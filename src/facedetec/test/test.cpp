@@ -23,6 +23,10 @@
 #include "http/HTTPResponder.h"
 #include "base/logger.h"
 
+#include "rgba_bitmap.h"
+
+
+
 //#define JSON_ASSERT(x) /* value */
 //#define assert(x)
 
@@ -71,53 +75,90 @@ int main(int argc, char** argv) {
 
 
     ConsoleChannel *ch = new ConsoleChannel("debug", Level::Info);
-
     Logger::instance().add(ch);
     //test::init();
 
 
+    
+    std::ifstream f("./snap.rgba"); //taking file as inputstream
+    std::string str;
+    if(f) {
+       std::stringstream ss;
+       ss << f.rdbuf(); // reading data
+       str = ss.str();
+    }
+
+    
+    
+   //unsigned long  p_width = 0;
+   //unsigned long  p_height = 0;
+   //size_t  p_output_size = 0;
+      
+    
+  //unsigned char *  tmp = rgba_decode_file_data_to_bitmap( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0,  &p_width , &p_height , &p_output_size );
+   
+   //w=640 h=360
+           
+           
+    unsigned long  p_width = 640;
+   unsigned long  p_height = 360;
+   size_t  p_output_size = 0;
+      
+    
+  unsigned char *  tmp = rgba_convert_to_rgb( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_BGR , 0,  p_width , p_height , &p_output_size );
+   
+           
+
+           
+           
+  write_bmp(tmp, p_width,p_height, "arvind.bmp"  );
+  
+   
+    
+    
     Application app;
 
     
-    RestAPI("GET", "/"); //GET, POST, PUT, DELETE
     
-    
-
-   net::ClientConnecton *m_client = new HttpsClient("wss", "192.168.0", 443, "/");
-
-
-   // conn->Complete += sdelegate(&context, &CallbackContext::onClientConnectionComplete);
-   m_client->fnComplete = [&](const Response & response) {
-       std::string reason = response.getReason();
-       StatusCode statuscode = response.getStatus();
-       std::string body = m_client->readStream() ? m_client->readStream()->str() : "";
-       STrace << "SocketIO handshake response:" << "Reason: " << reason << " Response: " << body;
-   };
-
-   m_client->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
-       STrace << "client->fnPayload " << std::string(data, sz);
-       //m_ping_timeout_timer.Reset();
-       //m_packet_mgr.put_payload(std::string(data,sz));
-   };
-
-   m_client->fnClose = [&](HttpBase * con, std::string str) {
-       STrace << "client->fnClose " << str;
-       //close(0,"exit");
-       //on_close();
-   };
-
-   m_client->fnConnect = [&](HttpBase * con) {
-
-       m_client->send("{\"messageType\": \"createorjoin\", \"room\": \"room11\"}");
-
-       std::cout << "onConnect:";
-   };
-
-
-   //  conn->_request.setKeepAlive(false);
-   m_client->setReadStream(new std::stringstream);
-   m_client->send();
-   LTrace("sendHandshakeRequest over")
+//    RestAPI("GET", "/"); //GET, POST, PUT, DELETE
+//    
+//    
+//
+//   net::ClientConnecton *m_client = new HttpsClient("wss", "192.168.0", 443, "/");
+//
+//
+//   // conn->Complete += sdelegate(&context, &CallbackContext::onClientConnectionComplete);
+//   m_client->fnComplete = [&](const Response & response) {
+//       std::string reason = response.getReason();
+//       StatusCode statuscode = response.getStatus();
+//       std::string body = m_client->readStream() ? m_client->readStream()->str() : "";
+//       STrace << "SocketIO handshake response:" << "Reason: " << reason << " Response: " << body;
+//   };
+//
+//   m_client->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
+//       STrace << "client->fnPayload " << std::string(data, sz);
+//       //m_ping_timeout_timer.Reset();
+//       //m_packet_mgr.put_payload(std::string(data,sz));
+//   };
+//
+//   m_client->fnClose = [&](HttpBase * con, std::string str) {
+//       STrace << "client->fnClose " << str;
+//       //close(0,"exit");
+//       //on_close();
+//   };
+//
+//   m_client->fnConnect = [&](HttpBase * con) {
+//
+//       m_client->send("{\"messageType\": \"createorjoin\", \"room\": \"room11\"}");
+//
+//       std::cout << "onConnect:";
+//   };
+//
+//
+//   //  conn->_request.setKeepAlive(false);
+//   m_client->setReadStream(new std::stringstream);
+//   m_client->send();
+//   LTrace("sendHandshakeRequest over")
 
 
 
