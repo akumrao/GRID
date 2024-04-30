@@ -1,18 +1,4 @@
-/*
-// rgba_bitmap.c
-//
-// This module defines a generic RGBA "bitmap" object and provides helpful
-// functions to read and write them. This is intended to be a super dumb
-// file format that is trivial to read and write. Please see
-//     https://github.com/bzotto/rgba_bitmap
-// for the "spec", such as it is.
-//
-// You are hereby licensed to use this module in any way you want, anywhere
-// you want, and you aren't required to give anyone credit or tell anyone.
-// Knock yourself out! No warranty express or implied. Stay safe out there.
-//
-// Created by Ben Zotto, 2021.
-*/
+
 
 #include "rgba_bitmap.h"
 #include <stdlib.h>
@@ -44,7 +30,7 @@
                                             *(ptr+3) = u32 & 0xFF;
 
 
-unsigned char * rgba_encode_bitmap_to_file_data(
+unsigned char * encode_to_rgbaMagic(
     const unsigned char * input_buffer,
     unsigned long width,
     unsigned long height,
@@ -122,8 +108,8 @@ unsigned char * rgba_encode_bitmap_to_file_data(
     *p_output_size = output_size;
     return rgba_file;
 }
-//w=640 h=360
-unsigned char * rgba_decode_file_data_to_bitmap(
+
+unsigned char * rgbaMagic_decode(
     const unsigned char * file_data,
     unsigned long file_data_length,
     bitmap_buffer_format desired_output_format,
@@ -222,9 +208,8 @@ unsigned char * rgba_decode_file_data_to_bitmap(
 }
 
 
-
 //w=640 h=360
-unsigned char * rgba_convert_to_rgb(
+unsigned char * rgba_to_rgb_brg(
     const unsigned char * file_data,
     unsigned long file_data_length,
     bitmap_buffer_format desired_output_format,
@@ -308,7 +293,7 @@ unsigned char * rgba_convert_to_rgb(
 
 
 
-void write_bmp(unsigned char* img, size_t w, size_t h, const char* fn) 
+void write_bmp(unsigned char* img, size_t w, size_t h, const char* filename) 
 {
   
   FILE *f;
@@ -332,7 +317,7 @@ void write_bmp(unsigned char* img, size_t w, size_t h, const char* fn)
   bmpinfoheader[10] = (unsigned char)(       h>>16);
   bmpinfoheader[11] = (unsigned char)(       h>>24);
 
-  f = fopen(fn,"wb");
+  f = fopen(filename,"wb");
   fwrite(bmpfileheader,1,14,f);
   fwrite(bmpinfoheader,1,40,f);
   for(size_t i=0; i<h; ++i) {

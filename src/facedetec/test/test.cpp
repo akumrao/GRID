@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
 
 
     
-    std::ifstream f("./snap.rgba"); //taking file as inputstream
+    std::ifstream f("./arvind.rgba"); //taking file as inputstream
     std::string str;
     if(f) {
        std::stringstream ss;
@@ -93,30 +93,26 @@ int main(int argc, char** argv) {
    //unsigned long  p_width = 0;
    //unsigned long  p_height = 0;
    //size_t  p_output_size = 0;
-      
-    
-  //unsigned char *  tmp = rgba_decode_file_data_to_bitmap( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0,  &p_width , &p_height , &p_output_size );
+   //unsigned char *  tmp = rgbaMagic_decode( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0,  &p_width , &p_height , &p_output_size );
    
    //w=640 h=360
            
            
-    unsigned long  p_width = 640;
-   unsigned long  p_height = 360;
-   size_t  p_output_size = 0;
-      
-    
-  unsigned char *  tmp = rgba_convert_to_rgb( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_BGR , 0,  p_width , p_height , &p_output_size );
-   
-           
-
-           
-           
-  write_bmp(tmp, p_width,p_height, "arvind.bmp"  );
+  unsigned long  width = 640;
+  unsigned long  height = 360;
+  size_t  p_output_size = 0;
   
+    
+  unsigned char *  bgrBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_BGR , 0, width , height , &p_output_size );
    
+           
+  write_bmp(bgrBuf, width, height, "arvind.bmp"  );
+  
+  
+  free(bgrBuf) ;
     
     
-    Application app;
+  Application app;
 
     
     

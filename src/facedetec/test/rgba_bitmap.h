@@ -1,18 +1,3 @@
-/*
-// rgba_bitmap.h
-//
-// This module defines a generic RGBA "bitmap" object and provides helpful
-// functions to read and write them. This is intended to be a super dumb
-// file format that is trivial to read and write. Please see
-//     https://github.com/bzotto/rgba_bitmap
-// for the "spec", such as it is.
-//
-// You are hereby licensed to use this module in any way you want, anywhere
-// you want, and you aren't required to give anyone credit or tell anyone.
-// Knock yourself out! No warranty express or implied. Stay safe out there.
-//
-// Created by Ben Zotto, 2021.
-*/
 
 #ifndef bitmap_h
 #define bitmap_h
@@ -43,7 +28,7 @@ typedef enum _bitmap_buffer_format {
     @param p_output_size A pointer to a variable to contain the size of the allocated file data.
     @return The allocated file data. (NULL on error.) Caller must free.
 */
-unsigned char * rgba_encode_bitmap_to_file_data(
+unsigned char * encode_to_rgbaMagic(
     const unsigned char * input_buffer,
     unsigned long width,
     unsigned long height,
@@ -66,7 +51,7 @@ unsigned char * rgba_encode_bitmap_to_file_data(
     @param p_output_size A pointer to a variable to contain the size of the allocated bitmap (optional; can be NULL)
     @return The allocated bitmap buffer. (NULL on error.) Caller must free.
 */
-unsigned char * rgba_decode_file_data_to_bitmap(
+unsigned char * rgbaMagic_decode(
     const unsigned char * file_data,
     unsigned long file_data_length,
     bitmap_buffer_format desired_output_format,
@@ -76,7 +61,7 @@ unsigned char * rgba_decode_file_data_to_bitmap(
     size_t * p_output_size
 );
 
-unsigned char * rgba_convert_to_rgb(
+unsigned char * rgba_to_rgb_brg(
     const unsigned char * file_data,
     unsigned long file_data_length,
     bitmap_buffer_format desired_output_format,
@@ -86,6 +71,7 @@ unsigned char * rgba_convert_to_rgb(
     size_t * p_output_size
 );
 
-void write_bmp(unsigned char* img, size_t w, size_t h, const char* fn) ;
+
+void write_bmp(unsigned char* img, size_t w, size_t h, const char* filename) ;
 
 #endif /* bitmap_h */
