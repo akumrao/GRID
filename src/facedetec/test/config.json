@@ -1,0 +1,29 @@
+{
+  "configuredVisionCells": [],
+  "deviceConfiguration": {
+    "isFREnabled": true,
+    "isPackageDetectionEnabled": false,
+    "isPersonDetectionEnabled": false,
+    "isPetDetectionEnabled": false,
+    "isVehicleDetectionEnabled": false,
+    "orchestraitCollectFaceData": {
+      "accuracyMonitorConsent": {
+        "enabledForNonRegisteredIdentityImages": false,
+        "enabledForPackageDetectionImages": false,
+        "enabledForPersonDetectionImages": false,
+        "enabledForPetDetectionImages": false,
+        "enabledForRegisteredIdentityImages": false,
+        "enabledForVehicleDetectionImages": false
+      },
+      "productImprovementConsent": {
+        "enabledForNonRegisteredIdentityImages": true,
+        "enabledForPackageDetectionImages": false,
+        "enabledForPersonDetectionImages": false,
+        "enabledForPetDetectionImages": false,
+        "enabledForRegisteredIdentityImages": true,
+        "enabledForVehicleDetectionImages": false
+      }
+    }
+  },
+  "sequenceNum": 2
+}

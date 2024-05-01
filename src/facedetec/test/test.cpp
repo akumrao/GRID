@@ -162,12 +162,15 @@ int main(int argc, char** argv) {
   size_t  p_output_size = 0;
   
     
-  unsigned char *  bgrBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_BGR , 0, width , height , &p_output_size );
-   
+  //unsigned char *  bgrBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_BGR , 0, width , height , &p_output_size );
   //write_bmp(bgrBuf, width, height, "arvind.bmp"  );
+  //free(bgrBuf) ;
   
-    // test["arv"] = 1;
+  unsigned char *  rgbBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0, width , height , &p_output_size );
 
+  
+  
+  
 #if XALIENT_TEST
   
 
@@ -175,8 +178,15 @@ int main(int argc, char** argv) {
 
     config.load("./config.json");
 
-    std::string xaconfig = config.root.dump();
-
+   
+    
+    if (!config.loaded()) 
+    {
+        SError << "Could not load config";
+    }
+     std::string xaconfig = config.root.dump();
+     
+    
     xa_fi_error_t returnValue;
 
     const char* path_to_vision_cell =
@@ -212,19 +222,97 @@ int main(int argc, char** argv) {
     }
 
 
+   #if 1  
+    
+    const char * galleryIdentityManifest;
+    const xa_sdk_identity_images_t * remaining_identity_image_pairs;
+    const char * updated_json_identities;
+    //xa_fi_error_t returnValue;
 
+    
+    cnfg::Configuration identity;
+
+    identity.load("./identity.json");
+
+            
+    //if (< a new gallery manifest exists >) 
+    if (identity.loaded()) 
+    {
+           std::string xaidentity = identity.root.dump();
            
+        galleryIdentityManifest = xaidentity.c_str();
+
+        // Step 1
+        returnValue = xa_sdk_update_identities(galleryIdentityManifest,
+        &remaining_identity_image_pairs,
+        &updated_json_identities);
+        if (returnValue == XA_ERR_NONE) {
+            //< persist updated_json_identities >
+            SInfo << "xa_sdk_update_identities passed";      
+                 
+         }
+         else {
+            SError << "xa_sdk_update_identities fails";
+            return -1;
+         }
+    }
+
+    int totalIdentity = remaining_identity_image_pairs->number_of_remaining_images;
+    // Step 2 / Step 4
+    while ((returnValue == XA_ERR_NONE) && (remaining_identity_image_pairs->number_of_remaining_images > 0)) 
+    {
+        
+        int index = totalIdentity - remaining_identity_image_pairs->number_of_remaining_images;
+        
+        SInfo << "IdentityIndex:" << index  << " totalIndenty:" << totalIdentity;
+        
+        xa_fi_image_t image;
+        image.width = width;
+        image.height = height;
+        image.pixel_format =  XA_FI_COLOR_RGB888;  // signifies the buffer data format
+        image.buff = rgbBuf;
+
+    
+        //< acquire the image for remaining_identity_image_pairs->identity_images[0] >
+       // xa_fi_image_t image = < convert the acquired image to xa_fi_image_t - see fi_image.h >
+
+        // Step 3
+        returnValue = xa_sdk_add_identity_image(remaining_identity_image_pairs->identity_images[index].identity_id,
+        remaining_identity_image_pairs->identity_images[index].image_id,
+        &image,
+        &remaining_identity_image_pairs,
+        &updated_json_identities);
+        
+        // Step 5 - persist after each image to avoid needing to download them again
+         // this step could also be placed after the while loop
+         if (returnValue == XA_ERR_NONE) {
+          //< persist updated_json_identities >
+             
+              SInfo << "remaining_identity_image_pairs passed: " << remaining_identity_image_pairs->identity_images[0].identity_id;
+        }
+        else {
+            SError << "remaining_identity_image_pairs fails " << remaining_identity_image_pairs->identity_images[0].identity_id;
+            return -1;
+        }
+    }
+
+    const char * deviceCheckinJson = xa_sdk_get_device_checkin_json();
+    
+    SInfo << "deviceCheckinJson:" << deviceCheckinJson;
+    //< perform a deviceCheckin with the deviceCheckinJson >
+      #endif  
+            
 
     for( int x = 0; x < 100; ++x)
     {
-        XAProcess( bgrBuf , width, height );
+        XAProcess( rgbBuf , width, height );
 
         base::sleep(700);
     }
     
   
   
-  free(bgrBuf) ;
+  free(rgbBuf) ;
   #endif  
     
   Application app;

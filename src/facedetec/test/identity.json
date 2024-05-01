@@ -1,0 +1,21 @@
+{
+  "configuredGalleryIdentities": {
+    "76a92b24-31d5-463b-ab7a-b379efab7b30": {
+      "accuracyMonitorConsent": false,
+      "identityName": "arvind",
+      "productImprovementConsent": false,
+      "registrationImageIDs": [
+        "temp_new_identity_1_reg_image.jpg"
+      ]
+    },
+    "e4cf3fd8-a23f-484e-82f0-ec160b21189c": {
+      "accuracyMonitorConsent": true,
+      "identityName": "ria",
+      "productImprovementConsent": true,
+      "registrationImageIDs": [
+        "temp_new_identity_2_reg_image.jpg"
+      ]
+    }
+  },
+  "sequenceNum": 2
+}
