@@ -27,7 +27,7 @@ CXXFLAGS   +=  -O3 -std=c++11  -DNDEBUG -fpermissive
 
 CPPFLAGS   += -I../../facedetec/include/ -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../net/uv_multiplex/include/  -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser -I../xailient-sdk/include/ -I/workspace/MagicAI/src/openssl/build/include -I${T31SDK}/include -I${T31SDK}/samples/libimp-sample/
 
-LDFLAGS +=  -L../xailient-sdk/lib -L${INSTALLPATH}/mips-linux-gnu/lib -L/workspace/libra_coredump/src/libuv/build   -muclibc
+LDFLAGS +=  -L../xailient-sdk/lib -L${INSTALLPATH}/mips-linux-gnu/lib -muclibc
 
 #-L${T31SDK}/lib/uclibc -lalog -limp
 
