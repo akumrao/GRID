@@ -26,3 +26,17 @@ runConfTest
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mnt
 
 
+
+
+# to test
+
+To compile webrtc
+
+cmake -DWEBRTC_REPO=/workspace/webrtc/src -DWEBRTC_BUILD_DIR=out/arm64 -DANDROID_ABI=x86_64 .. 
+
+
+cmake -DWEBRTC_REPO=/workspace/webrtc/src -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DWEBRTC_BUILD_DIR=out/arm64 -DANDROID_ABI=x86_64 .. 
+  
+
+
+cmake -DWEBRTC_REPO=/workspace/webrtc/src -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DWEBRTC_BUILD_DIR=out/arm64 -DANDROID_ABI=mipsel cmake -DWEBRTC_REPO=/workspace/webrtc/src -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DWEBRTC_BUILD_DIR=out/arm64 -DCMAKE_CROSSCOMPILING=1 -DANDROID_ABI=mipssel .

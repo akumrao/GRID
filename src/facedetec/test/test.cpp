@@ -128,7 +128,7 @@ int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  )
 int main(int argc, char** argv) {
 
 
-    ConsoleChannel *ch = new ConsoleChannel("debug", Level::Info);
+    ConsoleChannel *ch = new ConsoleChannel("trace", Level::Trace);
     Logger::instance().add(ch);
     //test::init();
 
@@ -222,7 +222,7 @@ int main(int argc, char** argv) {
     }
 
 
-   #if 1  
+   #if 0  
     
     const char * galleryIdentityManifest;
     const xa_sdk_identity_images_t * remaining_identity_image_pairs;
@@ -300,7 +300,7 @@ int main(int argc, char** argv) {
     
     SInfo << "deviceCheckinJson:" << deviceCheckinJson;
     //< perform a deviceCheckin with the deviceCheckinJson >
-      #endif  
+    #endif  
             
 
     for( int x = 0; x < 100; ++x)
