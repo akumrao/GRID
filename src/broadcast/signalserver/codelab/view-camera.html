@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Live camera</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <link rel="stylesheet" type="text/css" href="css/camerastyle.css">
+  <link rel="stylesheet" type="text/css" href="css/jquery-spinner-pro.min.css">
+</head>
+<body>
+  <script>
+    log = function () {
+      var args = Array.prototype.slice.call(arguments);
+      $('#webrtc-logs').append(JSON.stringify(args)).append('\n');
+      console.log.apply(console, arguments);
+    }
+  </script>
+  <div id="boundary">
+    <div id="videoLoader" class="videoLoader" style="z-index: -1;">
+      <div class="loadingSec">
+        <!--            <p>Rendering Video.. </p>-->
+        <!-- <p><span id="secnleft"></span> seconds left</p> -->
+      </div>
+    </div>
+    <div id="hlsStreamSection">
+      <video poster="noposter" id="remoteVideo" autoplay playsinline muted></video>
+    </div>
+    <div id="controls"></div>
+  </div>
+  <script type="text/javascript" src="js/jquery-spinner-pro.min.js"></script>
+  <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+  <script type="text/javascript" src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script>
+  <script type="text/javascript" src="/socket.io/socket.io.js"></script>
+  <script type="text/javascript" src="https://webrtc.github.io/adapter/adapter-latest.js"></script>
+  <script type="text/javascript" src="js/main-new.js"></script>
+  <script>
+    var spinner = new jQuerySpinner({
+      parentId: 'videoLoader'
+    });
+    $(function () {
+      spinner.show();
+      $('.loadingSec').show();
+    });
+    if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+      var myobj = document.getElementById("controls");
+      myobj.remove();
+    }
+  </script>
+</body>
+</html>
