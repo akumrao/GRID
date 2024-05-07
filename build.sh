@@ -49,4 +49,25 @@ make clean
 make -j8
 make -j8 install
 
+# cd ../../
+
+
+RTSP_CROSS=$TOOLCHAIN/mips-linux-gnu-
+
+mkdir -p 3rdparty
+
+echo "Build ffmpeg"
+cd 3rdparty
+rm -rf ffmpeg
+if [[ ! -f ffmpeg-3.4.10.tar.xz ]]; then
+    wget 'https://ffmpeg.org/releases/ffmpeg-3.4.10.tar.xz'
+fi
+tar xvf ffmpeg-3.4.10.tar.xz
+mv ffmpeg-3.4.10 ffmpeg
+cd ffmpeg
+./configure --disable-zlib --target-os=linux --arch=mipsel --cpu=mips32r2 --disable-msa --ranlib="${RTSP_CROSS}ranlib" --nm="${RTSP_CROSS}nm" --ar="${RTSP_CROSS}ar" --cc="${RTSP_CROSS}gcc" --cxx="${RTSP_CROSS}g++" --strip="${RTSP_CROSS}strip" --prefix="$TOP/3rdparty/install" --enable-gpl  --cross-prefix=mips-linux-gnu --enable-cross-compile  --enable-version3
+make -j$(nproc)
+make install
+
+cd ../../
 
