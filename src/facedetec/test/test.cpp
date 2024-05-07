@@ -24,6 +24,11 @@
 #include "base/logger.h"
 
 #include "rgba_bitmap.h"
+#include "base/base64.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+
+#include "stb_image.h"
 
 
 
@@ -38,6 +43,52 @@ using json = nlohmann::json;
 using namespace base;
 using namespace base::net;
 using namespace base::cnfg;
+
+
+typedef unsigned char uchar;
+static const std::string b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";//=
+static std::string base64_encode(const std::string &in) {
+    std::string out;
+
+    int val=0, valb=-6;
+    for (uchar c : in) {
+        val = (val<<8) + c;
+        valb += 8;
+        while (valb>=0) {
+            out.push_back(b[(val>>valb)&0x3F]);
+            valb-=6;
+        }
+    }
+    if (valb>-6) out.push_back(b[((val<<8)>>(valb+8))&0x3F]);
+    while (out.size()%4) out.push_back('=');
+    return out;
+}
+
+
+static std::string base64_decode(const std::string &in) {
+
+    std::string out;
+
+    std::vector<int> T(256,-1);
+    for (int i=0; i<64; i++) T[b[i]] = i;
+
+    int val=0, valb=-8;
+    for (uchar c : in) {
+        if (T[c] == -1) break;
+        val = (val<<6) + T[c];
+        valb += 6;
+        if (valb>=0) {
+            out.push_back(char((val>>valb)&0xFF));
+            valb-=8;
+        }
+    }
+    return out;
+}
+
+
+
+
+
 void RestAPI(std::string method, std::string uri)
 {
     
@@ -71,6 +122,118 @@ void RestAPI(std::string method, std::string uri)
     
 }
 #if XALIENT_TEST
+
+int XA_addGallery(std::string jpegBuffBase64 )
+{
+
+  SInfo << "jpegBuffBase64 " << jpegBuffBase64.size() ;
+            
+   std::string out;
+   //  base64::Decoder dec;
+   //  dec.decode(jpegBuffBase64, out);
+                
+    out = base64_decode(jpegBuffBase64);
+    
+    SInfo << "base64 decoded " << out.size() ;
+  
+
+
+  int width, height , channels;
+
+//  if(!stbi_info_from_memory(out, jpegBuffBase64.size(), &width, &height, &channels)) return -1;
+//
+
+//  /* exit if the image is larger than ~80MB */
+//  if(width && height > (80000000 / 4) / height) return -1;
+
+  unsigned char *img = stbi_load_from_memory(out.c_str(), out.size(), &width, &height, &channels, 3);
+
+  SInfo << "wx: " << width  << " he: " << height <<  " ch: " << channels;
+
+  
+  const char * galleryIdentityManifest;
+  const xa_sdk_identity_images_t * remaining_identity_image_pairs;
+  const char * updated_json_identities;
+  xa_fi_error_t returnValue;
+
+  
+  cnfg::Configuration identity;
+
+  identity.load("./identity.json");
+
+          
+  //if (< a new gallery manifest exists >) 
+  if (identity.loaded()) 
+  {
+           std::string xaidentity = identity.root.dump();
+           
+        galleryIdentityManifest = xaidentity.c_str();
+
+        // Step 1
+        returnValue = xa_sdk_update_identities(galleryIdentityManifest,
+        &remaining_identity_image_pairs,
+        &updated_json_identities);
+        if (returnValue == XA_ERR_NONE) {
+            //< persist updated_json_identities >
+            SInfo << "xa_sdk_update_identities passed";      
+                 
+         }
+         else {
+            SError << "xa_sdk_update_identities fails";
+            return -1;
+       }
+  }
+
+  int totalIdentity = remaining_identity_image_pairs->number_of_remaining_images;
+  // Step 2 / Step 4
+  while ((returnValue == XA_ERR_NONE) && (remaining_identity_image_pairs->number_of_remaining_images > 0)) 
+  {
+      
+      int index = totalIdentity - remaining_identity_image_pairs->number_of_remaining_images;
+      
+      SInfo << "IdentityIndex:" << index  << " totalIndenty:" << totalIdentity;
+      
+      xa_fi_image_t image;
+      image.width = width;
+      image.height = height;
+      image.pixel_format =  XA_FI_COLOR_RGB888;  // signifies the buffer data format
+      image.buff = img;
+
+  
+      //< acquire the image for remaining_identity_image_pairs->identity_images[0] >
+     // xa_fi_image_t image = < convert the acquired image to xa_fi_image_t - see fi_image.h >
+
+      // Step 3
+      returnValue = xa_sdk_add_identity_image(remaining_identity_image_pairs->identity_images[index].identity_id,
+      remaining_identity_image_pairs->identity_images[index].image_id,
+      &image,
+      &remaining_identity_image_pairs,
+      &updated_json_identities);
+      
+      // Step 5 - persist after each image to avoid needing to download them again
+       // this step could also be placed after the while loop
+       if (returnValue == XA_ERR_NONE) {
+        //< persist updated_json_identities >
+           
+            SInfo << "remaining_identity_image_pairs passed: " << remaining_identity_image_pairs->identity_images[0].identity_id;
+      }
+      else {
+          SError << "remaining_identity_image_pairs fails " << remaining_identity_image_pairs->identity_images[0].identity_id;
+          return -1;
+      }
+  }
+
+  const char * deviceCheckinJson = xa_sdk_get_device_checkin_json();
+  
+  SInfo << "deviceCheckinJson:" << deviceCheckinJson;
+
+
+  free(img);
+
+    //< perform a deviceCheckin with the deviceCheckinJson >
+
+}
+
 int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  )
 {
 
@@ -106,6 +269,27 @@ int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  )
                     // send blob -> json to Face Track Event endpoint >
                     STrace << "json to Face Track Event endpoint: " <<  blob.json;
 
+        
+                     json event = json::parse(blob.json); 
+
+                     if(  (event.find("eventType") != event.end())  &&  (event["eventType"].get<std::string>() ==  "IDENTITY_NOT_IN_GALLERY"))
+                     {
+
+                        if(  event.find("registrationImage") != event.end()) 
+                        XA_addGallery(event["registrationImage"].get<std::string>()) ;
+                        else
+                         SError << "no registrationImage " <<  event.dump(4);  
+
+                     }
+                     else
+                     {
+                       SError << "no eventType " << event.dump(4);
+                     }
+
+                     
+
+
+
                 } else if (blob.blob_descriptor == XA_ACCURACY_MONITOR) {
                     //<
                     // send blob -> json to Accuracy Monitor endpoint >
@@ -133,6 +317,62 @@ int main(int argc, char** argv) {
     //test::init();
 
 
+    
+     
+//    cnfg::Configuration config;
+//
+//    config.load("./event.json");
+//
+//    if( config.loaded())
+//    {
+//        json event = json::parse(config.root.dump(4)); 
+//
+//        if(  (event.find("eventType") != event.end())  &&  (event["eventType"].get<std::string>() ==  "IDENTITY_NOT_IN_GALLERY"))
+//        {
+//
+//           if(  event.find("registrationImage") != event.end()) 
+//          // XA_addGallery(event["registrationImage"].get<std::string>()) ;
+//           {
+//                std::string jpegBuffBase64 = event["looselyCroppedImage"].get<std::string>();
+//                
+//                
+//                SInfo << "jpegBuffBase64 " << jpegBuffBase64.size() ;
+//
+//                std::string out;
+//              //  base64::Decoder dec;
+//                //dec.decode(jpegBuffBase64, out);
+//                
+//                out = base64_decode(jpegBuffBase64);
+//
+//                SInfo << "base64 decode " << out.size() ;
+//
+//                int width, height , channels;
+//                
+////                if(!stbi_info_from_memory(out.c_str(), out.size(), &width, &height, &channels)) return -1;
+////
+////               SInfo << "wx: " << width  << " he: " << height <<  " ch: " << channels;
+//
+//
+//                /* exit if the image is larger than ~80MB */
+//              //  if(width && height > (80000000 / 4) / height) return -1;
+//
+//                unsigned char *img = stbi_load_from_memory(out.c_str(), out.size(), &width, &height, &channels, 3);
+//                
+//                int x = 1;
+//                
+//                free(img);
+//           }
+//           else
+//            SError << "no registrationImage " <<  event.dump(4);  
+//
+//        }
+//        else
+//        {
+//          SError << "no eventType " << event.dump(4);
+//        }
+//     
+//    }
+    
     
     std::ifstream f("./arvind.rgba"); //taking file as inputstream
     std::string str;
@@ -222,86 +462,7 @@ int main(int argc, char** argv) {
     }
 
 
-   #if 0  
-    
-    const char * galleryIdentityManifest;
-    const xa_sdk_identity_images_t * remaining_identity_image_pairs;
-    const char * updated_json_identities;
-    //xa_fi_error_t returnValue;
-
-    
-    cnfg::Configuration identity;
-
-    identity.load("./identity.json");
-
-            
-    //if (< a new gallery manifest exists >) 
-    if (identity.loaded()) 
-    {
-           std::string xaidentity = identity.root.dump();
-           
-        galleryIdentityManifest = xaidentity.c_str();
-
-        // Step 1
-        returnValue = xa_sdk_update_identities(galleryIdentityManifest,
-        &remaining_identity_image_pairs,
-        &updated_json_identities);
-        if (returnValue == XA_ERR_NONE) {
-            //< persist updated_json_identities >
-            SInfo << "xa_sdk_update_identities passed";      
-                 
-         }
-         else {
-            SError << "xa_sdk_update_identities fails";
-            return -1;
-         }
-    }
-
-    int totalIdentity = remaining_identity_image_pairs->number_of_remaining_images;
-    // Step 2 / Step 4
-    while ((returnValue == XA_ERR_NONE) && (remaining_identity_image_pairs->number_of_remaining_images > 0)) 
-    {
-        
-        int index = totalIdentity - remaining_identity_image_pairs->number_of_remaining_images;
-        
-        SInfo << "IdentityIndex:" << index  << " totalIndenty:" << totalIdentity;
-        
-        xa_fi_image_t image;
-        image.width = width;
-        image.height = height;
-        image.pixel_format =  XA_FI_COLOR_RGB888;  // signifies the buffer data format
-        image.buff = rgbBuf;
-
-    
-        //< acquire the image for remaining_identity_image_pairs->identity_images[0] >
-       // xa_fi_image_t image = < convert the acquired image to xa_fi_image_t - see fi_image.h >
-
-        // Step 3
-        returnValue = xa_sdk_add_identity_image(remaining_identity_image_pairs->identity_images[index].identity_id,
-        remaining_identity_image_pairs->identity_images[index].image_id,
-        &image,
-        &remaining_identity_image_pairs,
-        &updated_json_identities);
-        
-        // Step 5 - persist after each image to avoid needing to download them again
-         // this step could also be placed after the while loop
-         if (returnValue == XA_ERR_NONE) {
-          //< persist updated_json_identities >
-             
-              SInfo << "remaining_identity_image_pairs passed: " << remaining_identity_image_pairs->identity_images[0].identity_id;
-        }
-        else {
-            SError << "remaining_identity_image_pairs fails " << remaining_identity_image_pairs->identity_images[0].identity_id;
-            return -1;
-        }
-    }
-
-    const char * deviceCheckinJson = xa_sdk_get_device_checkin_json();
-    
-    SInfo << "deviceCheckinJson:" << deviceCheckinJson;
-    //< perform a deviceCheckin with the deviceCheckinJson >
-    #endif  
-            
+ 
 
     for( int x = 0; x < 100; ++x)
     {
