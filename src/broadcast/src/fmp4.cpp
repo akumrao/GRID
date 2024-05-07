@@ -15,8 +15,14 @@
 #include "base/define.h"
 #include "base/test.h"
 #include <thread>
+
+#if BYPASSGAME
+#include "base/thread.h"
+#else
 #include "livethread.h"
- #include "Settings.h"
+#endif
+
+#include "Settings.h"
 
 //#include <libavutil/timestamp.h>
 //#include <avformat.h>

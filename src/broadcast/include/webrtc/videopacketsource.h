@@ -19,13 +19,13 @@
 #include "rtc_base/timestamp_aligner.h"
 #include "framefilter.h"
 
-//#define BYPASSGAME 1
+#define BYPASSGAME 1
 
 #if BYPASSGAME
 #include "base/thread.h"
-#endif
+#else
 #include "livethread.h"
-
+#endif
 
 
 
