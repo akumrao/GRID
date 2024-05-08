@@ -196,7 +196,6 @@ void VideoPacketSource::run()
 {
     
     load( "/var/tmp/test.264", 30.0f);
-        
    
     while(!this->stopped())
         
