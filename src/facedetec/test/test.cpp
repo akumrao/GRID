@@ -29,11 +29,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 
 #include "stb_image.h"
-
-
-
-//#define JSON_ASSERT(x) /* value */
-//#define assert(x)
+#include "base64.h"
 
 #include <json/json.hpp>
 using json = nlohmann::json;
@@ -44,46 +40,6 @@ using namespace base;
 using namespace base::net;
 using namespace base::cnfg;
 
-
-typedef unsigned char uchar;
-static const std::string b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";//=
-static std::string base64_encode(const std::string &in) {
-    std::string out;
-
-    int val=0, valb=-6;
-    for (uchar c : in) {
-        val = (val<<8) + c;
-        valb += 8;
-        while (valb>=0) {
-            out.push_back(b[(val>>valb)&0x3F]);
-            valb-=6;
-        }
-    }
-    if (valb>-6) out.push_back(b[((val<<8)>>(valb+8))&0x3F]);
-    while (out.size()%4) out.push_back('=');
-    return out;
-}
-
-
-static std::string base64_decode(const std::string &in) {
-
-    std::string out;
-
-    std::vector<int> T(256,-1);
-    for (int i=0; i<64; i++) T[b[i]] = i;
-
-    int val=0, valb=-8;
-    for (uchar c : in) {
-        if (T[c] == -1) break;
-        val = (val<<6) + T[c];
-        valb += 6;
-        if (valb>=0) {
-            out.push_back(char((val>>valb)&0xFF));
-            valb-=8;
-        }
-    }
-    return out;
-}
 
 
 
@@ -121,20 +77,19 @@ void RestAPI(std::string method, std::string uri)
     conn->send();
     
 }
-#if XALIENT_TEST
 
 int XA_addGallery(std::string jpegBuffBase64 )
 {
 
   SInfo << "jpegBuffBase64 " << jpegBuffBase64.size() ;
             
-   std::string out;
-   //  base64::Decoder dec;
-   //  dec.decode(jpegBuffBase64, out);
+ std::string out;
+ //  base64::Decoder dec;
+ //  dec.decode(jpegBuffBase64, out);
                 
-    out = base64_decode(jpegBuffBase64);
+out = base64_decode(jpegBuffBase64);
     
-    SInfo << "base64 decoded " << out.size() ;
+ SInfo << "base64 decoded " << out.size() ;
   
 
 
@@ -180,6 +135,7 @@ int XA_addGallery(std::string jpegBuffBase64 )
          }
          else {
             SError << "xa_sdk_update_identities fails";
+            free(img);
             return -1;
        }
   }
@@ -215,11 +171,15 @@ int XA_addGallery(std::string jpegBuffBase64 )
        if (returnValue == XA_ERR_NONE) {
         //< persist updated_json_identities >
            
-            SInfo << "remaining_identity_image_pairs passed: " << remaining_identity_image_pairs->identity_images[0].identity_id;
+          SInfo << "remaining_identity_image_pairs passed: " << remaining_identity_image_pairs->identity_images[0].identity_id;
       }
-      else {
+      else 
+      {
           SError << "remaining_identity_image_pairs fails " << remaining_identity_image_pairs->identity_images[0].identity_id;
+          
+          free(img);
           return -1;
+          
       }
   }
 
@@ -241,8 +201,7 @@ int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  )
     image.width = w;
     image.height = h;
 
-    image.pixel_format =
-        XA_FI_COLOR_RGB888;  // signifies the buffer data format
+    image.pixel_format =   XA_FI_COLOR_RGB888;  // signifies the buffer data format
 
    // uint8_t* buffer_containing_raw_rgb_data = new uint8_t [image.width*3*image.height];
 
@@ -286,8 +245,6 @@ int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  )
                        SError << "no eventType " << event.dump(4);
                      }
 
-                     
-
 
 
                 } else if (blob.blob_descriptor == XA_ACCURACY_MONITOR) {
@@ -306,7 +263,7 @@ int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  )
     }
 
 }
-#endif
+
 
 
 int main(int argc, char** argv) {
@@ -316,63 +273,6 @@ int main(int argc, char** argv) {
     Logger::instance().add(ch);
     //test::init();
 
-
-    
-     
-//    cnfg::Configuration config;
-//
-//    config.load("./event.json");
-//
-//    if( config.loaded())
-//    {
-//        json event = json::parse(config.root.dump(4)); 
-//
-//        if(  (event.find("eventType") != event.end())  &&  (event["eventType"].get<std::string>() ==  "IDENTITY_NOT_IN_GALLERY"))
-//        {
-//
-//           if(  event.find("registrationImage") != event.end()) 
-//          // XA_addGallery(event["registrationImage"].get<std::string>()) ;
-//           {
-//                std::string jpegBuffBase64 = event["looselyCroppedImage"].get<std::string>();
-//                
-//                
-//                SInfo << "jpegBuffBase64 " << jpegBuffBase64.size() ;
-//
-//                std::string out;
-//              //  base64::Decoder dec;
-//                //dec.decode(jpegBuffBase64, out);
-//                
-//                out = base64_decode(jpegBuffBase64);
-//
-//                SInfo << "base64 decode " << out.size() ;
-//
-//                int width, height , channels;
-//                
-////                if(!stbi_info_from_memory(out.c_str(), out.size(), &width, &height, &channels)) return -1;
-////
-////               SInfo << "wx: " << width  << " he: " << height <<  " ch: " << channels;
-//
-//
-//                /* exit if the image is larger than ~80MB */
-//              //  if(width && height > (80000000 / 4) / height) return -1;
-//
-//                unsigned char *img = stbi_load_from_memory(out.c_str(), out.size(), &width, &height, &channels, 3);
-//                
-//                int x = 1;
-//                
-//                free(img);
-//           }
-//           else
-//            SError << "no registrationImage " <<  event.dump(4);  
-//
-//        }
-//        else
-//        {
-//          SError << "no eventType " << event.dump(4);
-//        }
-//     
-//    }
-    
     
     std::ifstream f("./arvind.rgba"); //taking file as inputstream
     std::string str;
@@ -474,6 +374,7 @@ int main(int argc, char** argv) {
   
   
   free(rgbBuf) ;
+  
   #endif  
     
   Application app;
