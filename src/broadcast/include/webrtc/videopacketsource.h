@@ -65,14 +65,21 @@ public:
     bool readFrame();
     int readBuffer();
     bool update(bool& needsMoreBytes);
-    uint8_t inbuf[H264_INBUF_SIZE + FF_INPUT_BUFFER_PADDING_SIZE]; 
+    uint8_t inbuf[H264_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE]; 
     FILE* fp;                                                                              /* file pointer to the file from which we read the h264 data */
    // int frame;                                                                             /* the number of decoded frames */
   //  h264_decoder_callback cb_frame;                                                        /* the callback function which will receive the frame/packet data */
   //  void* cb_user;                                                                         /* the void* with user data that is passed into the set callback */
     uint64_t frame_timeout;                                                                /* timeout when we need to parse a new frame */
     uint64_t frame_delay;  
-    
+ #else
+  fmp4::LiveThread  *ffparser{nullptr};
+     
+  fmp4::DummyFrameFilter *fragmp4_filter{nullptr};
+  fmp4::FrameFilter *fragmp4_muxer{nullptr};
+  fmp4::FrameFilter *info{nullptr};
+  fmp4::FrameFilter *txt{nullptr};
+  fmp4::LiveConnectionContext *ctx{nullptr};   
     
  #endif   
     void run(fmp4::Frame  *frame);
@@ -138,13 +145,7 @@ protected:
     
   
          
-     fmp4::LiveThread  *ffparser{nullptr};
-    
-     fmp4::DummyFrameFilter *fragmp4_filter{nullptr};
-     fmp4::FrameFilter *fragmp4_muxer{nullptr};;
-     fmp4::FrameFilter *info{nullptr};;
-     fmp4::FrameFilter *txt{nullptr};;
-     fmp4::LiveConnectionContext *ctx{nullptr};;
+   
      int slot{1};    
 };
 

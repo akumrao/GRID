@@ -67,58 +67,7 @@ VideoPacketSource::VideoPacketSource( const char *name,  std::string cam, fmp4::
 
 void VideoPacketSource::StopLive()
 {
-    if(ffparser)
-    {
-        if(ffparser)
-        {
-            
-            SInfo << "Stopping cam "  << ctx->cam;
-            
-            std::string state;
-              
-            if( Settings::getNodeState(cam, "state" , state ))
-            {
-                if( state == "streaming"  &&  !Settings::setNodeState(ctx->cam , "stopped" ) )
-                {
-                     SError << "Could not find camera at Json Repository "  << ctx->cam; 
-                }
-                 
-            }
-            
-          //  Settings::configuration.rtsp[ctx->cam]["state"]= "stopped";
-              
-            ffparser->stopStreamCall(*ctx);
-
-            ffparser->deregisterStreamCall(*ctx);
-            ffparser->stop();
-            ffparser->join();
-
-
-            delete ffparser;
-            ffparser =nullptr;
-            
-            if(ctx)
-            delete ctx;
-            ctx = nullptr;
-            
-            if(fragmp4_filter)        
-             delete fragmp4_filter;
-            fragmp4_filter = nullptr;
-            
-            //if(fragmp4_muxer)
-            //delete fragmp4_muxer;
-            //fragmp4_muxer = nullptr;
-            
-            if(info)
-            delete info;
-            info = nullptr;
-            
-            if(txt)
-            delete txt;
-            txt = nullptr;
-        }
-    }
-    
+ 
 }
 
 void VideoPacketSource::StartParser()
@@ -156,8 +105,8 @@ void VideoPacketSource::StartParser()
 
     }
 
-    if(codec->capabilities & CODEC_CAP_TRUNCATED) {
-        cdc_ctx->flags |= CODEC_FLAG_TRUNCATED;
+    if(codec->capabilities & AV_CODEC_CAP_TRUNCATED) {
+        cdc_ctx->flags |= AV_CODEC_CAP_TRUNCATED;
     }
 
     int ret ;
@@ -185,42 +134,7 @@ void VideoPacketSource::StartParser()
 
 void VideoPacketSource::StartLive()
 {
-     fragmp4_filter = new fmp4::DummyFrameFilter("fragmp4", cam, nullptr);
-       // fragmp4_muxer = new fmp4::FragMP4MuxFrameFilter("fragmp4muxer", fragmp4_filter);
-
-    info = new fmp4::InfoFrameFilter("info", nullptr);
-
-    txt = new fmp4::TextFrameFilter("txt", cam, self);
-
-
-    ffparser = new fmp4::LiveThread("live");
-
-    ffparser->start();
-
-   // fmp4::FrameFilter *tmpVc =(fmp4::FrameFilter *) VideoCapturer.get();
-
-   // std::string  cam = peer->getCam();
-
-    std::string add;
-
-
-    if( Settings::getNodeState(cam, "rtsp" , add ))
-    {
-   // std::string &add =  Settings::configuration.rtsp[cam]["rtsp"].get<std::string>();
-
-        ctx = new fmp4::LiveConnectionContext(fmp4::LiveConnectionType::rtsp, add, slot, cam, tcprequest, this , info, txt); // Request livethread to write into filter info
-        ffparser->registerStreamCall(*ctx);
-        ffparser->playStreamCall(*ctx);
-
-     //   Settings::configuration.rtsp[cam]["state"]="streaming";
-        Settings::setNodeState(cam , "streaming" );
-
-        SInfo  <<   cam  << " " <<    "streaming";
-    }
-    else
-    {
-        SError << "Could not find camera at Json Repository "  << cam; 
-    }   
+    
     
 }
 

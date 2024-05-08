@@ -1,0 +1,106 @@
+diff --git a/modules/audio_processing/aec3/clockdrift_detector.h b/modules/audio_processing/aec3/clockdrift_detector.h
+index 22528c9489..78d8f424d0 100644
+--- a/modules/audio_processing/aec3/clockdrift_detector.h
++++ b/modules/audio_processing/aec3/clockdrift_detector.h
+@@ -12,7 +12,7 @@
+ #define MODULES_AUDIO_PROCESSING_AEC3_CLOCKDRIFT_DETECTOR_H_
+ 
+ #include <array>
+-
++#include <cstddef>
+ namespace webrtc {
+ 
+ class ApmDataDumper;
+diff --git a/modules/video_coding/decoding_state.h b/modules/video_coding/decoding_state.h
+index b87fb2d034..b3faffcfc7 100644
+--- a/modules/video_coding/decoding_state.h
++++ b/modules/video_coding/decoding_state.h
+@@ -14,6 +14,7 @@
+ #include <map>
+ #include <set>
+ #include <vector>
++#include <cstdint>
+ 
+ namespace webrtc {
+ 
+diff --git a/rtc_base/cpu_time.cc b/rtc_base/cpu_time.cc
+index b95bcb136e..9a7d8faabe 100644
+--- a/rtc_base/cpu_time.cc
++++ b/rtc_base/cpu_time.cc
+@@ -70,9 +70,19 @@ int64_t GetProcessCpuTimeNanos() {
+   RTC_LOG_ERR(LS_ERROR) << "GetProcessCpuTimeNanos() not implemented";
+   return 0;
+ #else
++
++  //arvind
++  
++  struct timespec ts;
++  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts) == 0) {
++    return ts.tv_sec * kNumNanosecsPerSec + ts.tv_nsec;
++  } else {
++    RTC_LOG_ERR(LS_ERROR) << "clock_gettime() failed.";
++  }
++
+   // Not implemented yet.
+-  static_assert(
+-      false, "GetProcessCpuTimeNanos() platform support not yet implemented.");
++ // static_assert(
++    //  false, "GetProcessCpuTimeNanos() platform support not yet implemented."); // arvind
+ #endif
+   return -1;
+ }
+@@ -116,8 +126,16 @@ int64_t GetThreadCpuTimeNanos() {
+   return 0;
+ #else
+   // Not implemented yet.
+-  static_assert(
+-      false, "GetThreadCpuTimeNanos() platform support not yet implemented.");
++ // static_assert(
++  //    false, "GetThreadCpuTimeNanos() platform support not yet implemented."); // arvind
++
++  struct timespec ts;
++  if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts) == 0) {
++    return ts.tv_sec * kNumNanosecsPerSec + ts.tv_nsec;
++  } else {
++    RTC_LOG_ERR(LS_ERROR) << "clock_gettime() failed.";
++  }
++
+ #endif
+   return -1;
+ }
+diff --git a/rtc_base/memory_usage.cc b/rtc_base/memory_usage.cc
+index 20db9f3bf4..1b75987767 100644
+--- a/rtc_base/memory_usage.cc
++++ b/rtc_base/memory_usage.cc
+@@ -64,9 +64,14 @@ int64_t GetProcessResidentSizeBytes() {
+   return 0;
+ #else
+   // Not implemented yet.
+-  static_assert(false,
+-                "GetProcessVirtualMemoryUsageBytes() platform support not yet "
+-                "implemented.");
++ // static_assert(false,
++  //              "GetProcessVirtualMemoryUsageBytes() platform support not yet "
++ //               "implemented.");  // arvind
++
++
++ 
++return -1;
++
+ #endif
+ }
+ 
+diff --git a/rtc_base/platform_thread_types.cc b/rtc_base/platform_thread_types.cc
+index 15d48618bd..40e70bfeca 100644
+--- a/rtc_base/platform_thread_types.cc
++++ b/rtc_base/platform_thread_types.cc
+@@ -31,7 +31,8 @@ PlatformThreadId CurrentThreadId() {
+   return syscall(__NR_gettid);
+ #else
+   // Default implementation for nacl and solaris.
+-  return reinterpret_cast<pid_t>(pthread_self());
++ // return reinterpret_cast<pid_t>(pthread_self()); arvind
++  return static_cast<pid_t>((intptr_t)pthread_self());
+ #endif
+ #endif  // defined(WEBRTC_POSIX)
+ }

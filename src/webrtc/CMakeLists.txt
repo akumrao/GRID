@@ -278,7 +278,7 @@ target_link_libraries(jingle_peerconnection_so
     srtp
     ssl
     usrsctp
-    #vpx
+    vpx
     yuv
 
     #android
