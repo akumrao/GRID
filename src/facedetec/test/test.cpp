@@ -170,8 +170,15 @@ out = base64_decode(jpegBuffBase64);
        // this step could also be placed after the while loop
        if (returnValue == XA_ERR_NONE) {
         //< persist updated_json_identities >
-           
-          SInfo << "remaining_identity_image_pairs passed: " << remaining_identity_image_pairs->identity_images[0].identity_id;
+        
+        json up_json_identities = json::parse(updated_json_identities); 
+
+        std::string path = "./updated_json_identities.json";
+
+        base::cnfg::saveFile(path, up_json_identities );
+
+
+        SInfo << "remaining_identity_image_pairs passed: " << remaining_identity_image_pairs->identity_images[0].identity_id;
       }
       else 
       {
@@ -186,6 +193,10 @@ out = base64_decode(jpegBuffBase64);
   const char * deviceCheckinJson = xa_sdk_get_device_checkin_json();
   
   SInfo << "deviceCheckinJson:" << deviceCheckinJson;
+
+  SInfo << "sleep for 10 secs ";
+
+  base::sleep(10000);
 
 
   free(img);
@@ -202,10 +213,6 @@ int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  )
     image.height = h;
 
     image.pixel_format =   XA_FI_COLOR_RGB888;  // signifies the buffer data format
-
-   // uint8_t* buffer_containing_raw_rgb_data = new uint8_t [image.width*3*image.height];
-
-    //memset(buffer_containing_raw_rgb_data, 0, image.width*3*image.height);
 
 
     image.buff =  buffer_containing_raw_rgb_data;  // note this is in RGB order, otherwise
@@ -228,14 +235,32 @@ int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  )
                     // send blob -> json to Face Track Event endpoint >
                     STrace << "json to Face Track Event endpoint: " <<  blob.json;
 
-        
-                     json event = json::parse(blob.json); 
+                    json event = json::parse(blob.json); 
 
-                     if(  (event.find("eventType") != event.end())  &&  (event["eventType"].get<std::string>() ==  "IDENTITY_NOT_IN_GALLERY"))
-                     {
+                    std::string path = "./event.json";
+
+                    base::cnfg::saveFile(path, event );
+
+
+                    if(  (event.find("eventType") != event.end())  &&  (event["eventType"].get<std::string>() ==  "IDENTITY_NOT_IN_GALLERY"))
+                    {
 
                         if(  event.find("registrationImage") != event.end()) 
-                        XA_addGallery(event["registrationImage"].get<std::string>()) ;
+                        {
+                          XA_addGallery(event["registrationImage"].get<std::string>()) ;
+
+                          
+                          uint8_t* tmpBuf = new uint8_t [image.width*3*image.height];
+
+                          memset(tmpBuf, 0, image.width*3*image.height);
+
+                          XAProcess( tmpBuf , image.width, image.height );
+
+                          delete [] tmpBuf;
+
+                          base::sleep(700);
+
+                        }
                         else
                          SError << "no registrationImage " <<  event.dump(4);  
 
@@ -362,7 +387,19 @@ int main(int argc, char** argv) {
     }
 
 
- 
+    /*
+    cnfg::Configuration event;
+    event.load("./event.json");
+
+    if( event.root.find("registrationImage") == event.root.end()) 
+    {
+       SError  << " no registrationImage found in event" ;
+
+       return -1;
+    }
+
+    XA_addGallery(event.root["registrationImage"].get<std::string>()) ;
+    */
 
     for( int x = 0; x < 100; ++x)
     {
