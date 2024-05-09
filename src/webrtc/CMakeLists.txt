@@ -79,7 +79,8 @@ include_directories(
     ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen
 
     ${WEBRTC_REPO}/third_party/abseil-cpp
-    ${WEBRTC_REPO}/third_party/boringssl/src/include
+    #${WEBRTC_REPO}/third_party/boringssl/src/include
+    /workspace/MagicAI/src/openssl/buildx64/include
     ${WEBRTC_REPO}/third_party/icu/source/common
     ${WEBRTC_REPO}/sdk/libs/ffmpeg/include
     ${WEBRTC_REPO}/third_party/jsoncpp/source/include
@@ -268,7 +269,7 @@ target_link_libraries(jingle_peerconnection_so
     absl::optional
     absl::variant
     absl::strings
-    crypto
+    #crypto
     event
     #json
     opus
@@ -276,19 +277,19 @@ target_link_libraries(jingle_peerconnection_so
     protobuf_lite
     rnnoise
     srtp
-    ssl
+    #ssl
     usrsctp
     vpx
     yuv
 
     #android
     #log
-    GLESv2
+    #GLESv2
     #OpenSLES
 
     z
-    ${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libswresample.a
-    ${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavformat.a
-    ${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavcodec.a
-    ${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavutil.a
+    #${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libswresample.a
+    #${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavformat.a
+    #${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavcodec.a
+    #${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavutil.a
 )

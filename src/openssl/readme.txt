@@ -23,3 +23,5 @@ export LDFLAGS="-O2 -muclibc -L${INSTALLPATH}/lib -L${INSTALLPATH}/mips-linux-gn
 
 
 ./Configure linux-mips32 no-async  no-shared no-dso --prefix=/workspace/MagicAI/src/openssl/build/
+
+./Configure linux-x86_64 --prefix=/workspace/MagicAI/src/openssl/buildx64/
