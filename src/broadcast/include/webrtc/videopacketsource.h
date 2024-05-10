@@ -22,7 +22,7 @@
 
 #include "framefilter.h"
 //#include "NV_Decoder.h"
-//#include "livethread.h"
+#include "livethread.h"
 
 
 extern "C"
@@ -55,7 +55,7 @@ class VideoPacketSource : public rtc::AdaptedVideoTrackSource, public web_rtc::F
 { 
 
 public:                                                                
-      VideoPacketSource(const char *name, st_track &trackInfo, web_rtc::FrameFilter *next = NULL);
+      VideoPacketSource(const char *name, std::string cam, web_rtc::FrameFilter *next = NULL);
 
 protected:
     void go(web_rtc::Frame *frame)
@@ -71,7 +71,7 @@ public:
     void runNULLEnc(web_rtc::Frame  *frame);
    
 public:
-    st_track trackInfo;
+    std::string cam;
    
    // VideoPacketSource(const cricket::VideoFormat& captureFormat);
     virtual ~VideoPacketSource();
@@ -84,9 +84,9 @@ public:
 
     /// cricket::VideoCapturer implementation.
 
-//    void myAddPeerRef(std::string peerid);
-//    rtc::RefCountReleaseStatus myReleasePeer( std::string peerid);
-//    void resetPeer(  std::set< std::string> & peerids ); 
+    void myAddRef(std::string peerid);
+    rtc::RefCountReleaseStatus myRelease( std::string peerid);
+    void reset(  std::set< std::string> & peerids ); 
     SourceState state() const override;
     bool remote() const override;
     bool is_screencast() const override;
@@ -102,16 +102,20 @@ public:
     
     NULLDecoder *nullDecoder{nullptr};
 
-//    std::set< std::string> setPeerId;
-//    std::mutex mtPeerId;  
+
+    LiveThread  *liveThread{nullptr}; 
+    LiveConnectionContext *ctx{nullptr};
+    
 private:
     
-   // std::mutex mutextxt;
-  //  std::string metaData;
-      
+    std::set< std::string> setPeerid;
     
+    std::mutex mutexVideoSoure;
+   
+private:
     
-    std::mutex mtTrackId;
+   
+
     
     bool reset_sws_cts{false};
 
@@ -120,7 +124,7 @@ private:
     
    // std::string res{"HD"};
     
-    struct SwsContext *sws_ctx{nullptr};
+    //struct SwsContext *sws_ctx{nullptr};
     
     uint8_t *dst_data[4];
     int dst_linesize[4];

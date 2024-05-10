@@ -32,7 +32,7 @@ extern "C" {
 namespace base {
     namespace web_rtc {
 
-        NULLDecoder::NULLDecoder(st_track  &trackInfo): trackInfo(trackInfo)
+        NULLDecoder::NULLDecoder(std::string  &cam): cam(cam)
         {
             
             SInfo << "NULLDecoder()";
@@ -155,7 +155,7 @@ namespace base {
                qframe->clear();
             }
 
-            if ( (trackInfo.speed <=1 && trackInfo.scale ==1) ||  ((trackInfo.speed >1 || trackInfo.scale ==-1) &&  pict_type == AV_PICTURE_TYPE_I))
+            if (  pict_type == AV_PICTURE_TYPE_I)
             {    
                 Store *store = new Store(&buffer[0], size, width, height, vframecount, idr);
 
@@ -179,10 +179,10 @@ namespace base {
             
            int speed =1; 
            
-           if( trackInfo.speed != 0)
-           {
-               speed = trackInfo.speed;
-           }
+//           if( trackInfo.speed != 0)
+//           {
+//               speed = trackInfo.speed;
+//           }
 
 
            if(speed > 1 && speed < 4 )

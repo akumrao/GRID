@@ -54,10 +54,11 @@ bool AddCandidateToFirstTransport(cricket::Candidate *candidate, webrtc::Session
 Peer::Peer(
     PeerManager *manager,
     PeerFactoryContext *context,
+    std::string &cam,    
     std::string &room,
     const std::string &peerid,
     Mode mode)
-    : room(room),
+    : cam(cam), room(room),
       _manager(manager),
       _context(context),
       _peerid(peerid),
@@ -229,50 +230,52 @@ void Peer::recvSDP(
         }
 
         SInfo << track->kind() << " " << track->id();
+        
+        encType = EN_NATIVE;
 
-        webrtc::RtpParameters getParameters = sender->GetParameters();
+        //webrtc::RtpParameters getParameters = sender->GetParameters();
 
-        std::vector<webrtc::RtpCodecParameters> vtCodecs = getParameters.codecs;
+      //  std::vector<webrtc::RtpCodecParameters> vtCodecs = getParameters.codecs;
 
-        for (webrtc::RtpCodecParameters &codecs : vtCodecs)
-        {
-            SDebug << codecs.name;
-            if (codecs.name == "H264")
-            {
-                std::unordered_map<std::string, std::string> parameters = codecs.parameters;
-
-                if (parameters["Enc"] == "NATIVE")
-                {
-                    encType = EN_NATIVE;
-                    break;
-                }
-                else if (parameters["Enc"] == "NVIDIA")
-                {
-                    encType = EN_NVIDIA;
-                    break;
-                }
-                else if (parameters["Enc"] == "QUICKSYNC")
-                {
-                    encType = EN_QUICKSYNC;
-                    break;
-                }
-                else if (parameters["Enc"] == "X264")  /// never use this better to use VP9
-                {
-                    encType = EN_X264;
-                    break;
-                }
-
-
-                //                for( auto &parameter :parameters)
-                //                {
-                //                     SInfo <<  parameter.first << " " <<  parameter.second;
-                //                }
-            }
-            else if (codecs.name == "VP9")
-            {
-                encType = EN_VP9;
-            }
-        }
+//        for (webrtc::RtpCodecParameters &codecs : vtCodecs)
+//        {
+//            SDebug << codecs.name;
+//            if (codecs.name == "H264")
+//            {
+//                std::unordered_map<std::string, std::string> parameters = codecs.parameters;
+//
+//                if (parameters["Enc"] == "NATIVE")
+//                {
+//                    encType = EN_NATIVE;
+//                    break;
+//                }
+//                else if (parameters["Enc"] == "NVIDIA")
+//                {
+//                    encType = EN_NVIDIA;
+//                    break;
+//                }
+//                else if (parameters["Enc"] == "QUICKSYNC")
+//                {
+//                    encType = EN_QUICKSYNC;
+//                    break;
+//                }
+//                else if (parameters["Enc"] == "X264")  /// never use this better to use VP9
+//                {
+//                    encType = EN_X264;
+//                    break;
+//                }
+//
+//
+//                //                for( auto &parameter :parameters)
+//                //                {
+//                //                     SInfo <<  parameter.first << " " <<  parameter.second;
+//                //                }
+//            }
+//            else if (codecs.name == "VP9")
+//            {
+//                encType = EN_VP9;
+//            }
+//        }
     }
 }
 
@@ -521,39 +524,7 @@ std::string Peer::peerid() const
 //
 // }
 
-bool Peer::gettrackInfo(std::string &id, st_track & tc)
-{
-    bool ret  = true;
-  
-    if (mapcam.find(id) != mapcam.end()) 
-    { 
-        tc= mapcam[id];
-    }
-    else
-    {
-        ret = false;
-        SError<< "Not a possible state. gettrackInfo could not find " << id;
-    }
-    return ret;
-}
 
-
-bool Peer::addtrackInfo(std::string &id, st_track & tc)
-{
-    bool ret  = true;
-
-    if (mapcam.find(id) == mapcam.end()) 
-    { 
-        mapcam[id] = tc;
-    }
-    else
-    {
-        ret = false;
-    }
-    
-    return ret;
-}
-     
 
     
 

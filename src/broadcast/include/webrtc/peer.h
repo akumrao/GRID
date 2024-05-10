@@ -34,6 +34,7 @@ public:
     Peer(
         PeerManager *manager,
         PeerFactoryContext *context,
+        std::string &cam,
         std::string &room,
         const std::string &peerid,
         Mode mode);
@@ -79,13 +80,14 @@ public:
 
     // void mute( const json& message);
 
-    bool gettrackInfo(std::string &id, st_track & tc);
+    //bool gettrackInfo(std::string &id, st_track & tc);
     
-    bool addtrackInfo(std::string &id, st_track & tc);
+   // bool addtrackInfo(std::string &id, st_track & tc);
      
     //bool deltrackInfo(std::string &id);
 
     std::string &getRoom() { return room; }
+    std::string& getCam( ){return cam;}
 
     // webrtc::FakeConstraints& constraints();
     webrtc::PeerConnectionFactoryInterface *factory() const;
@@ -122,6 +124,7 @@ protected:
 
 protected:
     std::string room;
+    std::string  cam;
 
     PeerFactoryContext *_context;
     std::string _peerid;

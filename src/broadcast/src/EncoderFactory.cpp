@@ -133,8 +133,8 @@ std::unique_ptr<webrtc::VideoEncoder> EncoderFactory::CreateVideoEncoder(const w
     }
     else
     {
-        std::map<std::string, std::string> parameters = format.parameters;
-        if (parameters["Enc"] == "NATIVE")
+       // std::map<std::string, std::string> parameters = format.parameters;
+       // if (parameters["Enc"] == "NATIVE")
         {
             auto VideoEncoder = make_unique<NULLEncoder>();  // for cam encoders
             return VideoEncoder;

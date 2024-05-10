@@ -8,10 +8,9 @@ var pc;
 var remoteStream;
 var turnReady;
 
-var roomId = 'foo'; /*think as a group  peerName@room */
-//var  remotePeerID;
+var roomId = 'VideoEdgeWebRTC'; /*think as a group  peerName@room */
+
 var  peerID;
-//var  remotePeerName;
 var  peerName;
 
 
@@ -56,7 +55,7 @@ socket.on('joined', function(room, id, numClients) {
 
   let number = getUrlVars()["cam"];
    if ( !number ) {
-     number =0;
+     number =1;
     }
 
   if (isInitiator) {
@@ -92,7 +91,7 @@ function sendMessage(message) {
   console.log('Client sending message: ', message);
   log('Client sending message: ', message);
   //socket.emit('message', message);
-  socket.emit('sfu-message', message);
+  socket.emit('messageToWebrtc', message);
 }
 
 // This client receives a message

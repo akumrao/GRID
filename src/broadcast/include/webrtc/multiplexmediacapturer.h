@@ -9,10 +9,6 @@
 //#ifdef HAVE_FFMPEG
 
 
-#if MP4File
-#include "ff/ff.h"
-#include "ff/mediacapture.h"
-#endif
 
 
 #include "webrtc/audiopacketmodule.h"
@@ -60,22 +56,21 @@ public:
 
     std::string random_string();
 
-    void addMediaTracks(
-        webrtc::PeerConnectionFactoryInterface *factory,
-        webrtc::PeerConnectionInterface *conn,
-        web_rtc::Peer *peer,
-        st_track &trackInfo,
-        std::string &room);
+   void addMediaTracks(webrtc::PeerConnectionFactoryInterface* factory,
+                        webrtc::PeerConnectionInterface* conn, web_rtc::Peer *peer);
+
+    //void start(std::string & cam );
+    void stop(std::string & cam ,  std::set< std::string> & tmp);
+    
+    void remove(web_rtc::Peer* conn );
 
 
     void getPeerids(st_track &trackInfo, std::set<std::string> &sPeerIds);
 
     // void start(std::string & cam );
-    void stop(std::string &cam, std::set<std::string> &tmp);
 
-    void remove(web_rtc::Peer *conn, std::string &trackId);
 
-    void remove(web_rtc::Peer *conn);
+
 
     void oncommand(web_rtc::Peer *conn, std::string &trackId, std::string &cmd, int arg1, int arg2);
 
@@ -118,85 +113,10 @@ private:
     std::string fileName;
     std::mutex mutexCap;
     
+  //  LiveThread  *liveThread{nullptr};
     
-    struct stLiveThread
-    {
 
-        //int refCount{0};
-
-        LiveThread  *liveThread{nullptr}; 
-        LiveConnectionContext *ctx{nullptr};
-        int slot{1}; 
-
-        stLiveThread( VideoPacketSource *src, std::string& cam, std::string& trackid, bool recording );
-        ~stLiveThread();
-        
-        void addVideoPacketSource(std::string& trackid, VideoPacketSource *src );
-        int removeVideoPacketSource(std::string & trackid );
-   
-        
-        void myAddPeerRef(  std::string peerid)
-        {
-
-           mtPeerId.lock();
-           setPeerId.insert(peerid);
-           mtPeerId.unlock();
-
-        }
-
-        rtc::RefCountReleaseStatus myReleasePeer(  std::string peerid )  
-        {
-
-            std::set< std::string> ::iterator itr;
-            int count =1;
-
-            mtPeerId.lock();
-            itr = setPeerId.find(peerid);
-
-            if( itr != setPeerId.end())
-            {
-                setPeerId.erase(itr);
-            }
-
-            count = setPeerId.size();
-            mtPeerId.unlock();
-
-
-
-            if (count == 0) {
-
-              return rtc::RefCountReleaseStatus::kDroppedLastRef;
-            }
-            return rtc::RefCountReleaseStatus::kOtherRefsRemained;
-        }
-
-
-
-
-         void resetPeer(  std::set< std::string> & peeerids )  {
-
-            std::set< std::string> tmp;
-            mtPeerId.lock();
-
-            peeerids =    setPeerId;
-
-            setPeerId.clear();
-
-            mtPeerId.unlock();
-
-        }
-
-        std::set< std::string> setPeerId;
-        std::mutex mtPeerId;    
-
-    };
-    
- 
-    std::map< std::string,  stLiveThread* > mapLiveThread ;
-    
-    
 };
-
 
 }  // namespace web_rtc
 }  // namespace base

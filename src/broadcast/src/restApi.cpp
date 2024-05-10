@@ -207,17 +207,17 @@ namespace base {
                     {
                        if( currecording == "on")
                        {
-                           sig._capturer.startRecording(camid);
+                           //sig._capturer.startRecording(camid);
                        }
                        else
                        {
-                            sig._capturer.stopRecording(camid);
+                           // sig._capturer.stopRecording(camid);
                        }
                     }
                         
                 }else if ( currecording == "on"  )
                 {
-                    sig._capturer.startRecording(camid);
+                   // sig._capturer.startRecording(camid);
                 }
            
             }

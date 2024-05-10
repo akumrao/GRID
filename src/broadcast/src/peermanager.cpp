@@ -64,7 +64,7 @@ void PeerManager::recvSDP(const std::string &token, const json &message)
 
     conn->recvSDP(type, sdp, encType, vtrackid, atrackid);
 
-    _capturer.onAnswer(conn, encType, vtrackid, atrackid);
+   // _capturer.onAnswer(conn, encType, vtrackid, atrackid); // arvind
 
     LDebug("Received ", type, ": ", sdp)
 }

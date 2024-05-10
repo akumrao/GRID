@@ -31,7 +31,7 @@ class NULLDecoder
 public:
 
 
-    NULLDecoder(st_track  &trackInfo);
+    NULLDecoder(std::string  &cam);
     ~NULLDecoder();
     
     uint64_t startStreaming{0};
@@ -61,7 +61,7 @@ private:
     
     uint64_t vdelay{0};
     
-    st_track  &trackInfo;
+    std::string  &cam;
       
         
 };

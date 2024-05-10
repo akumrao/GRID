@@ -37,11 +37,10 @@ void LocalAudioSource::onAnswer()
                
     ffparser->start();
 
-     ffparser->registerStreamCall(*ctx); // arvind
-    ffparser->playStreamCall(*ctx);
+//     ffparser->registerStreamCall(*ctx); // arvind
+   // ffparser->playStreamCall(*ctx);
     
-   // ffparser->registerStream(ctx);
-   // ffparser->playStream(ctx);  
+  
 }
 
 
