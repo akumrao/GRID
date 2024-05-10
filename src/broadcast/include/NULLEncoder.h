@@ -162,7 +162,7 @@ private:
 
     uint64_t vframecount{0};
 
-    std::string metadata;
+   // std::string metadata;
 };
 
 

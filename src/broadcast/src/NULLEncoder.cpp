@@ -384,10 +384,10 @@ namespace base {
 
 
             int idata_start =  data_start_index.size();
-            if(!metadata.empty())
-            {
-                idata_start = idata_start + 1;
-            }
+//            if(!metadata.empty())
+//            {
+//                idata_start = idata_start + 1;
+//            }
             frag_header->VerifyAndAllocateFragmentationHeader(idata_start);
     
             for (auto it_start = data_start_index.begin(), it_length = data_length.begin();
@@ -405,41 +405,41 @@ namespace base {
             }
                
                
-            if(!metadata.empty())
-            {
-
-                 metadata=   base64::encode(metadata);
-
-                 //  uint32_t some_long = 10;
-
-                   uint32_t network_byte_order;
-
-               // convert and send
-                   network_byte_order = htonl(metadata.size());
-
-
-                   memcpy(encoded_image->data()+ encoded_image->size(), start_code, sizeof(start_code));
-                   encoded_image->set_size(encoded_image->size() + sizeof(start_code));
-                   //SInfo <<  " RtpFragmentize index0 " <<  index <<  " size" <<  encoded_image->size() << " metadata.size() " << metadata  ;
-
-                   frag_header->fragmentationOffset[index] = encoded_image->size();
-
-
-                   memcpy(encoded_image->data() + encoded_image->size(), metadata.c_str()  , static_cast<size_t>(metadata.size()) );
-                    encoded_image->set_size(encoded_image->size() + metadata.size());
-                   //encoded_image->_length += *it_length;
-
-                   memcpy(encoded_image->data() + encoded_image->size(), &network_byte_order  , static_cast<size_t>(sizeof(network_byte_order))    );
-                   //encoded_image->_length += *it_length;
-                   encoded_image->set_size(encoded_image->size() + sizeof(network_byte_order));
-
-
-                   frag_header->fragmentationLength[index] = static_cast<size_t>( metadata.size() + sizeof(network_byte_order));
-
-                 //  SInfo <<  " RtpFragmentize index1 " <<  index <<  " size" <<  encoded_image->size() << " *it_length " << metadata.size() + sizeof(network_byte_order) ;
-
-            }
-            
+//            if(!metadata.empty())
+//            {
+//
+//                 //metadata=   base64::encode(metadata);
+//
+//                 //  uint32_t some_long = 10;
+//
+//                   uint32_t network_byte_order;
+//
+//               // convert and send
+//                   network_byte_order = htonl(metadata.size());
+//
+//
+//                   memcpy(encoded_image->data()+ encoded_image->size(), start_code, sizeof(start_code));
+//                   encoded_image->set_size(encoded_image->size() + sizeof(start_code));
+//                   //SInfo <<  " RtpFragmentize index0 " <<  index <<  " size" <<  encoded_image->size() << " metadata.size() " << metadata  ;
+//
+//                   frag_header->fragmentationOffset[index] = encoded_image->size();
+//
+//
+//                   memcpy(encoded_image->data() + encoded_image->size(), metadata.c_str()  , static_cast<size_t>(metadata.size()) );
+//                    encoded_image->set_size(encoded_image->size() + metadata.size());
+//                   //encoded_image->_length += *it_length;
+//
+//                   memcpy(encoded_image->data() + encoded_image->size(), &network_byte_order  , static_cast<size_t>(sizeof(network_byte_order))    );
+//                   //encoded_image->_length += *it_length;
+//                   encoded_image->set_size(encoded_image->size() + sizeof(network_byte_order));
+//
+//
+//                   frag_header->fragmentationLength[index] = static_cast<size_t>( metadata.size() + sizeof(network_byte_order));
+//
+//                 //  SInfo <<  " RtpFragmentize index1 " <<  index <<  " size" <<  encoded_image->size() << " *it_length " << metadata.size() + sizeof(network_byte_order) ;
+//
+//            }
+//            
         
         }
 
@@ -604,7 +604,7 @@ namespace base {
 
                     encoded_images_[i]._completeFrame = true;
 
-                    metadata =  RawFrame->txt;
+                    //metadata =  RawFrame->txt;
 
                   // SInfo << this << " encode frame no " << encoderInc <<  " type "  << (int) encoded_images_[i]._frameType;
 
