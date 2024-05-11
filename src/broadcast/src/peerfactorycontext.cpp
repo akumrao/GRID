@@ -14,8 +14,9 @@
 #include "api/audio_codecs/audio_format.h"
 #include "api/audio_codecs/audio_decoder_factory_template.h"
 #include "api/audio_codecs/audio_encoder_factory_template.h"
-#include "api/audio_codecs/opus/audio_decoder_opus.h"
-#include "api/audio_codecs/opus/audio_encoder_opus.h"
+//#include "api/audio_codecs/opus/audio_decoder_opus.h"
+//#include "api/audio_codecs/opus/audio_encoder_opus.h"
+#include "api/audio_codecs/g711/audio_decoder_g711.h"
 
 #include "webrtc/G711.h"
 
@@ -76,6 +77,8 @@ PeerFactoryContext::PeerFactoryContext(webrtc::AudioDeviceModule *default_adm)
 #if !BYPASSGAME
 
     VideoEncoderFactoryStrong = make_unique<EncoderFactory>();
+    
+    VideoDecoderFactoryStrong = make_unique<FVideoDecoderFactory>();
 #endif
 
     factory = webrtc::CreatePeerConnectionFactory(
@@ -85,17 +88,16 @@ PeerFactoryContext::PeerFactoryContext(webrtc::AudioDeviceModule *default_adm)
         default_adm,
 
         webrtc::CreateAudioEncoderFactory<AudioEncoderG711_Cam>(),
-        webrtc::CreateAudioDecoderFactory<webrtc::AudioDecoderOpus>(),
+        webrtc::CreateAudioDecoderFactory<webrtc::AudioDecoderG711>(),
 
 #if BYPASSGAME
         webrtc::CreateBuiltinVideoEncoderFactory(),
+        webrtc::CreateBuiltinVideoDecoderFactory(),
 #else
         std::move(VideoEncoderFactoryStrong),
+        std::move(VideoDecoderFactoryStrong),
 #endif
 
-        //
-
-        webrtc::CreateBuiltinVideoDecoderFactory(),
 
         nullptr,
         nullptr);

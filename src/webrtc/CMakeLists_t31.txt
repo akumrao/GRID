@@ -29,7 +29,7 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 
 set(TEST_CC_FILTER ".*gunit.cc|.*/mock/.*|.*mock_.*|.*/mocks/.*|.*fake.*|.*/test/.*|.*/tests/.*|.*_test_.*|.*unittest.*|.*/end_to_end_tests/.*|.*_test.cc|.*_tests.cc|.*_integrationtest.cc|.*_perftest.cc|.*test_utils.cc|.*testutils.cc|.*testclient.cc|.*test.c")
 
-set(OTHER_PLATFORM_CC_FILTER ".*_chromeos.cc|.*_freebsd.cc|.*_fuchsia.cc|.*/fuchsia/.*|.*_ios.cc|.*_ios.mm|.*/ios/.*|.*_mac.cc|.*_mac.mm|.*/mac/.*|.*_openbsd.cc|.*_win.cc|.*/win/.*|.*win32.*|.*/windows/.*|.*sse.cc|.*sse2.cc|.*_mips.cc|.*_mips.c")
+set(OTHER_PLATFORM_CC_FILTER ".*_chromeos.cc|.*_freebsd.cc|.*_fuchsia.cc|.*/fuchsia/.*|.*_ios.cc|.*_ios.mm|.*/ios/.*|.*_mac.cc|.*_mac.mm|.*/mac/.*|.*_openbsd.cc|.*_win.cc|.*/win/.*|.*win32.*|.*/windows/.*|.*_mips.cc|.*_mips.c")
 
 
 set(arm_PLATFORM_CC_FILTER ".*fir_filter_neon.cc|.*sinc_resampler_neon.cc|.*cross_correlation_neon.c|.*downsample_fast_neon.c|.*min_max_operations_neon.c")
@@ -38,12 +38,12 @@ set(arm_PLATFORM_CC_FILTER ".*fir_filter_neon.cc|.*sinc_resampler_neon.cc|.*cros
 # add at first, avoid header search path, definition chaos
 add_subdirectory(third_party)
 
-add_definitions(-DWEBRTC_POSIX=1 -DNDEBUG -DOS_LINUX )
-add_definitions(-DWEBRTC_ENABLE_PROTOBUF=1)
+add_definitions(-DWEBRTC_POSIX=1  -DNDEBUG -DWEBRTC_LINUX=1  )
+#add_definitions(-DWEBRTC_ENABLE_PROTOBUF=1)
 add_definitions(-DWEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
 add_definitions(-DHAVE_PTHREAD -DHAVE_SCTP -DHAVE_WEBRTC_VIDEO -DHAVE_WEBRTC_VOICE)
-add_definitions(-DUSE_BUILTIN_SW_CODECS)
-add_definitions(-DENABLE_RTC_EVENT_LOG)
+#add_definitions(-DUSE_BUILTIN_SW_CODECS)
+#add_definitions(-DENABLE_RTC_EVENT_LOG)
 add_definitions(-DWEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS=0)
 
 if (${ANDROID_ABI} STREQUAL "armeabi-v7a")
@@ -52,7 +52,7 @@ else()
     add_definitions(-DWEBRTC_USE_BUILTIN_ISAC_FIX=0 -DWEBRTC_USE_BUILTIN_ISAC_FLOAT=1)
 endif()
 
-add_definitions(-DWEBRTC_OPUS_VARIABLE_COMPLEXITY=0)
+#add_definitions(-DWEBRTC_OPUS_VARIABLE_COMPLEXITY=0)
 
 add_definitions(-DNO_TCMALLOC=1)
 
@@ -68,21 +68,23 @@ add_definitions(-DWEBRTC_INTELLIGIBILITY_ENHANCER=0 -DWEBRTC_NS_FIXED)
 
 add_definitions(-DWEBRTC_APM_DEBUG_DUMP=0)
 
-add_definitions(-Wno-error)
+#add_definitions(-Wno-error)
 
 
 set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wno-error")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g -Wno-error")
 
 add_definitions(-DHAVE_NETINET_IN_H)
 
 include_directories(
     ${WEBRTC_REPO}
 
-    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen
+    #${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen
 
     ${WEBRTC_REPO}/third_party/abseil-cpp
-    ${WEBRTC_REPO}/third_party/boringssl/src/include
+    #${WEBRTC_REPO}/third_party/boringssl/src/include
+    /workspace/MagicAI/src/openssl/buildx64/include
     ${WEBRTC_REPO}/third_party/icu/source/common
     ${WEBRTC_REPO}/sdk/libs/ffmpeg/include
     ${WEBRTC_REPO}/third_party/jsoncpp/source/include
@@ -90,9 +92,9 @@ include_directories(
     ${WEBRTC_REPO}/third_party/libsrtp/crypto/include
     ${WEBRTC_REPO}/third_party/libsrtp/include
     ${WEBRTC_REPO}/third_party/libyuv/include
-    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx
-    ${WEBRTC_REPO}/third_party/opus/src/include
-    ${WEBRTC_REPO}/third_party/protobuf/src
+    #${WEBRTC_REPO}/third_party/libvpx/source/libvpx
+    #${WEBRTC_REPO}/third_party/opus/src/include
+    #${WEBRTC_REPO}/third_party/protobuf/src
     ${WEBRTC_REPO}/third_party/usrsctp/usrsctplib
     #${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni
     #${webrtc_build_dir}/gen/sdk/android/generated_logging_jni
@@ -115,6 +117,12 @@ list(FILTER src_api EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_api EXCLUDE REGEX
     ".*echo_canceller3_config_json.cc|.*default_task_queue_factory_gcd.cc|.*default_task_queue_factory_stdlib.cc|.*default_task_queue_factory_win.cc|.*video_stream_decoder_create.cc"
 )
+
+list(FILTER src_api EXCLUDE REGEX
+    "./audio_codecs/opus/*|.*/video_codecs/builtin_video_decoder_factory.cc|.*/video_codecs/builtin_video_encoder_factory.cc|.*/video_codecs/vp8*"
+)
+
+
 
 file(GLOB_RECURSE src_audio
     ${WEBRTC_REPO}/audio/*.cc
@@ -151,20 +159,25 @@ file(GLOB_RECURSE src_logging
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log_factory.cc
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log_impl.cc
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_stream_config.cc
-    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/*.cc
+    #${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/logging/*.cc
 )
 list(FILTER src_logging EXCLUDE REGEX ${TEST_CC_FILTER})
+
+list(FILTER src_logging EXCLUDE REGEX ".*encoder/rtc_event_log_encoder_legacy.cc|.*encoder/rtc_event_log_encoder_new_format.cc")
+
 
 file(GLOB_RECURSE src_media
     ${WEBRTC_REPO}/media/*.cc
 )
 list(FILTER src_media EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_media EXCLUDE REGEX ".*fakertp.cc")
+list(FILTER src_media EXCLUDE REGEX ".*/engine/internal_decoder_factory.cc|.*/engine/internal_encoder_factory.cc")
+
 
 file(GLOB_RECURSE src_modules
     ${WEBRTC_REPO}/modules/*.c
     ${WEBRTC_REPO}/modules/*.cc
-    ${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/modules/*.cc
+    #${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen/modules/*.cc
 )
 list(FILTER src_modules EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_modules EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
@@ -173,8 +186,14 @@ list(FILTER src_modules EXCLUDE REGEX
 )
 
 list(FILTER src_modules EXCLUDE REGEX 
-    ".*codecs/isac/fix/source/entropy_coding_neon.c|.*codecs/isac/fix/source/filterbanks_neon.c|.*codecs/isac/fix/source/filters_neon.c|.*codecs/isac/fix/source/lattice_neon.c|.*codecs/isac/fix/source/transform_neon.c|.*audio_device/android/*|.*aec/aec_core_neon.cc|.*audio_processing/aecm/aecm_core_neon.cc|.*audio_processing/ns/nsx_core_neon.c|.*audio_processing/utility/ooura_fft_neon.cc|.*utility/source/jvm_android.cc|.*utility/source/helpers_android.cc|.*util/denoiser_filter_neon.cc|.*audio_device/linux/*"
+    ".*codecs/isac/fix/source/entropy_coding_neon.c|.*codecs/isac/fix/source/filterbanks_neon.c|.*codecs/isac/fix/source/filters_neon.c|.*codecs/isac/fix/source/lattice_neon.c|.*codecs/isac/fix/source/transform_neon.c|.*audio_device/android/*|.*aec/aec_core_neon.cc|.*audio_processing/aecm/aecm_core_neon.cc|.*audio_processing/ns/nsx_core_neon.c|.*audio_processing/utility/ooura_fft_neon.cc|.*utility/source/jvm_android.cc|.*utility/source/helpers_android.cc|.*util/denoiser_filter_neon.cc"
 )
+
+list(FILTER src_modules EXCLUDE REGEX 
+    ".*audio_coding/codecs/opus/*|.*audio_device/linux/*|.*/audio_processing/aec_dump/*|.*video_coding/codecs/vp8/*|.*video_coding/codecs/vp9/*"
+)
+
+
 
 
 file(GLOB_RECURSE src_ortc
@@ -274,9 +293,9 @@ target_link_libraries(jingle_peerconnection_so
     #crypto
     event
     #json
-    opus
+    #opus
     pffft
-    protobuf_lite
+    #protobuf_lite
     rnnoise
     srtp
     #ssl

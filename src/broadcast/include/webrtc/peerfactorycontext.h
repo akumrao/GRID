@@ -22,6 +22,7 @@
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "EncoderFactory.h"
+#include "VideoDecoder.h"
 
 
 namespace base
@@ -42,11 +43,12 @@ private:
     std::unique_ptr<rtc::Thread> workerThread;
     std::unique_ptr<rtc::Thread> g_signaling_thread;
     std::unique_ptr<EncoderFactory> VideoEncoderFactoryStrong;
+    std::unique_ptr<FVideoDecoderFactory> VideoDecoderFactoryStrong;
 
 public:
     // std::unique_ptr<rtc::NetworkManager> networkManager;
     // std::unique_ptr<rtc::PacketSocketFactory> socketFactory;
-    rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory;
+    rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory{nullptr};
     // rtc::scoped_refptr<webrtc::AudioDeviceModule> audioDeviceManager;
 };
 
