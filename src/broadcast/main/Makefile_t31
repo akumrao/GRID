@@ -16,28 +16,28 @@ RANLIB=${CROSS_COMPILE}ranlib
 # export LDFLAGS="-static -uClibc++ -L${INSTALLPATH}/lib -L${INSTALLPATH}/_install/lib/"
 
 
-#LIVE555_ROOT = /workspace/live
-#FFMPEG_ROOT = /workspace/ffmpeg
-#WEBRTC_PATH = /data/delete/mediaserverdocker/webrtc_android/src/
+
+FFMPEG_ROOT = /workspace/MagicAI/3rdparty/installt31
 WEBRTC_PATH = /workspace/webrtc/src/
+SSL_ROOT = /workspace/MagicAI/src/openssl/buildt31
+
 
 
 TARGET=runWebrtc # define the name of the executable
-SOURCES=$(wildcard *.cpp ../src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp ../../net/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../signal/src/*.cpp ../../facedetec/src/configuration.cpp )
+SOURCES=$(wildcard *.cpp ../src/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp ../../net/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../signal/src/*.cpp ../../facedetec/src/configuration.cpp )
 
 CXXFLAGS   := -g -fno-rtti -std=c++11 -Wno-inconsistent-missing-override -Wno-uninitialized -DNDEBUG -fpermissive
 
-CPPFLAGS   := -I../../facedetec/include/ -I/workspace/ffmpeg/  -I../include -I../../signal/include -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../webrtc/include  -DOPENSSL_IS_BORINGSSL -DWEBRTC_POSIX  -DWEBRTC_INCLUDE_DIRS=/workspace/webrtc_android/src   \
-               -I${WEBRTC_PATH} -I${WEBRTC_PATH}/third_party/abseil-cpp -I../xailient-sdk/include/ -I/workspace/MagicAI/src/openssl/build/include -I${T31SDK}/include -I${T31SDK}/samples/libimp-sample/ -DHTTPSSL
 
-#LDFLAGS   := -L/export/views/video/ffmpeg/Obj/
-
-LDFLAGS +=  -L../xailient-sdk/lib -L${INSTALLPATH}/mips-linux-gnu/lib -muclibc
+CPPFLAGS   := -I../../facedetec/include/ -I/${FFMPEG_ROOT}/include  -I../include -I../../signal/include -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../webrtc/include  -DWEBRTC_POSIX  -I${WEBRTC_PATH} -I${SSL_ROOT}/include -I${WEBRTC_PATH}/third_party/abseil-cpp -DHTTPSSL
 
 
-LDLIBS    := -lpthread -lm -ldl -lz -lfdk-aac -L/workspace/MagicAI/src/webrtc/build -ljingle_peerconnection_so
+LDFLAGS +=  -L${T31SDK}/lib -L${INSTALLPATH}/mips-linux-gnu/lib -lm  -muclibc
 
-SLIBS     := ${FFMPEG_ROOT}/libavformat/libavformat.a  /workspace/MagicAI/src/webrtc/build/libssl.a /workspace/MagicAI/src/webrtc/build/libcrypto.a  ${FFMPEG_ROOT}/libavcodec/libavcodec.a ${FFMPEG_ROOT}/libavutil/libavutil.a ${FFMPEG_ROOT}/libswresample/libswresample.a ${LIVE555_ROOT}/liveMedia/libliveMedia.a  ${LIVE555_ROOT}/groupsock/libgroupsock.a   ${LIVE555_ROOT}/BasicUsageEnvironment/libBasicUsageEnvironment.a  ${LIVE555_ROOT}/UsageEnvironment/libUsageEnvironment.a /usr/local/lib/libx264.a
+
+LDLIBS    :=  -L/workspace/MagicAI/src/webrtc/t31 -ljingle_peerconnection_so -lrt -lm  -lpthread -latomic
+
+SLIBS     := ../../libuv/build/libuv_a.a  ${FFMPEG_ROOT}/lib/libavformat.a ${FFMPEG_ROOT}/lib/libavcodec.a ${FFMPEG_ROOT}/lib/libavutil.a ${FFMPEG_ROOT}/lib/libswresample.a ${SSL_ROOT}/lib/libssl.a ${SSL_ROOT}/lib/libcrypto.a
 
 
 

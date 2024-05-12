@@ -318,24 +318,26 @@ bool Settings::putNode(json &node , std::vector<std::string> & vec )  // only on
 {
     bool ret = false;
     std::string dump;
-    uv_rwlock_wrlock(&rwlock_t);
+exit(0);
+
+    // uv_rwlock_wrlock(&rwlock_t);
       
-    json &rtsp =   Settings::encSetting.root["rtsp"] ;
+    // json &rtsp =   Settings::encSetting.root["rtsp"] ;
     
-    for (auto& [key, value] : node.items())
-    {
+    // for (auto& [key, value] : node.items())
+    // {
        
-       //if (rtsp.find(key) == rtsp.end()) 
-       {
-            rtsp[key] = value;
-            vec.push_back(key);
-            ret = true;
-       }
-    }
-    dump =  Settings::encSetting.root.dump(4) ;
-    uv_rwlock_wrunlock(&rwlock_t);
+    //    //if (rtsp.find(key) == rtsp.end()) 
+    //    {
+    //         rtsp[key] = value;
+    //         vec.push_back(key);
+    //         ret = true;
+    //    }
+    // }
+    // dump =  Settings::encSetting.root.dump(4) ;
+    // uv_rwlock_wrunlock(&rwlock_t);
     
-    saveFile( "./webrtcStats.js", dump   );
+    // saveFile( "./webrtcStats.js", dump   );
     
     return ret;
      

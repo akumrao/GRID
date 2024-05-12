@@ -35,7 +35,10 @@ cd ../../../
 
 cd src/openssl
 
-rm -rf openssl
+rm -rf openssl/buildt31
+rm -rf openssl/openssl
+rm -rf openssl/openssl-1.1.1t
+
 if [[ ! -f openssl-1.1.1t.tar.gz ]]; then
     wget 'https://www.openssl.org/source/openssl-1.1.1t.tar.gz'
 fi
@@ -43,13 +46,13 @@ tar xvf openssl-1.1.1t.tar.gz
 mv openssl-1.1.1t openssl
 cd openssl
 
-./Configure linux-mips32 no-async  no-shared no-dso --prefix="$TOP/src/openssl/build"
+./Configure linux-mips32 no-async  no-shared no-dso --prefix="$TOP/src/openssl/buildt31"
 
 make clean
-make -j8
-make -j8 install
+make -j$(nproc)
+make -j$(nproc) install
 
-# cd ../../
+cd ../../
 
 
 RTSP_CROSS=$TOOLCHAIN/mips-linux-gnu-
@@ -59,13 +62,15 @@ mkdir -p 3rdparty
 echo "Build ffmpeg"
 cd 3rdparty
 rm -rf ffmpeg
+rm -rf ffmpeg-3.4.10
+
 if [[ ! -f ffmpeg-3.4.10.tar.xz ]]; then
     wget 'https://ffmpeg.org/releases/ffmpeg-3.4.10.tar.xz'
 fi
 tar xvf ffmpeg-3.4.10.tar.xz
 mv ffmpeg-3.4.10 ffmpeg
 cd ffmpeg
-./configure --disable-zlib --target-os=linux --arch=mipsel --cpu=mips32r2 --disable-msa --ranlib="${RTSP_CROSS}ranlib" --nm="${RTSP_CROSS}nm" --ar="${RTSP_CROSS}ar" --cc="${RTSP_CROSS}gcc" --cxx="${RTSP_CROSS}g++" --strip="${RTSP_CROSS}strip" --prefix="$TOP/3rdparty/install" --enable-gpl  --cross-prefix=mips-linux-gnu --enable-cross-compile  --enable-version3
+./configure --disable-zlib --target-os=linux --arch=mipsel --cpu=mips32r2 --disable-msa --ranlib="${RTSP_CROSS}ranlib" --nm="${RTSP_CROSS}nm" --ar="${RTSP_CROSS}ar" --cc="${RTSP_CROSS}gcc" --cxx="${RTSP_CROSS}g++" --strip="${RTSP_CROSS}strip" --prefix="$TOP/3rdparty/installt31" --enable-gpl  --cross-prefix=mips-linux-gnu --enable-cross-compile  --enable-version3
 make -j$(nproc)
 make install
 

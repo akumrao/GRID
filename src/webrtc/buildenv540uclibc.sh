@@ -18,3 +18,15 @@ export CFLAGS="-O2 -muclibc -fPIC -Wno-error -I${INSTALLPATH}/include -I${INSTAL
 export CPPFLAGS="-O2 -muclibc -fPIC  -I${INSTALLPATH}/include -I${INSTALLPATH}/mips-linux-gnu/include/ -I${SDKPATH}/include/"
 export LDFLAGS="-O2 -muclibc -L${INSTALLPATH}/lib -L${INSTALLPATH}/mips-linux-gnu/lib/ -L${SDKPATH}/lib/uclibc/"
 
+mkdir -p t31
+
+rm CMakeLists.txt
+cp CMakeLists_t31.txt CMakeLists.txt
+
+cd t31
+
+cmake -DUSE_MUCLIBC=ON -DWEBRTC_REPO=/workspace/webrtc/src -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DWEBRTC_BUILD_DIR=out/arm64 -DANDROID_ABI=mipsel ..
+
+make -j$(nproc)
+
+cd ..

@@ -30,10 +30,8 @@ extern "C" {
 #include "libavutil/samplefmt.h"
 };
 
-
 namespace base {
-namespace web_rtc {
-    
+    namespace web_rtc {
 
 
 

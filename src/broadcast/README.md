@@ -1,27 +1,3 @@
- ./configure --pkg-config-flags="--static" --libdir=/usr/local/lib --disable-shared --enable-debug=2 --disable-optimizations --enable-static --enable-gpl --enable-pthreads --enable-nonfree  --disable-x86asm --enable-libx264 --enable-filters --enable-runtime-cpudetect --disable-lzma --disable-vaapi 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 ffmpeg complile

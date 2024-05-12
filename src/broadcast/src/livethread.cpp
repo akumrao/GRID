@@ -27,7 +27,7 @@ namespace web_rtc {
        
     
         
-        std::string filepath = "/var/tmp/test.264";
+        std::string filepath = "/mnt/test.264";
         
         FILE *fp = fopen(filepath.c_str(), "rb");
 

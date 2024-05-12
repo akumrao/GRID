@@ -34,7 +34,7 @@ CMemLeakDetect memLeakDetect;
 #endif
  */
 
-#define SERVER_HOST "127.0.0.1"
+#define SERVER_HOST "192.168.0.19"
 #define SERVER_PORT 9093
 
 
@@ -48,7 +48,13 @@ CMemLeakDetect memLeakDetect;
 //        fs::addnode(dir, file);
 //    return dir;
 //}
+#include <complex.h>
+__complex__ float  csqrtf (__complex__ float  x)
+{
+    exit(0);
 
+    return 0;
+}
 
 void IgnoreSignals() {
 #ifndef _WIN32

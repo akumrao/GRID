@@ -29,7 +29,7 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 
 set(TEST_CC_FILTER ".*gunit.cc|.*/mock/.*|.*mock_.*|.*/mocks/.*|.*fake.*|.*/test/.*|.*/tests/.*|.*_test_.*|.*unittest.*|.*/end_to_end_tests/.*|.*_test.cc|.*_tests.cc|.*_integrationtest.cc|.*_perftest.cc|.*test_utils.cc|.*testutils.cc|.*testclient.cc|.*test.c")
 
-set(OTHER_PLATFORM_CC_FILTER ".*_chromeos.cc|.*_freebsd.cc|.*_fuchsia.cc|.*/fuchsia/.*|.*_ios.cc|.*_ios.mm|.*/ios/.*|.*_mac.cc|.*_mac.mm|.*/mac/.*|.*_openbsd.cc|.*_win.cc|.*/win/.*|.*win32.*|.*/windows/.*|.*_mips.cc|.*_mips.c")
+set(OTHER_PLATFORM_CC_FILTER ".*_chromeos.cc|.*_freebsd.cc|.*_fuchsia.cc|.*/fuchsia/.*|.*_ios.cc|.*_ios.mm|.*/ios/.*|.*_mac.cc|.*_mac.mm|.*/mac/.*|.*_openbsd.cc|.*_win.cc|.*/win/.*|.*win32.*|.*/windows/.*|.*sse.cc|.*sse2.cc|.*_mips.cc|.*_mips.c")
 
 
 set(arm_PLATFORM_CC_FILTER ".*fir_filter_neon.cc|.*sinc_resampler_neon.cc|.*cross_correlation_neon.c|.*downsample_fast_neon.c|.*min_max_operations_neon.c")
@@ -38,7 +38,7 @@ set(arm_PLATFORM_CC_FILTER ".*fir_filter_neon.cc|.*sinc_resampler_neon.cc|.*cros
 # add at first, avoid header search path, definition chaos
 add_subdirectory(third_party)
 
-add_definitions(-DWEBRTC_POSIX=1  -DNDEBUG -DWEBRTC_LINUX=1  )
+add_definitions(-DWEBRTC_POSIX=1  -DNDEBUG   )
 #add_definitions(-DWEBRTC_ENABLE_PROTOBUF=1)
 add_definitions(-DWEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
 add_definitions(-DHAVE_PTHREAD -DHAVE_SCTP -DHAVE_WEBRTC_VIDEO -DHAVE_WEBRTC_VOICE)
@@ -84,7 +84,7 @@ include_directories(
 
     ${WEBRTC_REPO}/third_party/abseil-cpp
     #${WEBRTC_REPO}/third_party/boringssl/src/include
-    /workspace/MagicAI/src/openssl/buildx64/include
+    /workspace/MagicAI/src/openssl/buildt31/include
     ${WEBRTC_REPO}/third_party/icu/source/common
     ${WEBRTC_REPO}/sdk/libs/ffmpeg/include
     ${WEBRTC_REPO}/third_party/jsoncpp/source/include
@@ -102,7 +102,7 @@ include_directories(
 
     #${WEBRTC_REPO}/third_party/android_ndk/sysroot/usr/include
 
-#    ${WEBRTC_REPO}/third_party/libaom/source/libaom
+    #${WEBRTC_REPO}/third_party/libaom/source/libaom
 )
 
 
