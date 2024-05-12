@@ -382,8 +382,24 @@ void Peer::OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> strea
 
 void Peer::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> stream)
 {
-    LInfo(_peerid, ": OnDataChannel") assert(0 && "virtual");
+    //LInfo(_peerid, ": OnDataChannel") assert(0 && "virtual");
+    data_channel_ = stream;
+    //DataChannelSend("hello data channel");
 }
+
+  void Peer::OnDataReceived(int channel_id,
+                      webrtc::DataMessageType type,
+                      const rtc::CopyOnWriteBuffer& buffer)
+ {
+     DataChannelSend("hello data channel");
+ }
+//
+//void Peer::OnDataChannelAdded(const DataChannel& data_channe)
+//{
+//    //LInfo(_peerid, ": OnDataChannel") assert(0 && "virtual");
+//    //data_channel_ = stream;
+//    DataChannelSend("hello data channel");
+//}
 
 
 void Peer::OnAddStream(webrtc::MediaStreamInterface *stream)
@@ -393,6 +409,28 @@ void Peer::OnAddStream(webrtc::MediaStreamInterface *stream)
     LInfo(_peerid, ": On add stream") _manager->onAddRemoteStream(this, stream);
 }
 
+
+bool Peer::DataChannelSend(std::string data)
+{
+	webrtc::DataBuffer buff = webrtc::DataBuffer(data);
+	if (!this->data_channel_)
+	{
+		LInfo("No Data Channel");
+		return false;
+	}
+	if (this->data_channel_->state() != webrtc::DataChannelInterface::kOpen)
+	{
+		LInfo("Data Channel Not Open");
+		return false;
+	}
+	bool ret = this->data_channel_->Send(buff);
+
+	if (ret == false)
+	{
+		LInfo("Data not sent: " + data);
+	}
+	return ret;
+}
 
 void Peer::OnRemoveStream(webrtc::MediaStreamInterface *stream)
 {

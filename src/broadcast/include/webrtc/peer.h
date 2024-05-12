@@ -104,8 +104,15 @@ protected:
     virtual void OnRemoveTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver) override;
     virtual void
         OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;  ///< since 7f0676
-    virtual void
-        OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> stream) override;  ///< since 7f0676
+    virtual void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> stream) override;  ///< since 7f0676
+    
+   //virtual void OnDataChannelAdded(const DataChannel& data_channel) override;  ///< since 7f0676
+    
+    
+     virtual void OnDataReceived(int channel_id,
+                      webrtc::DataMessageType type,
+                      const rtc::CopyOnWriteBuffer& buffer) override;
+    
     virtual void OnIceCandidate(const webrtc::IceCandidateInterface *candidate) override;
     virtual void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override;
     virtual void OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) override;
@@ -155,6 +162,11 @@ public:
 
     std::map<std::string, st_track> mapcam;  // trackid <> trackinfoclass
    // std::mutex mtlock; // lock will happen at when camera source added or deleted
+    
+    rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_; 
+    
+    bool DataChannelSend(std::string data);
+
 };
 
 
