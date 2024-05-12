@@ -10,12 +10,12 @@ SSL_ROOT = /workspace/MagicAI/src/openssl/buildx64
 CC	= gcc
 CXX     = g++
 TARGET=runWebrtc # define the name of the executable
-SOURCES=$(wildcard *.cpp ../src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp ../../net/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../signal/src/*.cpp ../../facedetec/src/configuration.cpp )
+SOURCES=$(wildcard *.cpp ../src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp ../../net/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../facedetec/src/configuration.cpp )
 
 CXXFLAGS   := -g -fno-rtti -std=c++11 -Wno-inconsistent-missing-override -Wno-uninitialized
 
 
-CPPFLAGS   := -I../../facedetec/include/ -I${SSL_ROOT}/include -I/${FFMPEG_ROOT}/include  -I../include -I../../signal/include -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../webrtc/include  -DWEBRTC_POSIX -I${WEBRTC_PATH}  -I${WEBRTC_PATH}/third_party/abseil-cpp -DHTTPSSL
+CPPFLAGS   := -I../../facedetec/include/ -I${SSL_ROOT}/include -I/${FFMPEG_ROOT}/include  -I../include  -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../webrtc/include  -DWEBRTC_POSIX -I${WEBRTC_PATH}  -I${WEBRTC_PATH}/third_party/abseil-cpp -DHTTPSSL
 #LDFLAGS   := -L/export/views/video/ffmpeg/Obj/
 
 LDLIBS    := -lpthread -lm -ldl -lz -lbz2 -L/workspace/MagicAI/src/webrtc/build -L/workspace/MagicAI/src/openssl/buildx64/lib -ljingle_peerconnection_so -ljpeg -lssl -lcrypto

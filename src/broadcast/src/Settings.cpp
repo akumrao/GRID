@@ -157,6 +157,17 @@ void Settings::SetConfiguration(json &cnfg)
     {
         Settings::configuration.dtlsPrivateKeyFile = cnfg["dtlsPrivateKeyFile"].get<std::string>();
     }
+    
+    
+    if (cnfg.find("qrcode") != cnfg.end())
+    {
+        Settings::configuration.qrcode = cnfg["qrcode"].get<std::string>();
+    }
+    
+     if (cnfg.find("server") != cnfg.end())
+    {
+        Settings::configuration.server = cnfg["server"].get<std::string>();
+    }
 
     if (cnfg.find("listenIps") != cnfg.end()) { Settings::configuration.listenIps = cnfg["listenIps"]; }
     
@@ -318,7 +329,6 @@ bool Settings::putNode(json &node , std::vector<std::string> & vec )  // only on
 {
     bool ret = false;
     std::string dump;
-exit(0);
 
     // uv_rwlock_wrlock(&rwlock_t);
       

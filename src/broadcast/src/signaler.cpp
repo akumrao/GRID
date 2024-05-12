@@ -9,6 +9,9 @@
 #include "Settings.h"
 
 
+using namespace base;
+using namespace base::net;
+
 using std::endl;
 // using namespace base::sockio;
 namespace base
@@ -43,11 +46,15 @@ void Signaler::sendSDP(web_rtc::Peer *conn, const std::string &type, const std::
     desc[web_rtc::kSessionDescriptionSdpName] = sdp;
 
     json m;
+    if(type == "answer")
+    m["messageType"] = "SDP_ANSWER";
+    else
+    m["messageType"] = "SDP_OFFER";   
+    
+    m["messagePayload"] = desc;
+    m["RecipientClientId"] = conn->peerid();
 
-    m[web_rtc::kSessionDescriptionTypeName] = type;
-    m["desc"] = desc;
-    m["from"] = conn->peerid();
-    m["to"] = conn->peerid();
+    
     // smpl::Message m({ type, {
     //     { web_rtc::kSessionDescriptionTypeName, type },
     //     { web_rtc::kSessionDescriptionSdpName, sdp} }
@@ -66,10 +73,10 @@ void Signaler::sendCandidate(
     desc[web_rtc::kCandidateSdpName] = sdp;
 
     json m;
-    m[web_rtc::kSessionDescriptionTypeName] = "candidate";
-    m["candidate"] = desc;
-    m["from"] = conn->peerid();
-    m["to"] = conn->peerid();
+    m["messageType"] = "ICE_CANDIDATE";
+    m["messagePayload"] = desc;
+    m["RecipientClientId"] = conn->peerid();
+
 
     // smpl::Message m({ "candidate", {
     //     { web_rtc::kCandidateSdpMidName, mid },
@@ -77,7 +84,7 @@ void Signaler::sendCandidate(
     //     { web_rtc::kCandidateSdpName, sdp} }
     // });
 
-    LTrace("send candidate ", cnfg::stringify(m));
+   // LTrace("send candidate ", cnfg::stringify(m));
     postMessage(m);
 }
 
@@ -105,6 +112,30 @@ void Signaler::onPeerOffer(std::string &peerID, st_track &trackInfo, std::string
         }
     }
 }
+
+void Signaler::createPC(std::string &peerID,  std::string &room)
+{
+    if (!web_rtc::PeerManager::exists(peerID))
+    {
+        auto conn = new web_rtc::Peer(this, &_context, room, room, peerID, web_rtc::Peer::Offer);
+        conn->createConnection();
+        web_rtc::PeerManager::add(peerID, conn);
+
+        _capturer.addMediaTracks(_context.factory, conn->_peerConnection, conn );
+
+    }
+
+    else
+    {
+        auto conn = web_rtc::PeerManager::get(peerID);
+        if (conn)
+        {
+            _capturer.addMediaTracks(_context.factory, conn->_peerConnection, conn);
+         
+        }
+    }
+}
+
 
 
 //        void Signaler::onPeerConnected(std::string& peerID ,  st_track &trackInfo ,  std::string &room ) {
@@ -281,7 +312,7 @@ void Signaler::onPeerMessage(std::string &name, json const &m)
 
     LInfo("Peer message: ", from, " ", type)
 
-        if (std::string("offer") == type)
+    if (std::string("offer") == type)
     {
         onPeerOffer(from, camT, room);
     }
@@ -403,7 +434,7 @@ void Signaler::onClosed(web_rtc::Peer *conn)
          _capturer.stop(cam , peeerids);
          //_capturer.getPeerids(cam , peeerids);// when you do not want to close the websocket. For example
         // keyboard event, metadata etc
-         std::string room(JOIN_ROOM); // Arvind: hard coded room, soon we will
+       //  std::string room(JOIN_ROOM); // Arvind: hard coded room, soon we will
         // remove it 
         for( std::string from : peeerids   )
         {
@@ -417,7 +448,7 @@ void Signaler::onClosed(web_rtc::Peer *conn)
             m["room"] = room;
             m["cam"] = cam;
             SInfo << "postcloseCamera " << cnfg::stringify(m);
-            socket->emit("postAppMessage", m);
+           // m_client->emit("postAppMessage", m);
         }
     }
 
@@ -447,9 +478,10 @@ void Signaler::onFailure(web_rtc::Peer *conn, const std::string &error)
 
 void Signaler::postMessage(const json &m)
 {
-    SDebug << "postMessage " << cnfg::stringify(m);
-
-    socket->emit("message", m);
+     std::string send = cnfg::stringify(m);
+     
+    SDebug << "postMessage " << send;
+    m_client->send(send);
 }
 
 void Signaler::postAppMessage(std::string message, std::string from, std::string &room)
@@ -466,106 +498,214 @@ void Signaler::postAppMessage(std::string message, std::string from, std::string
 
     SInfo << "postMessage " << cnfg::stringify(m);
 
-    socket->emit("postAppMessage", m);
+    //socket->emit("postAppMessage", m);
 }
 
 
-void Signaler::connect(const std::string &host, const uint16_t port, const std::string rm)
+void Signaler::connect( const uint16_t port)
 {
     LTrace("Tests signalling Begin. Please run signalling server at webrtc folder")
+            
+   room = Settings::configuration.qrcode;
+   server = Settings::configuration.server; 
+    
+    m_client = new HttpsClient("wss",  server, port, "/");  //Websocket test
 
-        client
-        = new sockio::SocketioClient(host, port, true);
-    client->connect();
 
-    socket = client->io();
+   // conn->Complete += sdelegate(&context, &CallbackContext::onClientConnectionComplete);
+   m_client->fnComplete = [&](const Response & response) {
+       std::string reason = response.getReason();
+       StatusCode statuscode = response.getStatus();
+       std::string body = m_client->readStream() ? m_client->readStream()->str() : "";
+       STrace << "SocketIO handshake response:" << "Reason: " << reason << " Response: " << body;
+   };
 
-    socket->on(
-        "connection",
-        sockio::Socket::event_listener_aux(
-            [=](string const &name, json const &data, bool isAck, json &ack_resp)
+   m_client->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
+        std::string txt =  std::string(data, sz);
+       
+        json msg = json::parse(txt) ;
+       
+        if (msg.find("messageType") != msg.end())
+        {
+            std::string messageType = msg["messageType"].get<std::string>();
+            
+             std::string from;
+             if (msg.find("senderClientId") != msg.end())
             {
-                socket->on(
-                    "ipaddr",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-                        {
-                            STrace << cnfg::stringify(data);
+                from = msg["senderClientId"].get<std::string>();
+                
+              
+            }
+            
+            
+            
+            if(messageType == "join" )
+            {
+                isChannelReady = true;
+                  
+            }
+            else if( messageType == "SDP_OFFER"  )
+            {
+                             
+                if( isChannelReady)
+                {
+                    SInfo << "offer from " << from;
+                    createPC(from , room);  
+                     
+                    recvSDP( from, msg["messagePayload"]);    
+                }
 
-                            STrace << "Server IP address is: " << data;
-                            // updateRoomURL(ipaddr);
-                        }));
+                
+            }
+            else if( messageType == "ICE_CANDIDATE"  )
+            {
+                SInfo << "candidate from " << from;
+               // std::string from = msg["from"].get<std::string>();
+               // recvCandidate( from, msg["messagePayload"]);   
+                 if( isChannelReady) 
+                recvCandidate( from, msg["messagePayload"]);    
+                
 
-                socket->on(
-                    "created",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-                        {
-                            STrace << cnfg::stringify(data);
-                            STrace << "Created room " << data[0] << "- my client ID is " << data[1];
-                            isInitiator = true;
-                            // grabWebCamVideo();
-                        }));
+                
+            }
+        
+        }
+       
+     
+               
+               
+       
+       
+       
+       
+       //m_ping_timeout_timer.Reset();
+       //m_packet_mgr.put_payload(std::string(data,sz));
+   };
 
-                socket->on(
-                    "full",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-                        {
-                            STrace << cnfg::stringify(data);
-                            // LTrace("Room " + room + " is full.")
-                        }));
+   m_client->fnClose = [&](HttpBase * con, std::string str) {
+       STrace << "client->fnClose " << str;
+       //close(0,"exit");
+       //on_close();
+   };
 
+   m_client->fnConnect = [&](HttpBase * con) {
 
-                socket->on(
-                    "join",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-                        {
-                            STrace << cnfg::stringify(data);
-                            // LTrace("Another peer made a request to join room " + room)
-                            // LTrace("This peer is the initiator of room " + room + "!")
-                            isChannelReady = true;
-                        }));
+      
+       
+       json tmp;
+       tmp["messageType"] = "createorjoin";
+       
+       tmp["room"] = room; 
+       tmp["server"] = true; 
+       
+       std::string send = cnfg::stringify(tmp);
+       SInfo << "onConnect " << send;
+           
+       m_client->send(send);
 
-                /// for webrtc messages
-                socket->on(
-                    "message",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &m, bool isAck, json &ack_resp)
-                        {
-                            //  LTrace(cnfg::stringify(m));
-                            // LTrace('SocketioClient received message:', cnfg::stringify(m));
-
-                            onPeerMessage((string &) name, m);
-                            // signalingMessageCallback(message);
-                        }));
-
-
-                // Leaving rooms and disconnecting from peers.
-                socket->on(
-                    "disconnectClient",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-                        {
-                            std::string from = data.get<std::string>();
-                            // SInfo << "disconnectClient " <<  from;
-                            // LInfo(cnfg::stringify(data));
-                            onPeerDiconnected(from);
-                        }));
+       //std::cout << "onConnect:";
+   };
 
 
-                socket->on(
-                    "bye",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-                        {
-                            STrace << cnfg::stringify(data);
-                            // LTrace("Peer leaving room", room);
-                        }));
+   //  conn->_request.setKeepAlive(false);
+   m_client->setReadStream(new std::stringstream);
+   m_client->send();
+   LTrace("sendHandshakeRequest over")
+            
+            
 
-                socket->emit("WebrtcSocket");
-            }));
+//        client
+//        = new sockio::SocketioClient(host, port, true);
+//    client->connect();
+//
+//    socket = client->io();
+//
+//    socket->on(
+//        "connection",
+//        sockio::Socket::event_listener_aux(
+//            [=](string const &name, json const &data, bool isAck, json &ack_resp)
+//            {
+//                socket->on(
+//                    "ipaddr",
+//                    sockio::Socket::event_listener_aux(
+//                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+//                        {
+//                            STrace << cnfg::stringify(data);
+//
+//                            STrace << "Server IP address is: " << data;
+//                            // updateRoomURL(ipaddr);
+//                        }));
+//
+//                socket->on(
+//                    "created",
+//                    sockio::Socket::event_listener_aux(
+//                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+//                        {
+//                            STrace << cnfg::stringify(data);
+//                            STrace << "Created room " << data[0] << "- my client ID is " << data[1];
+//                            isInitiator = true;
+//                            // grabWebCamVideo();
+//                        }));
+//
+//                socket->on(
+//                    "full",
+//                    sockio::Socket::event_listener_aux(
+//                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+//                        {
+//                            STrace << cnfg::stringify(data);
+//                            // LTrace("Room " + room + " is full.")
+//                        }));
+//
+//
+//                socket->on(
+//                    "join",
+//                    sockio::Socket::event_listener_aux(
+//                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+//                        {
+//                            STrace << cnfg::stringify(data);
+//                            // LTrace("Another peer made a request to join room " + room)
+//                            // LTrace("This peer is the initiator of room " + room + "!")
+//                            isChannelReady = true;
+//                        }));
+//
+//                /// for webrtc messages
+//                socket->on(
+//                    "message",
+//                    sockio::Socket::event_listener_aux(
+//                        [&](string const &name, json const &m, bool isAck, json &ack_resp)
+//                        {
+//                            //  LTrace(cnfg::stringify(m));
+//                            // LTrace('SocketioClient received message:', cnfg::stringify(m));
+//
+//                            onPeerMessage((string &) name, m);
+//                            // signalingMessageCallback(message);
+//                        }));
+//
+//
+//                // Leaving rooms and disconnecting from peers.
+//                socket->on(
+//                    "disconnectClient",
+//                    sockio::Socket::event_listener_aux(
+//                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+//                        {
+//                            std::string from = data.get<std::string>();
+//                            // SInfo << "disconnectClient " <<  from;
+//                            // LInfo(cnfg::stringify(data));
+//                            onPeerDiconnected(from);
+//                        }));
+//
+//
+//                socket->on(
+//                    "bye",
+//                    sockio::Socket::event_listener_aux(
+//                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+//                        {
+//                            STrace << cnfg::stringify(data);
+//                            // LTrace("Peer leaving room", room);
+//                        }));
+//
+//                socket->emit("WebrtcSocket");
+//            }));
 }
 
 

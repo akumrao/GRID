@@ -4,10 +4,17 @@
 #define WebRTCStreamer_Signaler_H
 
 
-#include "socketio/socketioClient.h"
+#include "net/netInterface.h"
+#include "http/client.h"
+
+#include "http/url.h"
+#include "http/HttpClient.h"
+#include "http/HttpsClient.h"
+#include "http/HTTPResponder.h"
+
 #include "webrtc/peermanager.h"
 
-#define JOIN_ROOM "VideoEdgeWebRTC"
+//#define JOIN_ROOM "VideoEdgeWebRTC"
 
 namespace base
 {
@@ -21,7 +28,7 @@ public:
     ~Signaler();
 
     void startStreaming(const std::string &dir, const std::string &file, const std::string &type, bool looping);
-    void connect(const std::string &host, const uint16_t port, const std::string room);
+    void connect( const uint16_t port);
     // void closeCamera(std::string &cam ,  std::string  reason );
     void postcloseCamera(std::string &trackInfo, std::string reason);
     void postAppMessage(std::string message, std::string from, std::string &room);
@@ -46,6 +53,7 @@ protected:
 
     // void onPeerConnected(std::string& peerID,  st_track &trackInfo, std::string &room);
     void onPeerOffer(std::string &peerID, st_track &trackInfo, std::string &room);
+    void createPC(std::string &peerID,  std::string &room);
     void onPeerMessage(std::string &name, json const &m);
     void onPeerDiconnected(std::string &peerID);
 
@@ -53,8 +61,12 @@ protected:
 #if USE_SSL
     //  SocketioSecClient *client;
 #else
-    sockio::SocketioClient *client;
-    sockio::Socket *socket;
+    
+     net::ClientConnecton *m_client;
+      
+   // sockio::SocketioClient *client;
+   //sockio::Socket *socket;
+     
     // std::string peerID;
     // std::string remotePeerID;
 #endif
@@ -63,10 +75,14 @@ protected:
 
     // socket* socket{nullptr};
 
-    // std::string room;
+   
     bool isChannelReady{false};
     bool isInitiator{false};
     bool isStarted{false};
+    
+public:
+    std::string room;
+    std::string server;
 };
 
 }  // namespace web_rtc

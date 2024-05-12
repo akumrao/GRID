@@ -43,6 +43,8 @@ public:
         std::string dtlsCertificateFile;
         std::string dtlsPrivateKeyFile;
         std::string storage;
+        std::string qrcode;
+        std::string server;
         //json rtsp;
 
         //json root;

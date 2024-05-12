@@ -34,8 +34,8 @@ CMemLeakDetect memLeakDetect;
 #endif
  */
 
-#define SERVER_HOST "192.168.0.19"
-#define SERVER_PORT 9093
+//#define SERVER_HOST "192.168.0.19"
+#define SERVER_PORT 443
 
 
 //std::string sampleDataDir(const std::string& file) {
@@ -128,33 +128,33 @@ int main(int argc, char** argv) {
     } 
     
     
-    base::cnfg::Configuration encconfig;
-    encconfig.load("./webrtcStats.js");
-    Settings::SetEncoderConf(encconfig.root);
-
-
-    if (Settings::configuration.haswell)
-    {
-        if (-1 == putenv((char *) "LIBVA_DRIVER_NAME=i965"))
-        {
-            printf((char *) "putenv LIBVA_DRIVER_NAME failed \n");
-            return EXIT_FAILURE;
-        }
-    }
-    else
-    {
-        if (-1 == putenv((char *) "LIBVA_DRIVER_NAME=iHD"))
-        {
-            printf((char *) "putenv LIBVA_DRIVER_NAME failed \n");
-            return EXIT_FAILURE;
-        }
-
-        if (-1 == putenv((char *) "LIBVA_DRIVERS_PATH=/opt/intel/mediasdk/lib64"))
-        {
-            printf("putenv failed \n");
-            return EXIT_FAILURE;
-        }
-    }
+//    base::cnfg::Configuration encconfig;
+//    encconfig.load("./webrtcStats.js");
+//    Settings::SetEncoderConf(encconfig.root);
+//
+//
+//    if (Settings::configuration.haswell)
+//    {
+//        if (-1 == putenv((char *) "LIBVA_DRIVER_NAME=i965"))
+//        {
+//            printf((char *) "putenv LIBVA_DRIVER_NAME failed \n");
+//            return EXIT_FAILURE;
+//        }
+//    }
+//    else
+//    {
+//        if (-1 == putenv((char *) "LIBVA_DRIVER_NAME=iHD"))
+//        {
+//            printf((char *) "putenv LIBVA_DRIVER_NAME failed \n");
+//            return EXIT_FAILURE;
+//        }
+//
+//        if (-1 == putenv((char *) "LIBVA_DRIVERS_PATH=/opt/intel/mediasdk/lib64"))
+//        {
+//            printf("putenv failed \n");
+//            return EXIT_FAILURE;
+//        }
+//    }
 
     // Setup WebRTC environment
     rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE); // LS_VERBOSE, LS_INFO, LS_ERROR
@@ -179,14 +179,13 @@ int main(int argc, char** argv) {
      
 
     
-
-    sig.connect(SERVER_HOST, SERVER_PORT, JOIN_ROOM);
+    sig.connect( SERVER_PORT);
     
     
     
-    web_rtc::RestApi *restApi = new  web_rtc::RestApi("0.0.0.0", 8080, sig,  new web_rtc::StreamingResponderFactory1( sig)  );
+   // web_rtc::RestApi *restApi = new  web_rtc::RestApi("0.0.0.0", 8080, sig,  new web_rtc::StreamingResponderFactory1( sig)  );
      
-    sig.startStreaming("/var/tmp/", "", "fmp4", true);
+   // sig.startStreaming("/var/tmp/", "", "fmp4", true);
 
     // test._capturer.start();
 
@@ -213,7 +212,7 @@ int main(int argc, char** argv) {
     
 //    restApi->stop();
         
-    restApi->shutdown();
+//    restApi->shutdown();
     
    });
 

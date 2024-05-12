@@ -1,7 +1,9 @@
 {
     "dtlsCertificateFile": "/var/tmp/key/certificate.crt",
     "dtlsPrivateKeyFile": "/var/tmp/key/private_key.pem",
-    "storage": "/media/pvi-storage/",
+    "storage": "/mnt/pvi-storage/",
+    "qrcode":"65c108570948a0346f67424623c38f86a7e718712aceadb10ac867",
+    "server":"192.168.0.19",
     "cam_reconnect": 0,
     "authtimeout": 3600,
     "Mp4Size_Key": 40,
