@@ -25,7 +25,7 @@ SOURCES=$(wildcard *.cpp ../src/*.cpp ../../base/src/*.cpp ../../base/token/*.cp
 #../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp
 CXXFLAGS   +=  -O3 -std=c++11  -DNDEBUG -fpermissive
 
-CPPFLAGS   += -I../../facedetec/include/ -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../net/uv_multiplex/include/  -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser -I../xailient-sdk/include/ -I/workspace/MagicAI/src/openssl/build/include -I${T31SDK}/include -I${T31SDK}/samples/libimp-sample/
+CPPFLAGS   += -I../../facedetec/include/ -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../net/uv_multiplex/include/  -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser -I../xailient-sdk/include/ -I../../openssl/buildt31/include -I${T31SDK}/include -I${T31SDK}/samples/libimp-sample/
 
 LDFLAGS +=  -L../xailient-sdk/lib -L${INSTALLPATH}/mips-linux-gnu/lib -muclibc
 
@@ -33,7 +33,7 @@ LDFLAGS +=  -L../xailient-sdk/lib -L${INSTALLPATH}/mips-linux-gnu/lib -muclibc
 
 LDLIBS    += -lxailient-fi -lpthread -lrt -lm
 
-SLIBS    += ../../libuv/build/libuv_a.a  ../../openssl/build/lib/libssl.a  ../../openssl/build/lib/libcrypto.a ${T31SDK}/lib/uclibc/libalog.a  ${T31SDK}/lib/uclibc/libimp.a
+SLIBS    += ../../libuv/build/libuv_a.a  ../../openssl/buildt31/lib/libssl.a  ../../openssl/buildt31/lib/libcrypto.a ${T31SDK}/lib/uclibc/libalog.a  ${T31SDK}/lib/uclibc/libimp.a
 
 
 # /workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/resource/toolchain/gcc_540/mips-gcc540-glibc222-64bit-r3.3.0/mips-linux-gnu/libc/uclibc/usr/lib/libm.a 

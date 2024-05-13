@@ -69,7 +69,7 @@ namespace web_rtc {
         
             basicframe.payload.resize(basicframe.payload.capacity());
        
-             base::sleep(10);   
+           //  base::sleep(10);   
         }
         
         fclose(fp);

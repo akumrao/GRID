@@ -155,7 +155,7 @@ namespace base {
                qframe->clear();
             }
 
-            if (  pict_type == AV_PICTURE_TYPE_I)
+           // if (  pict_type == AV_PICTURE_TYPE_I)
             {    
                 Store *store = new Store(&buffer[0], size, width, height, vframecount, idr);
 
@@ -206,13 +206,13 @@ namespace base {
         //         std::this_thread::sleep_for(std::chrono::microseconds(1004));
         //        SError <<  "deltamicro > vframecount * vdelay " << deltamicro - vframecount * vdelay;
         //    }
-#ifdef LOCALTEST
+//#ifdef LOCALTEST
             while(deltamicro < vframecount * vdelay)
             {
                 std::this_thread::sleep_for(std::chrono::microseconds(20000));
                 deltamicro = CurrentTime_microseconds() - startStreaming;
             }
-#endif
+//#endif
         }
         
         void NULLDecoder::resetTimer()

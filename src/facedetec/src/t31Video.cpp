@@ -39,11 +39,11 @@ void T31Video::run() {
     FILE *fp;
     IMPFrameInfo *frame;
 
-    // fp = fopen("/tmp/snap.rgba", "wb");
-    // if(fp == NULL) {
-    //     SError<<"file open error ";
-    //     return -1;
-    // }
+    fp = fopen("/tmp/snap.rgba", "wb");
+    if(fp == NULL) {
+        SError<<"file open error ";
+        return -1;
+    }
 
     while (!stopped()) {
         /* Snap RGBA */
@@ -61,11 +61,11 @@ void T31Video::run() {
 
         STrace << "Frame size "  <<  frame->size << " width"  << frame->width << " height "  <<   frame->height <<  " format "  << frame->pixfmt;
         
-        XAProcess( frame->virAddr, frame->width , frame->height) ;
-        // if (80 == i) {
-        //     fwrite((void *)frame->virAddr, frame->size, 1, fp);
-        //     fclose(fp);
-        // }
+      //  XAProcess( frame->virAddr, frame->width , frame->height) ;
+        if (80 == i) {
+            fwrite((void *)frame->virAddr, frame->size, 1, fp);
+            fclose(fp);
+        }
         IMP_FrameSource_ReleaseFrame(3, frame);
         if (ret < 0) {
             SError<<"IMP_FrameSource_ReleaseFrame failed";
@@ -161,11 +161,11 @@ int T31Video::T31Init()
      //start();
 #endif
 
-    // ret = sample_get_video_stream();  // For hh264 stream
-    // if (ret < 0) {
-    //     SError<<"Get H264 stream failed";
-    //     return -1;
-    // }
+    ret = sample_get_video_stream();  // For hh264 stream
+    if (ret < 0) {
+        SError<<"Get H264 stream failed";
+        return -1;
+    }
 
 
     return 0;

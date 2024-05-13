@@ -81,7 +81,7 @@ int main(int argc, char** argv) {
 
     T31Video t31Video;
 
-    if( !t31Video.XAInit())
+    //if( !t31Video.XAInit())
       if(! t31Video.T31Init())
       {
         t31Video.start();
