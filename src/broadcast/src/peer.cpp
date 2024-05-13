@@ -380,26 +380,40 @@ void Peer::OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> strea
 }
 
 
-void Peer::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> stream)
+void Peer::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel)
 {
+    channel->RegisterObserver(this);
     //LInfo(_peerid, ": OnDataChannel") assert(0 && "virtual");
-    data_channel_ = stream;
+     data_channel_ = channel;
     //DataChannelSend("hello data channel");
 }
 
-  void Peer::OnDataReceived(int channel_id,
-                      webrtc::DataMessageType type,
-                      const rtc::CopyOnWriteBuffer& buffer)
- {
-     DataChannelSend("hello data channel");
- }
-//
-//void Peer::OnDataChannelAdded(const DataChannel& data_channe)
-//{
-//    //LInfo(_peerid, ": OnDataChannel") assert(0 && "virtual");
-//    //data_channel_ = stream;
-//    DataChannelSend("hello data channel");
-//}
+ void Peer::OnStateChange() {
+  if (data_channel_) {
+    webrtc::DataChannelInterface::DataState state = data_channel_->state();
+    if (state == webrtc::DataChannelInterface::kOpen) {
+      //if (OnLocalDataChannelReady)
+      //  OnLocalDataChannelReady();
+      RTC_LOG(LS_INFO) << "Data channel is open";
+    }
+  }
+}
+
+
+
+
+
+//  A data buffer was successfully received.
+void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
+  size_t size = buffer.data.size();
+  char* msg = new char[size + 1];
+  memcpy(msg, buffer.data.data(), size);
+  msg[size] = 0;
+
+  DataChannelSend("arvind umrao");
+  
+  delete[] msg;
+}
 
 
 void Peer::OnAddStream(webrtc::MediaStreamInterface *stream)

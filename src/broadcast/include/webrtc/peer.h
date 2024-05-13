@@ -7,7 +7,7 @@
 #include "muxframe.h"
 #include "framefilter.h"
 #include <mutex>
-
+#include "api/data_channel_interface.h"
 #include "api/jsep.h"
 #include <json/json.hpp>
 using json = nlohmann::json;
@@ -18,11 +18,9 @@ namespace base
 namespace web_rtc
 {
 
-
 class PeerManager;
 
-
-class Peer : public webrtc::PeerConnectionObserver, public webrtc::CreateSessionDescriptionObserver
+class Peer : public webrtc::PeerConnectionObserver, public webrtc::CreateSessionDescriptionObserver,public webrtc::DataChannelObserver
 {
 public:
     enum Mode
@@ -106,13 +104,10 @@ protected:
         OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream) override;  ///< since 7f0676
     virtual void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> stream) override;  ///< since 7f0676
     
-   //virtual void OnDataChannelAdded(const DataChannel& data_channel) override;  ///< since 7f0676
-    
-    
-     virtual void OnDataReceived(int channel_id,
-                      webrtc::DataMessageType type,
-                      const rtc::CopyOnWriteBuffer& buffer) override;
-    
+    void OnMessage(const webrtc::DataBuffer& buffer) override;
+    void OnStateChange() override;
+  
+
     virtual void OnIceCandidate(const webrtc::IceCandidateInterface *candidate) override;
     virtual void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override;
     virtual void OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state) override;
