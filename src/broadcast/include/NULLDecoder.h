@@ -49,6 +49,7 @@ public:
     
     std::function<void(stFrame* frame) > cb_frame;
     
+    std::function<void(web_rtc::Frame* , bool) > cb_mp4;
     
     int  width{0};
     int height{0};
@@ -62,7 +63,9 @@ private:
     uint64_t vdelay{0};
     
     std::string  &cam;
-      
+    
+    BasicFrame basicframe;
+
         
 };
 

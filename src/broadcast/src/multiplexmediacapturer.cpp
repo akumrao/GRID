@@ -49,6 +49,9 @@ MultiplexMediaCapturer::MultiplexMediaCapturer()
 
     _videoCapture->cbProcessAudio.push_back(var);
 #endif
+    
+    mapVideoSource[Settings::configuration.qrcode] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  Settings::configuration.qrcode);
+
 
     //      local_video_observer_.reset(new VideoObserver());
 }
@@ -169,9 +172,8 @@ void MultiplexMediaCapturer::addMediaTracks(
       mutexCap.lock(); 
       std::string &cam = peer->getCam();
       
-      if( mapVideoSource.find(cam) == mapVideoSource.end())
+      if( mapvideo_track.find(cam) == mapvideo_track.end())
       {
-         mapVideoSource[cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" , cam);
          mapvideo_track[cam] =     factory->CreateVideoTrack(videoLable, mapVideoSource[cam]);
        
         #if BYPASSGAME

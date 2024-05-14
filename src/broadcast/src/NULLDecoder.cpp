@@ -40,6 +40,12 @@ namespace base {
             resetTimer();
 
             qframe = new stFrame();
+            
+
+            basicframe.media_type  = AVMEDIA_TYPE_VIDEO;
+            basicframe.codec_id   = AV_CODEC_ID_H264;
+            basicframe.stream_index  = 0;
+    
      
         }
 
@@ -75,10 +81,11 @@ namespace base {
 //                           unsigned char *tmp = m_sps.data() + 4;
                     qframe->pushsps(m_sps);
                     unsigned num_units_in_tick, time_scale;
-
+                    
+    
 
                     H264Framer obj;
-                    obj.analyze_seq_parameter_set_data(&buffer[index.start_offset + index.payload_start_offset], index.payload_size, num_units_in_tick, time_scale);
+                    obj.analyze_seq_parameter_set_data(&buffer[index.payload_start_offset], index.payload_size, num_units_in_tick, time_scale);
 
                     //SInfo <<  " Got SPS fps "  << obj.fps << " width "  << obj.width  <<  " height " << obj.height ;
 
@@ -92,9 +99,19 @@ namespace base {
                     height = obj.height;
 
                     fps = obj.fps ? obj.fps:30;
-
                     vdelay = uint64_t(1000000) / uint64_t(fps); // default
 
+                    
+                    basicframe.width = width;
+                    basicframe.height = height;
+                    basicframe.fps = fps;
+                    
+                    
+                    basicframe.payload.resize(m_sps.size());
+                    basicframe.payload.insert(basicframe.payload.begin(), m_sps.begin(), m_sps.end());
+                    basicframe.fillPars();
+                    cb_mp4(&basicframe, false); 
+                    
                     
                     cfg++;
                 } else if (nalu_type == webrtc::H264::NaluType::kPps && cfg < 2) {
@@ -103,12 +120,30 @@ namespace base {
                     // m_pps = webrtc::EncodedImageBuffer::Create((uint8_t*) & buffer[index.start_offset], index.payload_size + index.payload_start_offset - index.start_offset);
                     memcpy(&m_pps[0], &buffer[index.start_offset], index.payload_size + index.payload_start_offset - index.start_offset);
                     qframe->pushpps(m_pps);
+                    
+                    basicframe.payload.resize(m_pps.size());
+                    basicframe.payload.insert(basicframe.payload.begin(), m_pps.begin(), m_pps.end());
+                    basicframe.fillPars(); 
+                    cb_mp4(&basicframe, false); 
+                            
                     cfg++;
                 } else if (nalu_type == webrtc::H264::NaluType::kIdr) {
                     idr = true;
                     SDebug << " idr:" << idr << " cfg:" << cfg << "  sps " << m_sps.size() << " pps  " << m_pps.size() << " vframecount " << vframecount << " width " << width << " height  " << height << " fps " << fps;
+                    
+                    basicframe.payload.resize(index.payload_size + index.payload_start_offset - index.start_offset);
+                    basicframe.payload.insert(basicframe.payload.begin(),  &buffer[index.start_offset],   &buffer[index.start_offset] + index.payload_size + index.payload_start_offset - index.start_offset);
+                    basicframe.fillPars();
+                    cb_mp4(&basicframe, true); 
+                    
                 } else if (nalu_type == webrtc::H264::NaluType::kSlice) {
                     //slice = true;
+                    
+                    basicframe.payload.resize(index.payload_size + index.payload_start_offset - index.start_offset);
+                    basicframe.payload.insert(basicframe.payload.begin(),  &buffer[index.start_offset],   &buffer[index.start_offset] + index.payload_size + index.payload_start_offset - index.start_offset);
+                    basicframe.fillPars();
+                    cb_mp4(&basicframe, false); 
+          
                 }
             }// end for
                     // 
@@ -185,16 +220,16 @@ namespace base {
 //           }
 
 
-           if(speed > 1 && speed < 4 )
-           {
-              vdelay =  vdelay/speed;
-           }
-           else if( speed <  -1)
-           {
-               vdelay =  vdelay*(-1*speed);
-           }
-        
-             
+//           if(speed > 1 && speed < 4 )
+//           {
+//              vdelay =  vdelay/speed;
+//           }
+//           else if( speed <  -1)
+//           {
+//               vdelay =  vdelay*(-1*speed);
+//           }
+//        
+//             
 
             ++vframecount;
 

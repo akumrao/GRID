@@ -151,6 +151,8 @@ private:
     void StopParser(); 
     
     std::vector<uint8_t> buffer;
+    
+    bool recording{true};
 
 };
 

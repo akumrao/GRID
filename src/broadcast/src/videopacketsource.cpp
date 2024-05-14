@@ -8,6 +8,8 @@
 
 #include "webrtc/rawVideoFrame.h"
 
+#include "muxer.h"
+#include "tools.h";
 
 #include "Settings.h"
 
@@ -43,6 +45,29 @@ VideoPacketSource::VideoPacketSource( const char *name, std::string cam, web_rtc
     
     
     ctx = new web_rtc::LiveConnectionContext(LiveConnectionType::rtsp, "address", 1, cam, cam, Settings::configuration.tcpRtsp, this ) ; // Request livethread to write into filter info
+    
+    if(recording)
+    {
+        ctx->fragmp4_filter = new DummyFrameFilter("fragmp4", cam, nullptr);
+        ctx->fragmp4_muxer = new FragMP4MuxFrameFilter("fragmp4muxer", ctx->fragmp4_filter);
+
+	if(ctx->fragmp4_muxer)
+	ctx->fragmp4_muxer->deActivate();
+
+
+	SetupFrame setupframe;
+
+	// prepare setup frame
+	setupframe.sub_type             =SetupFrameType::stream_init;
+	setupframe.media_type           =AVMEDIA_TYPE_VIDEO;
+	setupframe.codec_id             =AV_CODEC_ID_H264;   // what frame types are to be expected from this stream
+	setupframe.stream_index     = 0;
+	setupframe.mstimestamp      = CurrentTime_milliseconds();
+	// send setup frame
+	if(ctx->fragmp4_muxer)
+	ctx->fragmp4_muxer->run(&setupframe);
+
+    }
    
     liveThread = new LiveThread("live", *ctx);
    
@@ -148,6 +173,41 @@ VideoPacketSource::~VideoPacketSource()
     SInfo <<  "~VideoPacketSource() "  << cam  ;
     if(liveThread)
     liveThread->stop();
+    
+    
+    liveThread->join();
+    
+              
+
+
+    delete liveThread;
+    liveThread =nullptr;
+            
+    if(ctx->txt)
+      delete ctx->txt;
+    ctx->txt = nullptr;
+            
+           
+    if(ctx->fragmp4_filter)
+    {
+
+        delete ctx->fragmp4_filter;
+        ctx->fragmp4_filter = nullptr;
+    }
+//            
+    if(ctx->fragmp4_muxer)
+    delete ctx->fragmp4_muxer;
+    ctx->fragmp4_muxer = nullptr;
+           
+           
+            
+    if(ctx)
+    delete ctx;
+    ctx = nullptr;
+            
+    
+    
+    
     
     #if BYPASSGAME
     StopParser();
@@ -283,7 +343,7 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 //                    mutextxt.lock();
 //        
 //                    txtCpy = metaData;
-//		    metaData.clear();
+//		      metaData.clear();
 //                    mutextxt.unlock();
 //        
                                 
@@ -306,6 +366,21 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 
 
                     };
+                    
+                    nullDecoder->cb_mp4 = [&](web_rtc::Frame *basicframe, bool key ) 
+                    {
+                        if(ctx->fragmp4_muxer)
+                        {
+                            ctx->fragmp4_muxer->run(basicframe);
+                            if( key)
+                            ctx->fragmp4_muxer->sendMeta();
+
+                            
+                        }
+
+                    };
+                     
+                    
                }
 
 

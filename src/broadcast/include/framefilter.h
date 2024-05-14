@@ -52,23 +52,23 @@ struct st_track
     int height{0};
     int scale{1};
     int speed{1};
-    bool ai{false};
+    //bool ai{false};
     bool audio{false};
     
-    std::string encoder;
+   // std::string encoder;
     
     en_EncType encType;  // 0 hw , 1 s/w , 2 native
     
     
     std::string getTrackId(){ 
         
-        if(!trackid.size())
-        trackid = camid+ "_" + start+ "_" + end +"_" + std::to_string(width)+std::to_string(height)+std::to_string(scale)+std::to_string(speed)+encoder;
-        return trackid;
-    
+      //  if(!trackid.size())
+       // trackid = camid+ "_" + start+ "_" + end +"_" + std::to_string(width)+std::to_string(height)+std::to_string(scale)+std::to_string(speed)+encoder;
+        return camid;
+            
     }
     
-    st_track():encType(EN_NONE)
+    st_track():encType(EN_NATIVE)
     {
         
     }
@@ -77,8 +77,7 @@ struct st_track
     std::string room;
     
     Signaler *signaler{nullptr};
-private:
-     std::string trackid;
+
     
 }; 
 

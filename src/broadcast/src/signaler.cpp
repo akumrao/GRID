@@ -305,7 +305,7 @@ void Signaler::onPeerMessage(std::string &name, json const &m)
 //    }
     
     
-    camT.encoder = "NATIVE";
+//    camT.encoder = "NATIVE";
     camT.encType = EN_NATIVE;
     Settings::encSetting.native = Settings::configuration.native;
         

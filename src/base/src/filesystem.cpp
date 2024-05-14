@@ -95,13 +95,13 @@ bool exists(const std::string& path)
 // trailing slash for directories or
 // stat fails to recognize validity.
 // TODO: Do we need transcode here?
-// #ifdef base_WIN
-//     struct _stat s;
-//     return _stat(fs::normalize(path).c_str(), &s) != -1;
-// #else
-//     struct stat s;
-//     return stat(fs::normalize(path).c_str(), &s) != -1;
-// #endif
+ #ifdef base_WIN
+     struct _stat s;
+     return _stat(fs::normalize(path).c_str(), &s) != -1;
+ #else
+     struct stat s;
+     return stat(fs::normalize(path).c_str(), &s) != -1;
+ #endif
 
     return false;
 }

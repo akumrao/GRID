@@ -26,7 +26,7 @@ SSL_ROOT = /workspace/MagicAI/src/openssl/buildt31
 TARGET=runWebrtc # define the name of the executable
 SOURCES=$(wildcard *.cpp ../src/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp ../../net/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../facedetec/src/configuration.cpp )
 
-CXXFLAGS   := -g -fno-rtti -std=c++11 -Wno-inconsistent-missing-override -Wno-uninitialized -DNDEBUG -fpermissive
+CXXFLAGS   := -g -fno-rtti -std=c++11 -Wno-inconsistent-missing-override -Wno-uninitialized -DNDEBUG -fpermissive -DT31ENV
 
 
 CPPFLAGS   := -I../../facedetec/include/ -I/${FFMPEG_ROOT}/include  -I../include -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../webrtc/include  -DWEBRTC_POSIX  -I${WEBRTC_PATH} -I${SSL_ROOT}/include -I${WEBRTC_PATH}/third_party/abseil-cpp -DHTTPSSL
