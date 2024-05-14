@@ -136,6 +136,8 @@ int main(int argc, char** argv) {
 
         t31Video.stop();
 
+        t31Video.join();
+
     }
 
     );

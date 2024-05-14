@@ -256,7 +256,7 @@ extern "C"
 
 #define BITRATE_720P_Kbs        1000
 
-#define NR_FRAMES_TO_SAVE		200
+#define NR_FRAMES_TO_SAVE		20000
 #define STREAM_BUFFER_SIZE		(1 * 1024 * 1024)
 
 #define ENC_VIDEO_CHANNEL		0

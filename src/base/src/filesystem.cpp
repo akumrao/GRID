@@ -94,14 +94,20 @@ bool exists(const std::string& path)
 // Normalize is needed to ensure no
 // trailing slash for directories or
 // stat fails to recognize validity.
-// TODO: Do we need transcode here?
- #ifdef base_WIN
-     struct _stat s;
-     return _stat(fs::normalize(path).c_str(), &s) != -1;
- #else
-     struct stat s;
-     return stat(fs::normalize(path).c_str(), &s) != -1;
- #endif
+// // TODO: Do we need transcode here?
+//  #ifdef base_WIN
+//      struct _stat s;
+//      return _stat(fs::normalize(path).c_str(), &s) != -1;
+//  #else
+//      struct stat s;
+//      return stat(fs::normalize(path).c_str(), &s) != -1;
+//  #endif
+
+
+    if(!access(path.c_str(), F_OK )){
+          return true;
+    }
+
 
     return false;
 }
@@ -109,6 +115,9 @@ bool exists(const std::string& path)
 
 bool isdir(const std::string& path)
 {
+
+    exit(0);
+
 // TODO: Do we need transcode here?
 // #ifdef base_WIN
 //     struct _stat s;

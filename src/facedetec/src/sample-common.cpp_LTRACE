@@ -31,8 +31,7 @@
 
 static const IMPEncoderRcMode S_RC_METHOD = IMP_ENC_RC_MODE_CAPPED_QUALITY;
 
-#include "base/logger.h"
-using namespace base;
+
 
 
 
@@ -50,7 +49,7 @@ struct chn_conf chn[FS_CHN_NUM] = {
 	{
 		.index = CH0_INDEX,
 		.enable = CHN0_EN,
-    .payloadType = IMP_ENC_PROFILE_HEVC_MAIN,
+    .payloadType = IMP_ENC_PROFILE_AVC_MAIN,
 		.fs_chn_attr = {
 			.picWidth = SENSOR_WIDTH,
 			.picHeight = SENSOR_HEIGHT,
@@ -80,7 +79,7 @@ struct chn_conf chn[FS_CHN_NUM] = {
 	{
 		.index = CH1_INDEX,
 		.enable = CHN1_EN,
-    .payloadType = IMP_ENC_PROFILE_HEVC_MAIN,
+    .payloadType = IMP_ENC_PROFILE_AVC_MAIN,
 		.fs_chn_attr = {
 			.picWidth = SENSOR_WIDTH_THIRD,
 			.picHeight = SENSOR_HEIGHT_THIRD,
@@ -114,7 +113,7 @@ struct chn_conf chn[FS_CHN_NUM] = {
 	{
 		.index = CH2_INDEX,
 		.enable = CHN2_EN,
-    .payloadType = IMP_ENC_PROFILE_HEVC_MAIN,
+    .payloadType = IMP_ENC_PROFILE_AVC_MAIN,
 		.fs_chn_attr = {
 			.picWidth = SENSOR_WIDTH_SECOND,
 			.picHeight = SENSOR_HEIGHT_SECOND,
@@ -148,7 +147,7 @@ struct chn_conf chn[FS_CHN_NUM] = {
 	{
 		.index = CH3_INDEX,
 		.enable = CHN3_EN,
-    .payloadType = IMP_ENC_PROFILE_HEVC_MAIN,
+    .payloadType = IMP_ENC_PROFILE_AVC_MAIN,
 		.fs_chn_attr = {
 			.picWidth = SENSOR_WIDTH_SECOND,
 			.picHeight = SENSOR_HEIGHT_SECOND,
@@ -260,7 +259,7 @@ struct chn_conf chn_ext_rgba[1] = {
 	},
 };
 
-extern int IMP_OSD_SetPoolSize(int size);
+//extern int IMP_OSD_SetPoolSize(int size);
 
 IMPSensorInfo sensor_info;
 int sample_system_init()
@@ -289,36 +288,36 @@ int sample_system_init()
 	memcpy(sensor_info.i2c.type, SENSOR_NAME, sizeof(SENSOR_NAME));
 	sensor_info.i2c.addr = SENSOR_I2C_ADDR;
 
-	SDebug<<"sample_system_init start";
+	IMP_LOG_DBG(TAG, "sample_system_init start\n");
 
 	ret = IMP_ISP_Open();
 	if(ret < 0){
-		SError<<"failed to open ISP";
+		IMP_LOG_ERR(TAG, "failed to open ISP\n");
 		return -1;
 	}
 
 	ret = IMP_ISP_AddSensor(&sensor_info);
 	if(ret < 0){
-		SError<<"failed to AddSensor";
+		IMP_LOG_ERR(TAG, "failed to AddSensor\n");
 		return -1;
 	}
 
 	ret = IMP_ISP_EnableSensor();
 	if(ret < 0){
-		SError<<"failed to EnableSensor";
+		IMP_LOG_ERR(TAG, "failed to EnableSensor\n");
 		return -1;
 	}
 
 	ret = IMP_System_Init();
 	if(ret < 0){
-		SError<<"IMP_System_Init failed";
+		IMP_LOG_ERR(TAG, "IMP_System_Init failed\n");
 		return -1;
 	}
 
 	/* enable turning, to debug graphics */
 	ret = IMP_ISP_EnableTuning();
 	if(ret < 0){
-		SError<<"IMP_ISP_EnableTuning failed";
+		IMP_LOG_ERR(TAG, "IMP_ISP_EnableTuning failed\n");
 		return -1;
 	}
     IMP_ISP_Tuning_SetContrast(128);
@@ -328,18 +327,18 @@ int sample_system_init()
 #if 1
     ret = IMP_ISP_Tuning_SetISPRunningMode(IMPISP_RUNNING_MODE_DAY);
     if (ret < 0){
-        SError<<"failed to set running mode";
+        IMP_LOG_ERR(TAG, "failed to set running mode\n");
         return -1;
     }
 #endif
 #if 0
     ret = IMP_ISP_Tuning_SetSensorFPS(SENSOR_FRAME_RATE_NUM, SENSOR_FRAME_RATE_DEN);
     if (ret < 0){
-        SError<<"failed to set sensor fps";
+        IMP_LOG_ERR(TAG, "failed to set sensor fps\n");
         return -1;
     }
 #endif
-	SDebug<<"ImpSystemInit success";
+	IMP_LOG_DBG(TAG, "ImpSystemInit success\n");
 
 	return 0;
 }
@@ -348,35 +347,35 @@ int sample_system_exit()
 {
 	int ret = 0;
 
-	SDebug<<"sample_system_exit start";
+	IMP_LOG_DBG(TAG, "sample_system_exit start\n");
 
 
 	IMP_System_Exit();
 
 	ret = IMP_ISP_DisableSensor();
 	if(ret < 0){
-		SError<<"failed to EnableSensor";
+		IMP_LOG_ERR(TAG, "failed to EnableSensor\n");
 		return -1;
 	}
 
 	ret = IMP_ISP_DelSensor(&sensor_info);
 	if(ret < 0){
-		SError<<"failed to AddSensor";
+		IMP_LOG_ERR(TAG, "failed to AddSensor\n");
 		return -1;
 	}
 
 	ret = IMP_ISP_DisableTuning();
 	if(ret < 0){
-		SError<<"IMP_ISP_DisableTuning failed";
+		IMP_LOG_ERR(TAG, "IMP_ISP_DisableTuning failed\n");
 		return -1;
 	}
 
 	if(IMP_ISP_Close()){
-		SError<<"failed to open ISP";
+		IMP_LOG_ERR(TAG, "failed to open ISP\n");
 		return -1;
 	}
 
-	SDebug<<" sample_system_exit success";
+	IMP_LOG_DBG(TAG, " sample_system_exit success\n");
 
 	return 0;
 }
@@ -389,7 +388,7 @@ int sample_framesource_streamon()
 		if (chn[i].enable) {
 			ret = IMP_FrameSource_EnableChn(chn[i].index);
 			if (ret < 0) {
-				SError<<"IMP_FrameSource_EnableChn error: "<<  ret << " " <<  chn[i].index;
+				IMP_LOG_ERR(TAG, "IMP_FrameSource_EnableChn(%d) error: %d\n", ret, chn[i].index);
 				return -1;
 			}
 		}
@@ -403,7 +402,7 @@ int sample_framesource_ext_hsv_streamon()
 	/* Enable channels */
 	ret = IMP_FrameSource_EnableChn(3);
 	if (ret < 0) {
-		SError<<"IMP_FrameSource_EnableChn error: "<<  ret << " " <<  3 ;
+		IMP_LOG_ERR(TAG, "IMP_FrameSource_EnableChn(%d) error: %d\n", ret, 3);
 		return -1;
 	}
 	return 0;
@@ -415,7 +414,7 @@ int sample_framesource_ext_rgba_streamon()
 	/* Enable channels */
 	ret = IMP_FrameSource_EnableChn(3);
 	if (ret < 0) {
-		SError<<"IMP_FrameSource_EnableChn error: "<<  ret << " " <<  3 ;
+		IMP_LOG_ERR(TAG, "IMP_FrameSource_EnableChn(%d) error: %d\n", ret, 3);
 		return -1;
 	}
 	return 0;
@@ -429,7 +428,7 @@ int sample_framesource_streamoff()
 		if (chn[i].enable){
 			ret = IMP_FrameSource_DisableChn(chn[i].index);
 			if (ret < 0) {
-				SError<<"IMP_FrameSource_DisableChn(%d) error: "<<  ret << " " <<  chn[i].index;
+				IMP_LOG_ERR(TAG, "IMP_FrameSource_DisableChn(%d) error: %d\n", ret, chn[i].index);
 				return -1;
 			}
 		}
@@ -443,7 +442,7 @@ int sample_framesource_ext_hsv_streamoff()
 	/* Enable channels */
 	ret = IMP_FrameSource_DisableChn(3);
 	if (ret < 0) {
-		SError<<"IMP_FrameSource_DisableChn error: "<<  ret << " " <<  3 ;
+		IMP_LOG_ERR(TAG, "IMP_FrameSource_DisableChn(%d) error: %d\n", ret, 3);
 		return -1;
 	}
 	return 0;
@@ -455,7 +454,7 @@ int sample_framesource_ext_rgba_streamoff()
 	/* Enable channels */
 	ret = IMP_FrameSource_DisableChn(3);
 	if (ret < 0) {
-		SError<<"IMP_FrameSource_DisableCh error: "<<  ret << " " <<  3 ;
+		IMP_LOG_ERR(TAG, "IMP_FrameSource_DisableChn(%d) error: %d\n", ret, 3);
 		return -1;
 	}
 	return 0;
@@ -478,31 +477,31 @@ static void *get_frame(void *args)
 
 	fd = open(framefilename, O_RDWR | O_CREAT, 0x644);
 	if (fd < 0) {
-		SError<<"open "<< framefilename << " failed" <<  strerror(errno);
+		IMP_LOG_ERR(TAG, "open %s failed:%s\n", framefilename, strerror(errno));
 		goto err_open_framefilename;
 	}
 
 	ret = IMP_FrameSource_SetFrameDepth(chnNum, chn[index].fs_chn_attr.nrVBs * 2);
 	if (ret < 0) {
-		SError<<"IMP_FrameSource_SetFrameDept failed chno:"   << chnNum << " "  << chn[index].fs_chn_attr.nrVBs * 2;
+		IMP_LOG_ERR(TAG, "IMP_FrameSource_SetFrameDepth(%d,%d) failed\n", chnNum, chn[index].fs_chn_attr.nrVBs * 2);
 		goto err_IMP_FrameSource_SetFrameDepth_1;
 	}
 
 	for (i = 0; i < NR_FRAMES_TO_SAVE; i++) {
 		ret = IMP_FrameSource_GetFrame(chnNum, &frame);
 		if (ret < 0) {
-			SError<<"IMP_FrameSource_GetFrame failed: " <<   i;
+			IMP_LOG_ERR(TAG, "IMP_FrameSource_GetFrame(%d) i=%d failed\n", chnNum, i);
 			goto err_IMP_FrameSource_GetFrame_i;
 		}
 		if (NR_FRAMES_TO_SAVE/2 == i) {
 			if (write(fd, (void *)frame->virAddr, frame->size) != frame->size) {
-				SError<<"chnNum=%d write framefailed: " <<   i;
+				IMP_LOG_ERR(TAG, "chnNum=%d write frame i=%d failed\n", chnNum, i);
 				goto err_write_frame;
 			}
 		}
 		ret = IMP_FrameSource_ReleaseFrame(chnNum, frame);
 		if (ret < 0) {
-			SError<<"IMP_FrameSource_ReleaseFramefailed: " <<   i;
+			IMP_LOG_ERR(TAG, "IMP_FrameSource_ReleaseFrame(%d) i=%d failed\n", chnNum, i);
 			goto err_IMP_FrameSource_ReleaseFrame_i;
 		}
 	}
@@ -533,7 +532,7 @@ int sample_get_frame()
 		if (chn[i].enable) {
 			ret = pthread_create(&tid[i], NULL, get_frame, (void *)i);
 			if (ret < 0) {
-				SError<<"Create ChnNum get_frame failed: " <<  chn[i].index ;
+				IMP_LOG_ERR(TAG, "Create ChnNum%d get_frame failed\n", chn[i].index);
 				return -1;
 			}
 		}
@@ -556,13 +555,13 @@ int sample_framesource_init()
 		if (chn[i].enable) {
 			ret = IMP_FrameSource_CreateChn(chn[i].index, &chn[i].fs_chn_attr);
 			if(ret < 0){
-				SError<<"IMP_FrameSource_CreateChn  error "<<  chn[i].index;
+				IMP_LOG_ERR(TAG, "IMP_FrameSource_CreateChn(chn%d) error !\n", chn[i].index);
 				return -1;
 			}
 
 			ret = IMP_FrameSource_SetChnAttr(chn[i].index, &chn[i].fs_chn_attr);
 			if (ret < 0) {
-				SError<<"IMP_FrameSource_SetChnAttr " <<    chn[i].index;
+				IMP_LOG_ERR(TAG, "IMP_FrameSource_SetChnAttr(chn%d) error !\n",  chn[i].index);
 				return -1;
 			}
 		}
@@ -578,13 +577,13 @@ int sample_framesource_ext_hsv_init()
 
 	ret = IMP_FrameSource_CreateChn(3, &chn_ext_hsv[0].fs_chn_attr);
 	if(ret < 0){
-		SError<<"IMP_FrameSource_CreateChn(chn) "<< 3;
+		IMP_LOG_ERR(TAG, "IMP_FrameSource_CreateChn(chn%d) error !\n", 3);
 		return -1;
 	}
 
 	ret = IMP_FrameSource_SetChnAttr(3, &chn_ext_hsv[0].fs_chn_attr);
 	if (ret < 0) {
-		SError<<"IMP_FrameSource_SetChnAttr(chn) "<< 3;
+		IMP_LOG_ERR(TAG, "IMP_FrameSource_SetChnAttr(chn%d) error !\n", 3);
 		return -1;
 	}
 	return 0;
@@ -597,19 +596,19 @@ int sample_framesource_ext_rgba_init()
 
 	ret = IMP_FrameSource_CreateChn(3, &chn_ext_rgba[0].fs_chn_attr);
 	if(ret < 0){
-		SError<<"IMP_FrameSource_CreateChn(chn) "<< 3;
+		IMP_LOG_ERR(TAG, "IMP_FrameSource_CreateChn(chn%d) error !\n", 3);
 		return -1;
 	}
 
 	ret = IMP_FrameSource_SetSource(3, 2);
 	if(ret < 0){
-		SError<<"IMP_FrameSource_SetSource(chn) "<< 3;
+		IMP_LOG_ERR(TAG, "IMP_FrameSource_SetSource(chn%d) error !\n", 3);
 		return -1;
 	}
 
 	ret = IMP_FrameSource_SetChnAttr(3, &chn_ext_rgba[0].fs_chn_attr);
 	if (ret < 0) {
-		SError<<"IMP_FrameSource_SetChnAttr(chn) "<< 3;
+		IMP_LOG_ERR(TAG, "IMP_FrameSource_SetChnAttr(chn%d) error !\n", 3);
 		return -1;
 	}
 	return 0;
@@ -624,7 +623,7 @@ int sample_framesource_exit()
 			/*Destroy channel */
 			ret = IMP_FrameSource_DestroyChn(chn[i].index);
 			if (ret < 0) {
-				SError<<"IMP_FrameSource_DestroyChn " <<  chn[i].index << " error: " << ret;
+				IMP_LOG_ERR(TAG, "IMP_FrameSource_DestroyChn(%d) error: %d\n", chn[i].index, ret);
 				return -1;
 			}
 		}
@@ -638,7 +637,7 @@ int sample_framesource_ext_hsv_exit()
 
 	ret = IMP_FrameSource_DestroyChn(3);
 	if (ret < 0) {
-		SError<<"IMP_FrameSource_DestroyChn() error: "<<  ret;
+		IMP_LOG_ERR(TAG, "IMP_FrameSource_DestroyChn() error: %d\n", ret);
 		return -1;
 	}
 	return 0;
@@ -650,7 +649,7 @@ int sample_framesource_ext_rgba_exit()
 
 	ret = IMP_FrameSource_DestroyChn(3);
 	if (ret < 0) {
-		SError<<"IMP_FrameSource_DestroyChn() error: "<<  ret;
+		IMP_LOG_ERR(TAG, "IMP_FrameSource_DestroyChn() error: %d\n", ret);
 		return -1;
 	}
 	return 0;
@@ -673,14 +672,16 @@ int sample_jpeg_init()
 			/* Create Channel */
 			ret = IMP_Encoder_CreateChn(4 + chn[i].index, &channel_attr);
 			if (ret < 0) {
-				SError<<"IMP_Encoder_CreateChn " << chn[i].index << " error:" <<  ret;
+				IMP_LOG_ERR(TAG, "IMP_Encoder_CreateChn(%d) error: %d\n",
+							chn[i].index, ret);
 				return -1;
 			}
 
 			/* Resigter Channel */
 			ret = IMP_Encoder_RegisterChn(i, 4 + chn[i].index);
 			if (ret < 0) {
-				SError<<"IMP_Encoder_RegisterChn" << 	chn[i].index << " error: " <<  ret;
+				IMP_LOG_ERR(TAG, "IMP_Encoder_RegisterChn(0, %d) error: %d\n",
+							chn[i].index, ret);
 				return -1;
 			}
 		}
@@ -718,7 +719,7 @@ int sample_encoder_init()
                     (S_RC_METHOD == IMP_ENC_RC_MODE_FIXQP) ? 35 : -1,
                     uTargetBitRate);
             if (ret < 0) {
-                SError<<"IMP_Encoder_SetDefaultParam " <<  chnNum;
+                IMP_LOG_ERR(TAG, "IMP_Encoder_SetDefaultParam(%d) error !\n", chnNum);
                 return -1;
             }
 #ifdef LOW_BITSTREAM
@@ -775,20 +776,20 @@ int sample_encoder_init()
 					rcAttr->attrRcMode.attrCappedQuality.uMaxPSNR = 42;
 					break;
 				case IMP_ENC_RC_MODE_INVALID:
-					SError<<"unsupported rcmode:%d, we only support fixqp, cbr vbr and capped vbr" <<  rcAttr->attrRcMode.rcMode ;
+					IMP_LOG_ERR(TAG, "unsupported rcmode:%d, we only support fixqp, cbr vbr and capped vbr\n", rcAttr->attrRcMode.rcMode);
 					return -1;
 			}
 #endif
 
             ret = IMP_Encoder_CreateChn(chnNum, &channel_attr);
             if (ret < 0) {
-                SError<<"IMP_Encoder_CreateChn(%d)  " << chnNum  ;
+                IMP_LOG_ERR(TAG, "IMP_Encoder_CreateChn(%d) error !\n", chnNum);
                 return -1;
             }
 
 			ret = IMP_Encoder_RegisterChn(chn[i].index, chnNum);
 			if (ret < 0) {
-				SError<<"IMP_Encoder_RegisterChn "<<  chn[i].index << " " << chnNum  << " error: " << ret;
+				IMP_LOG_ERR(TAG, "IMP_Encoder_RegisterChn(%d, %d) error: %d\n", chn[i].index, chnNum, ret);
 				return -1;
 			}
 		}
@@ -808,19 +809,20 @@ int sample_jpeg_exit(void)
 			memset(&chn_stat, 0, sizeof(IMPEncoderChnStat));
 			ret = IMP_Encoder_Query(chnNum, &chn_stat);
 			if (ret < 0) {
-				SError<<"IMP_Encoder_Query " << chnNum <<" error: " << ret;
+				IMP_LOG_ERR(TAG, "IMP_Encoder_Query(%d) error: %d\n", chnNum, ret);
 				return -1;
 			}
 
 			if (chn_stat.registered) {
 				ret = IMP_Encoder_UnRegisterChn(chnNum);
 				if (ret < 0) {
-					SError<<"IMP_Encoder_UnRegister " << chnNum   <<" error: " << ret;
+					IMP_LOG_ERR(TAG, "IMP_Encoder_UnRegisterChn(%d) error: %d\n", chnNum, ret);
+					return -1;
 				}
 
 				ret = IMP_Encoder_DestroyChn(chnNum);
 				if (ret < 0) {
-					SError<<"IMP_Encoder_DestroyChn " << chnNum  <<" error: " << ret;
+					IMP_LOG_ERR(TAG, "IMP_Encoder_DestroyChn(%d) error: %d\n", chnNum, ret);
 					return -1;
 				}
 			}
@@ -842,26 +844,26 @@ int sample_encoder_exit(void)
             memset(&chn_stat, 0, sizeof(IMPEncoderChnStat));
             ret = IMP_Encoder_Query(chnNum, &chn_stat);
             if (ret < 0) {
-                SError<<"IMP_Encoder_Query " << chnNum  <<" error: " << ret;
+                IMP_LOG_ERR(TAG, "IMP_Encoder_Query(%d) error: %d\n", chnNum, ret);
                 return -1;
             }
 
             if (chn_stat.registered) {
                 ret = IMP_Encoder_UnRegisterChn(chnNum);
                 if (ret < 0) {
-                    SError<<"IMP_Encoder_UnRegisterChn " << chnNum  <<" error: " << ret;
+                    IMP_LOG_ERR(TAG, "IMP_Encoder_UnRegisterChn(%d) error: %d\n", chnNum, ret);
                     return -1;
                 }
 
                 ret = IMP_Encoder_DestroyChn(chnNum);
                 if (ret < 0) {
-                    SError<<"IMP_Encoder_DestroyChn " << chnNum  <<" error: " << ret;
+                    IMP_LOG_ERR(TAG, "IMP_Encoder_DestroyChn(%d) error: %d\n", chnNum, ret);
                     return -1;
                 }
 
                 ret = IMP_Encoder_DestroyGroup(chnNum);
                 if (ret < 0) {
-                    SError<<"IMP_Encoder_DestroyGroup " << chnNum  <<" error: " << ret;
+                    IMP_LOG_ERR(TAG, "IMP_Encoder_DestroyGroup(%d) error: %d\n", chnNum, ret);
                     return -1;
                 }
             }
@@ -882,56 +884,56 @@ IMPRgnHandle *sample_osd_init(int grpNum)
 
 	prHander = malloc(4 * sizeof(IMPRgnHandle));
 	if (prHander <= 0) {
-		SError<<"malloc() error !";
+		IMP_LOG_ERR(TAG, "malloc() error !\n");
 		return NULL;
 	}
 
 	rHanderFont = IMP_OSD_CreateRgn(NULL);
 	if (rHanderFont == INVHANDLE) {
-		SError<<"IMP_OSD_CreateRgn TimeStamp error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_CreateRgn TimeStamp error !\n");
 		return NULL;
 	}
 
 	rHanderLogo = IMP_OSD_CreateRgn(NULL);
 	if (rHanderLogo == INVHANDLE) {
-		SError<<"IMP_OSD_CreateRgn Logo error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_CreateRgn Logo error !\n");
 		return NULL;
 	}
 
 	rHanderCover = IMP_OSD_CreateRgn(NULL);
 	if (rHanderCover == INVHANDLE) {
-		SError<<"IMP_OSD_CreateRgn Cover error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_CreateRgn Cover error !\n");
 		return NULL;
 	}
 
 	rHanderRect = IMP_OSD_CreateRgn(NULL);
 	if (rHanderRect == INVHANDLE) {
-		SError<<"IMP_OSD_CreateRgn Rect error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_CreateRgn Rect error !\n");
 		return NULL;
 	}
 
 
 	ret = IMP_OSD_RegisterRgn(rHanderFont, grpNum, NULL);
 	if (ret < 0) {
-		SError<<"IVS IMP_OSD_RegisterRgn failed";
+		IMP_LOG_ERR(TAG, "IVS IMP_OSD_RegisterRgn failed\n");
 		return NULL;
 	}
 
 	ret = IMP_OSD_RegisterRgn(rHanderLogo, grpNum, NULL);
 	if (ret < 0) {
-		SError<<"IVS IMP_OSD_RegisterRgn failed";
+		IMP_LOG_ERR(TAG, "IVS IMP_OSD_RegisterRgn failed\n");
 		return NULL;
 	}
 
 	ret = IMP_OSD_RegisterRgn(rHanderCover, grpNum, NULL);
 	if (ret < 0) {
-		SError<<"IVS IMP_OSD_RegisterRgn failed";
+		IMP_LOG_ERR(TAG, "IVS IMP_OSD_RegisterRgn failed\n");
 		return NULL;
 	}
 
 	ret = IMP_OSD_RegisterRgn(rHanderRect, grpNum, NULL);
 	if (ret < 0) {
-		SError<<"IVS IMP_OSD_RegisterRgn failed";
+		IMP_LOG_ERR(TAG, "IVS IMP_OSD_RegisterRgn failed\n");
 		return NULL;
 	}
 
@@ -951,14 +953,14 @@ IMPRgnHandle *sample_osd_init(int grpNum)
 	rAttrFont.data.picData.pData = NULL;
 	ret = IMP_OSD_SetRgnAttr(rHanderFont, &rAttrFont);
 	if (ret < 0) {
-		SError<<"IMP_OSD_SetRgnAttr TimeStamp error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_SetRgnAttr TimeStamp error !\n");
 		return NULL;
 	}
 
 	IMPOSDGrpRgnAttr grAttrFont;
 
 	if (IMP_OSD_GetGrpRgnAttr(rHanderFont, grpNum, &grAttrFont) < 0) {
-		SError<<"IMP_OSD_GetGrpRgnAttr Logo error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_GetGrpRgnAttr Logo error !\n");
 		return NULL;
 
 	}
@@ -970,7 +972,7 @@ IMPRgnHandle *sample_osd_init(int grpNum)
 	grAttrFont.fgAlhpa = 0xff;
 	grAttrFont.layer = 3;
 	if (IMP_OSD_SetGrpRgnAttr(rHanderFont, grpNum, &grAttrFont) < 0) {
-		SError<<"IMP_OSD_SetGrpRgnAttr Logo error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_SetGrpRgnAttr Logo error !\n");
 		return NULL;
 	}
 
@@ -987,13 +989,13 @@ IMPRgnHandle *sample_osd_init(int grpNum)
 	rAttrLogo.data.picData.pData = logodata_100x100_bgra;
 	ret = IMP_OSD_SetRgnAttr(rHanderLogo, &rAttrLogo);
 	if (ret < 0) {
-		SError<<"IMP_OSD_SetRgnAttr Logo error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_SetRgnAttr Logo error !\n");
 		return NULL;
 	}
 	IMPOSDGrpRgnAttr grAttrLogo;
 
 	if (IMP_OSD_GetGrpRgnAttr(rHanderLogo, grpNum, &grAttrLogo) < 0) {
-		SError<<"IMP_OSD_GetGrpRgnAttr Logo error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_GetGrpRgnAttr Logo error !\n");
 		return NULL;
 
 	}
@@ -1006,7 +1008,7 @@ IMPRgnHandle *sample_osd_init(int grpNum)
 	grAttrLogo.layer = 2;
 
 	if (IMP_OSD_SetGrpRgnAttr(rHanderLogo, grpNum, &grAttrLogo) < 0) {
-		SError<<"IMP_OSD_SetGrpRgnAttr Logo error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_SetGrpRgnAttr Logo error !\n");
 		return NULL;
 	}
 
@@ -1021,13 +1023,13 @@ IMPRgnHandle *sample_osd_init(int grpNum)
 	rAttrCover.data.coverData.color = OSD_BLACK;
 	ret = IMP_OSD_SetRgnAttr(rHanderCover, &rAttrCover);
 	if (ret < 0) {
-		SError<<"IMP_OSD_SetRgnAttr Cover error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_SetRgnAttr Cover error !\n");
 		return NULL;
 	}
 	IMPOSDGrpRgnAttr grAttrCover;
 
 	if (IMP_OSD_GetGrpRgnAttr(rHanderCover, grpNum, &grAttrCover) < 0) {
-		SError<<"IMP_OSD_GetGrpRgnAttr Cover error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_GetGrpRgnAttr Cover error !\n");
 		return NULL;
 
 	}
@@ -1039,7 +1041,7 @@ IMPRgnHandle *sample_osd_init(int grpNum)
 	grAttrCover.fgAlhpa = 0x7f;
 	grAttrCover.layer = 2;
 	if (IMP_OSD_SetGrpRgnAttr(rHanderCover, grpNum, &grAttrCover) < 0) {
-		SError<<"IMP_OSD_SetGrpRgnAttr Cover error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_SetGrpRgnAttr Cover error !\n");
 		return NULL;
 	}
 
@@ -1056,13 +1058,13 @@ IMPRgnHandle *sample_osd_init(int grpNum)
 	rAttrRect.data.lineRectData.linewidth = 5;
 	ret = IMP_OSD_SetRgnAttr(rHanderRect, &rAttrRect);
 	if (ret < 0) {
-		SError<<"IMP_OSD_SetRgnAttr Rect error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_SetRgnAttr Rect error !\n");
 		return NULL;
 	}
 	IMPOSDGrpRgnAttr grAttrRect;
 
 	if (IMP_OSD_GetGrpRgnAttr(rHanderRect, grpNum, &grAttrRect) < 0) {
-		SError<<"IMP_OSD_GetGrpRgnAttr Rect error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_GetGrpRgnAttr Rect error !\n");
 		return NULL;
 
 	}
@@ -1072,14 +1074,14 @@ IMPRgnHandle *sample_osd_init(int grpNum)
 	grAttrRect.scalex = 1;
 	grAttrRect.scaley = 1;
 	if (IMP_OSD_SetGrpRgnAttr(rHanderRect, grpNum, &grAttrRect) < 0) {
-		SError<<"IMP_OSD_SetGrpRgnAttr Rect error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_SetGrpRgnAttr Rect error !\n");
 		return NULL;
 	}
 
 
 	ret = IMP_OSD_Start(grpNum);
 	if (ret < 0) {
-		SError<<"IMP_OSD_Start TimeStamp, Logo, Cover and Rect error !";
+		IMP_LOG_ERR(TAG, "IMP_OSD_Start TimeStamp, Logo, Cover and Rect error !\n");
 		return NULL;
 	}
 
@@ -1096,43 +1098,43 @@ int sample_osd_exit(IMPRgnHandle *prHander,int grpNum)
 
 	ret = IMP_OSD_ShowRgn(prHander[0], grpNum, 0);
 	if (ret < 0) {
-		SError<<"IMP_OSD_ShowRgn close timeStamp error";
+		IMP_LOG_ERR(TAG, "IMP_OSD_ShowRgn close timeStamp error\n");
 	}
 
 	ret = IMP_OSD_ShowRgn(prHander[1], grpNum, 0);
 	if (ret < 0) {
-		SError<<"IMP_OSD_ShowRgn close Logo error";
+		IMP_LOG_ERR(TAG, "IMP_OSD_ShowRgn close Logo error\n");
 	}
 
 	ret = IMP_OSD_ShowRgn(prHander[2], grpNum, 0);
 	if (ret < 0) {
-		SError<<"IMP_OSD_ShowRgn close cover error";
+		IMP_LOG_ERR(TAG, "IMP_OSD_ShowRgn close cover error\n");
 	}
 
 	ret = IMP_OSD_ShowRgn(prHander[3], grpNum, 0);
 	if (ret < 0) {
-		SError<<"IMP_OSD_ShowRgn close Rect error";
+		IMP_LOG_ERR(TAG, "IMP_OSD_ShowRgn close Rect error\n");
 	}
 
 
 	ret = IMP_OSD_UnRegisterRgn(prHander[0], grpNum);
 	if (ret < 0) {
-		SError<<"IMP_OSD_UnRegisterRgn timeStamp error";
+		IMP_LOG_ERR(TAG, "IMP_OSD_UnRegisterRgn timeStamp error\n");
 	}
 
 	ret = IMP_OSD_UnRegisterRgn(prHander[1], grpNum);
 	if (ret < 0) {
-		SError<<"IMP_OSD_UnRegisterRgn logo error";
+		IMP_LOG_ERR(TAG, "IMP_OSD_UnRegisterRgn logo error\n");
 	}
 
 	ret = IMP_OSD_UnRegisterRgn(prHander[2], grpNum);
 	if (ret < 0) {
-		SError<<"IMP_OSD_UnRegisterRgn Cover error";
+		IMP_LOG_ERR(TAG, "IMP_OSD_UnRegisterRgn Cover error\n");
 	}
 
 	ret = IMP_OSD_UnRegisterRgn(prHander[3], grpNum);
 	if (ret < 0) {
-		SError<<"IMP_OSD_UnRegisterRgn Rect error";
+		IMP_LOG_ERR(TAG, "IMP_OSD_UnRegisterRgn Rect error\n");
 	}
 
 
@@ -1143,7 +1145,7 @@ int sample_osd_exit(IMPRgnHandle *prHander,int grpNum)
 
 	ret = IMP_OSD_DestroyGroup(grpNum);
 	if (ret < 0) {
-		SError<<"IMP_OSD_DestroyGroup(0) error";
+		IMP_LOG_ERR(TAG, "IMP_OSD_DestroyGroup(0) error\n");
 		return -1;
 	}
 	free(prHander);
@@ -1156,35 +1158,33 @@ static int save_stream(int fd, IMPEncoderStream *stream)
 {
 	int ret, i, nr_pack = stream->packCount;
 
-  //SDebug<<"----------packCount=%d, stream->seq=%u start----------\n", stream->packCount, stream->seq);
+  //IMP_LOG_DBG(TAG, "----------packCount=%d, stream->seq=%u start----------\n", stream->packCount, stream->seq);
 	for (i = 0; i < nr_pack; i++) {
-    //SDebug<<"[%d]:%10u,%10lld,%10u,%10u,%10u\n", i, stream->pack[i].length, stream->pack[i].timestamp, stream->pack[i].frameEnd, *((uint32_t *)(&stream->pack[i].nalType)), stream->pack[i].sliceType);
+    //IMP_LOG_DBG(TAG, "[%d]:%10u,%10lld,%10u,%10u,%10u\n", i, stream->pack[i].length, stream->pack[i].timestamp, stream->pack[i].frameEnd, *((uint32_t *)(&stream->pack[i].nalType)), stream->pack[i].sliceType);
 		IMPEncoderPack *pack = &stream->pack[i];
 		if(pack->length){
 			uint32_t remSize = stream->streamSize - pack->offset;
 			if(remSize < pack->length){
 				ret = write(fd, (void *)(stream->virAddr + pack->offset), remSize);
 				if (ret != remSize) {
-					SError<<"stream write ret " << ret  << " != pack[" << i << "].remSize(" << remSize  << " )error " << strerror(errno);
+					IMP_LOG_ERR(TAG, "stream write ret(%d) != pack[%d].remSize(%d) error:%s\n", ret, i, remSize, strerror(errno));
 					return -1;
 				}
 				ret = write(fd, (void *)stream->virAddr, pack->length - remSize);
 				if (ret != (pack->length - remSize)) {
-					//SError<<"stream write ret(%d) != pack[%d].(length-remSize)(%d) error:%s\n", ret, i, (pack->length - remSize), strerror(errno));
-					SError<<"stream write error";
+					IMP_LOG_ERR(TAG, "stream write ret(%d) != pack[%d].(length-remSize)(%d) error:%s\n", ret, i, (pack->length - remSize), strerror(errno));
 					return -1;
 				}
 			}else {
 				ret = write(fd, (void *)(stream->virAddr + pack->offset), pack->length);
 				if (ret != pack->length) {
-					//SError<<"stream write ret(%d) != pack[%d].length(%d) error:%s\n", ret, i, pack->length, strerror(errno));
-					SError<<"stream write error";
+					IMP_LOG_ERR(TAG, "stream write ret(%d) != pack[%d].length(%d) error:%s\n", ret, i, pack->length, strerror(errno));
 					return -1;
 				}
 			}
 		}
 	}
-  //SDebug<<"----------packCount=%d, stream->seq=%u end----------\n", stream->packCount, stream->seq);
+  //IMP_LOG_DBG(TAG, "----------packCount=%d, stream->seq=%u end----------\n", stream->packCount, stream->seq);
 	return 0;
 }
 
@@ -1196,13 +1196,13 @@ static int save_stream_by_name(char *stream_prefix, int idx, IMPEncoderStream *s
 
     sprintf(stream_path, "%s_%d", stream_prefix, idx);
 
-    SDebug<<"Open Stream file  "<<  stream_path;
+    IMP_LOG_DBG(TAG, "Open Stream file %s ", stream_path);
     stream_fd = open(stream_path, O_RDWR | O_CREAT | O_TRUNC, 0777);
     if (stream_fd < 0) {
-        SError<<"failed: " <<  strerror(errno);
+        IMP_LOG_ERR(TAG, "failed: %s\n", strerror(errno));
         return -1;
     }
-    SDebug<<"OK";
+    IMP_LOG_DBG(TAG, "OK\n");
 
 	for (i = 0; i < nr_pack; i++) {
 		IMPEncoderPack *pack = &stream->pack[i];
@@ -1212,21 +1212,18 @@ static int save_stream_by_name(char *stream_prefix, int idx, IMPEncoderStream *s
 				ret = write(stream_fd, (void *)(stream->virAddr + pack->offset),
 						remSize);
 				if (ret != remSize) {
-					//SError<<"stream write ret(%d) != pack[%d].remSize(%d) error:%s\n", ret, i, remSize, strerror(errno));
-					SError<<"stream write error";
+					IMP_LOG_ERR(TAG, "stream write ret(%d) != pack[%d].remSize(%d) error:%s\n", ret, i, remSize, strerror(errno));
 					return -1;
 				}
 				ret = write(stream_fd, (void *)stream->virAddr, pack->length - remSize);
 				if (ret != (pack->length - remSize)) {
-					//SError<<"stream write ret(%d) != pack[%d].(length-remSize)(%d) error:%s\n", ret, i, (pack->length - remSize), strerror(errno));
-					SError<<"stream write error";
+					IMP_LOG_ERR(TAG, "stream write ret(%d) != pack[%d].(length-remSize)(%d) error:%s\n", ret, i, (pack->length - remSize), strerror(errno));
 					return -1;
 				}
 			}else {
 				ret = write(stream_fd, (void *)(stream->virAddr + pack->offset), pack->length);
 				if (ret != pack->length) {
-					//SError<<"stream write ret(%d) != pack[%d].length(%d) error:%s\n", ret, i, pack->length, strerror(errno));
-					SError<<"stream write error";
+					IMP_LOG_ERR(TAG, "stream write ret(%d) != pack[%d].length(%d) error:%s\n", ret, i, pack->length, strerror(errno));
 					return -1;
 				}
 			}
@@ -1251,7 +1248,7 @@ static void *get_video_stream(void *args)
 
   ret = IMP_Encoder_StartRecvPic(chnNum);
   if (ret < 0) {
-    SError<<"IMP_Encoder_StartRecvPic " << chnNum  ;
+    IMP_LOG_ERR(TAG, "IMP_Encoder_StartRecvPic(%d) failed\n", chnNum);
     return ((void *)-1);
   }
 
@@ -1261,20 +1258,20 @@ static void *get_video_stream(void *args)
   if (encType == IMP_ENC_TYPE_JPEG) {
     totalSaveCnt = ((NR_FRAMES_TO_SAVE / 50) > 0) ? (NR_FRAMES_TO_SAVE / 50) : 1;
   } else {
-    //SDebug<<"Video ChnNum=%d Open Stream file %s ", chnNum, stream_path);
+    IMP_LOG_DBG(TAG, "Video ChnNum=%d Open Stream file %s ", chnNum, stream_path);
     stream_fd = open(stream_path, O_RDWR | O_CREAT | O_TRUNC, 0777);
     if (stream_fd < 0) {
-      SError<<"failed: " <<  strerror(errno);
+      IMP_LOG_ERR(TAG, "failed: %s\n", strerror(errno));
       return ((void *)-1);
     }
-    SDebug<<"OK";
+    IMP_LOG_DBG(TAG, "OK\n");
     totalSaveCnt = NR_FRAMES_TO_SAVE;
   }
 
   for (i = 0; i < totalSaveCnt; i++) {
     ret = IMP_Encoder_PollingStream(chnNum, 1000);
     if (ret < 0) {
-      SError<<"IMP_Encoder_PollingStream(%d) timeout " <<  chnNum ;
+      IMP_LOG_ERR(TAG, "IMP_Encoder_PollingStream(%d) timeout\n", chnNum);
       continue;
     }
 
@@ -1303,7 +1300,7 @@ static void *get_video_stream(void *args)
     }
 #endif
     if (ret < 0) {
-      SError<<"IMP_Encoder_GetStream " << chnNum  ;
+      IMP_LOG_ERR(TAG, "IMP_Encoder_GetStream(%d) failed\n", chnNum);
       return ((void *)-1);
     }
 
@@ -1329,7 +1326,7 @@ static void *get_video_stream(void *args)
 
   ret = IMP_Encoder_StopRecvPic(chnNum);
   if (ret < 0) {
-    SError<<"IMP_Encoder_StopRecvPic " << chnNum  ;
+    IMP_LOG_ERR(TAG, "IMP_Encoder_StopRecvPic(%d) failed\n", chnNum);
     return ((void *)-1);
   }
 
@@ -1352,8 +1349,7 @@ int sample_get_video_stream()
             }
 			ret = pthread_create(&tid[i], NULL, get_video_stream, (void *)arg);
 			if (ret < 0) {
-				//SError<<"Create ChnNum%d get_video_stream failed\n", (chn[i].payloadType == IMP_ENC_PROFILE_JPEG) ? (4 + chn[i].index) : chn[i].index);
-				SError << "Thread Create Error";
+				IMP_LOG_ERR(TAG, "Create ChnNum%d get_video_stream failed\n", (chn[i].payloadType == IMP_ENC_PROFILE_JPEG) ? (4 + chn[i].index) : chn[i].index);
 			}
 		}
 	}
@@ -1376,25 +1372,25 @@ int sample_get_jpeg_snap()
 		if (chn[i].enable) {
 			ret = IMP_Encoder_StartRecvPic(4 + chn[i].index);
 			if (ret < 0) {
-				SError<<"IMP_Encoder_StartRecvPic(%d) failed" <<  3 + chn[i].index;
+				IMP_LOG_ERR(TAG, "IMP_Encoder_StartRecvPic(%d) failed\n", 3 + chn[i].index);
 				return -1;
 			}
 
 			sprintf(snap_path, "%s/snap-%d.jpg",
 					SNAP_FILE_PATH_PREFIX, chn[i].index);
 
-			SError<<"Open Snap file " <<  snap_path;
+			IMP_LOG_ERR(TAG, "Open Snap file %s ", snap_path);
 			int snap_fd = open(snap_path, O_RDWR | O_CREAT | O_TRUNC, 0777);
 			if (snap_fd < 0) {
-				SError<<"failed: " <<  strerror(errno);
+				IMP_LOG_ERR(TAG, "failed: %s\n", strerror(errno));
 				return -1;
 			}
-			SDebug<<"OK";
+			IMP_LOG_DBG(TAG, "OK\n");
 
 			/* Polling JPEG Snap, set timeout as 1000msec */
 			ret = IMP_Encoder_PollingStream(4 + chn[i].index, 10000);
 			if (ret < 0) {
-				SError<<"Polling stream timeout";
+				IMP_LOG_ERR(TAG, "Polling stream timeout\n");
 				continue;
 			}
 
@@ -1402,7 +1398,7 @@ int sample_get_jpeg_snap()
 			/* Get JPEG Snap */
 			ret = IMP_Encoder_GetStream(chn[i].index + 4, &stream, 1);
 			if (ret < 0) {
-				SError<<"IMP_Encoder_GetStream() failed";
+				IMP_LOG_ERR(TAG, "IMP_Encoder_GetStream() failed\n");
 				return -1;
 			}
 
@@ -1418,7 +1414,7 @@ int sample_get_jpeg_snap()
 
 			ret = IMP_Encoder_StopRecvPic(4 + chn[i].index);
 			if (ret < 0) {
-				SError<<"IMP_Encoder_StopRecvPic() failed";
+				IMP_LOG_ERR(TAG, "IMP_Encoder_StopRecvPic() failed\n");
 				return -1;
 			}
 		}
@@ -1458,14 +1454,14 @@ int sample_get_video_stream_byfd()
             if (chn[i].payloadType != IMP_ENC_PROFILE_JPEG) {
                 streamFd[i] = open(stream_path[i], O_RDWR | O_CREAT | O_TRUNC, 0777);
                 if (streamFd[i] < 0) {
-                    SError<<"open failed " <<  stream_path[i] <<  " " <<  strerror(errno) ;
+                    IMP_LOG_ERR(TAG, "open %s failed:%s\n", stream_path[i], strerror(errno));
                     return -1;
                 }
             }
 
             vencFd[i] = IMP_Encoder_GetFd(chnNum);
             if (vencFd[i] < 0) {
-                SError<<"IMP_Encoder_GetFd " << chnNum  ;
+                IMP_LOG_ERR(TAG, "IMP_Encoder_GetFd(%d) failed\n", chnNum);
                 return -1;
             }
 
@@ -1475,7 +1471,7 @@ int sample_get_video_stream_byfd()
 
             ret = IMP_Encoder_StartRecvPic(chnNum);
             if (ret < 0) {
-                SError<<"IMP_Encoder_StartRecvPic " << chnNum  ;
+                IMP_LOG_ERR(TAG, "IMP_Encoder_StartRecvPic(%d) failed\n", chnNum);
                 return -1;
             }
         }
@@ -1501,7 +1497,7 @@ int sample_get_video_stream_byfd()
 
         ret = select(maxVencFd + 1, &readfds, NULL, NULL, &selectTimeout);
         if (ret < 0) {
-            SError<<"select failed: " << strerror(errno);
+            IMP_LOG_ERR(TAG, "select failed:%s\n", strerror(errno));
             return -1;
         } else if (ret == 0) {
             continue;
@@ -1518,7 +1514,7 @@ int sample_get_video_stream_byfd()
                     /* Get H264 or H265 Stream */
                     ret = IMP_Encoder_GetStream(chnNum, &stream, 1);
                     if (ret < 0) {
-                        SError<<"IMP_Encoder_GetStream " << chnNum  ;
+                        IMP_LOG_ERR(TAG, "IMP_Encoder_GetStream(%d) failed\n", chnNum);
                         return -1;
                     }
 
@@ -1574,7 +1570,7 @@ int sample_SetIRCUT(int enable)
 
 	fd = open("/sys/class/gpio/export", O_WRONLY);
 	if(fd < 0) {
-		SDebug<<"open /sys/class/gpio/export error";
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/export error !");
 		return -1;
 	}
 
@@ -1585,13 +1581,13 @@ int sample_SetIRCUT(int enable)
 
 	fd79 = open("/sys/class/gpio/gpio79/direction", O_RDWR);
 	if(fd79 < 0) {
-		SDebug<<"open /sys/class/gpio/gpio79/direction error";
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/gpio79/direction error !");
 		return -1;
 	}
 
 	fd80 = open("/sys/class/gpio/gpio80/direction", O_RDWR);
 	if(fd80 < 0) {
-		SDebug<<"open /sys/class/gpio/gpio80/direction error";
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/gpio80/direction error !");
 		return -1;
 	}
 
@@ -1603,13 +1599,13 @@ int sample_SetIRCUT(int enable)
 
 	fd79 = open("/sys/class/gpio/gpio79/active_low", O_RDWR);
 	if(fd79 < 0) {
-		SDebug<<"open /sys/class/gpio/gpio79/active_low error";
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/gpio79/active_low error !");
 		return -1;
 	}
 
 	fd80 = open("/sys/class/gpio/gpio80/active_low", O_RDWR);
 	if(fd80 < 0) {
-		SDebug<<"open /sys/class/gpio/gpio80/active_low error";
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/gpio80/active_low error !");
 		return -1;
 	}
 
@@ -1621,13 +1617,13 @@ int sample_SetIRCUT(int enable)
 
 	fd79 = open("/sys/class/gpio/gpio79/value", O_RDWR);
 	if(fd79 < 0) {
-		SDebug<<"open /sys/class/gpio/gpio79/value error";
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/gpio79/value error !");
 		return -1;
 	}
 
 	fd80 = open("/sys/class/gpio/gpio80/value", O_RDWR);
 	if(fd80 < 0) {
-		SDebug<<"open /sys/class/gpio/gpio80/value error";
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/gpio80/value error !");
 		return -1;
 	}
 
