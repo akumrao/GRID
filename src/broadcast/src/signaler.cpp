@@ -92,7 +92,7 @@ void Signaler::onPeerOffer(std::string &peerID, st_track &trackInfo, std::string
 {
     if (!web_rtc::PeerManager::exists(peerID))
     {
-        auto conn = new web_rtc::Peer(this, &_context, trackInfo.camid, room, peerID, web_rtc::Peer::Offer);
+        auto conn = new web_rtc::Peer(this, &_context, trackInfo, peerID, web_rtc::Peer::Offer);
         conn->createConnection();
         web_rtc::PeerManager::add(peerID, conn);
 

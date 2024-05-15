@@ -2,6 +2,8 @@
 #ifndef base64_h
 #define bitmap_h
 
+#include <vector>
+
 
 typedef unsigned char uchar;
 static const std::string b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";//=

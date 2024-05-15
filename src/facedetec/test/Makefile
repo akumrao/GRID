@@ -19,7 +19,7 @@ RANLIB=${CROSS_COMPILE}ranlib
 
 TARGET=runConfTest # define the name of the executable
 
-SOURCES=$(wildcard *.cpp ../src/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp  ../../net/src/*.cpp ../../http/src/*.cpp ../../net/uv_multiplex/src/*.cpp ../../http_parser/*.cpp )
+SOURCES=$(wildcard *.cpp ../src/json.cpp ../src/configuration.cpp ../../base/src/*.cpp ../../base/token/*.cpp  ../../net/src/*.cpp ../../http/src/*.cpp ../../net/uv_multiplex/src/*.cpp ../../http_parser/*.cpp )
 
 #../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp
 CXXFLAGS   +=  -O3 -std=c++11  -DNDEBUG -fpermissive -DXALIENT_TEST

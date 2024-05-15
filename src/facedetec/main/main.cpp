@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
 
     Application app;
 
-    T31Video t31Video;
+    T31Video t31Video(nullptr,nullptr );
 
     //if( !t31Video.XAInit())
       if(! t31Video.T31Init())
@@ -134,9 +134,9 @@ int main(int argc, char** argv) {
 
     app.waitForShutdown([&](void*) {
 
-        t31Video.stop();
+        //t31Video.stop();
 
-        t31Video.join();
+        //t31Video.join();
 
     }
 

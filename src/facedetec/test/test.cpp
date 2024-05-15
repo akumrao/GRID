@@ -23,13 +23,11 @@
 #include "http/HTTPResponder.h"
 #include "base/logger.h"
 
-#include "rgba_bitmap.h"
-#include "base/base64.h"
+#include "base/rgba_bitmap.h"
+#include "base/base64.hpp"
 
 #define STB_IMAGE_IMPLEMENTATION
-
-#include "stb_image.h"
-#include "base64.h"
+#include "base/stb_image.h"
 
 #include <json/json.hpp>
 using json = nlohmann::json;
@@ -87,13 +85,13 @@ int XA_addGallery(std::string jpegBuffBase64 )
  //  base64::Decoder dec;
  //  dec.decode(jpegBuffBase64, out);
                 
-out = base64_decode(jpegBuffBase64);
+ out = base64_decode(jpegBuffBase64);
     
  SInfo << "base64 decoded " << out.size() ;
   
 
 
-  int width, height , channels;
+ int width, height , channels;
 
 //  if(!stbi_info_from_memory(out, jpegBuffBase64.size(), &width, &height, &channels)) return -1;
 //
@@ -341,7 +339,7 @@ int main(int argc, char** argv) {
 
     cnfg::Configuration config;
 
-    config.load("./config.json");
+    config.load("./configXA.json");
 
    
     
