@@ -46,6 +46,7 @@ class RestApi;
 struct st_track
 {
     std::string camid;
+    std::string peerID;
     std::string start;
     std::string end;
     int width{0};
@@ -57,7 +58,7 @@ struct st_track
     
    // std::string encoder;
     
-    en_EncType encType;  // 0 hw , 1 s/w , 2 native
+    en_EncType encType{EN_NATIVE};  // 0 hw , 1 s/w , 2 native
     
     
     std::string getTrackId(){ 
@@ -68,15 +69,15 @@ struct st_track
             
     }
     
-    st_track():encType(EN_NATIVE)
+    st_track(std::string &peerID,  std::string &camid):peerID(peerID),camid(camid)
     {
         
     }
 
-    std::string from;
-    std::string room;
+  
+   // std::string room;
     
-    Signaler *signaler{nullptr};
+    //Signaler *signaler{nullptr};
 
     
 }; 

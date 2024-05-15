@@ -30,7 +30,7 @@ namespace web_rtc
  extern RestApi *self;
     
 
-MultiplexMediaCapturer::MultiplexMediaCapturer()
+MultiplexMediaCapturer::MultiplexMediaCapturer(LiveConnectionContext  *ctx, Signaler *sig)
     :
 #if MP4File
       _videoCapture(std::make_shared<ff::MediaCapture>()),
@@ -49,8 +49,9 @@ MultiplexMediaCapturer::MultiplexMediaCapturer()
 
     _videoCapture->cbProcessAudio.push_back(var);
 #endif
+    ctx->signaler= sig;
     
-    mapVideoSource[Settings::configuration.qrcode] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  Settings::configuration.qrcode);
+    mapVideoSource[ctx->cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  ctx);
 
 
     //      local_video_observer_.reset(new VideoObserver());

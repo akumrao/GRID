@@ -32,9 +32,7 @@ public:
     Peer(
         PeerManager *manager,
         PeerFactoryContext *context,
-        std::string &cam,
-        std::string &room,
-        const std::string &peerid,
+        st_track &trackInfo,
         Mode mode);
     virtual ~Peer();
 
@@ -84,8 +82,8 @@ public:
      
     //bool deltrackInfo(std::string &id);
 
-    std::string &getRoom() { return room; }
-    std::string& getCam( ){return cam;}
+    //std::string &getRoom() { return room; }
+    std::string& getCam( ){return trackInfo.camid;}
 
     // webrtc::FakeConstraints& constraints();
     webrtc::PeerConnectionFactoryInterface *factory() const;
@@ -125,12 +123,10 @@ protected:
     }
 
 protected:
-    std::string room;
-    std::string  cam;
+ 
 
     PeerFactoryContext *_context;
-    std::string _peerid;
-    //std::string _token;
+
     Mode _mode;
     webrtc::PeerConnectionInterface::RTCConfiguration _config;
 
@@ -161,6 +157,8 @@ public:
     rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_; 
     
     bool DataChannelSend(std::string data);
+    
+    st_track trackInfo;
 
 };
 

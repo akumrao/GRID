@@ -55,7 +55,7 @@ class VideoPacketSource : public rtc::AdaptedVideoTrackSource, public web_rtc::F
 { 
 
 public:                                                                
-      VideoPacketSource(const char *name, std::string cam, web_rtc::FrameFilter *next = NULL);
+      VideoPacketSource(const char *name, LiveConnectionContext  *ctx , web_rtc::FrameFilter *next = NULL);
 
 protected:
     void go(web_rtc::Frame *frame)

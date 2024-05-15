@@ -77,37 +77,37 @@ void Settings::SetConfiguration(json &cnfg)
         Settings::configuration.rtcMaxPort = cnfg["rtcMaxPort"].get<uint16_t>();
     }
 
+//
+//    if (cnfg.find("vp9Enc") != cnfg.end()) { Settings::configuration.vp9Enc = cnfg["vp9Enc"].get<uint16_t>(); }
+//
+//    if (cnfg.find("nvidiaEnc") != cnfg.end())
+//    {
+//        Settings::configuration.nvidiaEnc = cnfg["nvidiaEnc"].get<uint16_t>();
+//    }
+//
+//    if (cnfg.find("quicksyncEnc") != cnfg.end())
+//    {
+//        Settings::configuration.quicksyncEnc = cnfg["quicksyncEnc"].get<uint16_t>();
+//    }
+//
+//    if (cnfg.find("VAAPIEnc") != cnfg.end())
+//    {
+//        Settings::configuration.VAAPIEnc = cnfg["VAAPIEnc"].get<uint16_t>();
+//    }
 
-    if (cnfg.find("vp9Enc") != cnfg.end()) { Settings::configuration.vp9Enc = cnfg["vp9Enc"].get<uint16_t>(); }
 
-    if (cnfg.find("nvidiaEnc") != cnfg.end())
-    {
-        Settings::configuration.nvidiaEnc = cnfg["nvidiaEnc"].get<uint16_t>();
-    }
-
-    if (cnfg.find("quicksyncEnc") != cnfg.end())
-    {
-        Settings::configuration.quicksyncEnc = cnfg["quicksyncEnc"].get<uint16_t>();
-    }
-
-    if (cnfg.find("VAAPIEnc") != cnfg.end())
-    {
-        Settings::configuration.VAAPIEnc = cnfg["VAAPIEnc"].get<uint16_t>();
-    }
-
-
-    if (cnfg.find("haswell") != cnfg.end()) { Settings::configuration.haswell = cnfg["haswell"].get<bool>(); }
+//    if (cnfg.find("haswell") != cnfg.end()) { Settings::configuration.haswell = cnfg["haswell"].get<bool>(); }
     
     if (cnfg.find("tcpRtsp") != cnfg.end()) { Settings::configuration.tcpRtsp = cnfg["tcpRtsp"].get<bool>(); }
     
 
-    if (cnfg.find("NATIVE") != cnfg.end()) { Settings::configuration.native = cnfg["NATIVE"].get<uint16_t>(); }
+//    if (cnfg.find("NATIVE") != cnfg.end()) { Settings::configuration.native = cnfg["NATIVE"].get<uint16_t>(); }
 
 
-    if (cnfg.find("x264Enc") != cnfg.end())
-    {
-        Settings::configuration.x264Enc = cnfg["x264Enc"].get<uint16_t>();
-    }
+//    if (cnfg.find("x264Enc") != cnfg.end())
+//    {
+//        Settings::configuration.x264Enc = cnfg["x264Enc"].get<uint16_t>();
+//    }
 
     if (cnfg.find("Mp4Size_Key") != cnfg.end())
     {
@@ -161,13 +161,20 @@ void Settings::SetConfiguration(json &cnfg)
     
     if (cnfg.find("qrcode") != cnfg.end())
     {
-        Settings::configuration.qrcode = cnfg["qrcode"].get<std::string>();
+        Settings::configuration.cam = cnfg["qrcode"].get<std::string>();
     }
     
      if (cnfg.find("server") != cnfg.end())
     {
         Settings::configuration.server = cnfg["server"].get<std::string>();
     }
+    
+    
+    if (cnfg.find("recording") != cnfg.end()) { Settings::configuration.recording = cnfg["recording"].get<bool>(); }
+    if (cnfg.find("facedetect") != cnfg.end()) { Settings::configuration.facedetect = cnfg["facedetect"].get<bool>(); }
+    if (cnfg.find("motionevent") != cnfg.end()) { Settings::configuration.motionevent = cnfg["motionevent"].get<bool>(); }
+    
+    
 
     if (cnfg.find("listenIps") != cnfg.end()) { Settings::configuration.listenIps = cnfg["listenIps"]; }
     

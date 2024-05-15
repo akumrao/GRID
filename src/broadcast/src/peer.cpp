@@ -54,20 +54,17 @@ bool AddCandidateToFirstTransport(cricket::Candidate *candidate, webrtc::Session
 Peer::Peer(
     PeerManager *manager,
     PeerFactoryContext *context,
-    std::string &cam,    
-    std::string &room,
-    const std::string &peerid,
+    st_track &trackInfo,
     Mode mode)
-    : cam(cam), room(room),
-      _manager(manager),
+    : _manager(manager),
       _context(context),
-      _peerid(peerid),
+      trackInfo(trackInfo),
       _mode(mode)
       //, _context->factory(manager->factory())
       ,
       _peerConnection(nullptr)
 {
-    SInfo << _peerid << ": Creating ";
+    SInfo << trackInfo.peerID << ": Creating ";
 
     webrtc::PeerConnectionInterface::IceServer stun;
     // stun.uri = kGoogleStunServerUri;
@@ -99,8 +96,8 @@ Peer::Peer(
 
 Peer::~Peer()
 {
-    // LInfo(_peerid, ": Destroying " , this )
-    SInfo << "Destroying " << _peerid << " obj " << this;
+    // LInfo( trackInfo.peerID, ": Destroying " , this )
+    SInfo << "Destroying " << trackInfo.peerID ;
     // closeConnection();  // Do not uncomment it it will cause memory leaks
 }
 
@@ -150,7 +147,7 @@ void Peer::createConnection()
 
 void Peer::closeConnection()
 {
-    LInfo(_peerid, ": Closing")
+     SInfo << "Closing " << trackInfo.peerID;
 
         if (_peerConnection)
     {
@@ -169,8 +166,7 @@ void Peer::createOffer( bool video , bool audio)
 {
     // assert(_mode == Offer);
     // assert(_peerConnection);
-
-    LInfo(_peerid, ": Create Offer")
+    SInfo << "Create Offer " << trackInfo.peerID;
 
     webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
 
@@ -189,7 +185,7 @@ void Peer::recvSDP(
     std::string &vtrackid,
     std::string &atrackid)
 {
-    LDebug(_peerid, ": Received answer ", type, ": ", sdp)
+    LDebug( trackInfo.peerID, ": Received answer ", type, ": ", sdp)
 
         webrtc::SdpParseError error;
     webrtc::SessionDescriptionInterface *desc(webrtc::CreateSessionDescription(type, sdp, &error));
@@ -204,7 +200,7 @@ void Peer::recvSDP(
     if (type == "offer")
     {
         // assert(_mode == Answer);
-        SError << _peerid << ": wrong state Received " <<  type  <<  ": " << sdp;
+        SError <<  trackInfo.peerID << ": wrong state Received " <<  type  <<  ": " << sdp;
         _peerConnection->CreateAnswer(this, options);
     }
     else
@@ -292,7 +288,7 @@ void Peer::recvCandidate(const std::string &mid, int mlineindex, const std::stri
 
 void Peer::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state)
 {
-    LInfo(_peerid, ": On signaling state change: ", new_state)
+    LInfo( trackInfo.peerID, ": On signaling state change: ", new_state)
 
         switch (new_state)
     {
@@ -313,13 +309,13 @@ void Peer::OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new
 
 void Peer::OnIceConnectionChange(webrtc::PeerConnectionInterface::IceConnectionState new_state)
 {
-    LDebug(_peerid, ": On ICE connection change: ", new_state)
+    LDebug( trackInfo.peerID, ": On ICE connection change: ", new_state)
 }
 
 
 void Peer::OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringState new_state)
 {
-    LDebug(_peerid, ": On ICE gathering change: ", new_state)
+    LDebug( trackInfo.peerID, ": On ICE gathering change: ", new_state)
 
     // if( new_state == webrtc::PeerConnectionInterface::kIceGatheringComplete)
     // {
@@ -331,20 +327,20 @@ void Peer::OnIceGatheringChange(webrtc::PeerConnectionInterface::IceGatheringSta
 
 void Peer::OnRenegotiationNeeded()
 {
-    LInfo(_peerid, ": On renegotiation needed")
+    LInfo( trackInfo.peerID, ": On renegotiation needed")
 }
 
 
 void Peer::OnAddStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
-    LInfo(_peerid, ": OnAddStream")
+    LInfo( trackInfo.peerID, ": OnAddStream")
         // proxy to deprecated OnAddStream method
         OnAddStream(stream.get());
 }
 
 void Peer::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiver)
 {
-    LInfo(_peerid, ": OnTrack")
+    LInfo( trackInfo.peerID, ": OnTrack")
     //_manager->onAddRemoteTrack(this, transceiver.get());
 
     //    const char * pMid  = transceiver->mid()->c_str();
@@ -371,19 +367,19 @@ void Peer::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiv
 
 void Peer::OnRemoveTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver)
 {
-    LInfo(_peerid, ": OnRemoveTrack")
+    LInfo( trackInfo.peerID, ": OnRemoveTrack")
 }
 
 void Peer::OnRemoveStream(rtc::scoped_refptr<webrtc::MediaStreamInterface> stream)
 {
-    LInfo(_peerid, ": OnRemoveStream") OnRemoveStream(stream.get());
+    LInfo( trackInfo.peerID, ": OnRemoveStream") OnRemoveStream(stream.get());
 }
 
 
 void Peer::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channel)
 {
     channel->RegisterObserver(this);
-    //LInfo(_peerid, ": OnDataChannel") assert(0 && "virtual");
+    //LInfo( trackInfo.peerID, ": OnDataChannel") assert(0 && "virtual");
      data_channel_ = channel;
     //DataChannelSend("hello data channel");
 }
@@ -420,7 +416,7 @@ void Peer::OnAddStream(webrtc::MediaStreamInterface *stream)
 {
     // assert(_mode == Answer);
 
-    LInfo(_peerid, ": On add stream") _manager->onAddRemoteStream(this, stream);
+    LInfo( trackInfo.peerID, ": On add stream") _manager->onAddRemoteStream(this, stream);
 }
 
 
@@ -450,7 +446,7 @@ void Peer::OnRemoveStream(webrtc::MediaStreamInterface *stream)
 {
     // assert(_mode == Answer);
 
-    LInfo(_peerid, ": On remove stream") _manager->onRemoveRemoteStream(this, stream);
+    LInfo( trackInfo.peerID, ": On remove stream") _manager->onRemoveRemoteStream(this, stream);
 }
 
 
@@ -474,18 +470,18 @@ void Peer::OnIceCandidate(const webrtc::IceCandidateInterface *candidate)
     std::string sdp;
     if (!candidate->ToString(&sdp))
     {
-        LError(_peerid, ": Failed to serialize candidate") assert(0);
+        LError( trackInfo.peerID, ": Failed to serialize candidate") assert(0);
         return;
     }
 
-    LDebug(_peerid, sdp);
+    LDebug( trackInfo.peerID, sdp);
     _manager->sendCandidate(this, candidate->sdp_mid(), candidate->sdp_mline_index(), sdp);
 }
 
 
 void Peer::OnSuccess(webrtc::SessionDescriptionInterface *desc)
 {
-    LDebug(_peerid, ": Set local description")
+    LDebug( trackInfo.peerID, ": Set local description")
 
         cricket::SessionDescription *desc1
         = desc->description();
@@ -518,7 +514,7 @@ void Peer::OnSuccess(webrtc::SessionDescriptionInterface *desc)
         std::string sdp;
         if (!desc->ToString(&sdp))
         {
-            LError(_peerid, ": Failed to serialize local sdp") assert(0);
+            LError( trackInfo.peerID, ": Failed to serialize local sdp") assert(0);
             return;
         }
         _manager->sendSDP(this, desc->type(), sdp);
@@ -528,7 +524,7 @@ void Peer::OnSuccess(webrtc::SessionDescriptionInterface *desc)
 
 void Peer::OnFailure(const std::string &error)
 {
-    LError(_peerid, ": On failure: ", error)
+    LError( trackInfo.peerID, ": On failure: ", error)
 
         _manager->onFailure(this, error);
 }
@@ -543,14 +539,14 @@ void Peer::setPeerFactory(rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterf
 
 std::string Peer::peerid() const
 {
-    return _peerid;
+    return  trackInfo.peerID;
 }
 
 // void Peer::mute( const json& m)
 // {
 //     bool val = m.get<bool>();
 //
-//     SInfo << _peerid <<  ": On mute: " <<  val ;
+//     SInfo <<  trackInfo.peerID <<  ": On mute: " <<  val ;
 //
 //    std::vector<rtc::scoped_refptr<webrtc::RtpSenderInterface>> senders =  _peerConnection->GetSenders();
 //

@@ -168,7 +168,9 @@ int main(int argc, char** argv) {
 
     //std::string sourceFile(sampleDataDir("test.mp3"));
 
-    base::web_rtc::Signaler sig;
+     web_rtc::LiveConnectionContext  *ctx = new web_rtc::LiveConnectionContext(web_rtc::LiveConnectionType::rtsp, "address", 1, Settings::configuration.cam,  Settings::configuration.tcpRtsp, nullptr ) ; // Request livethread to write into filter info
+
+    base::web_rtc::Signaler sig(ctx);
 
 //    sig.startStreaming("/var/tmp/songs", "", "ul",  false);
     
@@ -209,6 +211,10 @@ int main(int argc, char** argv) {
     Settings::exit();         
     rtc::CleanupSSL();
     Logger::destroy();
+    
+    if(ctx->txt)
+    delete ctx->txt;
+    ctx->txt = nullptr;
     
 //    restApi->stop();
         

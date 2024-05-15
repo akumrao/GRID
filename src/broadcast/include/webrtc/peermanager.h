@@ -25,7 +25,7 @@ class Peer;
 class PeerManager : public PointerCollection<std::string, Peer>
 {
 public:
-    PeerManager();
+    PeerManager(LiveConnectionContext  *ctx,  Signaler *sig);
     virtual ~PeerManager();
 
     virtual void sendSDP(Peer *conn, const std::string &type, const std::string &sdp);

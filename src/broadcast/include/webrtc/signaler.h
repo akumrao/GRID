@@ -24,7 +24,7 @@ namespace web_rtc
 class Signaler : public web_rtc::PeerManager
 {
 public:
-    Signaler();
+    Signaler(LiveConnectionContext *ctx);
     ~Signaler();
 
     void startStreaming(const std::string &dir, const std::string &file, const std::string &type, bool looping);

@@ -49,7 +49,7 @@ namespace web_rtc
 class MultiplexMediaCapturer
 {
 public:
-    MultiplexMediaCapturer();
+    MultiplexMediaCapturer(LiveConnectionContext  *ctx, Signaler *sig);
     ~MultiplexMediaCapturer();
 
     void openFile(const std::string &dir, const std::string &file, const std::string &type, bool loop = true);

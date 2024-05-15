@@ -9,7 +9,7 @@
 #include "webrtc/rawVideoFrame.h"
 
 #include "muxer.h"
-#include "tools.h";
+#include "tools.h"
 
 #include "Settings.h"
 
@@ -22,7 +22,7 @@ namespace web_rtc {
     
 
 
-VideoPacketSource::VideoPacketSource( const char *name, std::string cam, web_rtc::FrameFilter *next):cam(cam),web_rtc::FrameFilter(name, next)
+VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *ctx, web_rtc::FrameFilter *next):ctx(ctx),cam(ctx->cam), web_rtc::FrameFilter(name, next)
     , _rotation(webrtc::kVideoRotation_0)
     , _timestampOffset(0)
 
@@ -43,10 +43,10 @@ VideoPacketSource::VideoPacketSource( const char *name, std::string cam, web_rtc
     #endif
     
     
+    this->ctx->liveFrame = this;
+    //ctx = new web_rtc::LiveConnectionContext(LiveConnectionType::rtsp, "address", 1, cam, cam, Settings::configuration.tcpRtsp, this ) ; // Request livethread to write into filter info
     
-    ctx = new web_rtc::LiveConnectionContext(LiveConnectionType::rtsp, "address", 1, cam, cam, Settings::configuration.tcpRtsp, this ) ; // Request livethread to write into filter info
-    
-    if(recording)
+    if(Settings::configuration.recording )
     {
         ctx->fragmp4_filter = new DummyFrameFilter("fragmp4", cam, nullptr);
         ctx->fragmp4_muxer = new FragMP4MuxFrameFilter("fragmp4muxer", ctx->fragmp4_filter);
@@ -69,7 +69,7 @@ VideoPacketSource::VideoPacketSource( const char *name, std::string cam, web_rtc
 
     }
    
-    liveThread = new LiveThread("live", *ctx);
+    liveThread = new LiveThread("live", nullptr, ctx);
    
     //ctx->txt = new web_rtc::TextFrameFilter("txt", cam, self);
    // info = new web_rtc::InfoFrameFilter("info", nullptr);
@@ -182,11 +182,7 @@ VideoPacketSource::~VideoPacketSource()
 
     delete liveThread;
     liveThread =nullptr;
-            
-    if(ctx->txt)
-      delete ctx->txt;
-    ctx->txt = nullptr;
-            
+                   
            
     if(ctx->fragmp4_filter)
     {

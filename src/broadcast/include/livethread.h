@@ -1,7 +1,7 @@
 #ifndef LIVETHREAD_HEADER_GUARD
 #define LIVETHREAD_HEADER_GUARD
 
-#include "live.h"
+//#include "live.h"
 //#include "liveserver.h"
 #include "base/thread.h"
 #include "framefilter.h"
@@ -20,7 +20,7 @@ namespace web_rtc {
 
     struct LiveConnectionContext {
         /** Default constructor */
-        LiveConnectionContext(LiveConnectionType ct, std::string address, SlotNumber slot, std::string& cam, std::string& trackid, 
+        LiveConnectionContext(LiveConnectionType ct, std::string address, SlotNumber slot, std::string& cam, 
             bool request_tcp, FrameFilter* liveFrame )
             : connection_type(ct)
             , address(address)
@@ -57,6 +57,8 @@ namespace web_rtc {
         //std::map< std::string, FrameFilter* >    setLiveFrame; // with trackid <> videosource
         
         FrameFilter*  liveFrame{nullptr}; // with trackid <> videosource
+        
+        Signaler *signaler{nullptr};
         
         DummyFrameFilter *fragmp4_filter{nullptr};
         FrameFilter *fragmp4_muxer{nullptr};
@@ -111,7 +113,7 @@ namespace web_rtc {
    * 
    */
     
-    LiveThread(const char* name, LiveConnectionContext& ctx);
+    LiveThread(const char* name, st_track *trackInfo, LiveConnectionContext* ctx);
     
     
     ~LiveThread(){
@@ -130,10 +132,12 @@ namespace web_rtc {
   
     private: // internal
 
-    //std::mutex m;
-        
-     LiveConnectionContext& ctx;
-     BasicFrame basicframe;
+
+    st_track *trackInfo;
+    
+    LiveConnectionContext *ctx;
+     
+    BasicFrame basicframe;
 
     public:
       

@@ -8,6 +8,9 @@
 #include "base/logger.h"
 #include "base/platform.h"
 #include "Settings.h"
+
+#include "webrtc/signaler.h"
+
 // #define RECONNECT_VERBOSE   // by default, disable
 // #define LIVE_SIGNAL_FRAMES // experimental
 
@@ -17,7 +20,7 @@
 namespace base {
 namespace web_rtc {
     
-    LiveThread::LiveThread(const char* name, LiveConnectionContext& ctx):ctx(ctx)
+    LiveThread::LiveThread(const char* name, st_track *trackInfo, LiveConnectionContext* ctx):trackInfo(trackInfo), ctx(ctx)
     {
         
     }
@@ -49,6 +52,10 @@ namespace web_rtc {
 
                   if(feof(fp))
                   {
+                      if(ctx->signaler)
+                      {
+                         ctx->signaler->postAppMessage( "arvind", "", ctx->cam);
+                      }
 
                        if (fseek(fp, 0, SEEK_SET))
                            continue;
@@ -62,9 +69,9 @@ namespace web_rtc {
            
 
            // ctx.muRecFrame.lock();
-            if(ctx.liveFrame)
-            ctx.liveFrame->run(&basicframe); // starts the frame filter chain
-            //ctx.muRecFrame.unlock(); 
+            if(ctx->liveFrame)
+            ctx->liveFrame->run(&basicframe); // starts the frame filter chain
+            //ctx->muRecFrame.unlock(); 
 
         
             basicframe.payload.resize(basicframe.payload.capacity());
@@ -73,7 +80,6 @@ namespace web_rtc {
         }
         
         fclose(fp);
-        
         
     }
 

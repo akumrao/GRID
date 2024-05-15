@@ -12,7 +12,7 @@ namespace base
 namespace web_rtc
 {
 
-PeerManager::PeerManager()  // (PeerFactoryContext* context)
+PeerManager::PeerManager(LiveConnectionContext  *ctx , Signaler *sig) : _capturer(ctx, sig)
 // : _context(context)
 {
     SInfo << "PeerManager()";

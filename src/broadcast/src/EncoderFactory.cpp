@@ -92,13 +92,8 @@ std::vector<webrtc::SdpVideoFormat> EncoderFactory::GetSupportedFormats() const
             cricket::kH264CodecName,
             {{cricket::kH264FmtpProfileLevelId, *profile_string},
              {cricket::kH264FmtpLevelAsymmetryAllowed, "1"},
-             {cricket::kH264FmtpPacketizationMode, "1"},
-             {"Enc", "NATIVE"},
-             {"MaxEnc", std::to_string(Settings::configuration.native)},
-             {"PresentEncIns", std::to_string(NULLEncoder::nativeInstance)}
-
+             {cricket::kH264FmtpPacketizationMode, "1"}
             }
-
             ));
     }
 

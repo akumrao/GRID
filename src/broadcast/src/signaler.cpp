@@ -19,7 +19,7 @@ namespace base
 namespace web_rtc
 {
 
-Signaler::Signaler() : _context(_capturer.getAudioModule()) {}
+Signaler::Signaler(LiveConnectionContext  *ctx) : PeerManager(ctx, this), _context(_capturer.getAudioModule()) {  }
 
 Signaler::~Signaler()
 {
@@ -92,7 +92,7 @@ void Signaler::onPeerOffer(std::string &peerID, st_track &trackInfo, std::string
 {
     if (!web_rtc::PeerManager::exists(peerID))
     {
-        auto conn = new web_rtc::Peer(this, &_context, trackInfo, peerID, web_rtc::Peer::Offer);
+        auto conn = new web_rtc::Peer(this, &_context, trackInfo,  web_rtc::Peer::Offer);
         conn->createConnection();
         web_rtc::PeerManager::add(peerID, conn);
 
@@ -113,11 +113,13 @@ void Signaler::onPeerOffer(std::string &peerID, st_track &trackInfo, std::string
     }
 }
 
-void Signaler::createPC(std::string &peerID,  std::string &room)
+void Signaler::createPC(std::string &peerID,  std::string &camid)
 {
+    st_track trackInfo(peerID, camid );
+            
     if (!web_rtc::PeerManager::exists(peerID))
     {
-        auto conn = new web_rtc::Peer(this, &_context, room, room, peerID, web_rtc::Peer::Offer);
+        auto conn = new web_rtc::Peer(this, &_context,trackInfo, web_rtc::Peer::Offer);
         conn->createConnection();
         web_rtc::PeerManager::add(peerID, conn);
 
@@ -167,236 +169,236 @@ void Signaler::createPC(std::string &peerID,  std::string &room)
 
 void Signaler::onPeerMessage(std::string &name, json const &m)
 {
-    if (std::string("got user media") == m) { return; }
-
-    std::string from;
-    std::string type;
-    std::string room;
-    std::string to;
-    std::string user;
-
-    st_track camT;
-    camT.signaler = this;
-    if (m.find("to") != m.end()) { to = m["to"].get<std::string>(); }
-
-    if (m.find("from") != m.end())
-    {
-        from = m["from"].get<std::string>();
-        camT.from = from;
-    }
-    else
-    {
-        SError << " On Peer message is missing participant id ";
-        return;
-    }
-
-    if (m.find("type") != m.end()) { type = m["type"].get<std::string>(); }
-    else
-    {
-        SError << " On Peer message is missing SDP type";
-    }
-
-    if (m.find("room") != m.end())
-    {
-        room = m["room"].get<std::string>();
-        camT.room = room;
-    }
-    else
-    {
-        SError << " On Peer message is missing room id ";
-        return;
-    }
-
-    //             if (m.find("user") != m.end()) {
-    //                user = m["user"].get<std::string>();
-    //            }
-    //            else
-    //            {
-    //                SWarn << " On Peer message is missing user name ";
-    //            }
-
-    if (m.find("cam") != m.end())
-    {
-        camT.camid = m["cam"].get<std::string>();
-        std::string add;
-
-
-        if( camT.camid.empty())
-        {
-             {
-                 postAppMessage("Camera not available.", from , room  );
-                 return;
-             }
-        }
-    }
-
-
-    if (m.find("start") != m.end())
-    {
-        camT.start = m["start"].get<std::string>();
-
-        //                std::string add;
-        //               if( !Settings::getNodeState(camT, "rtsp" , add ))
-        //               {
-        //                    {
-        //                        postAppMessage("Camera not available.", from , room  );
-        //                        return;
-        //                    }
-        //                }
-    }
-
-
-    if (m.find("end") != m.end()) { camT.end = m["end"].get<std::string>(); }
-
-    if (m.find("width") != m.end()) { camT.width = std::stoi(m["width"].get<std::string>()); }
-
-    if (m.find("height") != m.end()) { camT.height = std::stoi(m["height"].get<std::string>()); }
-
-    if (m.find("scale") != m.end()) { camT.scale = std::stoi(m["scale"].get<std::string>()); }
-
-    if (m.find("speed") != m.end()) { camT.speed = std::stoi(m["speed"].get<std::string>()); }
-
-    //if (m.find("ai") != m.end()) { camT.ai = m["ai"].get<bool>(); }
-//    if (m.find("encoder") != m.end())
+//    if (std::string("got user media") == m) { return; }
+//
+//    std::string from;
+//    std::string type;
+//    std::string room;
+//    std::string to;
+//    std::string user;
+//
+//    st_track camT;
+//    camT.signaler = this;
+//    if (m.find("to") != m.end()) { to = m["to"].get<std::string>(); }
+//
+//    if (m.find("from") != m.end())
 //    {
-//        Settings::encSetting.nvidiaEnc = 0;
-//        Settings::encSetting.vp9Enc = 0;
-//        Settings::encSetting.native = 0;
-//        Settings::encSetting.x264Enc = 0;
-//        Settings::encSetting.quicksyncEnc = 0;
-//        Settings::encSetting.VAAPIEnc = 0;
-//        camT.encoder = m["encoder"].get<std::string>();
+//        from = m["from"].get<std::string>();
+//        camT.from = from;
+//    }
+//    else
+//    {
+//        SError << " On Peer message is missing participant id ";
+//        return;
+//    }
 //
-//       // if (!camT.isLive() && camT.encoder == "NATIVE") { camT.encoder = "X264"; }
+//    if (m.find("type") != m.end()) { type = m["type"].get<std::string>(); }
+//    else
+//    {
+//        SError << " On Peer message is missing SDP type";
+//    }
+//
+//    if (m.find("room") != m.end())
+//    {
+//        room = m["room"].get<std::string>();
+//        camT.room = room;
+//    }
+//    else
+//    {
+//        SError << " On Peer message is missing room id ";
+//        return;
+//    }
+//
+//    //             if (m.find("user") != m.end()) {
+//    //                user = m["user"].get<std::string>();
+//    //            }
+//    //            else
+//    //            {
+//    //                SWarn << " On Peer message is missing user name ";
+//    //            }
+//
+//    if (m.find("cam") != m.end())
+//    {
+//        camT.camid = m["cam"].get<std::string>();
+//        std::string add;
 //
 //
-//        if (camT.encoder == "VP9")
+//        if( camT.camid.empty())
 //        {
-//            camT.encType = EN_VP9;
-//            Settings::encSetting.vp9Enc = Settings::configuration.vp9Enc;
-//        }
-//        else if (camT.encoder == "X264")
-//        {
-//            camT.encType = EN_X264;
-//            Settings::encSetting.x264Enc = Settings::configuration.x264Enc;
-//        }
-//        else if (camT.encoder == "NVIDIA")
-//        {
-//            camT.encType = EN_NVIDIA;
-//            Settings::encSetting.nvidiaEnc = Settings::configuration.nvidiaEnc;
-//        }
-//        else if (camT.encoder == "NATIVE")
-//        {
-//            camT.encType = EN_NATIVE;
-//            Settings::encSetting.native = Settings::configuration.native;
-//        }
-//        else if (camT.encoder == "QUICKSYNC")
-//        {
-//            camT.encType = EN_QUICKSYNC;
-//            if (Settings::configuration.haswell)
-//            {
-//                Settings::encSetting.VAAPIEnc = Settings::configuration.VAAPIEnc;
-//            }
-//            else
-//            {
-//                Settings::encSetting.quicksyncEnc = Settings::configuration.quicksyncEnc;
-//            }
+//             {
+//                 postAppMessage("Camera not available.", from , room  );
+//                 return;
+//             }
 //        }
 //    }
-    
-    
-//    camT.encoder = "NATIVE";
-    camT.encType = EN_NATIVE;
-    Settings::encSetting.native = Settings::configuration.native;
-        
-
-    LInfo("Peer message: ", from, " ", type)
-
-    if (std::string("offer") == type)
-    {
-        onPeerOffer(from, camT, room);
-    }
-    else if (std::string("answer") == type) {
-        recvSDP(from, m["desc"]);
-    }
-    else if (std::string("candidate") == type) { recvCandidate(from, m["candidate"]); }
-
-    else if (std::string("bye") == type) { onPeerDiconnected(from); }
-    else if (std::string("command") == type)
-    {
-        if (m.find("desc") != m.end())
-        {
-            std::string cmd = m["desc"].get<std::string>();
-
-            // std::string trackid = m["para"].get<std::string>();
-
-            onPeerCommand(from, camT, cmd, m["trackids"], m["act"]);
-        }
-    }
-}
-
-void Signaler::onPeerDiconnected(std::string &peerID)
-{
-    SInfo << "onPeerDiconnected " << peerID;
-
-    auto conn = web_rtc::PeerManager::remove(peerID);
-    if (conn)
-    {
-        // web_rtc::PeerManager::onClosed(conn);
-
-        _capturer.remove(conn);
-        LInfo("Deleting peer connection: ", peerID)
-
-            //  conn->Release();
-            // async delete not essential, but to be safe
-            delete conn;
-    }
-}
-
-void Signaler::onPeerCommand(
-    std::string &peerID, st_track &camT, std::string &cmd, const json &trackids, const json &action)
-{
-    SInfo << "onPeerDiconnected on done yet " << peerID;
-
-    auto conn = web_rtc::PeerManager::get(peerID);
-    if (conn)
-    {
-        bool act = action.get<bool>();
-
-        for (auto &trac : trackids)
-        {
-            std::string tc = trac.get<std::string>();
-            std::cout << tc << '\n';
-
-            if (cmd == "close") {/* _capturer.remove(conn, tc);*/ }
-            else if (cmd == "mute")
-            {
-                //_capturer.mute(conn, tc, cmd, act);
-            }
-            else if (cmd == "muteaudio")
-            {
-                //_capturer.mute(conn, tc, cmd, act);
-            }
-            else if (cmd == "apply")
-            {
-                conn->mapcam[tc].width = camT.width;
-                conn->mapcam[tc].height = camT.height;
-                conn->mapcam[tc].speed = camT.speed;
-                conn->mapcam[tc].scale = camT.scale;
-
-             //   _capturer.oncommand(conn, tc, cmd, 0, 0);
-            }
-        }
-
-        // web_rtc::PeerManager::onClosed(conn);
-
-        //_capturer.remove(conn);
-        // LInfo("Deleting peer connection: ", peerID)
-
-        //  conn->Release();
-        // async delete not essential, but to be safe
-        //  delete conn;
-    }
+//
+//
+//    if (m.find("start") != m.end())
+//    {
+//        camT.start = m["start"].get<std::string>();
+//
+//        //                std::string add;
+//        //               if( !Settings::getNodeState(camT, "rtsp" , add ))
+//        //               {
+//        //                    {
+//        //                        postAppMessage("Camera not available.", from , room  );
+//        //                        return;
+//        //                    }
+//        //                }
+//    }
+//
+//
+//    if (m.find("end") != m.end()) { camT.end = m["end"].get<std::string>(); }
+//
+//    if (m.find("width") != m.end()) { camT.width = std::stoi(m["width"].get<std::string>()); }
+//
+//    if (m.find("height") != m.end()) { camT.height = std::stoi(m["height"].get<std::string>()); }
+//
+//    if (m.find("scale") != m.end()) { camT.scale = std::stoi(m["scale"].get<std::string>()); }
+//
+//    if (m.find("speed") != m.end()) { camT.speed = std::stoi(m["speed"].get<std::string>()); }
+//
+//    //if (m.find("ai") != m.end()) { camT.ai = m["ai"].get<bool>(); }
+////    if (m.find("encoder") != m.end())
+////    {
+////        Settings::encSetting.nvidiaEnc = 0;
+////        Settings::encSetting.vp9Enc = 0;
+////        Settings::encSetting.native = 0;
+////        Settings::encSetting.x264Enc = 0;
+////        Settings::encSetting.quicksyncEnc = 0;
+////        Settings::encSetting.VAAPIEnc = 0;
+////        camT.encoder = m["encoder"].get<std::string>();
+////
+////       // if (!camT.isLive() && camT.encoder == "NATIVE") { camT.encoder = "X264"; }
+////
+////
+////        if (camT.encoder == "VP9")
+////        {
+////            camT.encType = EN_VP9;
+////            Settings::encSetting.vp9Enc = Settings::configuration.vp9Enc;
+////        }
+////        else if (camT.encoder == "X264")
+////        {
+////            camT.encType = EN_X264;
+////            Settings::encSetting.x264Enc = Settings::configuration.x264Enc;
+////        }
+////        else if (camT.encoder == "NVIDIA")
+////        {
+////            camT.encType = EN_NVIDIA;
+////            Settings::encSetting.nvidiaEnc = Settings::configuration.nvidiaEnc;
+////        }
+////        else if (camT.encoder == "NATIVE")
+////        {
+////            camT.encType = EN_NATIVE;
+////            Settings::encSetting.native = Settings::configuration.native;
+////        }
+////        else if (camT.encoder == "QUICKSYNC")
+////        {
+////            camT.encType = EN_QUICKSYNC;
+////            if (Settings::configuration.haswell)
+////            {
+////                Settings::encSetting.VAAPIEnc = Settings::configuration.VAAPIEnc;
+////            }
+////            else
+////            {
+////                Settings::encSetting.quicksyncEnc = Settings::configuration.quicksyncEnc;
+////            }
+////        }
+////    }
+//    
+//    
+////    camT.encoder = "NATIVE";
+//    camT.encType = EN_NATIVE;
+//    Settings::encSetting.native = Settings::configuration.native;
+//        
+//
+//    LInfo("Peer message: ", from, " ", type)
+//
+//    if (std::string("offer") == type)
+//    {
+//        onPeerOffer(from, camT, room);
+//    }
+//    else if (std::string("answer") == type) {
+//        recvSDP(from, m["desc"]);
+//    }
+//    else if (std::string("candidate") == type) { recvCandidate(from, m["candidate"]); }
+//
+//    else if (std::string("bye") == type) { onPeerDiconnected(from); }
+//    else if (std::string("command") == type)
+//    {
+//        if (m.find("desc") != m.end())
+//        {
+//            std::string cmd = m["desc"].get<std::string>();
+//
+//            // std::string trackid = m["para"].get<std::string>();
+//
+//            onPeerCommand(from, camT, cmd, m["trackids"], m["act"]);
+//        }
+//    }
+//}
+//
+//void Signaler::onPeerDiconnected(std::string &peerID)
+//{
+//    SInfo << "onPeerDiconnected " << peerID;
+//
+//    auto conn = web_rtc::PeerManager::remove(peerID);
+//    if (conn)
+//    {
+//        // web_rtc::PeerManager::onClosed(conn);
+//
+//        _capturer.remove(conn);
+//        LInfo("Deleting peer connection: ", peerID)
+//
+//            //  conn->Release();
+//            // async delete not essential, but to be safe
+//            delete conn;
+//    }
+//}
+//
+//void Signaler::onPeerCommand(
+//    std::string &peerID, st_track &camT, std::string &cmd, const json &trackids, const json &action)
+//{
+//    SInfo << "onPeerDiconnected on done yet " << peerID;
+//
+//    auto conn = web_rtc::PeerManager::get(peerID);
+//    if (conn)
+//    {
+//        bool act = action.get<bool>();
+//
+//        for (auto &trac : trackids)
+//        {
+//            std::string tc = trac.get<std::string>();
+//            std::cout << tc << '\n';
+//
+//            if (cmd == "close") {/* _capturer.remove(conn, tc);*/ }
+//            else if (cmd == "mute")
+//            {
+//                //_capturer.mute(conn, tc, cmd, act);
+//            }
+//            else if (cmd == "muteaudio")
+//            {
+//                //_capturer.mute(conn, tc, cmd, act);
+//            }
+//            else if (cmd == "apply")
+//            {
+//                conn->mapcam[tc].width = camT.width;
+//                conn->mapcam[tc].height = camT.height;
+//                conn->mapcam[tc].speed = camT.speed;
+//                conn->mapcam[tc].scale = camT.scale;
+//
+//             //   _capturer.oncommand(conn, tc, cmd, 0, 0);
+//            }
+//        }
+//
+//        // web_rtc::PeerManager::onClosed(conn);
+//
+//        //_capturer.remove(conn);
+//        // LInfo("Deleting peer connection: ", peerID)
+//
+//        //  conn->Release();
+//        // async delete not essential, but to be safe
+//        //  delete conn;
+//    }
 }
 
 
@@ -506,7 +508,7 @@ void Signaler::connect( const uint16_t port)
 {
     LTrace("Tests signalling Begin. Please run signalling server at webrtc folder")
             
-   room = Settings::configuration.qrcode;
+   room = Settings::configuration.cam;
    server = Settings::configuration.server; 
     
     m_client = new HttpsClient("wss",  server, port, "/");  //Websocket test

@@ -28,13 +28,13 @@ public:
         uint16_t rtcMinPort{ 10000 };
         uint16_t rtcMaxPort{ 59999 };
         uint16_t cam_reconnect{0};
-        uint16_t vp9Enc{ 10 };
-        uint16_t nvidiaEnc{ 10 };
-        uint16_t quicksyncEnc{ 16 };
-        uint16_t native{ 16 };
-        uint16_t x264Enc{ 10 };
-        uint16_t VAAPIEnc{ 16 };
-        bool haswell{ false };
+//        uint16_t vp9Enc{ 10 };
+//        uint16_t nvidiaEnc{ 10 };
+//        uint16_t quicksyncEnc{ 16 };
+//        uint16_t native{ 16 };
+//        uint16_t x264Enc{ 10 };
+//        uint16_t VAAPIEnc{ 16 };
+//        bool haswell{ false };
         bool tcpRtsp{true};
         
         uint16_t Mp4Size_Key{40};
@@ -43,8 +43,11 @@ public:
         std::string dtlsCertificateFile;
         std::string dtlsPrivateKeyFile;
         std::string storage;
-        std::string qrcode;
+        std::string cam;
         std::string server;
+        bool recording;
+        bool facedetect;
+        bool motionevent;
         //json rtsp;
 
         //json root;
