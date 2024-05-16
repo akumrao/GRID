@@ -11,6 +11,8 @@
 namespace base {
 namespace web_rtc {
 
+    class LiveThread;
+
         enum class LiveConnectionType {
         none,
         rtsp,
@@ -59,6 +61,8 @@ namespace web_rtc {
         FrameFilter*  liveFrame{nullptr}; // with trackid <> videosource
         
         Signaler *signaler{nullptr};
+        
+        LiveThread *liveThread{nullptr};
         
         DummyFrameFilter *fragmp4_filter{nullptr};
         FrameFilter *fragmp4_muxer{nullptr};
@@ -114,6 +118,8 @@ namespace web_rtc {
    */
     
     LiveThread(const char* name, st_track *trackInfo, LiveConnectionContext* ctx);
+    
+    void onMessage(json &msg );
     
     
     ~LiveThread(){

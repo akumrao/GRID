@@ -76,7 +76,7 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
 
     liveThread->start();
     
-    
+    this->ctx->liveThread = liveThread;
  
 }
 

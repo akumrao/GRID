@@ -25,9 +25,14 @@ namespace web_rtc {
         
     }
     
+    void LiveThread::onMessage(json &msg )
+    {
+    }
+         
+    
+    
     void LiveThread::run(){
         
-       
     
         
         std::string filepath = "/mnt/test.264";
@@ -52,13 +57,14 @@ namespace web_rtc {
 
                   if(feof(fp))
                   {
-                      if(ctx->signaler)
-                      {
-                         ctx->signaler->postAppMessage( "arvind", "", ctx->cam);
-                      }
+                    if(ctx->signaler)
+                    {
+                        std::string tmp = "arvind";
+                        ctx->signaler->postAppMessage( tmp);
+                    }
 
-                       if (fseek(fp, 0, SEEK_SET))
-                           continue;
+                    if (fseek(fp, 0, SEEK_SET))
+                        continue;
 
                   }
 

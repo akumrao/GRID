@@ -408,6 +408,15 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
 
   //DataChannelSend("arvind umrao");
   
+    if( _manager->ctx->liveThread)
+    {
+        //int x = 1;
+        json test;
+        test["arv"]="goal";
+        _manager->ctx->liveThread->onMessage(test );
+    }
+  
+  
   delete[] msg;
 }
 
@@ -452,6 +461,10 @@ void Peer::OnRemoveStream(webrtc::MediaStreamInterface *stream)
 
 void Peer::OnIceCandidate(const webrtc::IceCandidateInterface *candidate)
 {
+    
+ 
+            
+            
     /*  std::string mid = candidate->sdp_mid() ;
 
       int line = candidate->sdp_mline_index();

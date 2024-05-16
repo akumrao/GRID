@@ -47,6 +47,8 @@ public:
 
 
     web_rtc::MultiplexMediaCapturer _capturer;
+    
+    LiveConnectionContext  *ctx;
 };
 
 
