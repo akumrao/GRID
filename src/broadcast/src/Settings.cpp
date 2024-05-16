@@ -66,16 +66,16 @@ void Settings::SetConfiguration(json &cnfg)
 //        }
 //    }
 
-
-    if (cnfg.find("rtcMinPort") != cnfg.end())
-    {
-        Settings::configuration.rtcMinPort = cnfg["rtcMinPort"].get<uint16_t>();
-    }
-
-    if (cnfg.find("rtcMaxPort") != cnfg.end())
-    {
-        Settings::configuration.rtcMaxPort = cnfg["rtcMaxPort"].get<uint16_t>();
-    }
+//
+//    if (cnfg.find("rtcMinPort") != cnfg.end())
+//    {
+//        Settings::configuration.rtcMinPort = cnfg["rtcMinPort"].get<uint16_t>();
+//    }
+//
+//    if (cnfg.find("rtcMaxPort") != cnfg.end())
+//    {
+//        Settings::configuration.rtcMaxPort = cnfg["rtcMaxPort"].get<uint16_t>();
+//    }
 
 //
 //    if (cnfg.find("vp9Enc") != cnfg.end()) { Settings::configuration.vp9Enc = cnfg["vp9Enc"].get<uint16_t>(); }

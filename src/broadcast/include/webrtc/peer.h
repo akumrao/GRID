@@ -158,6 +158,8 @@ public:
     
     bool DataChannelSend(std::string data);
     
+    void CloseDataChannel();
+    
     st_track trackInfo;
 
 };

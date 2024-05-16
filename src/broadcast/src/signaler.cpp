@@ -337,24 +337,29 @@ void Signaler::onPeerMessage(std::string &name, json const &m)
 //    }
 //}
 //
-//void Signaler::onPeerDiconnected(std::string &peerID)
-//{
-//    SInfo << "onPeerDiconnected " << peerID;
-//
-//    auto conn = web_rtc::PeerManager::remove(peerID);
-//    if (conn)
-//    {
-//        // web_rtc::PeerManager::onClosed(conn);
-//
-//        _capturer.remove(conn);
-//        LInfo("Deleting peer connection: ", peerID)
-//
-//            //  conn->Release();
-//            // async delete not essential, but to be safe
-//            delete conn;
-//    }
-//}
-//
+}
+
+void Signaler::onPeerDiconnected(std::string &peerID)
+{
+    SInfo << "onPeerDiconnected " << peerID;
+
+    auto conn = web_rtc::PeerManager::remove(peerID);
+    if (conn)
+    {
+        // web_rtc::PeerManager::onClosed(conn);
+
+        _capturer.remove(conn);
+        LInfo("Deleting peer connection: ", peerID)
+
+            //  conn->Release();
+            // async delete not essential, but to be safe
+                
+        conn->CloseDataChannel();
+        
+        delete conn;
+    }
+}
+
 //void Signaler::onPeerCommand(
 //    std::string &peerID, st_track &camT, std::string &cmd, const json &trackids, const json &action)
 //{
@@ -399,7 +404,7 @@ void Signaler::onPeerMessage(std::string &name, json const &m)
 //        // async delete not essential, but to be safe
 //        //  delete conn;
 //    }
-}
+//}
 
 
 void Signaler::onAddRemoteStream(web_rtc::Peer *conn, webrtc::MediaStreamInterface *stream)
@@ -567,15 +572,17 @@ void Signaler::connect( const uint16_t port)
                  if( isChannelReady) 
                 recvCandidate( from, msg["messagePayload"]);    
                 
-
+            }
+             
+             else if( messageType == "disconnectClient"  )
+            {
+                onPeerDiconnected(from);
                 
             }
+             
+             
         
         }
-       
-     
-               
-               
        
        
        
@@ -585,8 +592,9 @@ void Signaler::connect( const uint16_t port)
    };
 
    m_client->fnClose = [&](HttpBase * con, std::string str) {
-       STrace << "client->fnClose " << str;
+       SInfo << "client->fnClose " << str;
        //close(0,"exit");
+       
        //on_close();
    };
 

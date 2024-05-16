@@ -542,6 +542,15 @@ std::string Peer::peerid() const
     return  trackInfo.peerID;
 }
 
+
+void Peer::CloseDataChannel() {
+  if (data_channel_.get()) {
+    data_channel_->UnregisterObserver();
+    data_channel_->Close();
+  }
+  data_channel_ = nullptr;
+}
+
 // void Peer::mute( const json& m)
 // {
 //     bool val = m.get<bool>();
