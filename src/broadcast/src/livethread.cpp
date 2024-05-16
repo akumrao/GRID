@@ -57,14 +57,15 @@ namespace web_rtc {
 
                   if(feof(fp))
                   {
+                    if (fseek(fp, 0, SEEK_SET))
+                        continue;
+                      
                     if(ctx->signaler)
                     {
                         std::string tmp = "arvind";
                         ctx->signaler->postAppMessage( tmp);
                     }
 
-                    if (fseek(fp, 0, SEEK_SET))
-                        continue;
 
                   }
 

@@ -124,11 +124,11 @@ public:
     virtual void getAll(std::vector<TKey> &vt )  override
     {
         std::lock_guard<std::mutex> guard(_mutex);
-        typename Map::const_iterator it = _map.begin();
-        while (it != _map.end()) {
+        for (typename Map::iterator it = _map.begin(); it != _map.end(); ++it) 
+        {
           vt.push_back(it->first);
         } 
-
+    
         return ;
     }
 
