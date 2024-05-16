@@ -33,6 +33,16 @@ using namespace base::cnfg;
 
 extern struct chn_conf chn[];
 
+#define LOW_BITSTREAM
+#define SHOW_FRM_BITRATE
+#ifdef SHOW_FRM_BITRATE
+#define FRM_BIT_RATE_TIME 2
+#define STREAM_TYPE_NUM 3
+static int frmrate_sp[STREAM_TYPE_NUM] = { 0 };
+static int statime_sp[STREAM_TYPE_NUM] = { 0 };
+static int bitrate_sp[STREAM_TYPE_NUM] = { 0 };
+#endif
+
 
 
 void T31RGBA::run() {
@@ -388,7 +398,7 @@ void T31H264::run()
     }
 
 //    ret = save_stream(stream_fd, &stream);
-    int ret, i, nr_pack = stream.packCount;
+    int ret,  nr_pack = stream.packCount;
 
 //IMP_LOG_DBG(TAG, "----------packCount=%d, stream->seq=%u start----------\n", stream->packCount, stream->seq);
     for (i = 0; i < nr_pack; i++) {
@@ -397,22 +407,13 @@ void T31H264::run()
             if(pack->length){
                     uint32_t remSize = stream.streamSize - pack->offset;
                     if(remSize < pack->length){
-                            ret = fwrite( (void *)(stream.virAddr + pack->offset), remSize,1,stream_fd);
-                            if (ret != remSize) {
-                                SError << " write to file failed ";
-                                return ;
-                            }
-                            ret = fwrite( (void *)stream.virAddr, pack->length - remSize, 1, stream_fd);
-                            if (ret != (pack->length - remSize)) {
-                                SError << " write to file failed ";
-                                return ;
-                            }
+                             fwrite( (void *)(stream.virAddr + pack->offset), remSize,1,stream_fd);
+                           
+                             fwrite( (void *)stream.virAddr, pack->length - remSize, 1, stream_fd);
+                            
                     }else {
-                            ret = fwrite( (void *)(stream.virAddr + pack->offset), pack->length, 1, stream_fd);
-                            if (ret != pack->length) {
-                                SError << " write to file failed ";
-                                return;
-                            }
+                             fwrite( (void *)(stream.virAddr + pack->offset), pack->length, 1, stream_fd);
+                            
                     }
             }
     }
@@ -445,7 +446,6 @@ int T31H264::T31H264Init()
 
     for (i = 0; i < FS_CHN_NUM; i++) {
         if (chn[i].enable) {
-            int arg = 0;
             chnNum = chn[i].index;
             break;
         }
@@ -561,11 +561,11 @@ int T31Video::T31Init()
 
 
 
-    ret = sample_get_video_stream();  // For hh264 stream
-    if (ret < 0) {
-        SError<<"Get H264 stream failed";
-        return -1;
-    }
+    // ret = sample_get_video_stream();  // For hh264 stream
+    // if (ret < 0) {
+    //     SError<<"Get H264 stream failed";
+    //     return -1;
+    // }
 
 
     return 0;

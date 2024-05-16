@@ -6,7 +6,7 @@
     "server":"192.168.0.19",
     "recording": true,
     "facedetect":true,
-    "recording": true,
+    "motionevent": true,
     "cam_reconnect": 0,
     "authtimeout": 3600,
     "Mp4Size_Key": 40,
