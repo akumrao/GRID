@@ -47,6 +47,9 @@ public:
     virtual bool empty() const = 0;
     virtual size_t size() const = 0;
     virtual TValue* get(const TKey& key, bool whiny = true) const = 0;
+    
+    virtual void getAll(std::vector<TKey> &vt ) = 0;
+    
     virtual void clear() = 0;
 };
 
@@ -115,6 +118,18 @@ public:
         }
 
         return nullptr;
+    }
+    
+    
+    virtual void getAll(std::vector<TKey> &vt )  override
+    {
+        std::lock_guard<std::mutex> guard(_mutex);
+        typename Map::const_iterator it = _map.begin();
+        while (it != _map.end()) {
+          vt.push_back(it->first);
+        } 
+
+        return ;
     }
 
     virtual bool free(const TKey& key) override
@@ -200,7 +215,7 @@ public:
         std::lock_guard<std::mutex> guard(_mutex);
       //  util::clearMap<TDeleter>(_map);
         
-     typename    Map::iterator it = _map.begin();
+    typename    Map::iterator it = _map.begin();
     typename Map::iterator it2;
     while (it != _map.end()) {
         it2 = it++;

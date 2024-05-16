@@ -491,19 +491,37 @@ void Signaler::postMessage(const json &m)
     m_client->send(send);
 }
 
-void Signaler::postAppMessage(std::string message, std::string from, std::string &room)
+void Signaler::postAppMessage(std::string &message)
 {
     // LTrace("postAppMessage", cnfg::stringify(m));
 
-    json m;
-    m["type"] = "error";
-    // m["type"] = "ai"; // when you do not want to close the websocket. For example keyboard event, metadata
-    // etc
-    m["desc"] = message;
-    m["to"] = from;
-    m["room"] = room;
+//    json m;
+//    m["type"] = "error";
+//    // m["type"] = "ai"; // when you do not want to close the websocket. For example keyboard event, metadata
+//    // etc
+//    m["desc"] = message;
+//    m["to"] = from;
+//    m["room"] = room;
 
-    SInfo << "postMessage " << cnfg::stringify(m);
+   // SInfo << "postMessage " << cnfg::stringify(m);
+    
+    std::vector<std::string> vt;
+    
+    web_rtc::PeerManager::getAll(vt);
+    
+    std::vector<std::string>::iterator ptr; 
+      
+    for (ptr = vt.begin(); ptr < vt.end(); ptr++) 
+    {
+   
+        auto conn = web_rtc::PeerManager::get(*ptr);
+        if (conn)
+        {
+            conn->DataChannelSend(message);
+
+        }
+    }
+    
 
     //socket->emit("postAppMessage", m);
 }

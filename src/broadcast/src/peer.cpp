@@ -406,7 +406,7 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
   memcpy(msg, buffer.data.data(), size);
   msg[size] = 0;
 
-  DataChannelSend("arvind umrao");
+  //DataChannelSend("arvind umrao");
   
   delete[] msg;
 }
