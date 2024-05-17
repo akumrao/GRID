@@ -431,33 +431,33 @@ void Signaler::onClosed(web_rtc::Peer *conn)
 }
 
 
-
-    void Signaler::postcloseCamera(std::string &cam ,  std::string  reason )
-    {
-        SInfo << "close Camera "  << cam ;
-                 
-        std::set< std::string>  peeerids;
-
-         _capturer.stop(cam , peeerids);
-         //_capturer.getPeerids(cam , peeerids);// when you do not want to close the websocket. For example
-        // keyboard event, metadata etc
-       //  std::string room(JOIN_ROOM); // Arvind: hard coded room, soon we will
-        // remove it 
-        for( std::string from : peeerids   )
-        {
-            
-            json m;
-            m["type"] = "error";
-            // m["type"] = "ai"; // when you do not want to close the websocket. For example keyboard event, metadata
-            // etc
-            m["desc"] = reason;
-            m["to"] = from;
-            m["room"] = room;
-            m["cam"] = cam;
-            SInfo << "postcloseCamera " << cnfg::stringify(m);
-           // m_client->emit("postAppMessage", m);
-        }
-    }
+//
+//    void Signaler::postcloseCamera(std::string &cam ,  std::string  reason )
+//    {
+//        SInfo << "close Camera "  << cam ;
+//                 
+//        std::set< std::string>  peeerids;
+//
+//         _capturer.stop(cam , peeerids);
+//         //_capturer.getPeerids(cam , peeerids);// when you do not want to close the websocket. For example
+//        // keyboard event, metadata etc
+//       //  std::string room(JOIN_ROOM); // Arvind: hard coded room, soon we will
+//        // remove it 
+//        for( std::string from : peeerids   )
+//        {
+//            
+//            json m;
+//            m["type"] = "error";
+//            // m["type"] = "ai"; // when you do not want to close the websocket. For example keyboard event, metadata
+//            // etc
+//            m["desc"] = reason;
+//            m["to"] = from;
+//            m["room"] = room;
+//            m["cam"] = cam;
+//            SInfo << "postcloseCamera " << cnfg::stringify(m);
+//           // m_client->emit("postAppMessage", m);
+//        }
+//    }
 
 
 //       void Signaler::closeCamera(std::string &cam ,  std::string  reason )
@@ -491,19 +491,21 @@ void Signaler::postMessage(const json &m)
     m_client->send(send);
 }
 
-void Signaler::postAppMessage(std::string &message)
+void Signaler::postAppMessage(json &message)
 {
     // LTrace("postAppMessage", cnfg::stringify(m));
 
-//    json m;
+      
 //    m["type"] = "error";
 //    // m["type"] = "ai"; // when you do not want to close the websocket. For example keyboard event, metadata
 //    // etc
 //    m["desc"] = message;
 //    m["to"] = from;
-//    m["room"] = room;
+    
 
-   // SInfo << "postMessage " << cnfg::stringify(m);
+    std::string txt = cnfg::stringify(message);
+      
+    //SInfo <<  txt;
     
     std::vector<std::string> vt;
     
@@ -517,7 +519,7 @@ void Signaler::postAppMessage(std::string &message)
         auto conn = web_rtc::PeerManager::get(*ptr);
         if (conn)
         {
-            conn->DataChannelSend(message);
+            conn->DataChannelSend(txt);
 
         }
     }

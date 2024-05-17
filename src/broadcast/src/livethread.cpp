@@ -62,8 +62,16 @@ namespace web_rtc {
                       
                     if(ctx->signaler)
                     {
-                        std::string tmp = "arvind";
-                        ctx->signaler->postAppMessage( tmp);
+                        cnfg::Configuration identity;
+
+                        identity.load("./event.json");
+                       // std::string xaidentity = identity.root.dump();
+                        
+                        json m;
+                        
+                        m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
+                        m["messagePayload"] =  identity.root;
+                        ctx->signaler->postAppMessage( m);
                     }
 
 

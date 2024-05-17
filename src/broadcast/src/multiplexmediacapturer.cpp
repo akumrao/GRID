@@ -32,6 +32,7 @@ namespace web_rtc
 
 MultiplexMediaCapturer::MultiplexMediaCapturer(LiveConnectionContext  *ctx, Signaler *sig)
     :
+    ctx(ctx),
 #if MP4File
       _videoCapture(std::make_shared<ff::MediaCapture>()),
 #endif
@@ -51,7 +52,7 @@ MultiplexMediaCapturer::MultiplexMediaCapturer(LiveConnectionContext  *ctx, Sign
 #endif
     ctx->signaler= sig;
     
-    mapVideoSource[ctx->cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  ctx);
+    
 
 
     //      local_video_observer_.reset(new VideoObserver());
@@ -64,59 +65,10 @@ MultiplexMediaCapturer::~MultiplexMediaCapturer() {}
 void MultiplexMediaCapturer::openFile(
     const std::string &dir, const std::string &file, const std::string &type, bool loop)
 {
-#if MP4File
-
-    // Open the capture file
-    _videoCapture->setLoopInput(loop);
-    _videoCapture->setLimitFramerate(true);
-
-    if (!dir.empty())
-        _videoCapture->openDir(dir, type);
-    else if (!file.empty())
-        _videoCapture->openFile(dir + "/" + file, type);
-
-
-    // Set the output settings
-    if (_videoCapture->audio())
-    {
-        _videoCapture->audio()->oparams.sampleFmt = "s16";
-        _videoCapture->audio()->oparams.sampleRate = 8000;
-        _videoCapture->audio()->oparams.channels = 1;
-        _videoCapture->audio()->recreateResampler();
-        // _videoCapture->audio()->resampler->maxNumSamples = 480;
-        // _videoCapture->audio()->resampler->variableOutput = false;
-    }
-
-    // Convert to yuv420p for WebRTC compatability
-    if (_videoCapture->video())
-    {
-        _videoCapture->video()->oparams.pixelFmt = "yuv420p";  // nv12
-        // _videoCapture->video()->oparams.width = capture_format.width;
-        // _videoCapture->video()->oparams.height = capture_format.height;
-    }
-
-#endif
-    
     
     
     
 }
-
-
-// VideoPacketSource* MultiplexMediaCapturer::createVideoSource()
-//{
-//     using std::placeholders::_1;
-//     assert(_videoCapture->video());
-//     auto oparams = _videoCapture->video()->oparams;
-//     //auto source = new VideoPacketSource();
-//
-//     _videoCapture->cbProcessVideo = std::bind(&VideoPacketSource::onVideoCaptured ,source , _1);
-//
-////    source->setPacketSource(&_stream.emitter); // nullified on VideoPacketSource::Stop
-//
-//
-//    return source;
-//}
 
 
 std::string MultiplexMediaCapturer::random_string()
@@ -156,43 +108,37 @@ void MultiplexMediaCapturer::addMediaTracks(
 //  std::string videoLable = kVideoLabel + rnd;
 //  std::string streamId =  kStreamId + rnd;
 
-  std::string audioLable = kAudioLabel;
-  std::string videoLable = kVideoLabel;
-  std::string streamId =  kStreamId;
+//  std::string audioLable = kAudioLabel;
+  //std::string videoLable = kVideoLabel;
+  //std::string streamId =  kStreamId;
   
 
-  
-  
-  
-  //if (ffparser)
-  {
-   //   using std::placeholders::_1;
+
+//   using std::placeholders::_1;
 //      assert(_videoCapture->video());
- //     auto oparams = _videoCapture->video()->oparams;
-      //auto source = new VideoPacketSource();
-      mutexCap.lock(); 
-      std::string &cam = peer->getCam();
-      
-      if( mapvideo_track.find(cam) == mapvideo_track.end())
-      {
-         mapvideo_track[cam] =     factory->CreateVideoTrack(videoLable, mapVideoSource[cam]);
-       
-        #if BYPASSGAME
-        mapVideoSource[cam]->start();
-        #endif
-      }
-      mutexCap.unlock();   
-      
-     
-      
-        mapvideo_track[cam]->set_enabled(true);
-        conn->AddTrack(mapvideo_track[cam], {streamId});
-         
-        mapVideoSource[cam]->myAddRef(peer->peerid());
-         
-       
-      
-    }        
+//     auto oparams = _videoCapture->video()->oparams;
+   //auto source = new VideoPacketSource();
+   mutexCap.lock(); 
+   std::string &cam = peer->getCam();
+
+   if( mapvideo_track.find(cam) == mapvideo_track.end())
+   {
+     mapVideoSource[cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  ctx);
+     mapvideo_track[cam] =     factory->CreateVideoTrack(cam, mapVideoSource[cam]);
+
+     #if BYPASSGAME
+     mapVideoSource[cam]->start();
+     #endif
+   }
+   mutexCap.unlock();   
+
+
+
+ mapvideo_track[cam]->set_enabled(true);
+ conn->AddTrack(mapvideo_track[cam], {cam});
+
+ mapVideoSource[cam]->myAddRef(peer->peerid());
+
           
           
 

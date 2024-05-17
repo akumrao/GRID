@@ -197,13 +197,6 @@ VideoPacketSource::~VideoPacketSource()
            
            
             
-    if(ctx)
-    delete ctx;
-    ctx = nullptr;
-            
-    
-    
-    
     
     #if BYPASSGAME
     StopParser();

@@ -31,7 +31,7 @@ public:
     void connect( const uint16_t port);
     // void closeCamera(std::string &cam ,  std::string  reason );
     void postcloseCamera(std::string &trackInfo, std::string reason);
-    void postAppMessage(std::string &message);
+    void postAppMessage(json &message);
 
 protected:
     /// PeerManager interface

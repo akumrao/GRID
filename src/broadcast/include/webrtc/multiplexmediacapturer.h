@@ -113,7 +113,7 @@ private:
     std::string fileName;
     std::mutex mutexCap;
     
-  //  LiveThread  *liveThread{nullptr};
+    LiveConnectionContext  *ctx;
     
 
 };

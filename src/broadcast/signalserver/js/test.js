@@ -7,6 +7,7 @@ var localStream;
 var pc;
 var turnReady;
 
+let channelSnd;
 
 
 // Set up audio and video regardless of what devices are present.
@@ -293,10 +294,10 @@ function createPeerConnection() {
             });
 
     pc.addTransceiver('audio');
-+   pc.addTransceiver('video');
+    pc.addTransceiver('video');
 
 
-   var channelSnd = pc.createDataChannel("chat"); // sende PC1 
+    channelSnd = pc.createDataChannel("chat"); // sende PC1 
     
     channelSnd.onopen = function(event)
     {
@@ -307,22 +308,75 @@ function createPeerConnection() {
     {
         console.log("event.data " + event.data);
 
-        document.getElementById('w3review').value = event.data;
+        var msg = JSON.parse(event.data);
+
+        
+        switch (msg.messageType) {
+          case "IDENTITY_NOT_IN_GALLERY":
+           
+
+          var base64Url = "data:image/jpeg;base64, " + msg.messagePayload.looselyCroppedImage;
+          var imgid = document.getElementById("image");
+          imgid.src = base64Url;
+
+          var myJsObj = {
+                          "messageType": "identity",
+                          "messagePayload": {
+                            "configuredGalleryIdentities": {
+                              "76a92b24-31d5-463b-ab7a-b379efab7b30": {
+                                "accuracyMonitorConsent": false,
+                                "identityName": "entername",
+                                "productImprovementConsent": false,
+                                "registrationImageIDs": []
+                              }
+                            },
+                            "sequenceNum": 1
+                          }
+                        };
+
+          //var obj = JSON.parse(myJsObj);
+          myJsObj['messagePayload']['configuredGalleryIdentities']['76a92b24-31d5-463b-ab7a-b379efab7b30']['registrationImageIDs'].push(msg.messagePayload.registrationImage);
+
+          // using JSON.stringify pretty print capability:
+          var str = JSON.stringify(myJsObj);
+
+          // display pretty printed object in text area:
+          //document.getElementById('myTextArea').innerHTML = str;
+
+          document.getElementById('w3review').value= str;
+         
+
+          break;
+          case "IDENTITY_RECOGNIZED":
+          {
+
+             
+          // {
+          //   msg.identityID": "76a92b24-31d5-463b-ab7a-b379efab7b30",
+          //   "identityName": "arvind",
+          // }
+          
+                
+            //document.getElementById('w3review').value = msg.messagePayload;
+
+            break;
+            
+          }
+
+        }
     }
 
 
 
-    pc.ondatachannel = function(event) {  // receiver /PC2
-    var channel = event.channel;
-    channel.onopen = function(event) {
-    channel.send('ravind back!');
-    }
-    channel.onmessage = function(event) {
-    console.log("ravind " + event.data);
-    }
-    }
-
-
+    // pc.ondatachannel = function(event) {  // receiver /PC2
+    // var channel = event.channel;
+    // channel.onopen = function(event) {
+    // channel.send('ravind back!');
+    // }
+    // channel.onmessage = function(event) {
+    // console.log("ravind " + event.data);
+    // }
+    // }
 
 
     pc.onicecandidate = handleIceCandidate;
@@ -447,4 +501,13 @@ function onIceStateChange(pc, event) {
             console.log('failed...');
             break;
     }
+}
+
+
+
+function addIdentity()
+{
+  channelSnd.send('Hi arvind you!');
+
+  channelSnd.send(document.getElementById('w3review').value);
 }

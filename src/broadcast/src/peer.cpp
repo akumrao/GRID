@@ -408,15 +408,37 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
 
   //DataChannelSend("arvind umrao");
   
-    if( _manager->ctx->liveThread)
-    {
-        //int x = 1;
-        json test;
-        test["arv"]="goal";
-        _manager->ctx->liveThread->onMessage(test );
-    }
-  
-  
+
+	json jsonMsg ;
+	try
+	{   
+	   jsonMsg = json::parse(msg); 
+
+	}
+	catch(...)
+	{
+	    SError << "Json from client is not in correct format " << msg;
+	    delete[] msg;
+	    return;
+	}
+	   
+
+	if (jsonMsg.find("messageType") != jsonMsg.end())
+	{
+	    std::string type = jsonMsg["messageType"].get<std::string>();
+	    json payload = jsonMsg["messagePayload"];
+	    
+	    if(type == "identity")
+	    {
+		  if( _manager->ctx->liveThread)
+		  _manager->ctx->liveThread->onMessage(payload );
+	    }
+	    
+	    SInfo << payload.dump(4);
+	    
+	}
+
+
   delete[] msg;
 }
 

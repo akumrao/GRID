@@ -434,7 +434,7 @@ namespace base {
                 
                 for( std::string  el : vec)
                 {
-                     sig.postcloseCamera(el, "Deleted camera with Rest API");  // arvind
+                   //  sig.postcloseCamera(el, "Deleted camera with Rest API");  // arvind
                 }
                 
                 SInfo << "reconfigure Camera settings " << body << std::endl;
@@ -914,7 +914,7 @@ namespace base {
                     mutDelcamera.unlock();
 
                     //delCamera(sCamera);
-                    sig.postcloseCamera( camError.cam ,camError.reason  );  //arvind
+                   // sig.postcloseCamera( camError.cam ,camError.reason  );  //arvind
                 }
            }    
             
