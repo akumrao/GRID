@@ -24,20 +24,21 @@ SSL_ROOT = /workspace/MagicAI/src/openssl/buildt31
 
 
 TARGET=runWebrtc # define the name of the executable
-SOURCES=$(wildcard *.cpp ../src/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp ../../net/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../facedetec/src/configuration.cpp )
+SOURCES=$(wildcard *.cpp ../src/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp ../../net/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../facedetec/src/*.cpp ../../facedetec/src/t31/*.cpp )
 
-CXXFLAGS   := -g -fno-rtti -std=c++11 -Wno-inconsistent-missing-override -Wno-uninitialized -DNDEBUG -fpermissive -DT31ENV
-
-
-CPPFLAGS   := -I../../facedetec/include/ -I/${FFMPEG_ROOT}/include  -I../include -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../webrtc/include  -DWEBRTC_POSIX  -I${WEBRTC_PATH} -I${SSL_ROOT}/include -I${WEBRTC_PATH}/third_party/abseil-cpp -DHTTPSSL
+CXXFLAGS   := -g -fno-rtti -std=c++11 -Wno-uninitialized -DNDEBUG -fpermissive
 
 
-LDFLAGS +=  -L${T31SDK}/lib -L${INSTALLPATH}/mips-linux-gnu/lib -lm  -muclibc
+CPPFLAGS   := -I../../facedetec/include/  -I../../facedetec/include/t31/  -I/${FFMPEG_ROOT}/include  -I../include -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../webrtc/include  -DWEBRTC_POSIX  -I${WEBRTC_PATH}  -I${SSL_ROOT}/include  -I../include/t31 -I${WEBRTC_PATH}/third_party/abseil-cpp -DHTTPSSL -I../../facedetec/xailient-sdk/include/ -I${T31SDK}/include -I${T31SDK}/samples/libimp-sample/
 
 
-LDLIBS    :=  -L/workspace/MagicAI/src/webrtc/t31 -ljingle_peerconnection_so -lrt -lm  -lpthread -latomic
 
-SLIBS     := ../../libuv/build/libuv_a.a  ${FFMPEG_ROOT}/lib/libavformat.a ${FFMPEG_ROOT}/lib/libavcodec.a ${FFMPEG_ROOT}/lib/libavutil.a ${FFMPEG_ROOT}/lib/libswresample.a ${SSL_ROOT}/lib/libssl.a ${SSL_ROOT}/lib/libcrypto.a
+
+LDFLAGS  += -L../../facedetec/xailient-sdk/lib  -L${T31SDK}/lib -L${INSTALLPATH}/mips-linux-gnu/lib -lm  -muclibc 
+
+LDLIBS   +=  -lxailient-fi -L/workspace/MagicAI/src/webrtc/t31 -ljingle_peerconnection_so -lrt -lm -lpthread -latomic
+
+SLIBS    += ../../libuv/build/libuv_a.a  ${FFMPEG_ROOT}/lib/libavformat.a ${FFMPEG_ROOT}/lib/libavcodec.a ${FFMPEG_ROOT}/lib/libavutil.a ${FFMPEG_ROOT}/lib/libswresample.a ${SSL_ROOT}/lib/libssl.a ${SSL_ROOT}/lib/libcrypto.a ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a
 
 
 
@@ -53,7 +54,7 @@ OBJS=$(OBJSC:.cpp=.o)
 all: $(SOURCES) $(TARGET)
 
 $(TARGET): $(OBJS)
-	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(OBJS) $(SLIBS) $(LDFLAGS) $(LDLIBS) -o $(TARGET)
+		$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) $(OBJS) $(SLIBS) $(LDLIBS) -o $(TARGET)
 
 purge: clean
 	rm -f $(TARGET)

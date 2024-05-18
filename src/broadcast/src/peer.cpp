@@ -425,16 +425,15 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
 
 	if (jsonMsg.find("messageType") != jsonMsg.end())
 	{
-	    std::string type = jsonMsg["messageType"].get<std::string>();
-	    json payload = jsonMsg["messagePayload"];
-	    
+	    std::string type = jsonMsg["messageType"].get<std::string>();  
 	    if(type == "identity")
 	    {
+                
 		  if( _manager->ctx->liveThread)
-		  _manager->ctx->liveThread->onMessage(payload );
+		  _manager->ctx->liveThread->onMessage(jsonMsg );
 	    }
 	    
-	    SInfo << payload.dump(4);
+	    SInfo << jsonMsg.dump(4);
 	    
 	}
 

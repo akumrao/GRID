@@ -327,7 +327,7 @@ function createPeerConnection() {
                                 "accuracyMonitorConsent": false,
                                 "identityName": "entername",
                                 "productImprovementConsent": false,
-                                "registrationImageIDs": []
+                                "registrationImageIDs": ["entername"]
                               }
                             },
                             "sequenceNum": 1
@@ -335,7 +335,7 @@ function createPeerConnection() {
                         };
 
           //var obj = JSON.parse(myJsObj);
-          myJsObj['messagePayload']['configuredGalleryIdentities']['76a92b24-31d5-463b-ab7a-b379efab7b30']['registrationImageIDs'].push(msg.messagePayload.registrationImage);
+          myJsObj['registrationImage'] = msg.messagePayload.registrationImage;
 
           // using JSON.stringify pretty print capability:
           var str = JSON.stringify(myJsObj);

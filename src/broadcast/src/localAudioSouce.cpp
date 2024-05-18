@@ -237,7 +237,7 @@ void LocalAudioSource::StopLive()
 
             //ffparser->deregisterStream(ctx);
             ffparser->stop();
-            ffparser->join();
+          //  ffparser->join();
 
 
             delete ffparser;

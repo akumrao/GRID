@@ -174,13 +174,7 @@ VideoPacketSource::~VideoPacketSource()
     if(liveThread)
     liveThread->stop();
     
-    
-    liveThread->join();
-    
-              
-
-
-    delete liveThread;
+     delete liveThread;
     liveThread =nullptr;
                    
            
