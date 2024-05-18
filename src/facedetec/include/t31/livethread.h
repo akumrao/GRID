@@ -4,12 +4,40 @@
 
 #include "base/thread.h"
 #include  <string>
+
+#include <json/json.hpp>
+using json = nlohmann::json;
+#include "json/configuration.h"
+
+#if(DUMPFILE)
+namespace base {
+namespace web_rtc {
+struct FrameFilter
+{
+};
+struct st_track
+{
+};
+struct LiveConnectionContext
+{
+};
+struct BasicFrame
+{
+};
+
+}}
+#else
+
 #include "framefilter.h"
 
+#endif
 
                                                 
 namespace base {
 namespace web_rtc {
+
+#if(DUMPFILE)
+#else
     
 class LiveThread;
 
@@ -78,31 +106,10 @@ struct LiveConnectionContext {
     unsigned recv_buffer_size; ///< Operating system ringbuffer size for incoming socket
     unsigned reordering_time; ///< Live555 packet reordering treshold time (microsecs)
     TimeCorrectionType time_correction; ///< How to perform frame timestamp correction
-    
-//        void addLiveFrameSource(std::string & trackid, FrameFilter* src)
-//        {
-//           muLiveFrame.lock();
-//           setLiveFrame[trackid] = src;
-//           muLiveFrame.unlock();
-//        }
-//        
-//        int removeLiveFrameSource(std::string & trackid)
-//        {
-//            int ret;
-//            muLiveFrame.lock();
-//            setLiveFrame.erase(trackid);
-//            ret = setLiveFrame.size();
-//            muLiveFrame.unlock();
-//            
-//            return ret;
-//        }
-    
-    //std::mutex muLiveFrame;
-    
-   // std::mutex muRecFrame;
+
     
 };
-
+#endif
 
 
 class T31H264:public base::Thread

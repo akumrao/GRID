@@ -27,7 +27,7 @@
 #include <thread>
 
 
-#include "t31Video.h"
+#include "livethread.h"
 
 using std::cerr;
 using std::cout;
@@ -35,6 +35,7 @@ using std::endl;
 
 using namespace base;
 using namespace base::net;
+using namespace base::web_rtc;
 
 void RestAPI(std::string method, std::string uri)
 {
@@ -79,13 +80,12 @@ int main(int argc, char** argv) {
 
     Application app;
 
-    T31Video t31Video(nullptr,nullptr );
+    LiveThread t31Video("live", nullptr,nullptr );
 
     //if( !t31Video.XAInit())
-      if(! t31Video.T31Init())
-      {
-        t31Video.start();
-      }
+  
+    t31Video.start();
+     
 
 
 
@@ -134,9 +134,10 @@ int main(int argc, char** argv) {
 
     app.waitForShutdown([&](void*) {
 
-        //t31Video.stop();
 
-        //t31Video.join();
+        SInfo << "about to exit application" ;
+
+        t31Video.stop();
 
     }
 

@@ -13,13 +13,12 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "base/stb_image.h"
 
-
-
-#include <json/json.hpp>
-using json = nlohmann::json;
-#include "json/configuration.h"
-#include <xailient-fi/sdk_json_interface.h>
+#if(DUMPFILE)
+#else
 #include "webrtc/signaler.h"
+#endif
+
+#include <xailient-fi/sdk_json_interface.h>
 
 
 #include "base/logger.h"
@@ -89,11 +88,36 @@ void T31RGBA::run() {
         STrace << "Frame size "  <<  frame->size << " width"  << frame->width << " height "  <<   frame->height <<  " format "  << frame->pixfmt;
         
        
-        //if (80 == i) 
+        if (i==80) 
         {
+       
+
             fwrite((void *)frame->virAddr, frame->size, 1, fp);
             fclose(fp);
+
+            size_t  p_output_size = 0;
+            unsigned char *  bgrBuf = rgba_to_rgb_brg( (const unsigned char*) frame->virAddr , frame->size, bitmap_buffer_format_BGR , 0, frame->width , frame->height , &p_output_size );
+            write_bmp(bgrBuf, frame->width , frame->height, "/tmp/snap.bmp"  );
+            free(bgrBuf) ;
+
+        
+
+            // for( int x =0; x < 30 ; ++x)
+            // {
+
+            //    XAProcess( frame->virAddr, frame->width , frame->height) ;
+            //     base::sleep(100);
+            // }
+
+            
         }
+
+        ++i;
+
+
+         //XAProcess( frame->virAddr, frame->width , frame->height) ;
+
+       //  base::sleep(700);
 
         #else
 
@@ -128,16 +152,16 @@ void T31RGBA::run() {
 void T31RGBA::onMessage(json &jsonMsg )
 {
 
-   std::string jpegBuffBase64 = jsonMsg["messagePayload"].dump();
-   std::string registrationImage = jsonMsg["registrationImage"].get<std::string>();;
+   std::string registrationJson  = jsonMsg["messagePayload"].dump();
+   std::string  jpegBuffBase64= jsonMsg["registrationImage"].get<std::string>();;
 
-   XA_addGallery(jpegBuffBase64, registrationImage);
+   XA_addGallery(jpegBuffBase64, registrationJson);
 
 }
          
     
 
-int T31RGBA::XA_addGallery(std::string jpegBuffBase64, std::string & registrationImage)
+int T31RGBA::XA_addGallery(std::string jpegBuffBase64, std::string & registrationJson)
 {
 
   SInfo << "jpegBuffBase64 " << jpegBuffBase64.size() ;
@@ -170,18 +194,10 @@ int T31RGBA::XA_addGallery(std::string jpegBuffBase64, std::string & registratio
   const char * updated_json_identities;
   xa_fi_error_t returnValue;
 
-  
-  cnfg::Configuration identity;
-
- // identity.load("./identity.json");
-
-          
   //if (< a new gallery manifest exists >) 
-  if (identity.loaded()) 
+ 
   {
-        //std::string xaidentity = identity.root.dump();
-           
-        galleryIdentityManifest = registrationImage.c_str();
+        galleryIdentityManifest = registrationJson.c_str();
 
         // Step 1
         returnValue = xa_sdk_update_identities(galleryIdentityManifest,
@@ -313,25 +329,39 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
                         if(  event.find("registrationImage") != event.end()) 
                         {
                         
-                        //   XA_addGallery(event["registrationImage"].get<std::string>()) ;
-                        //   uint8_t* tmpBuf = new uint8_t [image.width*3*image.height];
-                        //   memset(tmpBuf, 0, image.width*3*image.height);
-                        //   XAProcess( tmpBuf , image.width, image.height );
-                        //   delete [] tmpBuf;
-                        //   base::sleep(700);
+                            #if DUMPFILE
 
+                              cnfg::Configuration identity;
+
+                              identity.load("./identity.json");
+                              std::string xaidentity = identity.root.dump();
+
+                               if (identity.loaded()) 
+                               {
+
+                                 XA_addGallery(event["registrationImage"].get<std::string>() ,xaidentity ) ;
+                                 uint8_t* tmpBuf = new uint8_t [image.width*3*image.height];
+                                 memset(tmpBuf, 0, image.width*3*image.height);
+                                 XAProcess( tmpBuf , image.width, image.height );
+                                 delete [] tmpBuf;
+                               }
+                               else
+                                SError << "./identity.json missing";
+
+                             #else
                             //cnfg::Configuration identity;
 
                             //identity.load("./event.json");
                             // std::string xaidentity = identity.root.dump();
                             
-                            std::string str = event["registrationImage"].get<std::string>();
+                                std::string str = event["registrationImage"].get<std::string>();
 
-                            json m;
-                            
-                            m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
-                            m["messagePayload"] =  event;
-                            ctx->signaler->postAppMessage( m);
+                                json m;
+                                
+                                m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
+                                m["messagePayload"] =  event;
+                                ctx->signaler->postAppMessage( m);
+                            #endif
 
 
                         }
@@ -395,6 +425,10 @@ void T31H264::play( unsigned char *str, int len)
 {
 
 
+#if(DUMPFILE)
+
+#else
+
   basicframe.data = str ;
   basicframe.sz = len;
             
@@ -402,11 +436,9 @@ void T31H264::play( unsigned char *str, int len)
   if(ctx->liveFrame)
   ctx->liveFrame->run(&basicframe); // starts the frame filter chain
   //ctx->muRecFrame.unlock(); 
-
-
   basicframe.payload.resize(basicframe.payload.capacity());
 
-
+ #endif 
 }
 
 void T31H264::run()
@@ -718,44 +750,44 @@ int LiveThread::XAInit()
 {
 
 
-   #if(DUMPFILE)
+  //  #if(DUMPFILE)
 
-    std::ifstream f("./arvind.rgba"); //taking file as inputstream
-    std::string str;
-    if(f) {
-       std::stringstream ss;
-       ss << f.rdbuf(); // reading data
-       str = ss.str();
-    }
-    else
-    {
-        SError << " rgba file does not exist ";
-        return -1;
-    }
+  //   std::ifstream f("./arvind.rgba"); //taking file as inputstream
+  //   std::string str;
+  //   if(f) {
+  //      std::stringstream ss;
+  //      ss << f.rdbuf(); // reading data
+  //      str = ss.str();
+  //   }
+  //   else
+  //   {
+  //       SError << " rgba file does not exist ";
+  //       return -1;
+  //   }
 
     
     
-   //unsigned long  p_width = 0;
-   //unsigned long  p_height = 0;
-   //size_t  p_output_size = 0;
-   //unsigned char *  tmp = rgbaMagic_decode( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0,  &p_width , &p_height , &p_output_size );
+  //  //unsigned long  p_width = 0;
+  //  //unsigned long  p_height = 0;
+  //  //size_t  p_output_size = 0;
+  //  //unsigned char *  tmp = rgbaMagic_decode( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0,  &p_width , &p_height , &p_output_size );
    
-   //w=640 h=360
+  //  //w=640 h=360
            
            
-  unsigned long  width = 640;
-  unsigned long  height = 360;
-  size_t  p_output_size = 0;
+  // unsigned long  width = 640;
+  // unsigned long  height = 360;
+  // size_t  p_output_size = 0;
   
     
-  //unsigned char *  bgrBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_BGR , 0, width , height , &p_output_size );
-  //write_bmp(bgrBuf, width, height, "arvind.bmp"  );
-  //free(bgrBuf) ;
+  // //unsigned char *  bgrBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_BGR , 0, width , height , &p_output_size );
+  // //write_bmp(bgrBuf, width, height, "arvind.bmp"  );
+  // //free(bgrBuf) ;
   
-  unsigned char *  rgbBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0, width , height , &p_output_size );
+  // unsigned char *  rgbBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0, width , height , &p_output_size );
 
   
-  #endif
+  // #endif
   
 
   
@@ -769,6 +801,8 @@ int LiveThread::XAInit()
     if (!config.loaded()) 
     {
         SError << "Could not load config";
+
+        return -1;
     }
      std::string xaconfig = config.root.dump();
      
@@ -829,11 +863,11 @@ int LiveThread::XAInit()
 //        base::sleep(700);
 //    }
     
-  #if(DUMPFILE)
+  // #if(DUMPFILE)
   
-  free(rgbBuf) ;
+  // free(rgbBuf) ;
   
-  #endif
+  // #endif
 
 
 
@@ -859,13 +893,15 @@ void LiveThread:: stop()
 
 void LiveThread::start()
 {
+     XAInit();
+     T31Init();
 
     //T31H264 t31h264;
     //T31RGBA t31rgba;
-    t31h264.T31H264Init();
+    //t31h264.T31H264Init();
     t31rgba.T31RGBAInit();
 
-    t31h264.start();
+   // t31h264.start();
     t31rgba.start();
 }
 

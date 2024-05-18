@@ -20,12 +20,12 @@ RANLIB=${CROSS_COMPILE}ranlib
 TARGET=runAI # define the name of the executable ./../net/src/*.cpp ../../http/src/*.cpp ../../net/uv_multiplex/src/*.cpp ../../http_parser/*.cpp  
 
 
-SOURCES=$(wildcard *.cpp ../src/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp  ../../net/src/*.cpp ../../http/src/*.cpp ../../net/uv_multiplex/src/*.cpp ../../http_parser/*.cpp )
+SOURCES=$(wildcard *.cpp ../src/*.cpp ../src/t31/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp  ../../net/src/*.cpp ../../http/src/*.cpp ../../net/uv_multiplex/src/*.cpp ../../http_parser/*.cpp )
 
 #../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp
-CXXFLAGS   +=  -O3 -std=c++11  -DNDEBUG -fpermissive
+CXXFLAGS   +=  -O3 -std=c++11  -DNDEBUG -fpermissive -DDUMPFILE=1
 
-CPPFLAGS   += -I../../facedetec/include/ -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../net/uv_multiplex/include/  -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser -I../xailient-sdk/include/ -I../../openssl/buildt31/include -I${T31SDK}/include -I${T31SDK}/samples/libimp-sample/
+CPPFLAGS   += -I../include/ -I../include/t31/ -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../net/uv_multiplex/include/  -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser -I../xailient-sdk/include/ -I../../openssl/buildt31/include -I${T31SDK}/include -I${T31SDK}/samples/libimp-sample/
 
 LDFLAGS +=  -L../xailient-sdk/lib -L${INSTALLPATH}/mips-linux-gnu/lib -muclibc
 

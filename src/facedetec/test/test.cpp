@@ -28,6 +28,8 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "base/stb_image.h"
+#include "t31Video.h"
+
 
 #include <json/json.hpp>
 using json = nlohmann::json;
@@ -296,121 +298,138 @@ int main(int argc, char** argv) {
     Logger::instance().add(ch);
     //test::init();
 
-    
-    std::ifstream f("./arvind.rgba"); //taking file as inputstream
-    std::string str;
-    if(f) {
-       std::stringstream ss;
-       ss << f.rdbuf(); // reading data
-       str = ss.str();
-    }
-    else
-    {
-        SError << " rgba file does not exist ";
-        return -1;
-    }
 
-    
-    
-   //unsigned long  p_width = 0;
-   //unsigned long  p_height = 0;
-   //size_t  p_output_size = 0;
-   //unsigned char *  tmp = rgbaMagic_decode( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0,  &p_width , &p_height , &p_output_size );
-   
-   //w=640 h=360
-           
-           
-  unsigned long  width = 640;
-  unsigned long  height = 360;
-  size_t  p_output_size = 0;
-  
-    
-  //unsigned char *  bgrBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_BGR , 0, width , height , &p_output_size );
-  //write_bmp(bgrBuf, width, height, "arvind.bmp"  );
-  //free(bgrBuf) ;
-  
-  unsigned char *  rgbBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0, width , height , &p_output_size );
 
-  
-  
-  
-#if XALIENT_TEST
-  
 
-    cnfg::Configuration config;
 
-    config.load("./configXA.json");
+
+
+       T31Video t31Video;
+
+      if( !t31Video.XAInit())
+      if(! t31Video.T31Init())
+      {
+        t31Video.start();
+      }
+
 
    
+
     
-    if (!config.loaded()) 
-    {
-        SError << "Could not load config";
-    }
-     std::string xaconfig = config.root.dump();
+//     std::ifstream f("./arvind.rgba"); //taking file as inputstream
+//     std::string str;
+//     if(f) {
+//        std::stringstream ss;
+//        ss << f.rdbuf(); // reading data
+//        str = ss.str();
+//     }
+//     else
+//     {
+//         SError << " rgba file does not exist ";
+//         return -1;
+//     }
+
+    
+    
+//    //unsigned long  p_width = 0;
+//    //unsigned long  p_height = 0;
+//    //size_t  p_output_size = 0;
+//    //unsigned char *  tmp = rgbaMagic_decode( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0,  &p_width , &p_height , &p_output_size );
+   
+//    //w=640 h=360
+           
+           
+//   unsigned long  width = 640;
+//   unsigned long  height = 360;
+//   size_t  p_output_size = 0;
+  
+    
+//   //unsigned char *  bgrBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_BGR , 0, width , height , &p_output_size );
+//   //write_bmp(bgrBuf, width, height, "./arvind.bmp"  );
+//   //free(bgrBuf) ;
+  
+//   unsigned char *  rgbBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0, width , height , &p_output_size );
+
+  
+  
+  
+// #if XALIENT_TEST
+  
+
+//     cnfg::Configuration config;
+
+//     config.load("./configXA.json");
+
+   
+    
+//     if (!config.loaded()) 
+//     {
+//         SError << "Could not load config";
+//     }
+//      std::string xaconfig = config.root.dump();
      
     
-    xa_fi_error_t returnValue;
+//     xa_fi_error_t returnValue;
 
-    const char* path_to_vision_cell =
-        "/mnt/libxailient-fi-vcell.so";                    // For shared lib
-    returnValue = xa_sdk_initialize(path_to_vision_cell);  // For shared lib
+//     const char* path_to_vision_cell =
+//         "/mnt/libxailient-fi-vcell.so";                    // For shared lib
+//     returnValue = xa_sdk_initialize(path_to_vision_cell);  // For shared lib
 
-    // returnValue = xa_sdk_initialize(); // For static lib
+//     // returnValue = xa_sdk_initialize(); // For static lib
 
-    if (returnValue != XA_ERR_NONE) {
-        SError << "Error at xa_sdk_initialize";
+//     if (returnValue != XA_ERR_NONE) {
+//         SError << "Error at xa_sdk_initialize";
 
-        return -1;
-    }
+//         return -1;
+//     }
 
-    const char* configuration = xaconfig.c_str();
+//     const char* configuration = xaconfig.c_str();
 
-    STrace << "config json: " << configuration;
+//     STrace << "config json: " << configuration;
 
-    // xa_sdk_update_identities
-    // xa_sdk_update_identity_image
-    returnValue = xa_sdk_configure(configuration);
-    if (returnValue != XA_ERR_NONE) {
-        SError << "Error at xa_sdk_configure";
+//     // xa_sdk_update_identities
+//     // xa_sdk_update_identity_image
+//     returnValue = xa_sdk_configure(configuration);
+//     if (returnValue != XA_ERR_NONE) {
+//         SError << "Error at xa_sdk_configure";
 
-        return -1;
-    }
+//         return -1;
+//     }
 
-    returnValue = xa_sdk_is_face_recognition_enabled();
-    if (returnValue != XA_ERR_NONE) {
-        SError << "Error at xa_sdk_configure";
+//     returnValue = xa_sdk_is_face_recognition_enabled();
+//     if (returnValue != XA_ERR_NONE) {
+//         SError << "Error at xa_sdk_configure";
 
-        return -1;
-    }
+//         return -1;
+//     }
 
 
-    /*
-    cnfg::Configuration event;
-    event.load("./event.json");
+//     /*
+//     cnfg::Configuration event;
+//     event.load("./event.json");
 
-    if( event.root.find("registrationImage") == event.root.end()) 
-    {
-       SError  << " no registrationImage found in event" ;
+//     if( event.root.find("registrationImage") == event.root.end()) 
+//     {
+//        SError  << " no registrationImage found in event" ;
 
-       return -1;
-    }
+//        return -1;
+//     }
 
-    XA_addGallery(event.root["registrationImage"].get<std::string>()) ;
-    */
+//     XA_addGallery(event.root["registrationImage"].get<std::string>()) ;
+//     */
 
-    for( int x = 0; x < 100; ++x)
-    {
-        XAProcess( rgbBuf , width, height );
+//     for( int x = 0; x < 100; ++x)
+//     {
+//         XAProcess( rgbBuf , width, height );
 
-        base::sleep(700);
-    }
+//         base::sleep(700);
+//     }
     
   
   
-  free(rgbBuf) ;
+//   free(rgbBuf) ;
   
-  #endif  
+//   #endif  
     
   Application app;
 

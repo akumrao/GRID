@@ -35,8 +35,8 @@ static const IMPEncoderRcMode S_RC_METHOD = IMP_ENC_RC_MODE_CAPPED_QUALITY;
 
 
 
-#define LOW_BITSTREAM
-#define SHOW_FRM_BITRATE
+//#define LOW_BITSTREAM
+//#define SHOW_FRM_BITRATE
 #ifdef SHOW_FRM_BITRATE
 #define FRM_BIT_RATE_TIME 2
 #define STREAM_TYPE_NUM 3
@@ -94,7 +94,7 @@ struct chn_conf chn[FS_CHN_NUM] = {
 		     },
 		     .scaler= 
 			 {
-			 	.enable = 0,
+			 	.enable = 1,
 			 	.outwidth = SENSOR_WIDTH_THIRD,
 				.outheight = SENSOR_HEIGHT_THIRD
 
@@ -128,7 +128,7 @@ struct chn_conf chn[FS_CHN_NUM] = {
 
 		     .scaler= 
 			 {
-			 	.enable = 0,
+			 	.enable = 1,
 			 	.outwidth = SENSOR_WIDTH_SECOND,
 				.outheight = SENSOR_HEIGHT_SECOND
 
@@ -783,14 +783,9 @@ static void *get_video_stream(void *args)
       return ((void *)-1);
     }
 
-    // if (encType == IMP_ENC_TYPE_JPEG) {
-    //   ret = save_stream_by_name(stream_path, i, &stream);
-    //   if (ret < 0) {
-    //     return ((void *)ret);
-    //   }
-    // }
+   
 #if 1
-    else {
+    {
       ret = save_stream(stream_fd, &stream);
       if (ret < 0) {
         close(stream_fd);
@@ -833,11 +828,11 @@ int sample_get_video_stream()
 		}
 	}
 
-	// for (i = 0; i < FS_CHN_NUM; i++) {
-	// 	if (chn[i].enable) {
-	// 		pthread_join(tid[i],NULL);
-	// 	}
-	// }
+	for (i = 0; i < FS_CHN_NUM; i++) {
+		if (chn[i].enable) {
+			pthread_join(tid[i],NULL);
+		}
+	}
 
 	return 0;
 }
