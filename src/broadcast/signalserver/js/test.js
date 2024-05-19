@@ -350,6 +350,13 @@ function createPeerConnection() {
           case "IDENTITY_RECOGNIZED":
           {
 
+
+            var base64Url = "data:image/jpeg;base64, " + msg.messagePayload.looselyCroppedImage;
+            var imgid = document.getElementById("image");
+            imgid.src = base64Url;
+
+            document.getElementById('w3review').value=  msg.messagePayload.identityName;
+
              
           // {
           //   msg.identityID": "76a92b24-31d5-463b-ab7a-b379efab7b30",

@@ -160,6 +160,8 @@ class T31RGBA:public base::Thread
 
     void onMessage(json &msg );
 
+    std::atomic<int> ready_flag {1};
+
 
     ~T31RGBA();
 };
