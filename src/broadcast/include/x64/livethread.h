@@ -122,9 +122,8 @@ namespace web_rtc {
     void onMessage(json &msg );
     
     
-    ~LiveThread(){
-        
-    }
+    ~LiveThread();
+    
 
 
     #define H264_INBUF_SIZE 16384  

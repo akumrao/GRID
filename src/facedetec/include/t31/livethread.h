@@ -170,8 +170,12 @@ class LiveThread
 {
     public:
         
-    LiveThread(const char* name, st_track *trackInfo,  LiveConnectionContext *ctx):trackInfo(trackInfo),ctx(ctx),t31h264( trackInfo, ctx),t31rgba( trackInfo, ctx)
+    LiveThread(const char* name, st_track *trackInfo,  LiveConnectionContext *ctx):trackInfo(trackInfo),ctx(ctx)
     {
+
+        t31h264 =  new  T31H264(trackInfo, ctx);
+        t31rgba =  new  T31RGBA(trackInfo, ctx);
+
     }
 
     st_track *trackInfo ;
@@ -180,7 +184,8 @@ class LiveThread
 
     void onMessage(json &msg )
     {
-        t31rgba.onMessage(msg);
+        if(t31rgba)
+        t31rgba->onMessage(msg);
     }
 
     void start();
@@ -201,8 +206,8 @@ class LiveThread
     
 public:
 
-    T31H264 t31h264;
-    T31RGBA t31rgba;
+    T31H264 *t31h264{nullptr};
+    T31RGBA *t31rgba{nullptr};
 
 };
 

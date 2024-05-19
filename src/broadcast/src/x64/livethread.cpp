@@ -30,7 +30,10 @@ namespace web_rtc {
     }
          
     
-    
+    ~LiveThread::LiveThread(){
+        join();
+    }
+
     void LiveThread::run(){
         
     

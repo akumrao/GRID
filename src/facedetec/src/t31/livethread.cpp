@@ -180,6 +180,8 @@ void T31RGBA::run() {
             SError<<"IMP_FrameSource_SetFrameDepth failed";
             return ;
         }
+
+         base::sleep(700);
     }
 
     #if(DUMPFILE)
@@ -187,6 +189,9 @@ void T31RGBA::run() {
     fclose(fp);
 
     #endif
+
+
+    SInfo << "31RGBA::run()" ;
 
     /* end */
     return ;
@@ -485,6 +490,9 @@ T31RGBA::~T31RGBA()
   stop();
   join();
   T31RGBAExit();
+
+  SInfo << "~t31rgba->()";
+
 }
 
 
@@ -517,8 +525,6 @@ void T31H264::run()
 {
  
   IMPEncoderEncType encType;
-
-
 
   int ret = IMP_Encoder_StartRecvPic(chnNum);
   if (ret < 0) {
@@ -614,9 +620,11 @@ void T31H264::run()
     #endif
 
     IMP_Encoder_ReleaseStream(chnNum, &stream);
+
+
   }
 
-
+   SInfo << "T31H264::run()" ;
 
 
   return ;
@@ -660,6 +668,9 @@ int T31H264::T31H264Exit()
   join();
   
   T31H264Exit();
+
+
+  SInfo << "~T31H264()";
 
 }
 
@@ -818,6 +829,30 @@ int LiveThread::T31Exit()
 
 
 
+
+typedef void (*xa_sdk_log_callback_function_t)(xa_fi_log_type_t log_level, const char * log_string);
+
+
+typedef void(*xa_fi_log_cb_t)(xa_fi_log_type_t, const char*);
+
+void logXaFi(xa_fi_log_type_t, const char*)
+{
+
+  printf("ravind log testing  \n");
+
+}
+
+
+void logXa(xa_fi_log_type_t log_level, const char * log_string)
+{
+
+   printf("arvind log testing  \n");
+
+}
+
+
+
+
 int LiveThread::XAInit()
 {
 
@@ -862,7 +897,15 @@ int LiveThread::XAInit()
   // #endif
   
 
-  
+    xa_sdk_log_callback_function_t log_function = &logXa;
+
+    xa_fi_log_cb_t cb = &logXaFi;
+
+   // xa_sdk_register_log_callback(log_function);
+
+   // xa_fi_set_log_callback(cb);
+
+
 
     cnfg::Configuration config;
 
@@ -896,6 +939,10 @@ int LiveThread::XAInit()
     const char* configuration = xaconfig.c_str();
 
     STrace << "config json: " << configuration;
+
+   // xa_fi_set_log_callback(cb);
+   // xa_sdk_register_log_callback(log_function);
+    
 
     // xa_sdk_update_identities
     // xa_sdk_update_identity_image
@@ -942,24 +989,42 @@ int LiveThread::XAInit()
   // #endif
 
 
-
-
 }
 
+
+int LiveThread::XAExit()
+{
+
+  xa_sdk_uninitialize();
+
+}
 
 
  LiveThread::~LiveThread() {
 
 
   T31Exit();
+  XAExit();
+
+  SInfo << "~LiveThread";
 
 }
 
 
 void LiveThread:: stop()
 {
-    t31rgba.stop();
-    t31h264.stop();
+    t31h264->stop();
+    t31rgba->stop();
+
+    t31h264->join();
+    t31rgba->join();
+
+    delete t31h264 ;
+    t31h264 = nullptr;
+    delete t31rgba ;
+    t31rgba = nullptr;
+
+   
 }
 
 
@@ -968,13 +1033,12 @@ void LiveThread::start()
      XAInit();
      T31Init();
 
-    //T31H264 t31h264;
-    //T31RGBA t31rgba;
-    //t31h264.T31H264Init();
-    t31rgba.T31RGBAInit();
 
-    t31h264.start();
-    t31rgba.start();
+    t31h264->T31H264Init();
+    t31rgba->T31RGBAInit();
+
+    t31h264->start();
+    t31rgba->start();
 }
 
 

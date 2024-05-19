@@ -35,7 +35,7 @@ static const IMPEncoderRcMode S_RC_METHOD = IMP_ENC_RC_MODE_CAPPED_QUALITY;
 
 
 
-//#define LOW_BITSTREAM
+#define LOW_BITSTREAM
 //#define SHOW_FRM_BITRATE
 #ifdef SHOW_FRM_BITRATE
 #define FRM_BIT_RATE_TIME 2

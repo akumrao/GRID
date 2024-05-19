@@ -80,15 +80,11 @@ int main(int argc, char** argv) {
 
     Application app;
 
-    LiveThread t31Video("live", nullptr,nullptr );
 
-    //if( !t31Video.XAInit())
-  
-    t31Video.start();
-     
+   
 
-
-
+     LiveThread t31Video("live", nullptr,nullptr );
+     t31Video.start();
 
     
    // RestAPI("GET", "/"); //GET, POST, PUT, DELETE  // Rest API TEst
