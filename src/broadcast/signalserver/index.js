@@ -253,7 +253,7 @@ async function runSocketServer() {
                 }
             });
         }
-        else
+        else if(ws.room)
         {
             rooms[ws.room].forEach((client) => {
             if (client !== ws && client.readyState === WebSocket.OPEN)
