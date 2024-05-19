@@ -86,7 +86,10 @@ Peer::Peer(
     _config.rtcp_mux_policy = webrtc::PeerConnectionInterface::kRtcpMuxPolicyRequire;
     _config.bundle_policy = webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle;
     _config.type = webrtc::PeerConnectionInterface::kAll;
-    // _config.candidate_network_policy = webrtc::PeerConnectionInterface::kCandidateNetworkPolicyLowCost;
+    _config.candidate_network_policy = webrtc::PeerConnectionInterface::kCandidateNetworkPolicyLowCost;
+    //_config.disable_ipv6 = true;
+   // _config.disable_ipv6_on_wifi = true;
+
     // _config.min_port =80000;
     //_config.max_port =100000;
     // _config.enable_ice_renomination = true;

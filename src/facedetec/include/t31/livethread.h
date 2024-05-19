@@ -126,7 +126,7 @@ class T31H264:public base::Thread
         
     void run();
 
-    int T31H264Init();
+    int T31H264Init(int ch);
     int T31H264Exit();
 
     int chnNum{0};

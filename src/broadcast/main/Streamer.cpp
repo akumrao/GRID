@@ -56,6 +56,35 @@ __complex__ float  csqrtf (__complex__ float  x)
     return 0;
 }
 
+
+
+/*
+in documentation parameter ver is described like, ver shall be 3 or the behavior of these functions is undefined, which is not entirely true, because in source code, definition of _STAT_VER_LINUX follows:
+
+#ifndef __x86_64__
+# define _STAT_VER_LINUX    3
+#else
+# define _STAT_VER_LINUX    1
+#endif
+*/
+
+int __xstat(int ver, const char *path, struct stat *stat_buf)
+{
+   exit(0);
+
+    return 0;
+}
+
+
+// int
+// __xstat (const char *__path, struct stat *__statbuf)
+// {
+//   exit(0);
+
+//     return 0;
+// }
+
+
 void IgnoreSignals() {
 #ifndef _WIN32
 

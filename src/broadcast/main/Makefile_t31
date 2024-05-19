@@ -26,7 +26,7 @@ SSL_ROOT = /workspace/MagicAI/src/openssl/buildt31
 TARGET=runWebrtc # define the name of the executable
 SOURCES=$(wildcard *.cpp ../src/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp ../../net/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../facedetec/src/*.cpp ../../facedetec/src/t31/*.cpp )
 
-CXXFLAGS   := -g -fno-rtti -std=c++11 -Wno-uninitialized -DNDEBUG -fpermissive
+CXXFLAGS   := -Os -fdata-sections -ffunction-sections -fno-rtti -std=c++11 -Wno-uninitialized -DNDEBUG -fpermissive
 
 
 CPPFLAGS   := -I../../facedetec/include/  -I../../facedetec/include/t31/  -I/${FFMPEG_ROOT}/include  -I../include -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../webrtc/include  -DWEBRTC_POSIX  -I${WEBRTC_PATH}  -I${SSL_ROOT}/include  -I../include/t31 -I${WEBRTC_PATH}/third_party/abseil-cpp -DHTTPSSL -I../../facedetec/xailient-sdk/include/ -I${T31SDK}/include -I${T31SDK}/samples/libimp-sample/
@@ -61,6 +61,11 @@ purge: clean
 
 clean:
 	rm -f  $(OBJS)
+
+strip: 
+	${STRIP}  $(TARGET)
+
+
 
 ################################################################################
 ################################################################################

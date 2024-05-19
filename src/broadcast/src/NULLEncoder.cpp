@@ -71,8 +71,7 @@ const size_t kVPlaneIndex = 2;
 const uint8_t start_code[4] = {0, 0, 0, 1};
 
 
-//#include "rtc_base/ref_counted_object.h"
-//#include "rtc_base/atomic_ops.h"
+extern std::atomic<int>  HDVideo ;
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -274,13 +273,27 @@ namespace base {
                 return;
             }
 
-            // At this point, bitrate allocation should already match codec settings.
-            if (codec_.maxBitrate > 0)
-                RTC_DCHECK_LE(parameters.bitrate.get_sum_kbps(), codec_.maxBitrate);
-            RTC_DCHECK_GE(parameters.bitrate.get_sum_kbps(), codec_.minBitrate);
-            if (codec_.numberOfSimulcastStreams > 0)
-                RTC_DCHECK_GE(parameters.bitrate.get_sum_kbps(),
-                    codec_.simulcastStream[0].minBitrate);
+            // // At this point, bitrate allocation should already match codec settings.
+            // if (codec_.maxBitrate > 0)
+            // RTC_DCHECK_LE(parameters.bitrate.get_sum_kbps(), codec_.maxBitrate);
+            
+            // RTC_DCHECK_GE(parameters.bitrate.get_sum_kbps(), codec_.minBitrate);
+            
+
+
+            uint32_t bps =    parameters.bitrate.get_sum_bps()/1000;
+
+            if( bps < 500)
+             HDVideo =2;
+            else 
+             HDVideo =0;   
+
+      //      SInfo << "bitrate " <<  bps << " resolution " <<  HDVideo;
+
+
+            // if (codec_.numberOfSimulcastStreams > 0)
+            //     RTC_DCHECK_GE(parameters.bitrate.get_sum_kbps(),
+            //         codec_.simulcastStream[0].minBitrate);
 
             codec_.maxFramerate = static_cast<uint32_t> (parameters.framerate_fps);
  

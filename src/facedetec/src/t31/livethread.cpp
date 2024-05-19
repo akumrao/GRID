@@ -30,7 +30,7 @@ using namespace base::cnfg;
 extern struct chn_conf chn[];
 
 #define LOW_BITSTREAM
-#define SHOW_FRM_BITRATE
+//#define SHOW_FRM_BITRATE
 #ifdef SHOW_FRM_BITRATE
 #define FRM_BIT_RATE_TIME 2
 #define STREAM_TYPE_NUM 3
@@ -41,6 +41,7 @@ static int bitrate_sp[STREAM_TYPE_NUM] = { 0 };
 
 //#define DUMPFILE 1
 
+std::atomic<int>  HDVideo {2};
 
                                                 
 namespace base {
@@ -521,20 +522,11 @@ void T31H264::play( unsigned char *str, int len)
  #endif 
 }
 
+
+
 void T31H264::run()
 {
  
-  IMPEncoderEncType encType;
-
-  int ret = IMP_Encoder_StartRecvPic(chnNum);
-  if (ret < 0) {
-    SError <<  "IMP_Encoder_StartRecvPic failed\n" <<  chnNum;
-    return ;
-  }
-
-  SInfo << "Streaming h264 channel" << chnNum;
-
-
   #if(DUMPFILE)
 //  IMP_LOG_DBG(TAG, "Video ChnNum=%d Open Stream file %s ", chnNum, stream_path);
    FILE *stream_fd = fopen("/tmp/test.264", "wb"); 
@@ -545,10 +537,22 @@ void T31H264::run()
    #endif
 
    //IMP_LOG_DBG(TAG, "OK\n");
+
+  T31H264Init(2);
   
   while (!stopped())
   {
-    ret = IMP_Encoder_PollingStream(chnNum, 1000);
+
+
+   
+    if( HDVideo !=  chnNum)
+    {
+      T31H264Exit();
+      T31H264Init(HDVideo);
+    }
+    
+
+    int ret = IMP_Encoder_PollingStream(chnNum, 1000);
     if (ret < 0) {
       SError <<  "IMP_Encoder_PollingStream timeout" <<  chnNum;
       continue;
@@ -570,7 +574,7 @@ void T31H264::run()
       double fps = (double)frmrate_sp[chnNum] / ((double)(now - statime_sp[chnNum]) / 1000);
       double kbr = (double)bitrate_sp[chnNum] * 8 / (double)(now - statime_sp[chnNum]);
 
-      printf("streamNum[%d]:FPS: %0.2f,Bitrate: %0.2f(kbps)\n", chnNum, fps, kbr);
+      printf("HDVideo[%d] streamNum[%d]:FPS: %0.2f,Bitrate: %0.2f(kbps)\n", HDVideo, chnNum, fps, kbr);
       //fflush(stdout);
 
       frmrate_sp[chnNum] = 0;
@@ -584,7 +588,7 @@ void T31H264::run()
     }
 
 //    ret = save_stream(stream_fd, &stream);
-    int ret,  nr_pack = stream.packCount;
+    int i, nr_pack = stream.packCount;
 
 //IMP_LOG_DBG(TAG, "----------packCount=%d, stream->seq=%u start----------\n", stream->packCount, stream->seq);
     for (i = 0; i < nr_pack; i++) {
@@ -624,6 +628,8 @@ void T31H264::run()
 
   }
 
+  T31H264Exit();
+
    SInfo << "T31H264::run()" ;
 
 
@@ -632,21 +638,30 @@ void T31H264::run()
     
 }
 
-int T31H264::T31H264Init()
+int T31H264::T31H264Init( int ch)
 {
 
-    unsigned int i;
-    int ret;
-    pthread_t tid[FS_CHN_NUM];
 
-    for (i = 0; i < FS_CHN_NUM; i++) {
-        if (chn[i].enable) {
-            chnNum = chn[i].index;
-            break;
+
+  if (ch < FS_CHN_NUM && chn[ch].enable)
+   {    
+       chnNum = chn[ch].index;
+  
+       int ret = IMP_Encoder_StartRecvPic(chnNum);
+        if (ret < 0) {
+          SError <<  "IMP_Encoder_StartRecvPic failed\n" <<  chnNum;
+          return ;
         }
-    }
 
+      SInfo << "T31H264Init chnNum " << chnNum; 
+  }
+  else
+  {
+      SError << "T31H264Init not enabled chnNum " << chnNum; 
 
+  }
+
+  
     return 0;
 }
 
@@ -667,7 +682,7 @@ int T31H264::T31H264Exit()
   stop();
   join();
   
-  T31H264Exit();
+
 
 
   SInfo << "~T31H264()";
@@ -1034,7 +1049,6 @@ void LiveThread::start()
      T31Init();
 
 
-    t31h264->T31H264Init();
     t31rgba->T31RGBAInit();
 
     t31h264->start();

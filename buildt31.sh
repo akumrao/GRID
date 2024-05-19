@@ -19,9 +19,9 @@ export CC=${CROSS_COMPILE}gcc
 export CXX=${CROSS_COMPILE}g++
 export LD=${CROSS_COMPILE}ld
 export AR=${CROSS_COMPILE}ar
-export CFLAGS="-O2 -muclibc -fPIC -Wno-error -I${INSTALLPATH}/include -I${INSTALLPATH}/mips-linux-gnu/include/ -I${SDKPATH}/include/"
-export CPPFLAGS="-O2 -muclibc -fPIC  -I${INSTALLPATH}/include -I${INSTALLPATH}/mips-linux-gnu/include/ -I${SDKPATH}/include/"
-export LDFLAGS="-O2 -muclibc -L${INSTALLPATH}/lib -L${INSTALLPATH}/mips-linux-gnu/lib/ -L${SDKPATH}/lib/uclibc/"
+export CFLAGS="-Os -fdata-sections -ffunction-sections -muclibc -fPIC -Wno-error -I${INSTALLPATH}/include -I${INSTALLPATH}/mips-linux-gnu/include/ -I${SDKPATH}/include/"
+export CPPFLAGS="-Os -fdata-sections -ffunction-sections  -muclibc -fPIC  -I${INSTALLPATH}/include -I${INSTALLPATH}/mips-linux-gnu/include/ -I${SDKPATH}/include/"
+export LDFLAGS="-Os -fdata-sections -ffunction-sections -muclibc -L${INSTALLPATH}/lib -L${INSTALLPATH}/mips-linux-gnu/lib/ -L${SDKPATH}/lib/uclibc/"
 
 
 mkdir -p src/libuv/build
