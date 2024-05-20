@@ -413,7 +413,9 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
   {
         if(!strncmp(msg, "startrec",   8 )  )
         {
-
+            
+            _manager->ctx->liveThread->t31rgba->record = true;
+                     
             //ATOMIC_STORE_BOOL(&gSampleConfiguration->startrec, TRUE); 
 
         }else if(!strncmp(msg, "stoprec",   7 )  )

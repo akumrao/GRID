@@ -248,15 +248,17 @@ void VideoPacketSource::oncommand( std::string & cmd , int first,  int second)
 void VideoPacketSource::onAnswer()
 {
   //  this->trackInfo.encType = encType;
-            
-
         
     //ffparser->registerStream(ctx);  // arvind
     //ffparser->playStream(ctx);  
 }
 
 
+void VideoPacketSource::saveFrame(unsigned char * src , int size)
+{
 
+
+}
 
 
 void VideoPacketSource::run(web_rtc::Frame *frame)
@@ -352,7 +354,19 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
                     
                     nullDecoder->cb_mp4 = [&](web_rtc::Frame *basicframe, bool key ) 
                     {
-                        if(ctx->fragmp4_muxer)
+                        
+                        if(key && recording &&  ++recording > Settings::configuration.Mp4Size_Key)
+                        {
+                            recording = 0;
+                        }
+                        
+                        if( liveThread->t31rgba->record && key && !recording)
+                        {
+                            recording = 1;
+                            liveThread->t31rgba->record = false;
+                        }
+                                
+                        if(ctx->fragmp4_muxer && recording)
                         {
                             ctx->fragmp4_muxer->run(basicframe);
                             if( key)

@@ -65,6 +65,8 @@ protected:
 
 public:
   
+    
+    void saveFrame(unsigned char * src , int size);
   //  void run();
     void run(web_rtc::Frame  *frame);
     
@@ -152,7 +154,7 @@ private:
     
     std::vector<uint8_t> buffer;
     
-//    bool recording{true};
+    int recording{0};
 
 };
 

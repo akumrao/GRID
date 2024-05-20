@@ -134,6 +134,8 @@ namespace web_rtc {
        
     void run();
 
+    std::atomic<bool> record{false};
+
   
     private: // internal
 

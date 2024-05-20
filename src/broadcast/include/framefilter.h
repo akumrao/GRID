@@ -204,7 +204,7 @@ protected:
     
     base::cnfg::Configuration mf;
     
-    std::string camera;
+    //std::string camera;
 //    std::string metadata;
     std::string dayDate;
     

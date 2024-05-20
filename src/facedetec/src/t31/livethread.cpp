@@ -429,6 +429,8 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
                             {
                                  SInfo << "IDENTITY_RECOGNIZED";
 
+                                 record = true;
+
                                   #if DUMPFILE
 
                                   #else  

@@ -162,6 +162,7 @@ class T31RGBA:public base::Thread
 
     std::atomic<int> ready_flag {1};
 
+    std::atomic<bool> record{false};
 
     ~T31RGBA();
 };

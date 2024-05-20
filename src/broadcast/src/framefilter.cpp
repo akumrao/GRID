@@ -36,17 +36,8 @@ DummyFrameFilter::DummyFrameFilter(const char *name, std::string &cam , RestApi 
         base::fs::mkdir(Settings::configuration.storage);
     }
 
-    camera= "CAM" + cam;
 
-   
-    if (!base::fs::exists(Settings::configuration.storage + camera))
-    {
-        base::fs::mkdir(Settings::configuration.storage + camera);
-    }
-        
-  
-
-//    metadata = Settings::configuration.storage + camera + "/metadata";
+//    metadata = Settings::configuration.storage +  "/metadata";
 //    if (!base::fs::exists(metadata))
 //    {
 //       base::fs::mkdir(metadata );
@@ -105,7 +96,7 @@ void DummyFrameFilter::go(Frame *frame)
 
     if( dayDate != date)
     {   dayDate = date;
-        std::string tmp = Settings::configuration.storage + camera + "/" + dayDate + "/" ;
+        std::string tmp = Settings::configuration.storage +  "/" + dayDate + "/" ;
         if (!base::fs::exists(tmp ))
         {
            mkdir(tmp.c_str(),0777);
@@ -129,7 +120,7 @@ void DummyFrameFilter::go(Frame *frame)
 
     if( HR != timeHr)
     {   HR = timeHr;
-        HRFullPath = Settings::configuration.storage + camera + "/" + dayDate + "/" + HR;
+        HRFullPath = Settings::configuration.storage +  "/" + dayDate + "/" + HR;
         if (!base::fs::exists(HRFullPath))
         {
            //base::fs::mkdir(HRFullPath); crashes
