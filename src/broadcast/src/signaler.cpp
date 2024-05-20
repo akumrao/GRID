@@ -7,7 +7,23 @@
 #include "webrtc/videopacketsource.h"
 #include "webrtc/signaler.h"
 #include "Settings.h"
+/***********************************
+  function startWebsocket() {
+  var ws = new WebSocket('ws://localhost:8080')
 
+  ws.onmessage = function(e){
+    console.log('websocket message event:', e)
+  }
+  ws.onclose = function(){
+    // connection closed, discard old websocket and create a new one in 5s
+    ws = null
+    setTimeout(startWebsocket, 5000)
+  }
+}
+How to reopen a closed websocket
+startWebsocket();
+ 
+ ****************/
 
 using namespace base;
 using namespace base::net;
@@ -19,11 +35,19 @@ namespace base
 namespace web_rtc
 {
 
-Signaler::Signaler(LiveConnectionContext  *ctx) : PeerManager(ctx, this), _context(_capturer.getAudioModule()) {  }
+Signaler::Signaler(LiveConnectionContext  *ctx) : PeerManager(ctx, this), _context(_capturer.getAudioModule()) { 
+
+   m_connection_timer.cb_timeout = std::bind(&Signaler::reconnect, this);
+}
 
 Signaler::~Signaler()
 {
+    
+    m_connection_timer.Stop();
+    m_connection_timer.Close(); 
+             
     SInfo << "~Signaler() ";
+    
 }
 
 void Signaler::startStreaming(
@@ -529,14 +553,27 @@ void Signaler::postAppMessage(json &message)
 }
 
 
-void Signaler::connect( const uint16_t port)
+void Signaler::reconnect( )
+{
+    SInfo << "reconnect websocket client";
+    
+     m_client->Close();
+     delete m_client;
+     
+     connect();
+     
+  
+}
+
+void Signaler::connect()
 {
     LTrace("Tests signalling Begin. Please run signalling server at webrtc folder")
             
    room = Settings::configuration.cam;
    server = Settings::configuration.server; 
+   int port = Settings::configuration.port; 
     
-    m_client = new HttpsClient("wss",  server, port, "/");  //Websocket test
+   m_client = new HttpsClient("wss",  server, port, "/");  //Websocket test
 
 
    // conn->Complete += sdelegate(&context, &CallbackContext::onClientConnectionComplete);
@@ -544,7 +581,8 @@ void Signaler::connect( const uint16_t port)
        std::string reason = response.getReason();
        StatusCode statuscode = response.getStatus();
        std::string body = m_client->readStream() ? m_client->readStream()->str() : "";
-       STrace << "SocketIO handshake response:" << "Reason: " << reason << " Response: " << body;
+       STrace << " handshake response:" << "Reason: " << reason << " Response: " << body;
+      
    };
 
    m_client->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
@@ -612,15 +650,24 @@ void Signaler::connect( const uint16_t port)
    };
 
    m_client->fnClose = [&](HttpBase * con, std::string str) {
-       SInfo << "client->fnClose " << str;
-       //close(0,"exit");
+    
        
+      
+    if( m_connection_timer.IsActive())
+    m_connection_timer.Restart();
+    else
+    m_connection_timer.Start(30000);    
+    
+    SInfo << "client->fnClose " << str;
+    
        //on_close();
    };
 
    m_client->fnConnect = [&](HttpBase * con) {
 
       
+       m_connection_timer.Stop();
+       
        
        json tmp;
        tmp["messageType"] = "createorjoin";

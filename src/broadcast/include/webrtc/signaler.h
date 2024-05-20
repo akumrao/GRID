@@ -13,6 +13,7 @@
 #include "http/HTTPResponder.h"
 
 #include "webrtc/peermanager.h"
+#include "base/Timer.h"
 
 //#define JOIN_ROOM "VideoEdgeWebRTC"
 
@@ -28,7 +29,7 @@ public:
     ~Signaler();
 
     void startStreaming(const std::string &dir, const std::string &file, const std::string &type, bool looping);
-    void connect( const uint16_t port);
+    void connect( );
     // void closeCamera(std::string &cam ,  std::string  reason );
     void postcloseCamera(std::string &trackInfo, std::string reason);
     void postAppMessage(json &message);
@@ -79,6 +80,10 @@ protected:
     bool isChannelReady{false};
     bool isInitiator{false};
     bool isStarted{false};
+    
+    Timer m_connection_timer{ nullptr};
+    
+    void reconnect( );
     
 public:
     std::string room;

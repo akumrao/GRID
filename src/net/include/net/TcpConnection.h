@@ -90,7 +90,7 @@ namespace base
                     uint16_t localPort);
             bool IsClosed() const;
             uv_tcp_t* GetUvHandle() const;
-            void Start();
+            bool Start();
             int Write(const char* data, size_t len,onSendCallback cb);
             int Write(const char* data1, size_t len1, const char* data2, size_t len2,onSendCallback cb);
             int Write(const std::string& data);

@@ -35,7 +35,7 @@ CMemLeakDetect memLeakDetect;
  */
 
 //#define SERVER_HOST "192.168.0.19"
-#define SERVER_PORT 443
+//#define SERVER_PORT 443
 
 
 //std::string sampleDataDir(const std::string& file) {
@@ -210,7 +210,7 @@ int main(int argc, char** argv) {
      
 
     
-    sig.connect( SERVER_PORT);
+    sig.connect();
     
     
     

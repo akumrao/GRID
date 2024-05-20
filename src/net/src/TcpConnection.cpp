@@ -206,8 +206,10 @@ namespace base {
 
         inline void onconnect(uv_connect_t* req, int /*status*/) {
             TcpConnectionBase *obj = (TcpConnectionBase *) req->data;
-            obj->Start();
-            obj->on_connect();
+            if(obj->Start())
+             obj->on_connect();
+            else
+               obj->Close();
 
             delete req;
         }
@@ -294,11 +296,11 @@ namespace base {
 
         }
 
-        void TcpConnectionBase::Start() {
+        bool TcpConnectionBase::Start() {
 
 
             if (this->closed)
-                return;
+                return false;
 
             int err = uv_read_start(
                     reinterpret_cast<uv_stream_t*> (this->uvHandle),
@@ -306,11 +308,19 @@ namespace base {
                     static_cast<uv_read_cb> (onRead));
 
             if (err != 0)
+            {
                 LError("uv_read_start() failed: %s", uv_strerror(err));
+                return false;
+            }
 
             // Get the peer address.
             if (!SetPeerAddress())
+            {
                 LError("error setting peer IP and port");
+                return false;
+            }
+            
+            return true;
         }
 
         int TcpConnectionBase::Write(const char* data, size_t len, onSendCallback cb) {

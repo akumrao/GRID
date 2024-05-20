@@ -409,7 +409,45 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
   memcpy(msg, buffer.data.data(), size);
   msg[size] = 0;
 
-  //DataChannelSend("arvind umrao");
+  if(  size < 11 )
+  {
+        if(!strncmp(msg, "startrec",   8 )  )
+        {
+
+            //ATOMIC_STORE_BOOL(&gSampleConfiguration->startrec, TRUE); 
+
+        }else if(!strncmp(msg, "stoprec",   7 )  )
+        {
+           // ATOMIC_STORE_BOOL(&gSampleConfiguration->startrec, FALSE); 
+
+        }else if(!strncmp(msg, "recDates",   8 )  )
+        {
+           char json[256]={'\0'};
+
+//           MUTEX_LOCK(gSampleConfiguration->recordReadLock);
+//           getJson(json);
+//           MUTEX_UNLOCK(gSampleConfiguration->recordReadLock);
+//
+//           printf("final %s\n", json); 
+//
+//          STATUS retStatus = STATUS_SUCCESS;
+//          retStatus = dataChannelSend(pDataChannel, FALSE, (PBYTE) json, STRLEN(json));
+//          if (retStatus != STATUS_SUCCESS) {
+//            DLOGI("[KVS Master] dataChannelSend(): operation returned status code: 0x%08x \n", retStatus);
+//          }
+
+
+        }
+        else if(!strncmp(msg, "starttime:",   10 )  )
+        {
+            //strcpy( gSampleConfiguration->timeStamp, &pMessage[10]);
+
+            //ATOMIC_STORE_BOOL(&gSampleConfiguration->newRecording, TRUE);
+        }
+    }
+   else
+   {
+  
   
 
 	json jsonMsg ;
@@ -439,6 +477,7 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
 	    SInfo << jsonMsg.dump(4);
 	    
 	}
+   }
 
 
   delete[] msg;

@@ -15,7 +15,7 @@
 // #define LIVE_SIGNAL_FRAMES // experimental
 
 
-
+std::atomic<int>  HDVideo{0} ;
 
 namespace base {
 namespace web_rtc {
@@ -30,7 +30,7 @@ namespace web_rtc {
     }
          
     
-    ~LiveThread::LiveThread(){
+    LiveThread::~LiveThread(){
         join();
     }
 

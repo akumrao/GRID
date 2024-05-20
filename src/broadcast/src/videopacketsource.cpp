@@ -46,7 +46,7 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
     this->ctx->liveFrame = this;
     //ctx = new web_rtc::LiveConnectionContext(LiveConnectionType::rtsp, "address", 1, cam, cam, Settings::configuration.tcpRtsp, this ) ; // Request livethread to write into filter info
     
-    if(Settings::configuration.recording )
+    if(Settings::configuration.cloud)
     {
         ctx->fragmp4_filter = new DummyFrameFilter("fragmp4", cam, nullptr);
         ctx->fragmp4_muxer = new FragMP4MuxFrameFilter("fragmp4muxer", ctx->fragmp4_filter);

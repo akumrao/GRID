@@ -152,7 +152,7 @@ private:
     
     std::vector<uint8_t> buffer;
     
-    bool recording{true};
+//    bool recording{true};
 
 };
 

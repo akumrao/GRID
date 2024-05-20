@@ -45,7 +45,9 @@ public:
         std::string storage;
         std::string cam;
         std::string server;
-        bool recording;
+        int port{443};
+        bool recording{false};
+        bool cloud{false};
         bool facedetect;
         bool motionevent;
         //json rtsp;

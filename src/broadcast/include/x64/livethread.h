@@ -132,7 +132,7 @@ namespace web_rtc {
     
     public: // redefined virtual functions
        
-        void run();
+    void run();
 
   
     private: // internal
