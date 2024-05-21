@@ -51,21 +51,21 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
         ctx->fragmp4_filter = new DummyFrameFilter("fragmp4", cam, nullptr);
         ctx->fragmp4_muxer = new FragMP4MuxFrameFilter("fragmp4muxer", ctx->fragmp4_filter);
 
-	if(ctx->fragmp4_muxer)
-	ctx->fragmp4_muxer->deActivate();
+      	if(ctx->fragmp4_muxer)
+      	ctx->fragmp4_muxer->deActivate();
 
 
-	SetupFrame setupframe;
+      	SetupFrame setupframe;
 
-	// prepare setup frame
-	setupframe.sub_type             =SetupFrameType::stream_init;
-	setupframe.media_type           =AVMEDIA_TYPE_VIDEO;
-	setupframe.codec_id             =AV_CODEC_ID_H264;   // what frame types are to be expected from this stream
-	setupframe.stream_index     = 0;
-	setupframe.mstimestamp      = CurrentTime_milliseconds();
-	// send setup frame
-	if(ctx->fragmp4_muxer)
-	ctx->fragmp4_muxer->run(&setupframe);
+      	// prepare setup frame
+      	setupframe.sub_type             =SetupFrameType::stream_init;
+      	setupframe.media_type           =AVMEDIA_TYPE_VIDEO;
+      	setupframe.codec_id             =AV_CODEC_ID_H264;   // what frame types are to be expected from this stream
+      	setupframe.stream_index     = 0;
+      	setupframe.mstimestamp      = CurrentTime_milliseconds();
+      	// send setup frame
+      	if(ctx->fragmp4_muxer)
+      	ctx->fragmp4_muxer->run(&setupframe);
 
     }
    

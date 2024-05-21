@@ -22,11 +22,13 @@ namespace web_rtc {
     
     LiveThread::LiveThread(const char* name, st_track *trackInfo, LiveConnectionContext* ctx):trackInfo(trackInfo), ctx(ctx)
     {
-        
+          t31rgba = new T31RGBA(trackInfo, ctx) ;
+
     }
     
     void LiveThread::onMessage(json &msg )
     {
+        delete t31rgba ;
     }
          
     
@@ -75,6 +77,8 @@ namespace web_rtc {
                         m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
                         m["messagePayload"] =  identity.root;
                         ctx->signaler->postAppMessage( m);
+
+
                     }
 
 
@@ -91,7 +95,7 @@ namespace web_rtc {
             ctx->liveFrame->run(&basicframe); // starts the frame filter chain
             //ctx->muRecFrame.unlock(); 
 
-        
+            SInfo << "payload " << bytes_read;
             basicframe.payload.resize(basicframe.payload.capacity());
        
            //  base::sleep(10);   

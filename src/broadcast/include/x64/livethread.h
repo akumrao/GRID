@@ -105,6 +105,37 @@ namespace web_rtc {
     };
 
 
+
+    class T31RGBA:public base::Thread
+{
+    public:
+        
+    T31RGBA( st_track *trackInfo,  LiveConnectionContext *ctx):trackInfo(trackInfo),ctx(ctx)
+    {
+    }
+
+    st_track *trackInfo ;
+    LiveConnectionContext *ctx;
+    
+
+    void run(){};
+
+    
+    std::atomic<int> ready_flag {1};
+
+    std::atomic<bool> record{false};
+
+    ~T31RGBA()
+    {
+
+    }
+
+};
+
+
+
+
+
     class LiveThread : public Thread {
 
     public:
@@ -131,12 +162,11 @@ namespace web_rtc {
     uint8_t inbuf[H264_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
     
     public: // redefined virtual functions
+
+     T31RGBA *t31rgba;
        
     void run();
 
-    std::atomic<bool> record{false};
-
-  
     private: // internal
 
 
@@ -145,6 +175,8 @@ namespace web_rtc {
     LiveConnectionContext *ctx;
      
     BasicFrame basicframe;
+
+
 
     public:
       

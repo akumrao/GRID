@@ -1030,17 +1030,23 @@ int LiveThread::XAExit()
 
 void LiveThread:: stop()
 {
-    t31h264->stop();
+    SInfo << "LiveThread:: stop";
+
     t31rgba->stop();
 
-    t31h264->join();
+    t31h264->stop();
+
     t31rgba->join();
+
+    t31h264->join();
+    
 
     delete t31h264 ;
     t31h264 = nullptr;
     delete t31rgba ;
     t31rgba = nullptr;
 
+    SInfo << "LiveThread:: stop over";
    
 }
 
