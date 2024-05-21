@@ -18,7 +18,26 @@ var sdpConstraints = {
   }
 };
 
-/////////////////////////////////////////////
+var browserName = (function(agent) {
+    switch (true) {
+        case agent.indexOf("edge") > -1:
+            return "Edge";
+        case agent.indexOf("edg/") > -1:
+            return "Edge ( chromium based)";
+        case agent.indexOf("opr") > -1 && !!window.opr:
+            return "Opera";
+        case agent.indexOf("chrome") > -1 && !!window.chrome:
+            return "Chrome";
+        case agent.indexOf("trident") > -1:
+            return "MS IE";
+        case agent.indexOf("firefox") > -1:
+            return "Firefox";
+        case agent.indexOf("safari") > -1:
+            return "Safari";
+        default:
+            return "other";
+    }
+})(window.navigator.userAgent.toLowerCase());
 
 // Could prompt for room name:
 var room = prompt('Enter camera name:', '65c108570948a0346f67424623c38f86a7e718712aceadb10ac867');
@@ -27,128 +46,42 @@ if (room === '') {
   room = '65c108570948a0346f67424623c38f86a7e718712aceadb10ac867';
 }
 
+var socket = io.connect();
+socket.on('created', function(room) {
+    console.log('Created room ' + room);
+    isInitiator = true;
+});
 
-function reliable_log_msg(msg) {
-  console.log(msg);
-}
+socket.on('join', function(room, id, numClients) {
+    console.log('New peer, room: ' + room + ', ' + " client id: " + id);
+    isChannelReady = true;
+});
 
-
-window.WebSocket = window.WebSocket || window.MozWebSocket;
-
-if (!window.WebSocket) {
-  alert('Your browser doesn\'t support WebSocket');
-
-}
-
-
-//var socket = new WebSocket(window.location.href.replace('http://', 'ws://').replace('https://', 'wss://'));
-var reliableSocket = new WebSocket(window.location.href.replace('http://', 'ws://').replace('https://', 'wss://'));
-
-
-reliableSocket.onopen = function (event) {
-  // Socket is now ready to send and receive messages
-  console.log("reliableSocket is open and ready to use");
-  reliableSocket.send(JSON.stringify( {"messageType": "createorjoin" , "room": room}));
-};
-
-reliableSocket.onerror = function (event) {
-  // Socket failed to connect
-};
-
-reliableSocket.onclose = function (event) {
-  console.log("ERROR: Reliable socket has closed");
-};
-
-// Simple helper to send JSON messages with a given messageType
-reliableSocket.sendMessage = function (messageType, msg) {
-  reliable_log_msg("Sending msg of type: " + messageType);
-  reliableSocket.send(JSON.stringify({"messageType": messageType, "messagePayload": msg}));
-}
-
-reliableSocket.onmessage = function (event) {
-  console.log("Got msg", event);
-  var msg = JSON.parse(event.data);
-
-  reliable_log_msg("Received msg of messageType: " + msg.messageType);
-  console.log(msg);
-
-  switch (msg.messageType) {
-    case "join":
-     
-      console.log('camera not running');
-      isChannelReady = true;
-
-      break;
-    case "joined":
-      {
-
-      isChannelReady = true;
-      isInitiator = true;
-      maybeStart();
-
-      break;
-      }
-     case "SDP_OFFER":
-      {
-            if (!isInitiator && !isStarted) 
-            {
-              maybeStart();
-            }
-            pc.setRemoteDescription(new RTCSessionDescription(msg.messagePayload));
-            doAnswer();
-
-          break;
-      }
-    case "SDP_ANSWER":
-     {
-        if(isStarted) {
-          console.log("received answer %o",  msg.messagePayload);
-          pc.setRemoteDescription(new RTCSessionDescription(msg.messagePayload));
-        }
-        break;
-     }
-    case "ICE_CANDIDATE":
-     {
-
-        if(isStarted)
-        {
-            var candidate = new RTCIceCandidate({
-               sdpMLineIndex: msg.messagePayload.sdpMLineIndex,
-               sdpMid: msg.messagePayload.sdpMid,
-              candidate: msg.messagePayload.candidate
-            });
-            pc.addIceCandidate(candidate);
-        }
-
-         break;  
-     }
-    
-    case "bye":
-    {
-
-      if(isStarted) 
-      {
-        handleRemoteHangup();
-      }
-      break;
-    }
-
-    default:
-    {
-      console.log("WARNING: Ignoring unknown msg of messageType '" + msg.messageType + "'");
-      break;
-    }
+socket.on('joined', function(room, id, numClients) {
+    console.log('joined: ' + room + ' with peerID: ' + id);
+    log('joined: ' + room + ' with peerID: ' + id);
+    isChannelReady = true;
+    peerID = id;
 
 
-   };
-}
+  if (isInitiator) {
 
-function sendMessage(type,  message) {
-  console.log('Client sending message: ', message);
-  reliableSocket.sendMessage (type, message);
-}
+    // when working with web enable bellow line
+    // doCall();
+    // disable  send message 
+     sendMessage ({
+      room: roomId,
+       cam: camid.toString(),
+      type: 'offer',
+      desc:'sessionDescription'
+    });
 
-/*
+  }
+
+});
+
+
+
 socket.emit('create or join', room);
 console.log('Attempted to create or join room', room);
 
@@ -181,13 +114,16 @@ socket.on('log', function(array) {
 
 
 function sendMessage(message) {
-  console.log('Client sending message: ', message);
-  socket.emit('message', message);
+    console.log('Client sending message: ', message);
+    log('Client sending message: ', message);
+    socket.emit('messageToWebrtc', message);
 }
 
 // This client receives a message
 socket.on('message', function(message) {
   console.log('Client received message:', message);
+  log('Client received message:', message);
+
 
   if (message === 'got user media') {
     maybeStart();
@@ -195,22 +131,36 @@ socket.on('message', function(message) {
     if (!isInitiator && !isStarted) {
       maybeStart();
     }
-    pc.setRemoteDescription(new RTCSessionDescription(message));
+   // remotePeerID=message.from;
+   // log('got offfer from remotePeerID: ' + remotePeerID);
+
+    pc.setRemoteDescription(new RTCSessionDescription(message.desc));
     doAnswer();
   } else if (message.type === 'answer' && isStarted) {
-    console.log("received answer %o",  message.sdp);
-    pc.setRemoteDescription(new RTCSessionDescription(message));
+    pc.setRemoteDescription(new RTCSessionDescription(message.desc));
   } else if (message.type === 'candidate' && isStarted) {
     var candidate = new RTCIceCandidate({
-      sdpMLineIndex: message.label,
-      candidate: message.candidate
+      sdpMLineIndex: message.candidate.sdpMLineIndex,
+      sdpMid: message.candidate.sdpMid,
+      candidate: message.candidate.candidate
     });
     pc.addIceCandidate(candidate);
-  } else if (message === 'bye' && isStarted) {
+  } else if (message.type === 'bye' && isStarted) {
+
+    console.log('Camera state', message.desc);
+    log('Camera state:', message.desc);
+
     handleRemoteHangup();
   }
+  else if(message.type === 'error') {
+   
+    console.log('Camera state', message.desc);
+    log('Camera state:', message.desc);
+    hangup();
+  }
+
 });
-*/
+
 ////////////////////////////////////////////////////
 
 var localVideo = document.querySelector('#localVideo');
@@ -276,7 +226,10 @@ async function maybeStart() {
 }
 
 window.onbeforeunload = function() {
-  sendMessage('bye');
+    sendMessage({
+        room: roomId,
+        type: 'bye'
+    });
 };
 
 /////////////////////////////////////////////////////////
@@ -285,13 +238,14 @@ function createPeerConnection() {
   try {
     //pc = new RTCPeerConnection(null);
 
-    pc = new RTCPeerConnection({
-                iceServers: [{'urls': 'stun:stun.l.google.com:19302'}],
-                iceTransportPolicy: 'all',
-                bundlePolicy: 'max-bundle',
-                rtcpMuxPolicy: 'require',
-                sdpSemantics: 'unified-plan'
-            });
+     pc = new RTCPeerConnection(
+        {
+            iceServers         : [{'urls': 'stun:stun.l.google.com:19302'}],
+            iceTransportPolicy : 'all',
+            bundlePolicy       : 'max-bundle',
+            rtcpMuxPolicy      : 'require',
+            sdpSemantics       : 'unified-plan'
+        });
 
     pc.addTransceiver('audio');
     pc.addTransceiver('video');
@@ -387,16 +341,8 @@ function createPeerConnection() {
 
 
     pc.onicecandidate = handleIceCandidate;
-    if ('ontrack' in pc) {
-      pc.ontrack = handleRemoteStreamAdded;
-    } else {
-      // deprecated
-      pc.onaddstream = handleRemoteStreamAdded;
-    }
-    pc.onremovestream = handleRemoteStreamRemoved;
-
-    pc.addEventListener('iceconnectionstatechange', e => onIceStateChange(pc, e));
-
+    // pc.onaddstream = handleRemoteStreamAdded;
+    // pc.onremovestream = handleRemoteStreamRemoved;
     console.log('Created RTCPeerConnnection');
   } catch (e) {
     console.log('Failed to create PeerConnection, exception: ' + e.message);
@@ -408,82 +354,84 @@ function createPeerConnection() {
 function handleIceCandidate(event) {
   console.log('icecandidate event: ', event);
   if (event.candidate) {
-    sendMessage( "ICE_CANDIDATE", {
-       sdpMLineIndex: event.candidate.sdpMLineIndex,
-       sdpMid: event.candidate.sdpMid,
-      candidate: event.candidate.candidate
+    sendMessage({
+      room: roomId,
+      //to: remotePeerID,
+      type: 'candidate',
+      candidate: event.candidate
     });
   } else {
     console.log('End of candidates.');
   }
 }
 
-function handleRemoteStreamAdded(event) {
-  console.log('Remote stream added.');
-  if ('srcObject' in remoteVideo) {
-    remoteVideo.srcObject = event.streams[0];
-  } else {
-    // deprecated
-    remoteVideo.src = window.URL.createObjectURL(event.stream);
-  }
-}
-
 function handleCreateOfferError(event) {
-  console.log('createOffer() error: ', event);
+    console.log('createOffer() error: ', event);
 }
 
 function doCall() {
-  console.log('Sending offer to peer');
-  pc.createOffer(setLocalAndSendMessage, handleCreateOfferError);
+    console.log('Sending offer to peer');
+    pc.createOffer(setLocalAndSendMessage, handleCreateOfferError);
 }
 
 function doAnswer() {
-  console.log('Sending answer to peer.');
-  pc.createAnswer().then(
-    setLocalAndSendMessage,
-    onCreateSessionDescriptionError
-  );
+    console.log('Sending answer to peer.');
+    pc.createAnswer().then(
+        setLocalAndSendMessage,
+        onCreateSessionDescriptionError
+    );
 }
 
 function setLocalAndSendMessage(sessionDescription) {
-  // Set Opus as the preferred codec in SDP if Opus is present.
-  //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
-  pc.setLocalDescription(sessionDescription);
-  console.log(' messageType %o  sdp %o', sessionDescription.type, sessionDescription.sdp);
+    // for changing bandwidth,bitrate and audio stereo/mono
+    // sessionDescription.sdp = sessionDescription.sdp.replace("useinbandfec=1", "useinbandfec=1; minptime=10; cbr=1; stereo=1; sprop-stereo=1; maxaveragebitrate=510000");
+    // sessionDescription.sdp = sessionDescription.sdp.replace("useinbandfec=1", "useinbandfec=1; minptime=10; stereo=1; maxaveragebitrate=510000");
 
-  if( sessionDescription.type == "answer")
-  sendMessage( "SDP_ANSWER", sessionDescription);
-  else if( sessionDescription.type == "offer")
-  sendMessage( "SDP_OFFER", sessionDescription);
+    sessionDescription.sdp = sessionDescription.sdp.replaceAll("level-asymmetry-allowed=1", "level-asymmetry-allowed=1; Enc=" + encType);
+    pc.setLocalDescription(sessionDescription);
+    console.log('setLocalAndSendMessage sending message', sessionDescription);
 
+    sendMessage({
+        room: roomId,
+        type: sessionDescription.type,
+        desc: sessionDescription
+    });
 }
 
 function onCreateSessionDescriptionError(error) {
-  trace('Failed to create session description: ' + error.toString());
+    log('Failed to create session description: ' + error.toString());
+    console.log('Failed to create session description: ' + error.toString());
 }
 
 
+function handleRemoteStreamAdded(event) {
+    console.log('Remote stream added.');
+    remoteStream = event.stream;
+    remoteVideo.srcObject = remoteStream;
+}
 
 function handleRemoteStreamRemoved(event) {
-  console.log('Remote stream removed. Event: ', event);
+    console.log('Remote stream removed. Event: ', event);
 }
 
 function hangup() {
-  console.log('Hanging up.');
-  stop();
-  sendMessage('bye');
+    console.log('Hanging up.');
+    stop();
+    sendMessage({
+        room: roomId,
+        type: 'bye'
+    });
 }
 
 function handleRemoteHangup() {
-  console.log('Session terminated.');
-  stop();
-  isInitiator = false;
+    console.log('Session terminated.');
+    stop();
 }
 
 function stop() {
-  isStarted = false;
-  pc.close();
-  pc = null;
+    isStarted = false;
+    pc.close();
+    pc = null;
 }
 
 function onIceStateChange(pc, event) {

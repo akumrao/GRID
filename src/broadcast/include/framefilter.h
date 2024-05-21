@@ -74,6 +74,10 @@ struct st_track
         
     }
 
+     st_track()
+     {
+         
+     }
   
    // std::string room;
     

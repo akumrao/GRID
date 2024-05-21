@@ -7,23 +7,8 @@
 #include "webrtc/videopacketsource.h"
 #include "webrtc/signaler.h"
 #include "Settings.h"
-/***********************************
-  function startWebsocket() {
-  var ws = new WebSocket('ws://localhost:8080')
+#include "framefilter.h"
 
-  ws.onmessage = function(e){
-    console.log('websocket message event:', e)
-  }
-  ws.onclose = function(){
-    // connection closed, discard old websocket and create a new one in 5s
-    ws = null
-    setTimeout(startWebsocket, 5000)
-  }
-}
-How to reopen a closed websocket
-startWebsocket();
- 
- ****************/
 
 using namespace base;
 using namespace base::net;
@@ -37,15 +22,10 @@ namespace web_rtc
 
 Signaler::Signaler(LiveConnectionContext  *ctx) : PeerManager(ctx, this), _context(_capturer.getAudioModule()) { 
 
-   m_connection_timer.cb_timeout = std::bind(&Signaler::reconnect, this);
 }
 
 Signaler::~Signaler()
 {
-    
-    m_connection_timer.Stop();
-    m_connection_timer.Close(); 
-             
     SInfo << "~Signaler() ";
     
 }
@@ -70,15 +50,11 @@ void Signaler::sendSDP(web_rtc::Peer *conn, const std::string &type, const std::
     desc[web_rtc::kSessionDescriptionSdpName] = sdp;
 
     json m;
-    if(type == "answer")
-    m["messageType"] = "SDP_ANSWER";
-    else
-    m["messageType"] = "SDP_OFFER";   
-    
-    m["messagePayload"] = desc;
-    m["RecipientClientId"] = conn->peerid();
 
-    
+    m[web_rtc::kSessionDescriptionTypeName] = type;
+    m["desc"] = desc;
+    m["from"] = conn->peerid();
+    m["to"] = conn->peerid();
     // smpl::Message m({ type, {
     //     { web_rtc::kSessionDescriptionTypeName, type },
     //     { web_rtc::kSessionDescriptionSdpName, sdp} }
@@ -97,10 +73,10 @@ void Signaler::sendCandidate(
     desc[web_rtc::kCandidateSdpName] = sdp;
 
     json m;
-    m["messageType"] = "ICE_CANDIDATE";
-    m["messagePayload"] = desc;
-    m["RecipientClientId"] = conn->peerid();
-
+    m[web_rtc::kSessionDescriptionTypeName] = "candidate";
+    m["candidate"] = desc;
+    m["from"] = conn->peerid();
+    m["to"] = conn->peerid();
 
     // smpl::Message m({ "candidate", {
     //     { web_rtc::kCandidateSdpMidName, mid },
@@ -193,57 +169,57 @@ void Signaler::createPC(std::string &peerID,  std::string &camid)
 
 void Signaler::onPeerMessage(std::string &name, json const &m)
 {
-//    if (std::string("got user media") == m) { return; }
-//
-//    std::string from;
-//    std::string type;
-//    std::string room;
-//    std::string to;
-//    std::string user;
-//
-//    st_track camT;
+    if (std::string("got user media") == m) { return; }
+
+    std::string from;
+    std::string type;
+    std::string room;
+    std::string to;
+    std::string user;
+
+    st_track camT;
 //    camT.signaler = this;
-//    if (m.find("to") != m.end()) { to = m["to"].get<std::string>(); }
-//
-//    if (m.find("from") != m.end())
-//    {
-//        from = m["from"].get<std::string>();
-//        camT.from = from;
-//    }
-//    else
-//    {
-//        SError << " On Peer message is missing participant id ";
-//        return;
-//    }
-//
-//    if (m.find("type") != m.end()) { type = m["type"].get<std::string>(); }
-//    else
-//    {
-//        SError << " On Peer message is missing SDP type";
-//    }
-//
-//    if (m.find("room") != m.end())
-//    {
-//        room = m["room"].get<std::string>();
-//        camT.room = room;
-//    }
-//    else
-//    {
-//        SError << " On Peer message is missing room id ";
-//        return;
-//    }
-//
-//    //             if (m.find("user") != m.end()) {
-//    //                user = m["user"].get<std::string>();
-//    //            }
-//    //            else
-//    //            {
-//    //                SWarn << " On Peer message is missing user name ";
-//    //            }
-//
-//    if (m.find("cam") != m.end())
-//    {
-//        camT.camid = m["cam"].get<std::string>();
+    if (m.find("to") != m.end()) { to = m["to"].get<std::string>(); }
+
+    if (m.find("from") != m.end())
+    {
+        from = m["from"].get<std::string>();
+        camT.peerID = from;
+    }
+    else
+    {
+        SError << " On Peer message is missing participant id ";
+        return;
+    }
+
+    if (m.find("type") != m.end()) { type = m["type"].get<std::string>(); }
+    else
+    {
+        SError << " On Peer message is missing SDP type";
+    }
+
+    if (m.find("room") != m.end())
+    {
+        room = m["room"].get<std::string>();
+        camT.camid = room;
+    }
+    else
+    {
+        SError << " On Peer message is missing room id ";
+        return;
+    }
+
+    //             if (m.find("user") != m.end()) {
+    //                user = m["user"].get<std::string>();
+    //            }
+    //            else
+    //            {
+    //                SWarn << " On Peer message is missing user name ";
+    //            }
+
+    if (m.find("cam") != m.end())
+    {
+        camT.camid = m["cam"].get<std::string>();
 //        std::string add;
 //
 //
@@ -254,114 +230,123 @@ void Signaler::onPeerMessage(std::string &name, json const &m)
 //                 return;
 //             }
 //        }
-//    }
-//
-//
-//    if (m.find("start") != m.end())
+    }
+
+
+    if (m.find("start") != m.end())
+    {
+        camT.start = m["start"].get<std::string>();
+
+        //                std::string add;
+        //               if( !Settings::getNodeState(camT, "rtsp" , add ))
+        //               {
+        //                    {
+        //                        postAppMessage("Camera not available.", from , room  );
+        //                        return;
+        //                    }
+        //                }
+    }
+
+
+    if (m.find("end") != m.end()) { camT.end = m["end"].get<std::string>(); }
+
+    if (m.find("width") != m.end()) { camT.width = std::stoi(m["width"].get<std::string>()); }
+
+    if (m.find("height") != m.end()) { camT.height = std::stoi(m["height"].get<std::string>()); }
+
+    if (m.find("scale") != m.end()) { camT.scale = std::stoi(m["scale"].get<std::string>()); }
+
+    if (m.find("speed") != m.end()) { camT.speed = std::stoi(m["speed"].get<std::string>()); }
+
+    //if (m.find("ai") != m.end()) { camT.ai = m["ai"].get<bool>(); }
+//    if (m.find("encoder") != m.end())
 //    {
-//        camT.start = m["start"].get<std::string>();
+//        Settings::encSetting.nvidiaEnc = 0;
+//        Settings::encSetting.vp9Enc = 0;
+//        Settings::encSetting.native = 0;
+//        Settings::encSetting.x264Enc = 0;
+//        Settings::encSetting.quicksyncEnc = 0;
+//        Settings::encSetting.VAAPIEnc = 0;
+//        camT.encoder = m["encoder"].get<std::string>();
 //
-//        //                std::string add;
-//        //               if( !Settings::getNodeState(camT, "rtsp" , add ))
-//        //               {
-//        //                    {
-//        //                        postAppMessage("Camera not available.", from , room  );
-//        //                        return;
-//        //                    }
-//        //                }
-//    }
+//       // if (!camT.isLive() && camT.encoder == "NATIVE") { camT.encoder = "X264"; }
 //
 //
-//    if (m.find("end") != m.end()) { camT.end = m["end"].get<std::string>(); }
-//
-//    if (m.find("width") != m.end()) { camT.width = std::stoi(m["width"].get<std::string>()); }
-//
-//    if (m.find("height") != m.end()) { camT.height = std::stoi(m["height"].get<std::string>()); }
-//
-//    if (m.find("scale") != m.end()) { camT.scale = std::stoi(m["scale"].get<std::string>()); }
-//
-//    if (m.find("speed") != m.end()) { camT.speed = std::stoi(m["speed"].get<std::string>()); }
-//
-//    //if (m.find("ai") != m.end()) { camT.ai = m["ai"].get<bool>(); }
-////    if (m.find("encoder") != m.end())
-////    {
-////        Settings::encSetting.nvidiaEnc = 0;
-////        Settings::encSetting.vp9Enc = 0;
-////        Settings::encSetting.native = 0;
-////        Settings::encSetting.x264Enc = 0;
-////        Settings::encSetting.quicksyncEnc = 0;
-////        Settings::encSetting.VAAPIEnc = 0;
-////        camT.encoder = m["encoder"].get<std::string>();
-////
-////       // if (!camT.isLive() && camT.encoder == "NATIVE") { camT.encoder = "X264"; }
-////
-////
-////        if (camT.encoder == "VP9")
-////        {
-////            camT.encType = EN_VP9;
-////            Settings::encSetting.vp9Enc = Settings::configuration.vp9Enc;
-////        }
-////        else if (camT.encoder == "X264")
-////        {
-////            camT.encType = EN_X264;
-////            Settings::encSetting.x264Enc = Settings::configuration.x264Enc;
-////        }
-////        else if (camT.encoder == "NVIDIA")
-////        {
-////            camT.encType = EN_NVIDIA;
-////            Settings::encSetting.nvidiaEnc = Settings::configuration.nvidiaEnc;
-////        }
-////        else if (camT.encoder == "NATIVE")
-////        {
-////            camT.encType = EN_NATIVE;
-////            Settings::encSetting.native = Settings::configuration.native;
-////        }
-////        else if (camT.encoder == "QUICKSYNC")
-////        {
-////            camT.encType = EN_QUICKSYNC;
-////            if (Settings::configuration.haswell)
-////            {
-////                Settings::encSetting.VAAPIEnc = Settings::configuration.VAAPIEnc;
-////            }
-////            else
-////            {
-////                Settings::encSetting.quicksyncEnc = Settings::configuration.quicksyncEnc;
-////            }
-////        }
-////    }
-//    
-//    
-////    camT.encoder = "NATIVE";
-//    camT.encType = EN_NATIVE;
-//    Settings::encSetting.native = Settings::configuration.native;
-//        
-//
-//    LInfo("Peer message: ", from, " ", type)
-//
-//    if (std::string("offer") == type)
-//    {
-//        onPeerOffer(from, camT, room);
-//    }
-//    else if (std::string("answer") == type) {
-//        recvSDP(from, m["desc"]);
-//    }
-//    else if (std::string("candidate") == type) { recvCandidate(from, m["candidate"]); }
-//
-//    else if (std::string("bye") == type) { onPeerDiconnected(from); }
-//    else if (std::string("command") == type)
-//    {
-//        if (m.find("desc") != m.end())
+//        if (camT.encoder == "VP9")
 //        {
-//            std::string cmd = m["desc"].get<std::string>();
-//
-//            // std::string trackid = m["para"].get<std::string>();
-//
-//            onPeerCommand(from, camT, cmd, m["trackids"], m["act"]);
+//            camT.encType = EN_VP9;
+//            Settings::encSetting.vp9Enc = Settings::configuration.vp9Enc;
+//        }
+//        else if (camT.encoder == "X264")
+//        {
+//            camT.encType = EN_X264;
+//            Settings::encSetting.x264Enc = Settings::configuration.x264Enc;
+//        }
+//        else if (camT.encoder == "NVIDIA")
+//        {
+//            camT.encType = EN_NVIDIA;
+//            Settings::encSetting.nvidiaEnc = Settings::configuration.nvidiaEnc;
+//        }
+//        else if (camT.encoder == "NATIVE")
+//        {
+//            camT.encType = EN_NATIVE;
+//            Settings::encSetting.native = Settings::configuration.native;
+//        }
+//        else if (camT.encoder == "QUICKSYNC")
+//        {
+//            camT.encType = EN_QUICKSYNC;
+//            if (Settings::configuration.haswell)
+//            {
+//                Settings::encSetting.VAAPIEnc = Settings::configuration.VAAPIEnc;
+//            }
+//            else
+//            {
+//                Settings::encSetting.quicksyncEnc = Settings::configuration.quicksyncEnc;
+//            }
 //        }
 //    }
-//}
-//
+    
+    
+//    camT.encoder = "NATIVE";
+   // camT.encType = EN_NATIVE;
+//    Settings::encSetting.native = Settings::configuration.native;
+        
+
+    LInfo("Peer message: ", from, " ", type)
+
+    if (std::string("offer") == type)
+    {
+       // onPeerOffer(from, camT, room);
+        
+        if( isChannelReady)
+        {
+            SInfo << "offer from " << from;
+            createPC(from , room);  
+
+            //recvSDP( from, msg["messagePayload"]);    
+        }
+         
+    }
+    else if (std::string("answer") == type) {
+        recvSDP(from, m["desc"]);
+    }
+    else if (std::string("candidate") == type) { recvCandidate(from, m["candidate"]); }
+
+    else if (std::string("bye") == type) { onPeerDiconnected(from); }
+    else if (std::string("command") == type)
+    {
+        if (m.find("desc") != m.end())
+        {
+            std::string cmd = m["desc"].get<std::string>();
+
+            // std::string trackid = m["para"].get<std::string>();
+
+           // onPeerCommand(from, camT, cmd, m["trackids"], m["act"]);
+        }
+    }
 }
+
+
 
 void Signaler::onPeerDiconnected(std::string &peerID)
 {
@@ -509,10 +494,9 @@ void Signaler::onFailure(web_rtc::Peer *conn, const std::string &error)
 
 void Signaler::postMessage(const json &m)
 {
-     std::string send = cnfg::stringify(m);
-     
-    SDebug << "postMessage " << send;
-    m_client->send(send);
+    SDebug << "postMessage " << cnfg::stringify(m);
+
+    socket->emit("message", m);
 }
 
 void Signaler::postAppMessage(json &message)
@@ -553,238 +537,108 @@ void Signaler::postAppMessage(json &message)
 }
 
 
-void Signaler::reconnect( )
-{
-    SInfo << "reconnect websocket client";
-    
-     m_client->Close();
-     delete m_client;
-     
-     connect();
-     
-  
-}
-
 void Signaler::connect()
 {
     LTrace("Tests signalling Begin. Please run signalling server at webrtc folder")
             
    room = Settings::configuration.cam;
-   server = Settings::configuration.server; 
+   std::string host = Settings::configuration.server; 
    int port = Settings::configuration.port; 
     
-   m_client = new HttpsClient("wss",  server, port, "/");  //Websocket test
+ client  = new sockio::SocketioClient(host, port, true);
+    client->connect();
 
+    socket = client->io();
 
-   // conn->Complete += sdelegate(&context, &CallbackContext::onClientConnectionComplete);
-   m_client->fnComplete = [&](const Response & response) {
-       std::string reason = response.getReason();
-       StatusCode statuscode = response.getStatus();
-       std::string body = m_client->readStream() ? m_client->readStream()->str() : "";
-       STrace << " handshake response:" << "Reason: " << reason << " Response: " << body;
-      
-   };
-
-   m_client->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
-        std::string txt =  std::string(data, sz);
-       
-        json msg = json::parse(txt) ;
-       
-        if (msg.find("messageType") != msg.end())
-        {
-            std::string messageType = msg["messageType"].get<std::string>();
-            
-             std::string from;
-             if (msg.find("senderClientId") != msg.end())
+    socket->on(
+        "connection",
+        sockio::Socket::event_listener_aux(
+            [=](string const &name, json const &data, bool isAck, json &ack_resp)
             {
-                from = msg["senderClientId"].get<std::string>();
-                
-              
-            }
-            
-            
-            
-            if(messageType == "join" )
-            {
-                isChannelReady = true;
-                  
-            }
-            else if( messageType == "SDP_OFFER"  )
-            {
-                             
-                if( isChannelReady)
-                {
-                    SInfo << "offer from " << from;
-                    createPC(from , room);  
-                     
-                    recvSDP( from, msg["messagePayload"]);    
-                }
+                socket->on(
+                    "ipaddr",
+                    sockio::Socket::event_listener_aux(
+                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+                        {
+                            STrace << cnfg::stringify(data);
 
-                
-            }
-            else if( messageType == "ICE_CANDIDATE"  )
-            {
-                SInfo << "candidate from " << from;
-               // std::string from = msg["from"].get<std::string>();
-               // recvCandidate( from, msg["messagePayload"]);   
-                 if( isChannelReady) 
-                recvCandidate( from, msg["messagePayload"]);    
-                
-            }
-             
-             else if( messageType == "disconnectClient"  )
-            {
-                onPeerDiconnected(from);
-                
-            }
-             
-             
-        
-        }
-       
-       
-       
-       
-       //m_ping_timeout_timer.Reset();
-       //m_packet_mgr.put_payload(std::string(data,sz));
-   };
+                            STrace << "Server IP address is: " << data;
+                            // updateRoomURL(ipaddr);
+                        }));
 
-   m_client->fnClose = [&](HttpBase * con, std::string str) {
-    
-       
-      
-    if( m_connection_timer.IsActive())
-    m_connection_timer.Restart();
-    else
-    m_connection_timer.Start(30000);    
-    
-    SInfo << "client->fnClose " << str;
-    
-       //on_close();
-   };
+                socket->on(
+                    "created",
+                    sockio::Socket::event_listener_aux(
+                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+                        {
+                            STrace << cnfg::stringify(data);
+                            STrace << "Created room " << data[0] << "- my client ID is " << data[1];
+                            isInitiator = true;
+                            // grabWebCamVideo();
+                        }));
 
-   m_client->fnConnect = [&](HttpBase * con) {
-
-      
-       m_connection_timer.Stop();
-       
-       
-       json tmp;
-       tmp["messageType"] = "createorjoin";
-       
-       tmp["room"] = room; 
-       tmp["server"] = true; 
-       
-       std::string send = cnfg::stringify(tmp);
-       SInfo << "onConnect " << send;
-           
-       m_client->send(send);
-
-       //std::cout << "onConnect:";
-   };
+                socket->on(
+                    "full",
+                    sockio::Socket::event_listener_aux(
+                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+                        {
+                            STrace << cnfg::stringify(data);
+                            // LTrace("Room " + room + " is full.")
+                        }));
 
 
-   //  conn->_request.setKeepAlive(false);
-   m_client->setReadStream(new std::stringstream);
-   m_client->send();
-   LTrace("sendHandshakeRequest over")
-            
-            
+                socket->on(
+                    "join",
+                    sockio::Socket::event_listener_aux(
+                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+                        {
+                            STrace << cnfg::stringify(data);
+                            // LTrace("Another peer made a request to join room " + room)
+                            // LTrace("This peer is the initiator of room " + room + "!")
+                            isChannelReady = true;
+                        }));
 
-//        client
-//        = new sockio::SocketioClient(host, port, true);
-//    client->connect();
-//
-//    socket = client->io();
-//
-//    socket->on(
-//        "connection",
-//        sockio::Socket::event_listener_aux(
-//            [=](string const &name, json const &data, bool isAck, json &ack_resp)
-//            {
-//                socket->on(
-//                    "ipaddr",
-//                    sockio::Socket::event_listener_aux(
-//                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-//                        {
-//                            STrace << cnfg::stringify(data);
-//
-//                            STrace << "Server IP address is: " << data;
-//                            // updateRoomURL(ipaddr);
-//                        }));
-//
-//                socket->on(
-//                    "created",
-//                    sockio::Socket::event_listener_aux(
-//                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-//                        {
-//                            STrace << cnfg::stringify(data);
-//                            STrace << "Created room " << data[0] << "- my client ID is " << data[1];
-//                            isInitiator = true;
-//                            // grabWebCamVideo();
-//                        }));
-//
-//                socket->on(
-//                    "full",
-//                    sockio::Socket::event_listener_aux(
-//                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-//                        {
-//                            STrace << cnfg::stringify(data);
-//                            // LTrace("Room " + room + " is full.")
-//                        }));
-//
-//
-//                socket->on(
-//                    "join",
-//                    sockio::Socket::event_listener_aux(
-//                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-//                        {
-//                            STrace << cnfg::stringify(data);
-//                            // LTrace("Another peer made a request to join room " + room)
-//                            // LTrace("This peer is the initiator of room " + room + "!")
-//                            isChannelReady = true;
-//                        }));
-//
-//                /// for webrtc messages
-//                socket->on(
-//                    "message",
-//                    sockio::Socket::event_listener_aux(
-//                        [&](string const &name, json const &m, bool isAck, json &ack_resp)
-//                        {
-//                            //  LTrace(cnfg::stringify(m));
-//                            // LTrace('SocketioClient received message:', cnfg::stringify(m));
-//
-//                            onPeerMessage((string &) name, m);
-//                            // signalingMessageCallback(message);
-//                        }));
-//
-//
-//                // Leaving rooms and disconnecting from peers.
-//                socket->on(
-//                    "disconnectClient",
-//                    sockio::Socket::event_listener_aux(
-//                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-//                        {
-//                            std::string from = data.get<std::string>();
-//                            // SInfo << "disconnectClient " <<  from;
-//                            // LInfo(cnfg::stringify(data));
-//                            onPeerDiconnected(from);
-//                        }));
-//
-//
-//                socket->on(
-//                    "bye",
-//                    sockio::Socket::event_listener_aux(
-//                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-//                        {
-//                            STrace << cnfg::stringify(data);
-//                            // LTrace("Peer leaving room", room);
-//                        }));
-//
-//                socket->emit("WebrtcSocket");
-//            }));
+                /// for webrtc messages
+                socket->on(
+                    "message",
+                    sockio::Socket::event_listener_aux(
+                        [&](string const &name, json const &m, bool isAck, json &ack_resp)
+                        {
+                            //  LTrace(cnfg::stringify(m));
+                            // LTrace('SocketioClient received message:', cnfg::stringify(m));
+
+                            onPeerMessage((string &) name, m);
+                            // signalingMessageCallback(message);
+                        }));
+
+
+                // Leaving rooms and disconnecting from peers.
+                socket->on(
+                    "disconnectClient",
+                    sockio::Socket::event_listener_aux(
+                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+                        {
+                            std::string from = data.get<std::string>();
+                            // SInfo << "disconnectClient " <<  from;
+                            // LInfo(cnfg::stringify(data));
+                            onPeerDiconnected(from);
+                        }));
+
+
+                socket->on(
+                    "bye",
+                    sockio::Socket::event_listener_aux(
+                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+                        {
+                            STrace << cnfg::stringify(data);
+                            // LTrace("Peer leaving room", room);
+                        }));
+
+                socket->emit("WebrtcSocket");
+            }));
 }
 
 
 }  // namespace web_rtc
 }  // namespace base
+   

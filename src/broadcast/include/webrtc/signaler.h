@@ -4,16 +4,8 @@
 #define WebRTCStreamer_Signaler_H
 
 
-#include "net/netInterface.h"
-#include "http/client.h"
-
-#include "http/url.h"
-#include "http/HttpClient.h"
-#include "http/HttpsClient.h"
-#include "http/HTTPResponder.h"
-
+#include "socketio/socketioClient.h"
 #include "webrtc/peermanager.h"
-#include "base/Timer.h"
 
 //#define JOIN_ROOM "VideoEdgeWebRTC"
 
@@ -62,12 +54,8 @@ protected:
 #if USE_SSL
     //  SocketioSecClient *client;
 #else
-    
-     net::ClientConnecton *m_client;
-      
-   // sockio::SocketioClient *client;
-   //sockio::Socket *socket;
-     
+    sockio::SocketioClient *client;
+    sockio::Socket *socket;
     // std::string peerID;
     // std::string remotePeerID;
 #endif
@@ -81,13 +69,9 @@ protected:
     bool isInitiator{false};
     bool isStarted{false};
     
-    Timer m_connection_timer{ nullptr};
-    
-    void reconnect( );
-    
 public:
     std::string room;
-    std::string server;
+
 };
 
 }  // namespace web_rtc

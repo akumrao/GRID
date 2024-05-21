@@ -7,12 +7,12 @@ var os = require('os');
 const fs = require('fs');
 var nodeStatic = require('node-static');
 var http = require('https');
-const WebSocket = require('ws');
+var socketIO = require('socket.io');
 const config = require('./config');
 const express = require('express');
 
 const {
-    v4 : uuidv4
+    v4: uuidV4
 } = require('uuid');
 
 let webServer;
@@ -54,10 +54,7 @@ async function runExpressApp() {
     });
 }
 
-async function runWebServer() 
-{
-
-
+async function runWebServer() {
     console.error('runWebServer');
 
     const {
@@ -93,201 +90,147 @@ async function runWebServer()
 }
 
 async function runSocketServer() {
-
-    const rooms = {};
-
     console.error('runSocketServer');
-    const wss = new WebSocket.Server({server: webServer});  
-    wss.on('connection', function connection(ws) {
-    //console.log('received');
-    ws.id = uuidv4();
+    io = socketIO.listen(webServer);
 
-    ws.on('message', function incoming(data)
-    {
-       console.log('received: %s', data);
-       let msg;
- 
-       try {
-          msg = JSON.parse(data);
-        } catch (e) {
-        return console.error(e); // error in the above string (in this case, yes)!
-		 }
-
-       if( !msg.messageType)
-       {
-          console.log("websock data error %o", msg);
-	  return;
-       }
-
-
-       switch (msg.messageType) {
-        case "createorjoin":
-        {
-           // console.log('first: %o', rooms);
-
-            console.log("createorjoin " + msg.room );
-
-            if(msg.server)
-            {
-                if(rooms[msg.room])
-                 {
-                    rooms[msg.room].forEach((client) => {
-                    if ( client.readyState === WebSocket.OPEN)
-                    {
-                         console.log('close: %o %o %o', client.server, client.room,  client.id);
-                        rooms[client.room] = rooms[client.room].filter((cl) => cl !== ws);
-                    }
-                    });
-
-                    if(rooms[msg.room])
-                    delete rooms[msg.room];
-                    console.log('delete: %o',  rooms[msg.room]);
-                    rooms[msg.room] = [];
-
-                 }
-
-            }    
-
-            ws["room"] = msg.room;
-             if(! rooms[msg.room])
-              rooms[msg.room] = [];
-            
-           if (rooms[msg.room].indexOf(ws) < 0) {
-
-
-                rooms[msg.room].push(ws);
-            } 
-            else
-            {
-                console.log("websocket connection exist");
-            }
-            
-
-            var numClients = rooms[msg.room].length; 
-
-            if(numClients == 1)
-            {  ws.server = true;
-               ws.send( JSON.stringify({"messageType": "join", "room": msg.room}));
-            }
-            else if (numClients > 1)
-            {
-                ws.server = false;
-               ws.send( JSON.stringify({"messageType": "joined","room": msg.room})); 
-            }
-
-           
-
-            break;
+    io.sockets.on('connection', function(socket) {
+        // convenience function to log server messages on the client
+        function log() {
+            var array = ['Message from server:'];
+            array.push.apply(array, arguments);
+	    // Uncomment to see server side messages on client side JavaScript console.
+            // socket.emit('log', array);
+            console.log(array);
         }
-        case "ICE_CANDIDATE":
-        case "SDP_OFFER":
-        case "SDP_ANSWER":
-        {
-            rooms[ws.room].forEach((client) => {
-            if (client !== ws && client.readyState === WebSocket.OPEN)
-            {   
-                msg.senderClientId = ws.id;
 
-                if((  ws.server == true &&  client.server == false) ||  (  ws.server == false &&  client.server == true))
-                {
-                    console.log('RecipientClientId= %o client.id= %o',  msg.RecipientClientId,  client.id );
-                  if( !msg.RecipientClientId  ||  (msg.RecipientClientId == client.id ))
-                  { 
-                    //console.log('client.server: %o', client.server);
-                    //console.log('ws.server: %o', ws.server);
-                    msg.room = ws.room;
-                    if(ws.server  &&  !client.server)
-                    {
-                         console.log('camera sending: %s', JSON.stringify(msg));
-                    }
-                    else if(!ws.server  &&  client.server)
-                    {
-                         console.log('Particpant sending: %s', JSON.stringify(msg));
-                    }
-                    else
-                    {
-                        console.error('not possbile state');
-                    }
-                   
-                    client.send(JSON.stringify(msg));
-                  }
+        socket.on('disconnect', function() {
+            if (socket.id == serverSocketid) {
+
+                console.log("server down " + serverSocketid);
+                serverSocketid = null;
+
+                for (let soc in io.sockets.connected) {
+                    io.sockets.connected[soc].emit('leave', socket.room, -1, -1);
+                    io.sockets.connected[soc].disconnect();
                 }
+            } else {
+                var clientsInRoom = io.sockets.adapter.rooms[socket.room];
+                var numClients = clientsInRoom ? Object.keys(clientsInRoom.sockets).length : 0;
+                console.log("disconnect " + socket.id + " from room " + socket.room + " numClients " + numClients);
+
+                if (serverSocketid && io.sockets.connected[serverSocketid]) {
+		    /* Sometimes socket id of webrtc remains the same after service restart.
+                       If detected, disconnect obsolete socket */
+                    io.sockets.connected[serverSocketid].emit('disconnectClient', socket.id);
+		}
+
+                io.sockets.to(socket.room).emit('leave', socket.room, socket.id, numClients);
+                console.log("unsubscribe " + socket.id);
             }
-             
-            });
+        });
 
-            break;
-        }
-        case "bye":
-        
-        break;
+        socket.on('WebrtcSocket', function() {
+            log('Received request to create WebrtcSocket');
 
-        default:
-        {
-          console.log("WARNING: Ignoring unknown msg of messageType '" + msg.messageType + "'");
-          break;
-        }
+            if (serverSocketid !== null && io.sockets.connected[serverSocketid]) {
+                io.sockets.connected[serverSocketid].disconnect();
+                serverSocketid = null;
+            }
 
+            log('Webrtc ID ', socket.id);
+            serverSocketid = socket.id;
+        });
 
-        };
+        socket.on('create or join', function(roomId, user) {
+            log('Received request to create or join room ' + roomId);
 
+            if (serverSocketid == null || io.sockets.connected[serverSocketid] == null) {
+                io.emit('leave', socket.room, -1, -1);
+                return console.error("Webrtc server is down");
+            }
 
+            if (socket.room)
+                socket.leave(socket.room);
 
+            socket.room = roomId;
+            socket.join(roomId);
+
+            if (user)
+                socket.user = user;
+
+            var numClients = io.sockets.adapter.rooms[roomId].length; //For socket.io versions >= 1.4:
+
+            log('Room ' + roomId + ' now has ' + numClients + ' client(s)');
+
+            if (numClients === 1) {
+                log('Client ID ' + socket.id + ' created room ' + roomId);
+                //when first time client connection then socket is created, store socket id and then emit  Join event
+                io.sockets.connected[serverSocketid].emit('created', roomId, serverSocketid);
+                socket.emit('created', roomId, socket.id);
+                socket.emit('joined', roomId, socket.id, numClients);
+            } else if (numClients > 1) {
+                log('Client ID ' + socket.id + ' joined room ' + roomId);
+                //if already client connections are there then we send event Joined event.
+                
+                // when all the users in room need get joining event
+                //io.sockets.in(roomId).emit('join', roomId, socket.id, numClients);
+
+                socket.emit('joined', roomId, socket.id, numClients);
+
+            }
+        });
+
+        socket.on('message', function(message) {
+            console.log('SFU server message: ', message);
+
+            message.from = socket.id;
+
+            if (socket.user)
+                message.user = socket.user;
+
+            socket.to(message.to).emit('message', message);
+        });
+
+        socket.on('messageToWebrtc', function(message) {
+            message.from = socket.id;
+
+            if (socket.user)
+                message.user = socket.user;
+
+            console.log('app message: ', message);
+            if (io.sockets.connected[serverSocketid])
+                io.sockets.connected[serverSocketid].emit('message', message);
+        });
+
+        /* To broadcast to all in a roomm including sender: socket.in(room).emit();
+	   To exclude sender: socket.to(); */
+        socket.on('postAppMessage', function(message) {
+            if (message.type === "user") {
+                message.user = message.desc;
+            }
+
+            console.log('notification ' + JSON.stringify(message, null, 4));
+            message.from = socket.id;
+
+            if (socket.user)
+                message.user = socket.user;
+
+            if (message.type === "chat") {
+                if ('room' in message) {
+                    io.in(message.room).emit('message', message);
+                }
+            } else {
+                //if ('room' in message) {
+                socket.to(message.to).emit('message', message);
+                //}
+            }
+        });
+
+        socket.on('bye', function() {
+            console.log('received bye');
+        });
 
     });
-
-
-    ws.on('error',e=>console.log(e));
-    ws.on('close',(e)=>
-    {
-       
-        console.log('websocket closed'+e);
-
-        if(  ws.server == true && ws.room)
-        {
-            rooms[ws.room].forEach((client) => {
-                if (client !== ws && client.readyState === WebSocket.OPEN)
-                {
-                     console.log('close: %o %o %o', client.server, client.room,  client.id);
-                    rooms[client.room] = rooms[client.room].filter((cl) => cl !== ws);
-                }
-            });
-        }
-        else if(ws.room)
-        {
-            rooms[ws.room].forEach((client) => {
-            if (client !== ws && client.readyState === WebSocket.OPEN)
-            {   
-               // msg.senderClientId = ws.id;
-
-                if(  ws.server == false &&  client.server == true)
-                {
-                    client.send(JSON.stringify({"messageType": "disconnectClient", "senderClientId":ws.id})); 
-                }
-            }
-             
-            });
-        }
-
-        if(ws.room )
-        {
-          console.log('close:  %o %o %o', ws.server, ws.room,  ws.id);
-          rooms[ws.room] = rooms[ws.room].filter((client) => client !== ws);
-        }
-        //   console.log('delete: %o',  rooms[ws.room]);
-
-
-        //delete rooms[ws.room];
-       
-
-       
-
-    });
-
-
-
-    });
-
 }
 
 
