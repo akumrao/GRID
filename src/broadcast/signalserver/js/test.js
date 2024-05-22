@@ -59,8 +59,8 @@ socket.on('join', function(room, id, numClients) {
 
 
 
-socket.emit('create or join', room);
-console.log('Attempted to create or join room', room);
+socket.emit('createorjoin', room);
+console.log('Attempted to createorjoin room', room);
 
 socket.on('full', function(room) {
   console.log('Room ' + room + ' is full');

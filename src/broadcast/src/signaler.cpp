@@ -318,12 +318,12 @@ void Signaler::onPeerMessage(std::string &name, json const &m)
     {
        // onPeerOffer(from, camT, room);
         
-        if( isChannelReady)
+        //if( isChannelReady)
         {
             SInfo << "offer from " << from;
             createPC(from , room);  
 
-            //recvSDP( from, msg["messagePayload"]);    
+            recvSDP( from, m["desc"]);    
         }
          
     }
@@ -555,17 +555,6 @@ void Signaler::connect()
         sockio::Socket::event_listener_aux(
             [=](string const &name, json const &data, bool isAck, json &ack_resp)
             {
-                socket->on(
-                    "ipaddr",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-                        {
-                            STrace << cnfg::stringify(data);
-
-                            STrace << "Server IP address is: " << data;
-                            // updateRoomURL(ipaddr);
-                        }));
-
                 socket->on(
                     "created",
                     sockio::Socket::event_listener_aux(

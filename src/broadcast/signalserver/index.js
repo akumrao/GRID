@@ -141,8 +141,8 @@ async function runSocketServer() {
             serverSocketid = socket.id;
         });
 
-        socket.on('create or join', function(roomId, user) {
-            log('Received request to create or join room ' + roomId);
+        socket.on('createorjoin', function(roomId, user) {
+            log('Received request to createorjoin room ' + roomId);
 
             if (serverSocketid == null || io.sockets.connected[serverSocketid] == null) {
                 io.emit('leave', socket.room, -1, -1);

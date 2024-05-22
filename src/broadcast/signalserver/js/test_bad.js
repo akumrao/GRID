@@ -151,8 +151,8 @@ function sendMessage(type,  message) {
 }
 
 /*
-socket.emit('create or join', room);
-console.log('Attempted to create or join room', room);
+socket.emit('createorjoin', room);
+console.log('Attempted to createorjoin room', room);
 
 socket.on('created', function(room) {
   console.log('Created room ' + room);
