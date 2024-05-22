@@ -3,8 +3,10 @@
 'use strict';
 
 var isChannelReady = true;
-var isInitiator = false;
+var isInitiator = true;
 var isStarted = false;
+var roomId;
+
 var pc;
 
 var encType;
@@ -41,136 +43,24 @@ var browserName = (function(agent) {
 //     encoder = "VP9";
 
 
+var socket = io.connect();
+socket.on('created', function(room) {
+    console.log('Created room ' + room);
+    isInitiator = true;
+});
 
+socket.on('join', function(room, id, numClients) {
+    console.log('New peer, room: ' + room + ', ' + " client id: " + id);
+    isChannelReady = true;
+});
 
-function reliable_log_msg(msg) {
-  console.log(msg);
-}
-
-
-window.WebSocket = window.WebSocket || window.MozWebSocket;
-
-if (!window.WebSocket) {
-  alert('Your browser doesn\'t support WebSocket');
-
-}
-
-
-//var socket = new WebSocket(window.location.href.replace('http://', 'ws://').replace('https://', 'wss://'));
-var reliableSocket = new WebSocket(window.location.href.replace('http://', 'ws://').replace('https://', 'wss://'));
-
-
-reliableSocket.onopen = function (event) {
-   isInitiator = true;
-
-};
-
-reliableSocket.onerror = function (event) {
-      isInitiator = false;
-
-};
-
-reliableSocket.onclose = function (event) {
-  console.log("ERROR: Reliable socket has closed");
-      isInitiator = false;
-
-};
-
-// Simple helper to send JSON messages with a given messageType
-reliableSocket.sendMessage = function (messageType, msg, timestamp) {
-  reliable_log_msg("Sending msg of type: " + messageType);
-  
-  if(timestamp)
-    reliableSocket.send(JSON.stringify({"messageType": messageType, "messagePayload": msg, "starttime":timestamp}));
-  else
-    reliableSocket.send(JSON.stringify({"messageType": messageType, "messagePayload": msg}));
-}
-
-reliableSocket.onmessage = function (event) {
-  console.log("Got msg", event);
-  var msg = JSON.parse(event.data);
-
-  reliable_log_msg("Received msg of messageType: " + msg.messageType);
-  console.log(msg);
-
-  switch (msg.messageType) {
-    case "join":
-     
-      console.log('Another peer made a request to join room ');
-      console.log('This peer is the initiator of room ' + '!');
-      isChannelReady = true;
-
-      break;
-    case "joined":
-      {
-
-      isChannelReady = true;
-      isInitiator = true;
-     
-       doCall();
-
-      break;
-      }
-     case "SDP_OFFER":
-      {
-            if (!isInitiator && !isStarted) 
-            {
-              maybeStart();
-            }
-            pc.setRemoteDescription(new RTCSessionDescription(msg.messagePayload));
-            doAnswer();
-
-          break;
-      }
-    case "SDP_ANSWER":
-     {
-        if(isStarted) {
-          console.log("received answer %o",  msg.messagePayload);
-          pc.setRemoteDescription(new RTCSessionDescription(msg.messagePayload));
-        }
-        break;
-     }
-    case "ICE_CANDIDATE":
-     {
-
-        if(isStarted)
-        {
-             var candidate = new RTCIceCandidate({
-               sdpMLineIndex: msg.messagePayload.sdpMLineIndex,
-               sdpMid: msg.messagePayload.sdpMid,
-              candidate: msg.messagePayload.candidate
-            });
-            pc.addIceCandidate(candidate);
-        }
-
-         break;  
-     }
-    
-    case "bye":
-    {
-
-      if(isStarted) 
-      {
-        handleRemoteHangup();
-      }
-      break;
-    }
-
-    default:
-    {
-      console.log("WARNING: Ignoring unknown msg of messageType '" + msg.messageType + "'");
-      break;
-    }
-
-
-   };
-}
-
-
-function sendMessage(type,  message, timestamp) {
-  console.log('Client sending message: ', message);
-  reliableSocket.sendMessage (type, message, timestamp);
-}
+socket.on('joined', function(room, id, numClients) {
+    console.log('joined: ' + room + ' with peerID: ' + id);
+    log('joined: ' + room + ' with peerID: ' + id);
+    isChannelReady = true;
+    //peerID = id;
+    doCall();
+});
 
 
 function maybeStart(roomId) {
@@ -182,14 +72,18 @@ function maybeStart(roomId) {
         console.log('isInitiator', isInitiator);
 
         if (roomId !== '') {
-            console.log("reliableSocket is open and ready to use");
-            reliableSocket.send(JSON.stringify( {"messageType": "createorjoin" , "room": roomId}));
-
+            socket.emit('createorjoin', roomId);
+            console.log('Attempted to create or  join room', roomId);
         }
     }
 }
 
- 
+window.onbeforeunload = function() {
+    sendMessage({
+        room: roomId,
+        type: 'bye'
+    });
+};
 
 
 
@@ -242,16 +136,16 @@ async function createPeerConnection() {
 }
 
 function handleIceCandidate(event) {
-  console.log('icecandidate event: ', event);
+    console.log('icecandidate event: ', event);
     if (event.candidate) {
-      sendMessage( "ICE_CANDIDATE", {
-        sdpMLineIndex: event.candidate.sdpMLineIndex,
-        sdpMid: event.candidate.sdpMid,
-        candidate: event.candidate.candidate
-    });
-  } else {
-    console.log('End of candidates.');
-  }
+        sendMessage({
+            room: roomId,
+            type: 'candidate',
+            candidate: event.candidate
+        });
+    } else {
+        console.log('End of candidates.');
+    }
 }
 
 function handleCreateOfferError(event) {
@@ -263,28 +157,29 @@ function doCall() {
     pc.createOffer(setLocalAndSendMessage, handleCreateOfferError);
 }
 
-
 function doAnswer() {
-  console.log('Sending answer to peer.');
-  pc.createAnswer().then(
-    setLocalAndSendMessage,
-    onCreateSessionDescriptionError
-  );
+    console.log('Sending answer to peer.');
+    pc.createAnswer().then(
+        setLocalAndSendMessage,
+        onCreateSessionDescriptionError
+    );
 }
 
 function setLocalAndSendMessage(sessionDescription) {
-  // Set Opus as the preferred codec in SDP if Opus is present.
-  //  sessionDescription.sdp = preferOpus(sessionDescription.sdp);
-  pc.setLocalDescription(sessionDescription);
-  console.log(' messageType %o  sdp %o', sessionDescription.type, sessionDescription.sdp);
+    // for changing bandwidth,bitrate and audio stereo/mono
+    // sessionDescription.sdp = sessionDescription.sdp.replace("useinbandfec=1", "useinbandfec=1; minptime=10; cbr=1; stereo=1; sprop-stereo=1; maxaveragebitrate=510000");
+    // sessionDescription.sdp = sessionDescription.sdp.replace("useinbandfec=1", "useinbandfec=1; minptime=10; stereo=1; maxaveragebitrate=510000");
 
-  if( sessionDescription.type == "answer")
-  sendMessage( "SDP_ANSWER", sessionDescription, starttime );
-  else if( sessionDescription.type == "offer")
-  sendMessage( "SDP_OFFER", sessionDescription, starttime);
+    sessionDescription.sdp = sessionDescription.sdp.replaceAll("level-asymmetry-allowed=1", "level-asymmetry-allowed=1; Enc=" + encType);
+    pc.setLocalDescription(sessionDescription);
+    console.log('setLocalAndSendMessage sending message', sessionDescription);
 
+    sendMessage({
+        room: roomId,
+        type: sessionDescription.type,
+        desc: sessionDescription
+    });
 }
-
 
 function onCreateSessionDescriptionError(error) {
     log('Failed to create session description: ' + error.toString());
@@ -292,12 +187,9 @@ function onCreateSessionDescriptionError(error) {
 }
 
 function handleRemoteStreamAdded(event) {
-   if ('srcObject' in remoteVideo) {
-    remoteVideo.srcObject = event.streams[0];
-  } else {
-    // deprecated
-    remoteVideo.src = window.URL.createObjectURL(event.stream);
-  }
+    console.log('Remote stream added.');
+    remoteStream = event.stream;
+    remoteVideo.srcObject = remoteStream;
 }
 
 function handleRemoteStreamRemoved(event) {
@@ -305,12 +197,12 @@ function handleRemoteStreamRemoved(event) {
 }
 
 function hangup() {
-    // console.log('Hanging up.');
-    // stop();
-    // sendMessage({
-    //     room: roomId,
-    //     type: 'bye'
-    // });
+    console.log('Hanging up.');
+    stop();
+    sendMessage({
+        room: roomId,
+        type: 'bye'
+    });
 }
 
 function handleRemoteHangup() {
@@ -320,18 +212,11 @@ function handleRemoteHangup() {
 
 function stop() {
     isStarted = false;
-    if(pc)
-    {
-      pc.close();
-      pc = null;
-   }
-
-   reliableSocket.close();
-   reliableSocket = null;
-
+    pc.close();
+    pc = null;
 }
 
-
+//let streamV = new Map();
 
 function ontrack({
     transceiver,
@@ -616,6 +501,7 @@ function addCamera(camid, divAdd) {
 
 
     if (isInitiator) {
+        roomId=camid;
         maybeStart(camid);
     }
 
@@ -645,6 +531,13 @@ function addCamera(camid, divAdd) {
       console.log.apply(console, arguments);
       //var logger = document.getElementById('webrtc-logs');
      // logger.innerHTML += JSON.stringify(args) + '<br />';
+}
+
+
+function sendMessage(message) {
+    console.log('Client sending message: ', message);
+    log('Client sending message: ', message);
+    socket.emit('messageToWebrtc', message);
 }
 
 
