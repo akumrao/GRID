@@ -313,8 +313,8 @@ function createPeerConnection() {
 
 
     pc.onicecandidate = handleIceCandidate;
-    // pc.onaddstream = handleRemoteStreamAdded;
-    // pc.onremovestream = handleRemoteStreamRemoved;
+    pc.onaddstream = handleRemoteStreamAdded;
+    pc.onremovestream = handleRemoteStreamRemoved;
     console.log('Created RTCPeerConnnection');
   } catch (e) {
     console.log('Failed to create PeerConnection, exception: ' + e.message);
@@ -378,8 +378,8 @@ function onCreateSessionDescriptionError(error) {
 
 function handleRemoteStreamAdded(event) {
     console.log('Remote stream added.');
-    remoteStream = event.stream;
-    remoteVideo.srcObject = remoteStream;
+    //remoteStream = event.stream;
+    remoteVideo.srcObject =  event.stream;
 }
 
 function handleRemoteStreamRemoved(event) {

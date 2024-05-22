@@ -534,6 +534,50 @@ function addCamera(camid, divAdd) {
 }
 
 
+
+// This client receives a message
+socket.on('message', function(message) {
+  console.log('Client received message:', message);
+  //log('Client received message:', message);
+
+
+  if (message === 'got user media') {
+    maybeStart();
+  } else if (message.type === 'offer') {
+    if (!isInitiator && !isStarted) {
+      maybeStart();
+    }
+   // remotePeerID=message.from;
+   // log('got offfer from remotePeerID: ' + remotePeerID);
+
+    pc.setRemoteDescription(new RTCSessionDescription(message.desc));
+    doAnswer();
+  } else if (message.type === 'answer' && isStarted) {
+    pc.setRemoteDescription(new RTCSessionDescription(message.desc));
+  } else if (message.type === 'candidate' && isStarted) {
+    var candidate = new RTCIceCandidate({
+      sdpMLineIndex: message.candidate.sdpMLineIndex,
+      sdpMid: message.candidate.sdpMid,
+      candidate: message.candidate.candidate
+    });
+    pc.addIceCandidate(candidate);
+  } else if (message.type === 'bye' && isStarted) {
+
+    console.log('Camera state', message.desc);
+    //log('Camera state:', message.desc);
+
+    handleRemoteHangup();
+  }
+  else if(message.type === 'error') {
+   
+    console.log('Camera state', message.desc);
+    //log('Camera state:', message.desc);
+    hangup();
+  }
+
+});
+
+
 function sendMessage(message) {
     console.log('Client sending message: ', message);
     log('Client sending message: ', message);
