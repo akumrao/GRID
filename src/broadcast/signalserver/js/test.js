@@ -57,48 +57,20 @@ socket.on('join', function(room, id, numClients) {
     isChannelReady = true;
 });
 
-socket.on('joined', function(room, id, numClients) {
-    console.log('joined: ' + room + ' with peerID: ' + id);
-    log('joined: ' + room + ' with peerID: ' + id);
-    isChannelReady = true;
-    peerID = id;
-
-
-  if (isInitiator) {
-
-    // when working with web enable bellow line
-    // doCall();
-    // disable  send message 
-     sendMessage ({
-      room: roomId,
-       cam: camid.toString(),
-      type: 'offer',
-      desc:'sessionDescription'
-    });
-
-  }
-
-});
-
 
 
 socket.emit('create or join', room);
 console.log('Attempted to create or join room', room);
 
-socket.on('created', function(room) {
-  console.log('Created room ' + room);
-  
-});
-
 socket.on('full', function(room) {
   console.log('Room ' + room + ' is full');
 });
 
-socket.on('join', function (room){
-  console.log('Another peer made a request to join room ' + room);
-  console.log('This peer is the initiator of room ' + room + '!');
-  isChannelReady = true;
-});
+// socket.on('join', function (room){
+//   console.log('Another peer made a request to join room ' + room);
+//   console.log('This peer is the initiator of room ' + room + '!');
+//   isChannelReady = true;
+// });
 
 socket.on('joined', function(room) {
   console.log('joined: ' + room);
@@ -115,14 +87,14 @@ socket.on('log', function(array) {
 
 function sendMessage(message) {
     console.log('Client sending message: ', message);
-    log('Client sending message: ', message);
+    //log('Client sending message: ', message);
     socket.emit('messageToWebrtc', message);
 }
 
 // This client receives a message
 socket.on('message', function(message) {
   console.log('Client received message:', message);
-  log('Client received message:', message);
+  //log('Client received message:', message);
 
 
   if (message === 'got user media') {
@@ -148,14 +120,14 @@ socket.on('message', function(message) {
   } else if (message.type === 'bye' && isStarted) {
 
     console.log('Camera state', message.desc);
-    log('Camera state:', message.desc);
+    //log('Camera state:', message.desc);
 
     handleRemoteHangup();
   }
   else if(message.type === 'error') {
    
     console.log('Camera state', message.desc);
-    log('Camera state:', message.desc);
+    //log('Camera state:', message.desc);
     hangup();
   }
 
@@ -227,7 +199,7 @@ async function maybeStart() {
 
 window.onbeforeunload = function() {
     sendMessage({
-        room: roomId,
+        room: room,
         type: 'bye'
     });
 };
@@ -355,7 +327,7 @@ function handleIceCandidate(event) {
   console.log('icecandidate event: ', event);
   if (event.candidate) {
     sendMessage({
-      room: roomId,
+      room: room,
       //to: remotePeerID,
       type: 'candidate',
       candidate: event.candidate
@@ -387,19 +359,19 @@ function setLocalAndSendMessage(sessionDescription) {
     // sessionDescription.sdp = sessionDescription.sdp.replace("useinbandfec=1", "useinbandfec=1; minptime=10; cbr=1; stereo=1; sprop-stereo=1; maxaveragebitrate=510000");
     // sessionDescription.sdp = sessionDescription.sdp.replace("useinbandfec=1", "useinbandfec=1; minptime=10; stereo=1; maxaveragebitrate=510000");
 
-    sessionDescription.sdp = sessionDescription.sdp.replaceAll("level-asymmetry-allowed=1", "level-asymmetry-allowed=1; Enc=" + encType);
+    //sessionDescription.sdp = sessionDescription.sdp.replaceAll("level-asymmetry-allowed=1", "level-asymmetry-allowed=1; Enc=" + encType);
     pc.setLocalDescription(sessionDescription);
     console.log('setLocalAndSendMessage sending message', sessionDescription);
 
     sendMessage({
-        room: roomId,
+        room: room,
         type: sessionDescription.type,
         desc: sessionDescription
     });
 }
 
 function onCreateSessionDescriptionError(error) {
-    log('Failed to create session description: ' + error.toString());
+    //log('Failed to create session description: ' + error.toString());
     console.log('Failed to create session description: ' + error.toString());
 }
 
@@ -418,7 +390,7 @@ function hangup() {
     console.log('Hanging up.');
     stop();
     sendMessage({
-        room: roomId,
+        room: room,
         type: 'bye'
     });
 }

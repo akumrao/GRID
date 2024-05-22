@@ -855,7 +855,7 @@ typedef void(*xa_fi_log_cb_t)(xa_fi_log_type_t, const char*);
 void logXaFi(xa_fi_log_type_t, const char*)
 {
 
-  printf("ravind log testing  \n");
+  printf("never gets called \n");
 
 }
 
@@ -916,7 +916,7 @@ int LiveThread::XAInit()
 
     xa_sdk_log_callback_function_t log_function = &logXa;
 
-    xa_fi_log_cb_t cb = &logXaFi;
+    //xa_fi_log_cb_t cb = &logXaFi;
 
    // xa_sdk_register_log_callback(log_function);
 
@@ -957,8 +957,8 @@ int LiveThread::XAInit()
 
     STrace << "config json: " << configuration;
 
-   // xa_fi_set_log_callback(cb);
-   // xa_sdk_register_log_callback(log_function);
+    //xa_fi_set_log_callback(cb);
+    xa_sdk_register_log_callback(log_function);
     
 
     // xa_sdk_update_identities
