@@ -52,6 +52,7 @@ DummyFrameFilter::~DummyFrameFilter()
         fclose(in_file);
         in_file = nullptr;
     }
+    if(mf.loaded())
     mf.save();
 }
 

@@ -158,6 +158,9 @@ class T31RGBA:public base::Thread
     
     int XA_addGallery(std::string jpegBuffBase64, std::string & registrationImage);
 
+
+    int T31RGBA::XA_addGallery();
+
     void onMessage(json &msg );
 
     std::atomic<int> ready_flag {1};

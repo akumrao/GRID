@@ -6,7 +6,7 @@
     "server":"localhost",
     "port": 443,
     "recording": false,
-    "cloud": false,
+    "cloud": true,
     "facedetect": true,
     "motionevent": true,
     "cam_reconnect": 0,
