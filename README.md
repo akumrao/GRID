@@ -4,10 +4,12 @@
 # TO build
 sudo bash 
 
+Take ubuntu 18.04 LTS
+
 apt install build-essential
 
 
-Install the gcc-7 packages:
+Install the gcc-9 packages:
 
 sudo apt-get install -y software-properties-common
 
@@ -21,9 +23,13 @@ apt-get install g++-7
 
 cd /usr/bin
 
-ln -s gcc-7 gcc
+rm gcc
 
-ln -s g++-7 g++
+rm  g++ 
+
+ln -s gcc-9 gcc
+
+ln -s g++-9 g++
 
 
 gcc --version
@@ -41,7 +47,7 @@ export PATH=/export/webrtc/depot_tools:$PATH
 
 
 
-mkdir /workspace/webrtc
+mkdir -p /workspace/webrtc
 
 cd /workspace/webrtc
 
@@ -65,11 +71,18 @@ mkdir -p /workspace/
 
 git clone git@github.com:Adappt-Intelligence-Inc/MagicAI.git 
 
-./buildt31.sh
- 
-/workspace/MagicAI/src/broadcast/main
+git checkout h264_streaming
 
-root:main# make -f Makefile_t31
+cd /workspace/webrtc/src
+
+git apply /workspace/MagicAI/src/webrtc/patch_t31_full.txt
+
+
+cd /workspace/MagicAI/
+
+./buildt31.sh
+
+
 
 
 

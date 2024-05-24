@@ -76,3 +76,24 @@ make install
 
 cd ../../
 
+cd /workspace/MagicAI/src/webrtc
+
+./buildenv540uclibc.sh
+
+
+cd /workspace/MagicAI/src/broadcast/main
+
+make -f ./Makefile_t31 -j24
+
+make -f ./Makefile_t31 strip
+
+
+
+
+
+
+
+
+
+
+
