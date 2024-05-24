@@ -1,6 +1,80 @@
 # High performing AI for Face Detection for T31 chipset. 
 
 
+# TO build
+sudo bash 
+
+apt install build-essential
+
+
+Install the gcc-7 packages:
+
+sudo apt-get install -y software-properties-common
+
+compilers
+
+apt-get install gcc-7
+
+apt-get install g++-7
+
+
+
+cd /usr/bin
+
+ln -s gcc-7 gcc
+
+ln -s g++-7 g++
+
+
+gcc --version
+
+apt install git
+
+mkdir -p /export/webrtc
+
+cd /export/webrtc
+
+git clone  https://chromium.googlesource.com/chromium/tools/depot_tools 
+
+
+export PATH=/export/webrtc/depot_tools:$PATH 
+
+
+
+mkdir /workspace/webrtc
+
+cd /workspace/webrtc
+
+fetch --nohooks webrtc_android
+
+gclient sync
+
+cd src 
+
+git checkout branch-heads/m76
+
+gclient sync -D
+
+
+T31 compiler path should look like   /workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software  ( shared at google drive)
+
+
+
+mkdir -p /workspace/
+
+
+git clone git@github.com:Adappt-Intelligence-Inc/MagicAI.git 
+
+./buildt31.sh
+ 
+/workspace/MagicAI/src/broadcast/main
+
+root:main# make -f Makefile_t31
+
+
+
+
+# AI
 xa_sdk_initialize() 
 
  I would add xa_sdk_configure()  with the config blob in the Json HOWTO - this will enable face recognition.  A call to  xa_sdk_is_face_recognition_enabled() should return the correct values as specified in the .h file.  Then add a call to  xa_sdk_process_image() with an image with a face you'd like to test - call that function over and over with the same image until it returns some data in process_image_outputs 
