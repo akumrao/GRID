@@ -245,20 +245,22 @@ function createPeerConnection() {
           var imgid = document.getElementById("image");
           imgid.src = base64Url;
 
-          var myJsObj = {
-                          "messageType": "identity",
-                          "messagePayload": {
-                            "configuredGalleryIdentities": {
-                              "76a92b24-31d5-463b-ab7a-b379efab7b30": {
-                                "accuracyMonitorConsent": false,
-                                "identityName": "entername",
-                                "productImprovementConsent": false,
-                                "registrationImageIDs": ["entername"]
-                              }
-                            },
-                            "sequenceNum": 1
-                          }
-                        };
+          var myJsObj = GenIdentity();
+
+                        //   "messageType": "identity",
+                        //   "messagePayload": {
+                        //     "configuredGalleryIdentities": {
+                        //       "76a92b24-31d5-463b-ab7a-b379efab7b30": {
+                        //         "accuracyMonitorConsent": false,
+                        //         "identityName": "entername",
+                        //         "productImprovementConsent": false,
+                        //         "registrationImageIDs": ["entername"]
+                        //       }
+                        //     },
+                        //     "sequenceNum": 1
+                        //   }
+                        // };
+
 
           //var obj = JSON.parse(myJsObj);
           myJsObj['registrationImage'] = msg.messagePayload.registrationImage;
@@ -270,7 +272,8 @@ function createPeerConnection() {
           //document.getElementById('myTextArea').innerHTML = str;
 
           document.getElementById('w3review').value= str;
-         
+     
+             
 
           break;
           case "IDENTITY_RECOGNIZED":
@@ -439,16 +442,12 @@ function addIdentity()
   channelSnd.send(document.getElementById('w3review').value);
 }
 
-function prompt()
+function GenIdentity()
 {
 
-  var a = prompt("Enter name", "arvind");  
-  if (a == null || !a.length) {
+  var txtname =  document.getElementById("txtname").value;
 
-    return;
-  }  
-
-  return identity(name);
+  return identity(txtname);
 
 }
 
@@ -456,7 +455,6 @@ function prompt()
 function identity(name)
 {
 
- 
 
   let uid = uuidV4();
 
@@ -467,13 +465,14 @@ function identity(name)
                           "messagePayload": {
                             "configuredGalleryIdentities": {}
                           }
-              }
-  obj["messagePayload"][][uid]= {};
-  obj[uid]['accuracyMonitorConsent'] = false;
-  obj[uid]['identityName'] = name;
-  obj[uid]['productImprovementConsent'] = false;
-  obj[uid]['registrationImageIDs']=[];
-  obj[uid]['registrationImageIDs'].push(name);
+              };
+
+  obj["messagePayload"]["configuredGalleryIdentities"][uid]= {};
+  obj["messagePayload"]["configuredGalleryIdentities"][uid]['accuracyMonitorConsent'] = false;
+  obj["messagePayload"]["configuredGalleryIdentities"][uid]['identityName'] = name;
+  obj["messagePayload"]["configuredGalleryIdentities"][uid]['productImprovementConsent'] = false;
+  obj["messagePayload"]["configuredGalleryIdentities"][uid]['registrationImageIDs']=[];
+  obj["messagePayload"]["configuredGalleryIdentities"][uid]['registrationImageIDs'].push(name);
   
   jsonStr = JSON.stringify(obj);
 
