@@ -439,15 +439,36 @@ function addIdentity()
   channelSnd.send(document.getElementById('w3review').value);
 }
 
+function prompt()
+{
+
+  var a = prompt("Enter name", "arvind");  
+  if (a == null || !a.length) {
+
+    return;
+  }  
+
+  return identity(name);
+
+}
+
 
 function identity(name)
 {
+
+ 
+
   let uid = uuidV4();
 
   var jsonStr = '{}';
 
-  var obj = {};
-  obj[uid]= {};
+  var obj =  {
+                          "messageType": "identity",
+                          "messagePayload": {
+                            "configuredGalleryIdentities": {}
+                          }
+              }
+  obj["messagePayload"][][uid]= {};
   obj[uid]['accuracyMonitorConsent'] = false;
   obj[uid]['identityName'] = name;
   obj[uid]['productImprovementConsent'] = false;
@@ -458,9 +479,11 @@ function identity(name)
 
   console.log(jsonStr);
 
+  return obj;
+
 }
 
-identity("arvind");
+//identity("arvind");
 
 /*
 "76a92b24-31d5-463b-ab7a-b379efab7b30": {
