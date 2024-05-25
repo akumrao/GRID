@@ -23,39 +23,23 @@ Configuration::~Configuration()
 }
 
 
-void Configuration::load(const std::string path, bool create)
+void Configuration::load(const std::string path)
 {
     _path = path;
-    loadIt(create);
+    loadIt();
 }
 
 
-void Configuration::loadIt(bool create)
+void Configuration::loadIt()
 {
     std::lock_guard<std::mutex> guard(_mutex);
 
-    if (_path.empty())
-        throw std::runtime_error(
-            "Cannot load configuration: File path not set.");
-
-    LDebug("Load: ", _path)
-            
-    if(create)
-    {
-        // touche or greate the file;
-    }
-
-    try {
         // if (create && !fs::exists(_path))
         //    fs::createFile(_path);
 
-        loadFile(_path, root);
-    } catch (std::exception& error) {
-        
-        std::cout << "Parser failse " <<  _path  << error.what();
-    }
+    _loaded  = loadFile(_path, root);
+   
 
-    _loaded = true;
 }
 
 

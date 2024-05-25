@@ -21,7 +21,7 @@ public:
     Configuration();
     virtual ~Configuration();
 
-    virtual void load(const std::string path, bool create = false);
+    virtual void load(const std::string path);
    
     virtual void save();
 
@@ -44,7 +44,7 @@ public:
     
 
 private:
-     virtual void loadIt(bool create);
+    virtual void loadIt();
 
     bool _loaded;
     std::string _path;

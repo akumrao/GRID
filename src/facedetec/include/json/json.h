@@ -26,14 +26,19 @@ namespace cnfg {
 
 
 
-inline void loadFile(const std::string& path, json & root)
+inline bool loadFile(const std::string& path, json & root)
 {
     std::ifstream ifs;
     ifs.open(path.c_str(), std::ifstream::in);
     if (!ifs.is_open())
-        throw std::runtime_error("Cannot open input file: " + path);
+    { 
+        //SDebug << "Cannot open input file: " <<  path;
+        return false;
+    }
+
 
     root = json::parse(ifs); // thorws std::invalid_argument
+    return true;
 }
 
 

@@ -247,19 +247,19 @@ function createPeerConnection() {
 
           var myJsObj = GenIdentity();
 
-                        //   "messageType": "identity",
-                        //   "messagePayload": {
-                        //     "configuredGalleryIdentities": {
-                        //       "76a92b24-31d5-463b-ab7a-b379efab7b30": {
-                        //         "accuracyMonitorConsent": false,
-                        //         "identityName": "entername",
-                        //         "productImprovementConsent": false,
-                        //         "registrationImageIDs": ["entername"]
-                        //       }
-                        //     },
-                        //     "sequenceNum": 1
-                        //   }
-                        // };
+            //   "messageType": "identity",
+            //   "messagePayload": {
+            //     "configuredGalleryIdentities": {
+            //       "76a92b24-31d5-463b-ab7a-b379efab7b30": {
+            //         "accuracyMonitorConsent": false,
+            //         "identityName": "entername",
+            //         "productImprovementConsent": false,
+            //         "registrationImageIDs": ["entername"]
+            //       }
+            //     },
+            //     "sequenceNum": 1
+            //   }
+            // };
 
 
           //var obj = JSON.parse(myJsObj);
@@ -437,15 +437,23 @@ function onIceStateChange(pc, event) {
 
 function addIdentity()
 {
-  channelSnd.send('Hi arvind you!');
+  //channelSnd.send('Hi arvind you!');
 
+  if(document.getElementById('w3review').value.length)
   channelSnd.send(document.getElementById('w3review').value);
+  document.getElementById('w3review').value ="";
 }
 
 function GenIdentity()
 {
 
   var txtname =  document.getElementById("txtname").value;
+
+  let nx = Math.floor((Math.random() * 100) + 1);
+
+  txtname += nx.toString(); 
+
+  document.getElementById("txtname").value = txtname;
 
   return identity(txtname);
 
@@ -463,7 +471,8 @@ function identity(name)
   var obj =  {
                           "messageType": "identity",
                           "messagePayload": {
-                            "configuredGalleryIdentities": {}
+                            "configuredGalleryIdentities": {},
+                            "sequenceNum": 1
                           }
               };
 

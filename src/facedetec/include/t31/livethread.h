@@ -156,7 +156,7 @@ class T31RGBA:public base::Thread
 
     int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  );
     
-    int XA_addGallery(std::string jpegBuffBase64, std::string & registrationImage);
+    int XA_addGallery(std::string jpegBuffBase64, json & registrationImage);
 
 
     int T31RGBA::XA_addGallery();

@@ -206,10 +206,13 @@ void T31RGBA::run() {
 void T31RGBA::onMessage(json &jsonMsg )
 {
 
-   std::string registrationJson  = jsonMsg["messagePayload"].dump();
+   json & rjson  = jsonMsg["messagePayload"];
+ 
+   SInfo << " onMessage "  << rjson.dump();
+
    std::string  jpegBuffBase64= jsonMsg["registrationImage"].get<std::string>();;
 
-   XA_addGallery(jpegBuffBase64, registrationJson);
+   XA_addGallery(jpegBuffBase64, rjson);
 
 }
          
@@ -248,19 +251,21 @@ int T31RGBA::XA_addGallery()
 
               return -1;
          }
-    }
+    
 
-   int totalIdentity = remaining_identity_image_pairs->number_of_remaining_images;
-  // Step 2 / Step 4
-    if ((returnValue == XA_ERR_NONE) && (remaining_identity_image_pairs->number_of_remaining_images > 0)) 
-    {
-       SError << "xa_sdk_update_identities fails";
+     int totalIdentity = remaining_identity_image_pairs->number_of_remaining_images;
+    // Step 2 / Step 4
+      if ((returnValue == XA_ERR_NONE) && (remaining_identity_image_pairs->number_of_remaining_images > 0)) 
+      {
+         SError << "xa_sdk_update_identities fails";
+      }
+
     }
 
 }
     
 
-int T31RGBA::XA_addGallery(std::string jpegBuffBase64 , std::string & newidentity)
+int T31RGBA::XA_addGallery(std::string jpegBuffBase64 , json & newidentity)
 {
 
     ready_flag = 0;
@@ -270,7 +275,7 @@ int T31RGBA::XA_addGallery(std::string jpegBuffBase64 , std::string & newidentit
 
     identity.load("./updated_json_identities.json");
 
-
+    std::string sGal;
 
     if (identity.loaded()) 
     {
@@ -278,20 +283,15 @@ int T31RGBA::XA_addGallery(std::string jpegBuffBase64 , std::string & newidentit
       
         if( identity.root.find("configuredGalleryIdentities") != identity.root.end())
         {
-            json up_json_identities = json::parse(newidentity); 
-            
-
-
-            if( up_json_identities.find("configuredGalleryIdentities") != up_json_identities.end())
+        
+            if( newidentity.find("configuredGalleryIdentities") != newidentity.end())
             {
 
 
-                for (json::iterator it = up_json_identities["configuredGalleryIdentities"].begin(); it != up_json_identities["configuredGalleryIdentities"] .end(); ++it) {
+                for (json::iterator it = newidentity["configuredGalleryIdentities"].begin(); it != newidentity["configuredGalleryIdentities"] .end(); ++it) {
 
 
                     std::cout << it.key() << " : " << it.value() << "\n";
-
-
 
                     if(  (identity.root.find("sequenceNum") != identity.root.end()) && ( identity.root["configuredGalleryIdentities"].find(it.key()) ==  identity.root["configuredGalleryIdentities"].end()       ))
                     {
@@ -300,17 +300,27 @@ int T31RGBA::XA_addGallery(std::string jpegBuffBase64 , std::string & newidentit
 
                     identity.root["configuredGalleryIdentities"][it.key()] = it.value();
 
-
                 }
 
             }
                 
         }
-                        
+        
+          sGal=  identity.root.dump();
+    }
+    else
+    {
+         sGal=  newidentity.dump();
     }
     
-    SInfo << "jpegBuffBase64 " << jpegBuffBase64.size() ;
-
+    
+    const char * galleryIdentityManifest = sGal.c_str();
+    const xa_sdk_identity_images_t * remaining_identity_image_pairs;
+    const char * updated_json_identities;
+    xa_fi_error_t returnValue;
+    
+    SInfo << "jpegBuffBase64 " << jpegBuffBase64.size() << " identity " <<  sGal ;
+    
     std::string out;
     //  base64::Decoder dec;
     //  dec.decode(jpegBuffBase64, out);
@@ -332,17 +342,11 @@ int T31RGBA::XA_addGallery(std::string jpegBuffBase64 , std::string & newidentit
     SInfo << "wx: " << width  << " he: " << height <<  " ch: " << channels;
 
 
-    const char * galleryIdentityManifest;
-    const xa_sdk_identity_images_t * remaining_identity_image_pairs;
-    const char * updated_json_identities;
-    xa_fi_error_t returnValue;
+
 
     //if (< a new gallery manifest exists >) 
     {    
-
-        
-        galleryIdentityManifest = identity.root.dump().c_str();
-
+   
         // Step 1
         returnValue = xa_sdk_update_identities(galleryIdentityManifest,
         &remaining_identity_image_pairs,
@@ -1045,7 +1049,7 @@ int LiveThread::XAInit()
     STrace << "config json: " << configuration;
 
     //xa_fi_set_log_callback(cb);
-    xa_sdk_register_log_callback(log_function);
+   // xa_sdk_register_log_callback(log_function);
     
 
     // xa_sdk_update_identities

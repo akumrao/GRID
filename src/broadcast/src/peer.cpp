@@ -476,7 +476,7 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
 		  _manager->ctx->liveThread->onMessage(jsonMsg );
 	    }
 	    
-	    SInfo << jsonMsg.dump(4);
+	    //SInfo << jsonMsg.dump(4);
 	    
 	}
    }
