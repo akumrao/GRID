@@ -1,0 +1,13 @@
+diff --git a/abseil-cpp/absl/debugging/failure_signal_handler.cc b/abseil-cpp/absl/debugging/failure_signal_handler.cc
+index c6a4d962b42..1a74f892719 100644
+--- a/abseil-cpp/absl/debugging/failure_signal_handler.cc
++++ b/abseil-cpp/absl/debugging/failure_signal_handler.cc
+@@ -124,7 +124,7 @@ static bool SetupAlternateStackOnce() {
+ #else
+   const size_t page_mask = sysconf(_SC_PAGESIZE) - 1;
+ #endif
+-  size_t stack_size = (std::max(SIGSTKSZ, 65536) + page_mask) & ~page_mask;
++  size_t stack_size = (std::max<size_t>(SIGSTKSZ, 65536) + page_mask) & ~page_mask;
+ #if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
+     defined(THREAD_SANITIZER)
+   // Account for sanitizer instrumentation requiring additional stack space.
