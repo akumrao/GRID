@@ -141,7 +141,7 @@ namespace web_rtc {
             ctx->liveFrame->run(&basicframe); // starts the frame filter chain
             //ctx->muRecFrame.unlock(); 
 
-            SInfo << "payload " << bytes_read;
+            //SInfo << "payload " << bytes_read;
             basicframe.payload.resize(basicframe.payload.capacity());
             fclose(fp);
        
