@@ -3,7 +3,7 @@ rm -rf build
 mkdir -p build
 
 rm CMakeLists.txt
-cp CMakeLists_t31.txt CMakeLists.txt
+cp CMakeLists_arm64.txt CMakeLists.txt
 
 cd build
 
