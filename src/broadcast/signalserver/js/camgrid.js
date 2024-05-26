@@ -78,22 +78,16 @@ function maybeStart(roomId) {
     }
 }
 
+
+
+
+
+
 window.onbeforeunload = function() {
     sendMessage({
         room: roomId,
         type: 'bye'
     });
-};
-
-
-
-
-
-window.onbeforeunload = function() {
-    // sendMessage({
-    //     room: roomId,
-    //     type: 'bye'
-    // });
 
     
     handleRemoteHangup();
@@ -476,6 +470,12 @@ function onIceStateChange(pc, event) {
 
 function addCamera(camid, divAdd) {
 
+    if(camid == roomId ||  roomId)
+    {
+       return;
+    }
+
+   
 
     if(pc)
     {

@@ -1,9 +1,7 @@
 ################################################################################
 ### CUSTOMIZE BELOW HERE #######################################################
 
-#LIVE555_ROOT = /workspace/live
 FFMPEG_ROOT = /workspace/MagicAI/3rdparty/installx64
-#WEBRTC_PATH = /data/delete/mediaserverdocker/webrtc_android/src/
 WEBRTC_PATH = /workspace/webrtc/src/
 SSL_ROOT = /workspace/MagicAI/src/openssl/buildx64
 
@@ -45,11 +43,6 @@ purge: clean
 
 clean:
 	rm -f  $(OBJS)
-
-strip: 
-	${STRIP}  $(TARGET)
-
-
 
 ################################################################################
 ################################################################################
