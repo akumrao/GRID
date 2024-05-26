@@ -351,8 +351,8 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 
 
                     };
-                    
-                    nullDecoder->cb_mp4 = [&](web_rtc::Frame *basicframe, bool key ) 
+
+                    nullDecoder->cb_mp4 = [&](web_rtc::BasicFrame *basicframe, bool key ) 
                     {
                         
                         if(key && recording &&  ++recording > Settings::configuration.Mp4Size_Key)
@@ -365,12 +365,79 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
                             recording = 1;
                             liveThread->t31rgba->record = false;
                         }
+                        
+                       
                                 
                         if(ctx->fragmp4_muxer && recording)
                         {
-                            ctx->fragmp4_muxer->run(basicframe);
-                            if( key)
-                            ctx->fragmp4_muxer->sendMeta();
+                            
+//                            if ( foundsps && foundpps && basicframe->h264_pars.frameType == H264SframeType::i && basicframe->h264_pars.slice_type == H264SliceType::idr) //AUD Delimiter
+//                            {
+//                                ctx->fragmp4_muxer->sendMeta();
+//                                recording =3;
+//                            }
+//                          
+//                            !foundsps foundpps
+//                            
+//                            if(  foundsps && foundpps && ( basicframe->h264_pars.slice_type == H264SliceType::idr ||  basicframe->h264_pars.slice_type == H264SliceType::nonidr)  )
+//                            ctx->fragmp4_muxer->run(basicframe);
+                         
+                            
+                            
+                            if ( foundsps && foundpps && basicframe->h264_pars.frameType == H264SframeType::i && basicframe->h264_pars.slice_type == H264SliceType::idr) //AUD Delimiter
+                            {
+                                if(ctx->fragmp4_muxer)
+                                ctx->fragmp4_muxer->sendMeta();
+                            }
+
+                            if (basicframe->h264_pars.slice_type == H264SliceType::sps ||  basicframe->h264_pars.slice_type == H264SliceType::pps) //AUD Delimiter
+                            {
+
+
+                                if (!foundpps &&  basicframe->h264_pars.slice_type == H264SliceType::sps )
+                                {
+
+
+                                //info->run(&basicframe);
+                                    if(ctx->fragmp4_muxer)
+                                     ctx->fragmp4_muxer->run(basicframe); // starts the frame filter chain
+                
+                                    foundsps  = true;   
+               
+                                }
+
+                                 
+
+
+                                if( !foundpps &&  basicframe->h264_pars.slice_type == H264SliceType::pps  )
+                                {    
+
+                                    //info->run(&basicframe);
+                                     if(ctx->fragmp4_muxer)
+                                      ctx->fragmp4_muxer->run(basicframe); // starts the frame filter chain
+
+
+                                   // basicframe.payload.resize(basicframe.payload.capacity());
+
+                                    foundpps  = true;
+
+
+                                }
+
+
+                            }
+                            else if (!((basicframe->h264_pars.slice_type == H264SliceType::idr) ||   (basicframe->h264_pars.slice_type == H264SliceType::nonidr))) {
+                            //info->run(&basicframe);
+                                //basicframe.payload.resize(basicframe.payload.capacity());
+                            }
+                            else if (foundsps && foundpps  )
+                            {
+                            //info->run(&basicframe);
+                                 if(ctx->fragmp4_muxer)
+                                  ctx->fragmp4_muxer->run(basicframe); // starts the frame filter chain
+
+
+                            }
 
                             
                         }

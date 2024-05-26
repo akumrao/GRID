@@ -157,8 +157,7 @@ namespace web_rtc {
     
 
 
-    #define H264_INBUF_SIZE 16384  
-
+    #define H264_INBUF_SIZE 30000  
     uint8_t inbuf[H264_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
     
     public: // redefined virtual functions

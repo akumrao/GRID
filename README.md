@@ -19,6 +19,7 @@ apt-get install gcc-7
 
 apt-get install g++-7
 
+apt-get install python
 
 
 cd /usr/bin
@@ -27,9 +28,9 @@ rm gcc
 
 rm  g++ 
 
-ln -s gcc-9 gcc
+ln -s gcc-7 gcc
 
-ln -s g++-9 g++
+ln -s g++-7 g++
 
 
 gcc --version
@@ -42,6 +43,8 @@ cd /export/webrtc
 
 git clone  https://chromium.googlesource.com/chromium/tools/depot_tools 
 
+git checkout chrome/4147
+
 
 export PATH=/export/webrtc/depot_tools:$PATH 
 
@@ -53,6 +56,8 @@ cd /workspace/webrtc
 
 fetch --nohooks webrtc_android
 
+cd src
+
 gclient sync
 
 cd src 
@@ -61,12 +66,16 @@ git checkout branch-heads/m76
 
 gclient sync -D
 
+mkdir -p /workspace/
 
 T31 compiler path should look like   /workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software  ( shared at google drive)
 
+cd /workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software
 
+source ./t31_env_setup.sh 540	
 
-mkdir -p /workspace/
+./t31_image_mk.sh
+
 
 
 git clone git@github.com:Adappt-Intelligence-Inc/MagicAI.git 
@@ -83,6 +92,11 @@ cd /workspace/MagicAI/
 ./buildt31.sh
 
 
+
+For build error 
+if you get std::max error because of compiler gcc9  or higer replace
+
+std::max -> std::max<size_t>
 
 
 

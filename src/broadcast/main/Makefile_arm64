@@ -10,7 +10,7 @@ SSL_ROOT = /workspace/MagicAI/src/openssl/buildx64
 CC	= gcc
 CXX     = g++
 TARGET=runWebrtc # define the name of the executable
-SOURCES=$(wildcard *.cpp ../src/*.cpp ../src/x64/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp ../../net/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../facedetec/src/configuration.cpp ../../signal/src/*.cpp )
+SOURCES=$(wildcard *.cpp ../src/*.cpp ../src/x64/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp ../../net/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../facedetec/src/configuration.cpp ../../signal/src/*.cpp )
 
 CXXFLAGS   := -g -fno-rtti -std=c++11 -Wno-uninitialized
 
@@ -20,9 +20,8 @@ CPPFLAGS   := -I../../signal/include -I../../facedetec/include/ -I${SSL_ROOT}/in
 
 LDLIBS    := -lpthread -lm -ldl -lz -lbz2 -L/workspace/MagicAI/src/webrtc/build -L/workspace/MagicAI/src/openssl/buildx64/lib -ljingle_peerconnection_so -ljpeg -lssl -lcrypto
 
-SLIBS     := ${FFMPEG_ROOT}/lib/libavformat.a  ${FFMPEG_ROOT}/lib/libavcodec.a ${FFMPEG_ROOT}/lib/libavutil.a ${FFMPEG_ROOT}/lib/libswresample.a
+SLIBS     := ../../libuv/build/libuv_a.a  ${FFMPEG_ROOT}/lib/libavformat.a  ${FFMPEG_ROOT}/lib/libavcodec.a ${FFMPEG_ROOT}/lib/libavutil.a ${FFMPEG_ROOT}/lib/libswresample.a
 
-#  ${SSL_ROOT}/lib/libssl.a ${SSL_ROOT}/lib/libcrypto.a   
 
 
 

@@ -57,7 +57,9 @@ namespace base {
             
             TcpConnectionBase *obj = (TcpConnectionBase *) handle->data;
             
-            SDebug << "onClose ";
+            
+                    
+            SInfo << "onClose " <<  obj->IsClosed();
             
            
             if (obj)

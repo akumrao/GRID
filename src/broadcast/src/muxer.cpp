@@ -11,6 +11,8 @@
 // #include "avcodec.h"
 // #include "channel_layout.h"
 
+#define STREAM_DURATION   20.0
+
 extern "C"
 {
 //#include <libavutil/timestamp.h>
@@ -68,7 +70,7 @@ namespace web_rtc {
 
 MuxFrameFilter::MuxFrameFilter(const char* name, FrameFilter *next) :
 FrameFilter(name, next),  initialized(false),  av_format_ctx(NULL), avio_ctx(NULL),
-avio_ctx_buffer(NULL), missing(0), ccf(0), av_dict(NULL), format_name("matroska"),  extradata_count(0) {
+avio_ctx_buffer(NULL), missing(0), ccf(0), av_dict(NULL), format_name("mp4"),  extradata_count(0) {
     // two substreams per stream
     this->codec_contexes.resize(2, NULL);
     this->streams.resize(2, NULL);
@@ -453,7 +455,10 @@ void MuxFrameFilter::go(Frame* frame) {
 #ifdef MUXSTATE
                 std::cout << "MuxFrameFilter:  go: state: got setup frame " << *setupframe << std::endl;
 #endif
-                SInfo << "MuxFrameFilter :  go : got setup frame " << *setupframe << std::endl;
+                
+                deActivate();
+                
+               // SInfo << "MuxFrameFilter :  go : got setup frame " << *setupframe << std::endl;
                 setupframes[setupframe->stream_index] = *setupframe ;  
                 
                  //mstimestamp0 = setupframe->mstimestamp;
@@ -641,6 +646,14 @@ void MuxFrameFilter::writeFrame(BasicFrame* basicframe) {
         avpkt->flags = AV_PKT_FLAG_KEY;
     }
 
+    
+    if (av_compare_ts(avpkt->pts, av_codec_context->time_base,
+                STREAM_DURATION, (AVRational) {
+                1, 1 }) >= 0) {
+        return ;
+    }
+
+                    
          
     av_packet_rescale_ts(avpkt, av_codec_context->time_base, av_stream->time_base);
 
@@ -753,7 +766,7 @@ void FragMP4MuxFrameFilter::defineMux() {
     this->avio_ctx = avio_alloc_context(this->avio_ctx_buffer, this->avio_ctx_buffer_size, 1,
             this, this->read_packet, this->write_packet, this->seek); // no read, nor seek
     // .. must be done here, so that read/write_packet points to the correct static function
-    format_name = std::string("mp4");
+    //format_name = std::string("mp4");
 //ffmpeg -i myVideo.mp4 -y -c:v libx264 -profile:v high -prese6t:v fast -deinterlace -x264opts min-keyint=15:keyint=1000:scenecut=20 -b:v 2000k -c:a aac -b:a 128k -f segment -segment_format mp4 -segment_format_options movflags=empty_moov+frag_keyframe+default_base_moof+skip_trailer+faststart /home/1/output%%05d.mp4
 //> -                av_dict_set(&opts, "movflags", "frag_every_frame+dash+delay_moov+skip_sidx", 0);
 //               av_dict_set(&opts, "movflags", "frag_every_frame+dash+delay_moov+skip_sidx+skip_trailer", 0);
@@ -764,7 +777,10 @@ void FragMP4MuxFrameFilter::defineMux() {
     // av_dict_set(&av_dict, "movflags", "empty_moov+omit_tfhd_offset+separate_moof", 0);
    // av_dict_set(&av_dict, "movflags", "empty_moov+omit_tfhd_offset+separate_moof+frag_custom", 0); // will cause slow memory leaks
 
-    av_dict_set(&av_dict, "movflags", "empty_moov+omit_tfhd_offset+separate_moof+frag_custom+skip_trailer", 0);
+    //av_dict_set(&av_dict, "movflags", "empty_moov+omit_tfhd_offset+separate_moof+frag_custom+skip_trailer", 0);
+
+    av_dict_set(&av_dict, "movflags", "empty_moov+omit_tfhd_offset+frag_keyframe+default_base_moof+skip_trailer", 0);
+
 
     // no need for any of this, really.. the latency is small anyway
     // av_dict_set(&av_dict, "frag_size", "500", 500); // nopes

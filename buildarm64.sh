@@ -3,6 +3,14 @@ set -e
 TOP=$(pwd)
 echo "TOP = $TOP"
 
+mkdir -p src/libuv/build
+cd  src/libuv/build
+
+cmake .. -DUSE_MUCLIBC=ON
+make -j8
+
+
+cd ../../../
 
 
 cd src/openssl
