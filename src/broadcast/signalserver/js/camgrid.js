@@ -72,7 +72,7 @@ function maybeStart(roomId) {
         console.log('isInitiator', isInitiator);
 
         if (roomId !== '') {
-            socket.emit('createorjoin', roomId);
+            socket.emit('createorjoin', roomId, true);
             console.log('Attempted to create or  join room', roomId);
         }
     }

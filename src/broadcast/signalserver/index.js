@@ -96,7 +96,7 @@ async function runSocketServer() {
     io.sockets.on('connection', function(socket) {
         // convenience function to log server messages on the client
         function log() {
-            var array = ['Message from server:'];
+            var array = ['log:'];
             array.push.apply(array, arguments);
 	    // Uncomment to see server side messages on client side JavaScript console.
             // socket.emit('log', array);
@@ -104,89 +104,147 @@ async function runSocketServer() {
         }
 
         socket.on('disconnect', function() {
-            if (socket.id == serverSocketid) {
 
-                console.log("server down " + serverSocketid);
-                serverSocketid = null;
 
-                for (let soc in io.sockets.connected) {
-                    io.sockets.connected[soc].emit('leave', socket.room, -1, -1);
-                    io.sockets.connected[soc].disconnect();
+            console.log( "disconnect "+ socket.id);
+            var clientsInRoom = io.sockets.adapter.rooms[socket.room];
+
+            if ( !clientsInRoom)
+            {
+                 console.log( "error at disconnect, not client in room");
+                 return 
+            }
+
+            
+
+            if ( !socket.isclient) {
+
+                // console.log("server down " + serverSocketid);
+                // serverSocketid = null;
+
+                // for (let soc in io.sockets.connected) {
+                //     io.sockets.connected[soc].emit('leave', socket.room, -1, -1);
+                //     io.sockets.connected[soc].disconnect();
+                // }
+
+                    //var numClients = clientsInRoom.length; 
+                    //console.log( "disconnect" , numClients);
+
+                    Object.keys(clientsInRoom.sockets).forEach(function(scid){
+                     
+                     let sc = io.sockets.connected[scid];
+
+                     if(sc.isclient)
+                     {
+                        console.log( " webrtc is down, so client leaved " + sc.id);
+                        sc.emit('leave', socket.room, -1, -1);
+                        sc.disconnect();
+                     }
+
+
+                    });
                 }
-            } else {
-                var clientsInRoom = io.sockets.adapter.rooms[socket.room];
-                var numClients = clientsInRoom ? Object.keys(clientsInRoom.sockets).length : 0;
-                console.log("disconnect " + socket.id + " from room " + socket.room + " numClients " + numClients);
 
-                if (serverSocketid && io.sockets.connected[serverSocketid]) {
-		    /* Sometimes socket id of webrtc remains the same after service restart.
-                       If detected, disconnect obsolete socket */
-                    io.sockets.connected[serverSocketid].emit('disconnectClient', socket.id);
-		}
 
-                io.sockets.to(socket.room).emit('leave', socket.room, socket.id, numClients);
-                console.log("unsubscribe " + socket.id);
+            else  
+            {
+
+               // var numClients = clientsInRoom.length; 
+                //console.log( "disconnect" , numClients);
+
+
+                
+                Object.keys(clientsInRoom.sockets).forEach(function(scid){
+                     
+                let sc = io.sockets.connected[scid];
+                 
+                 if(!sc.isclient)
+                 {
+                    console.log( "clinet is closed " + socket.id);
+
+                    sc.emit('disconnectClient', socket.id);
+                    
+                 }
+
+
+                });
+
             }
         });
 
-        socket.on('WebrtcSocket', function() {
-            log('Received request to create WebrtcSocket');
+        // socket.on('WebrtcSocket', function() {
+        //     log('Received request to create WebrtcSocket');
 
-            if (serverSocketid !== null && io.sockets.connected[serverSocketid]) {
-                io.sockets.connected[serverSocketid].disconnect();
-                serverSocketid = null;
-            }
+        //     if (serverSocketid !== null && io.sockets.connected[serverSocketid]) {
+        //         io.sockets.connected[serverSocketid].disconnect();
+        //         serverSocketid = null;
+        //     }
 
-            log('Webrtc ID ', socket.id);
-            serverSocketid = socket.id;
-        });
+        //     log('Webrtc ID ', socket.id);
+        //     serverSocketid = socket.id;
+        // });
 
-        socket.on('createorjoin', function(roomId, user) {
-            log('Received request to createorjoin room ' + roomId);
-
-            if (serverSocketid == null || io.sockets.connected[serverSocketid] == null) {
-                io.emit('leave', socket.room, -1, -1);
-                return console.error("Webrtc server is down");
-            }
-
+        socket.on('createorjoin', function(roomId, client) {
+            
+        
             if (socket.room)
                 socket.leave(socket.room);
 
             socket.room = roomId;
             socket.join(roomId);
 
-            if (user)
-                socket.user = user;
+            if(!client)
+             socket.isclient= false;
+            else 
+            socket.isclient = true;
 
-            var numClients = io.sockets.adapter.rooms[roomId].length; //For socket.io versions >= 1.4:
+
+            log('Received request to createorjoin room ' + roomId + " isclient " +  socket.isclient ) ;
+
+
+           
+            var clientsInRoom = io.sockets.adapter.rooms[socket.room];
+  
+            var numClients = clientsInRoom.length; //For socket.io versions >= 1.4:
 
             log('Room ' + roomId + ' now has ' + numClients + ' client(s)');
 
             if (numClients === 1) {
                 log('Client ID ' + socket.id + ' created room ' + roomId);
                 //when first time client connection then socket is created, store socket id and then emit  Join event
-                io.sockets.connected[serverSocketid].emit('created', roomId, serverSocketid);
-                socket.emit('created', roomId, socket.id);
-                socket.emit('joined', roomId, socket.id, numClients);
+               // socket.emit('created', roomId, socket.id);
+                socket.emit('join', roomId, socket.id, numClients);
             } else if (numClients > 1) {
-                log('Client ID ' + socket.id + ' joined room ' + roomId);
+                //log('Client ID ' + socket.id + ' joined room ' + roomId);
                 //if already client connections are there then we send event Joined event.
                 
                 // when all the users in room need get joining event
-                //io.sockets.in(roomId).emit('join', roomId, socket.id, numClients);
 
-                socket.emit('joined', roomId, socket.id, numClients);
+                
+                Object.keys(clientsInRoom.sockets).forEach(function(scid){
+                 
+                 let sc = io.sockets.connected[scid];
+
+                 console.log('joined room: %o %o', sc.isclient , scid);
+                 
+                 if(!sc.isclient)
+                 {
+                    console.log('joined room: ', roomId);
+
+                    io.sockets.in(roomId).emit('joined', roomId, socket.id, numClients);
+                 }
+
+                });
+
+                socket.emit('join', roomId, socket.id, numClients);
 
             }
         });
 
         socket.on('message', function(message) {
-            console.log('SFU server message: ', message);
+            console.log('webrtc server message: ', message.type);
 
             message.from = socket.id;
-
-            if (socket.user)
-                message.user = socket.user;
 
             socket.to(message.to).emit('message', message);
         });
@@ -194,12 +252,31 @@ async function runSocketServer() {
         socket.on('messageToWebrtc', function(message) {
             message.from = socket.id;
 
-            if (socket.user)
-                message.user = socket.user;
 
-            console.log('app message: ', message);
-            if (io.sockets.connected[serverSocketid])
-                io.sockets.connected[serverSocketid].emit('message', message);
+            console.log('app message: ', message.type);
+
+            console.log( message.room );
+
+            var clientsInRoom = io.sockets.adapter.rooms[message.room];
+            if(!clientsInRoom)
+                return;
+
+            //console.log( clientsInRoom );
+
+         //   var numClients = clientsInRoom.length; //For socket.io versions >= 1.4:
+            Object.keys(clientsInRoom.sockets).forEach(function(scid){
+             
+             let sc = io.sockets.connected[scid];
+                 
+             if(!sc.isclient)
+             {
+                sc.emit('message', message);
+             }
+
+
+            });
+
+
         });
 
         /* To broadcast to all in a roomm including sender: socket.in(room).emit();
