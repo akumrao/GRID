@@ -2,8 +2,9 @@
 
 #include "NULLDecoder.h"
 #include "base/logger.h"
-
+#include "base/datetime.h"
 #include "tools.h"
+#include "base/filesystem.h"
 
 extern "C" {
     //#include <libavutil/timestamp.h>
@@ -44,9 +45,9 @@ namespace base {
             qframe = new stFrame();
             
 
-            basicframe.media_type  = AVMEDIA_TYPE_VIDEO;
-            basicframe.codec_id   = AV_CODEC_ID_H264;
-            basicframe.stream_index  = 0;
+//            basicframe.media_type  = AVMEDIA_TYPE_VIDEO;
+//            basicframe.codec_id   = AV_CODEC_ID_H264;
+//            basicframe.stream_index  = 0;
             
             std::string tmp = Settings::configuration.storage +  "/"   ;
                   
@@ -73,17 +74,17 @@ namespace base {
            
             char filePath[128];
              
-            sprintf(filePath, "%s/frame-%.4d.h264", PathDate.c_str()   , ++frameCount);
+            sprintf(filePath, "%s/frame-%.4d.h264", pathDate.c_str() , ++frameCount);
 
                             
-            in_file = fopen(filePath.c_str(),"wb");
+            in_file = fopen(filePath,"wb");
             if(!in_file){
                    SError << "can't open file! " <<  in_file;
             }
 
-            fwrite((const char*) muxframe->payload.data(), 1, meta->size, in_file);
+            fwrite(buf, 1, size, in_file);
             
-            flose(in_file);
+            fclose(in_file);
             
         }
  
@@ -133,15 +134,15 @@ namespace base {
                     vdelay = uint64_t(1000000) / uint64_t(fps); // default
 
                     
-                    basicframe.width = width;
-                    basicframe.height = height;
-                    basicframe.fps = fps;
-                    
-                    
-                    basicframe.payload.resize(m_sps.size());
-                    basicframe.payload.insert(basicframe.payload.begin(), m_sps.begin(), m_sps.end());
-                    basicframe.fillPars();
-                    cb_mp4(&basicframe, false); 
+//                    basicframe.width = width;
+//                    basicframe.height = height;
+//                    basicframe.fps = fps;
+//                    
+//                    
+//                    basicframe.payload.resize(m_sps.size());
+//                    basicframe.payload.insert(basicframe.payload.begin(), m_sps.begin(), m_sps.end());
+//                    basicframe.fillPars();
+//                    cb_mp4(&basicframe, false); 
                     
                     
                     cfg++;
@@ -152,28 +153,28 @@ namespace base {
                     memcpy(&m_pps[0], &buffer[index.start_offset], index.payload_size + index.payload_start_offset - index.start_offset);
                     qframe->pushpps(m_pps);
                     
-                    basicframe.payload.resize(m_pps.size());
-                    basicframe.payload.insert(basicframe.payload.begin(), m_pps.begin(), m_pps.end());
-                    basicframe.fillPars(); 
-                    cb_mp4(&basicframe, false); 
+//                    basicframe.payload.resize(m_pps.size());
+//                    basicframe.payload.insert(basicframe.payload.begin(), m_pps.begin(), m_pps.end());
+//                    basicframe.fillPars(); 
+//                    cb_mp4(&basicframe, false); 
                             
                     cfg++;
                 } else if (nalu_type == webrtc::H264::NaluType::kIdr) {
                     idr = true;
                     SDebug << " idr:" << idr << " cfg:" << cfg << "  sps " << m_sps.size() << " pps  " << m_pps.size() << " vframecount " << vframecount << " width " << width << " height  " << height << " fps " << fps;
                     
-                    basicframe.payload.resize(index.payload_size + index.payload_start_offset - index.start_offset);
-                    basicframe.payload.insert(basicframe.payload.begin(),  &buffer[index.start_offset],   &buffer[index.start_offset] + index.payload_size + index.payload_start_offset - index.start_offset);
-                    basicframe.fillPars();
-                    cb_mp4(&basicframe, true); 
+//                    basicframe.payload.resize(index.payload_size + index.payload_start_offset - index.start_offset);
+//                    basicframe.payload.insert(basicframe.payload.begin(),  &buffer[index.start_offset],   &buffer[index.start_offset] + index.payload_size + index.payload_start_offset - index.start_offset);
+//                    basicframe.fillPars();
+//                    cb_mp4(&basicframe, true); 
                     
                 } else if (nalu_type == webrtc::H264::NaluType::kSlice) {
                     //slice = true;
                     
-                    basicframe.payload.resize(index.payload_size + index.payload_start_offset - index.start_offset);
-                    basicframe.payload.insert(basicframe.payload.begin(),  &buffer[index.start_offset],   &buffer[index.start_offset] + index.payload_size + index.payload_start_offset - index.start_offset);
-                    basicframe.fillPars();
-                    cb_mp4(&basicframe, false); 
+//                    basicframe.payload.resize(index.payload_size + index.payload_start_offset - index.start_offset);
+//                    basicframe.payload.insert(basicframe.payload.begin(),  &buffer[index.start_offset],   &buffer[index.start_offset] + index.payload_size + index.payload_start_offset - index.start_offset);
+//                    basicframe.fillPars();
+//                    cb_mp4(&basicframe, false); 
           
                 }
             }// end for
@@ -234,50 +235,56 @@ namespace base {
 
             }
             
-            if( recording == 1 )
+            if( recording > 1  && frameCount > 1  )
             {
-                
+                if( frameCount > 250)
+                {
+                    frameCount = 0;
+                    recording = 0;
+                }
+                else if(idr )
+                {
+                    WriteTofile(&buffer[0], size);
+                }
+                else if ( frameCount > 2)
+                {
+                    WriteTofile(&buffer[0], size);
+                }
+            }
+            else if( Settings::configuration.recording && recording ==1  && !frameCount )
+            {
                 Timestamp ts;
-
                 Timestamp::TimeVal time = ts.epochMicroseconds();
-
                 int milli = int(time % 1000000) / 1000;
-
 
                 std::time_t time1 = ts.epochTime();
                 struct std::tm* tms = std::localtime(&time1);
-
 
                 char date[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
                 int len = std::strftime(date, sizeof (date), "%Y-%m-%d-%H-%M-%S", tms);
 
                 if( dayDate != date)
                 {   dayDate = date;
-                    PathDate = Settings::configuration.storage +  "/" + dayDate  ;
-                    if (!base::fs::exists(tmp ))
+                    pathDate = Settings::configuration.storage +  "/" + dayDate  ;
+                    if (!base::fs::exists(pathDate ))
                     {
-                       mkdir(PathDate.c_str(),0777);
+                       mkdir(pathDate.c_str(),0777);
                     }
-
-
-
-                    mf.load(tmp + "manifest.js");
-
-                    if( mf.root.is_null() )
-                    {
-                       mf.root = json::array();
-                    }
-                    
                     
                     mf.root.push_back(dayDate);
-                   
+                 
+                    WriteTofile(&qframe->m_sps[0], m_sps.size());
+                    WriteTofile(&qframe->m_pps[0], m_pps.size());
+                    if(idr )
+                    {
+                        WriteTofile(&buffer[0], size);
+                    }
                     
-
-                    //mf.root["fps"]= muxframe->fps;
                 }
-                    
-                
             }
+            
+            
+            
 
             delayFrame();
 

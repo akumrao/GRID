@@ -48,14 +48,6 @@ CMemLeakDetect memLeakDetect;
 //        fs::addnode(dir, file);
 //    return dir;
 //}
-#include <complex.h>
-__complex__ float  csqrtf (__complex__ float  x)
-{
-    exit(0);
-
-    return 0;
-}
-
 
 
 /*
@@ -68,6 +60,10 @@ in documentation parameter ver is described like, ver shall be 3 or the behavior
 #endif
 */
 
+
+#if defined(__x86_64__)
+/* 64 bit detected */
+#else 
 int __xstat(int ver, const char *path, struct stat *stat_buf)
 {
    exit(0);
@@ -75,6 +71,16 @@ int __xstat(int ver, const char *path, struct stat *stat_buf)
     return 0;
 }
 
+#include <complex.h>
+__complex__ float  csqrtf (__complex__ float  x)
+{
+    exit(0);
+
+    return 0;
+}
+
+
+#endif
 
 // int
 // __xstat (const char *__path, struct stat *__statbuf)

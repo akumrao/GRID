@@ -43,7 +43,7 @@ void PeerManager::recvSDP(const std::string &token, const json &message)
     auto conn = PeerManager::get(token, false);
     if (!conn)
     {
-        assert(0 && "peer mismath");
+         SError << "peer mismath for recvSDP: " << token;
         return;
     }
 
@@ -74,7 +74,8 @@ void PeerManager::recvCandidate(const std::string &token, const json &message)
     auto conn = PeerManager::get(token, false);
     if (!conn)
     {
-        assert(0 && "peer mismath");
+       // assert(0 && "peer mismath");
+        SError << "peer mismath for recvCandidate: " << token;
         return;
     }
 
@@ -88,7 +89,7 @@ void PeerManager::recvCandidate(const std::string &token, const json &message)
     {
         LError("Invalid candidate format")
             // assert(0 && "bad candiate");
-            return;
+        return;
     }
 
     LDebug("Received candidate: ", sdp)

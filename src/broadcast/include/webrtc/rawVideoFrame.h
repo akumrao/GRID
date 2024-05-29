@@ -97,6 +97,9 @@ public:
 
 
     void clear();
+    
+    std::vector< uint8_t> m_sps;
+    std::vector< uint8_t> m_pps;
 
 private:
     uv_rwlock_t rwlock_t;
@@ -108,8 +111,7 @@ private:
     int ncount{0};
 
     int Ifrm{0};
-    std::vector< uint8_t> m_sps;
-    std::vector< uint8_t> m_pps;
+  
     
 };
 

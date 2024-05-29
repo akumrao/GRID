@@ -66,10 +66,10 @@ private:
     
     std::string  &cam;
     
-    BasicFrame basicframe;
+    //BasicFrame basicframe;
     
     std::string dayDate;
-    std::string PathDate;
+    std::string pathDate;
     FILE *in_file{nullptr};
     base::cnfg::Configuration mf;
     

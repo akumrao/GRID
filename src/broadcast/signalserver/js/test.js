@@ -40,10 +40,10 @@ var browserName = (function(agent) {
 })(window.navigator.userAgent.toLowerCase());
 
 // Could prompt for room name:
-var room = prompt('Enter camera name:', '65c108570948a0346f67424623c38f86a7e718712aceadb10ac867');
+var room = prompt('Enter camera name:', '65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0');
 
 if (room === '') {
-  room = '65c108570948a0346f67424623c38f86a7e718712aceadb10ac867';
+  room = '65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0';
 }
 
 var socket = io.connect();

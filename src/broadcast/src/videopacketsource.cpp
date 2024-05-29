@@ -447,11 +447,11 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
                 
                
                     
-               
-                if(recording &&  ++recording > Settings::configuration.Mp4Size_Key*25)
-                {
-                     recording= 0;
-                }
+//               
+//                if(recording &&  ++recording > Settings::configuration.Mp4Size_Key*25)
+//                {
+//                     recording= 0;
+//                }
 
                 if( liveThread->t31rgba->record && !recording)
                 {
