@@ -71,7 +71,7 @@ add_definitions(-DWEBRTC_APM_DEBUG_DUMP=0)
 #add_definitions(-Wno-error)
 
 
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE MinSizeRel)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Os -fdata-sections -ffunction-sections")
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Os -fdata-sections -ffunction-sections")
 
