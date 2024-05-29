@@ -39,7 +39,7 @@ public:
     
    
      
-    void runNULLEnc(unsigned char *buffer, int size, AVPictureType pict_type); 
+    void runNULLEnc(unsigned char *buffer, int size, AVPictureType pict_type, int & recording); 
     
     void resetTimer();
     
@@ -50,6 +50,8 @@ public:
     std::function<void(stFrame* frame) > cb_frame;
     
     std::function<void(web_rtc::BasicFrame* , bool) > cb_mp4;
+    
+    void WriteTofile( unsigned char *buf , int size);
     
     int  width{0};
     int height{0};
@@ -65,6 +67,14 @@ private:
     std::string  &cam;
     
     BasicFrame basicframe;
+    
+    std::string dayDate;
+    std::string PathDate;
+    FILE *in_file{nullptr};
+    base::cnfg::Configuration mf;
+    
+    int frameCount{0};
+    
 
         
 };

@@ -24,6 +24,8 @@ extern "C" {
 #include "common_video/h264/h264_common.h"
 
 #include "H264Framer.h"
+#include "Settings.h"
+
 
 #include <thread>
 
@@ -45,7 +47,17 @@ namespace base {
             basicframe.media_type  = AVMEDIA_TYPE_VIDEO;
             basicframe.codec_id   = AV_CODEC_ID_H264;
             basicframe.stream_index  = 0;
-    
+            
+            std::string tmp = Settings::configuration.storage +  "/"   ;
+                  
+
+            mf.load(tmp + "manifest.js");
+
+            if( mf.root.is_null() )
+            {
+               mf.root = json::array();
+            }
+                    
      
         }
 
@@ -55,9 +67,28 @@ namespace base {
             SInfo << "~NULLDecoder()";
         }
 
+        
+        void NULLDecoder::WriteTofile( unsigned char *buf , int size)
+        {
+           
+            char filePath[128];
+             
+            sprintf(filePath, "%s/frame-%.4d.h264", PathDate.c_str()   , ++frameCount);
+
+                            
+            in_file = fopen(filePath.c_str(),"wb");
+            if(!in_file){
+                   SError << "can't open file! " <<  in_file;
+            }
+
+            fwrite((const char*) muxframe->payload.data(), 1, meta->size, in_file);
+            
+            flose(in_file);
+            
+        }
  
 
-        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size, AVPictureType pict_type) 
+        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size, AVPictureType pict_type, int & recording ) 
         {
 
             bool idr = false;
@@ -189,7 +220,8 @@ namespace base {
                // SInfo << "  AV_PICTURE_TYPE_I " ;
                qframe->clear();
             }
-
+            
+            
            // if (  pict_type == AV_PICTURE_TYPE_I)
             {    
                 Store *store = new Store(&buffer[0], size, width, height, vframecount, idr);
@@ -200,6 +232,51 @@ namespace base {
                 cb_frame(qframe); 
 
 
+            }
+            
+            if( recording == 1 )
+            {
+                
+                Timestamp ts;
+
+                Timestamp::TimeVal time = ts.epochMicroseconds();
+
+                int milli = int(time % 1000000) / 1000;
+
+
+                std::time_t time1 = ts.epochTime();
+                struct std::tm* tms = std::localtime(&time1);
+
+
+                char date[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
+                int len = std::strftime(date, sizeof (date), "%Y-%m-%d-%H-%M-%S", tms);
+
+                if( dayDate != date)
+                {   dayDate = date;
+                    PathDate = Settings::configuration.storage +  "/" + dayDate  ;
+                    if (!base::fs::exists(tmp ))
+                    {
+                       mkdir(PathDate.c_str(),0777);
+                    }
+
+
+
+                    mf.load(tmp + "manifest.js");
+
+                    if( mf.root.is_null() )
+                    {
+                       mf.root = json::array();
+                    }
+                    
+                    
+                    mf.root.push_back(dayDate);
+                   
+                    
+
+                    //mf.root["fps"]= muxframe->fps;
+                }
+                    
+                
             }
 
             delayFrame();

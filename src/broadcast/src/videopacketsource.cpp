@@ -352,6 +352,7 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 
                     };
 
+#if 0                     
                     nullDecoder->cb_mp4 = [&](web_rtc::BasicFrame *basicframe, bool key ) 
                     {
                         
@@ -367,21 +368,9 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
                         }
                         
                        
-                                
+       
                         if(ctx->fragmp4_muxer && recording)
                         {
-                            
-//                            if ( foundsps && foundpps && basicframe->h264_pars.frameType == H264SframeType::i && basicframe->h264_pars.slice_type == H264SliceType::idr) //AUD Delimiter
-//                            {
-//                                ctx->fragmp4_muxer->sendMeta();
-//                                recording =3;
-//                            }
-//                          
-//                            !foundsps foundpps
-//                            
-//                            if(  foundsps && foundpps && ( basicframe->h264_pars.slice_type == H264SliceType::idr ||  basicframe->h264_pars.slice_type == H264SliceType::nonidr)  )
-//                            ctx->fragmp4_muxer->run(basicframe);
-                         
                             
                             
                             if ( foundsps && foundpps && basicframe->h264_pars.frameType == H264SframeType::i && basicframe->h264_pars.slice_type == H264SliceType::idr) //AUD Delimiter
@@ -424,7 +413,6 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 
                                 }
 
-
                             }
                             else if (!((basicframe->h264_pars.slice_type == H264SliceType::idr) ||   (basicframe->h264_pars.slice_type == H264SliceType::nonidr))) {
                             //info->run(&basicframe);
@@ -441,8 +429,13 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 
                             
                         }
+                        
+
+
 
                     };
+                    
+#endif                    
                      
                     
                }
@@ -451,8 +444,23 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 
 
               // web_rtc::BasicFrame *basic_frame = static_cast<web_rtc::BasicFrame *>(frame);
+                
+               
+                    
+               
+                if(recording &&  ++recording > Settings::configuration.Mp4Size_Key*25)
+                {
+                     recording= 0;
+                }
 
-               nullDecoder->runNULLEnc( (uint8_t*) &buffer[0], size, (AVPictureType)parser->pict_type);
+                if( liveThread->t31rgba->record && !recording)
+                {
+                    liveThread->t31rgba->record = false;
+                    recording= 1;
+                }
+                
+
+               nullDecoder->runNULLEnc( (uint8_t*) &buffer[0], size, (AVPictureType)parser->pict_type , recording );
 
 
                // runNative(frame);
