@@ -59,7 +59,7 @@ socket.on('join', function(room, id, numClients) {
 
 
 
-socket.emit('createorjoin', room);
+socket.emit('createorjoin', room , true);
 console.log('Attempted to createorjoin room', room);
 
 socket.on('full', function(room) {
