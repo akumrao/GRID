@@ -56,11 +56,8 @@ namespace base {
             
             
             TcpConnectionBase *obj = (TcpConnectionBase *) handle->data;
-            
-            
-                    
-            SInfo << "onClose " <<  obj->IsClosed();
-            
+                   
+           // SInfo << "onClose " <<  obj->IsClosed(); // this will not fix the close crash problem. This issue only happens when you are debugging browser
            
             if (obj)
                 obj->on_close();

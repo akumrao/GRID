@@ -69,9 +69,9 @@ namespace base {
         }
 
         
-        void NULLDecoder::WriteTofile( unsigned char *buf , int size)
+        void NULLDecoder::WriteTofile( unsigned char *buf , int size , int& frameCount)
         {
-           
+          
             char filePath[128];
              
             sprintf(filePath, "%s/frame-%.4d.h264", pathDate.c_str() , ++frameCount);
@@ -89,14 +89,13 @@ namespace base {
         }
  
 
-        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size, AVPictureType pict_type, int & recording ) 
+        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size, AVPictureType pict_type, int & frameCount ) 
         {
 
             bool idr = false;
 
             //bool slice = false;
             int cfg = 0;
-
 
 
             std::vector<webrtc::H264::NaluIndex> naluIndexes = webrtc::H264::FindNaluIndices( buffer, size);
@@ -235,23 +234,28 @@ namespace base {
 
             }
             
-            if( recording > 1  && frameCount > 1  )
+            if(  frameCount > 1  )
             {
-                if( frameCount > 250)
+                if( frameCount > 2500)
                 {
-                    frameCount = 0;
-                    recording = 0;
+                     frameCount = -1;  
+                    
+                }
+                else if( frameCount > 250)
+                {
+                   ++frameCount ;
+                   mf.save();
                 }
                 else if(idr )
                 {
-                    WriteTofile(&buffer[0], size);
+                    WriteTofile(&buffer[0], size, frameCount);
                 }
                 else if ( frameCount > 2)
                 {
-                    WriteTofile(&buffer[0], size);
+                    WriteTofile(&buffer[0], size, frameCount);
                 }
             }
-            else if( Settings::configuration.recording && recording ==1  && !frameCount )
+            else if( Settings::configuration.recording && !frameCount )
             {
                 Timestamp ts;
                 Timestamp::TimeVal time = ts.epochMicroseconds();
@@ -273,11 +277,11 @@ namespace base {
                     
                     mf.root.push_back(dayDate);
                  
-                    WriteTofile(&qframe->m_sps[0], m_sps.size());
-                    WriteTofile(&qframe->m_pps[0], m_pps.size());
+                    WriteTofile(&qframe->m_sps[0], m_sps.size(), frameCount);
+                    WriteTofile(&qframe->m_pps[0], m_pps.size(), frameCount);
                     if(idr )
                     {
-                        WriteTofile(&buffer[0], size);
+                        WriteTofile(&buffer[0], size, frameCount);
                     }
                     
                 }
