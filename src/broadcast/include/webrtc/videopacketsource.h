@@ -154,7 +154,7 @@ private:
     
     std::vector<uint8_t> buffer;
     
-    int recording{0};
+    int frameCount{-1};
     
     bool foundsps{false};
     bool foundpps{false};

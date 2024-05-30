@@ -453,14 +453,14 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 //                     recording= 0;
 //                }
 
-                if( liveThread->t31rgba->record && !recording)
+                if( liveThread->t31rgba->record && frameCount < 0)
                 {
                     liveThread->t31rgba->record = false;
-                    recording= 1;
+                    frameCount= 0;
                 }
                 
 
-               nullDecoder->runNULLEnc( (uint8_t*) &buffer[0], size, (AVPictureType)parser->pict_type , recording );
+               nullDecoder->runNULLEnc( (uint8_t*) &buffer[0], size, (AVPictureType)parser->pict_type , frameCount );
 
 
                // runNative(frame);

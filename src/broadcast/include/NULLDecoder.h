@@ -51,7 +51,7 @@ public:
     
     std::function<void(web_rtc::BasicFrame* , bool) > cb_mp4;
     
-    void WriteTofile( unsigned char *buf , int size);
+    void WriteTofile( unsigned char *buf , int size,  int& frameCount);
     
     int  width{0};
     int height{0};
@@ -72,9 +72,6 @@ private:
     std::string pathDate;
     FILE *in_file{nullptr};
     base::cnfg::Configuration mf;
-    
-    int frameCount{0};
-    
 
         
 };
