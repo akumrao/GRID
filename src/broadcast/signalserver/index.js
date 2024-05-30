@@ -172,17 +172,6 @@ async function runSocketServer() {
             }
         });
 
-        // socket.on('WebrtcSocket', function() {
-        //     log('Received request to create WebrtcSocket');
-
-        //     if (serverSocketid !== null && io.sockets.connected[serverSocketid]) {
-        //         io.sockets.connected[serverSocketid].disconnect();
-        //         serverSocketid = null;
-        //     }
-
-        //     log('Webrtc ID ', socket.id);
-        //     serverSocketid = socket.id;
-        // });
 
         socket.on('createorjoin', function(roomId, client) {
             

@@ -96,6 +96,75 @@ std::vector<webrtc::SdpVideoFormat> EncoderFactory::GetSupportedFormats() const
             }
             ));
     }
+       
+    {
+       
+
+        const absl::optional<std::string> profile_string = webrtc::H264::ProfileLevelIdToString(
+            webrtc::H264::ProfileLevelId(webrtc::H264::kProfileBaseline, webrtc::H264::kLevel3_1));
+
+            supported_codecs.push_back(webrtc::SdpVideoFormat(
+            cricket::kH264CodecName,
+            {{cricket::kH264FmtpProfileLevelId, *profile_string},
+             {cricket::kH264FmtpLevelAsymmetryAllowed, "1"},
+             {cricket::kH264FmtpPacketizationMode, "1"}
+            }
+            ));
+    }
+    
+    
+    {
+        const absl::optional<std::string> profile_string = webrtc::H264::ProfileLevelIdToString(
+            webrtc::H264::ProfileLevelId(webrtc::H264::kProfileBaseline, webrtc::H264::kLevel3_1));
+        supported_codecs.push_back(webrtc::SdpVideoFormat(
+
+            cricket::kH264CodecName,
+            {{cricket::kH264FmtpProfileLevelId, *profile_string},
+             {cricket::kH264FmtpLevelAsymmetryAllowed, "1"},
+             {cricket::kH264FmtpPacketizationMode, "0"}
+            }
+            ));
+    }
+
+    
+    
+    
+    
+    {
+       
+
+        const absl::optional<std::string> profile_string = webrtc::H264::ProfileLevelIdToString(
+            webrtc::H264::ProfileLevelId(webrtc::H264::kProfileConstrainedBaseline, webrtc::H264::kLevel3_1));
+
+        supported_codecs.push_back(webrtc::SdpVideoFormat(
+
+            cricket::kH264CodecName,
+            {{cricket::kH264FmtpProfileLevelId, *profile_string},
+             {cricket::kH264FmtpLevelAsymmetryAllowed, "1"},
+             {cricket::kH264FmtpPacketizationMode, "1"}
+            }
+            ));
+    }
+    
+    
+    {
+       
+
+        const absl::optional<std::string> profile_string = webrtc::H264::ProfileLevelIdToString(
+            webrtc::H264::ProfileLevelId(webrtc::H264::kProfileConstrainedBaseline, webrtc::H264::kLevel3_1));
+
+        supported_codecs.push_back(webrtc::SdpVideoFormat(
+
+            cricket::kH264CodecName,
+            {{cricket::kH264FmtpProfileLevelId, *profile_string},
+             {cricket::kH264FmtpLevelAsymmetryAllowed, "1"},
+             {cricket::kH264FmtpPacketizationMode, "0"}
+            }
+            ));
+    }
+       
+  
+    
 
     return supported_codecs;
 }
