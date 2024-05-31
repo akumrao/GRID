@@ -113,9 +113,8 @@ void Signaler::onPeerOffer(std::string &peerID, st_track &trackInfo, std::string
     }
 }
 
-void Signaler::createPC(std::string &peerID,  std::string &camid)
+void Signaler::createPC(std::string &peerID,  st_track &trackInfo )
 {
-    st_track trackInfo(peerID, camid );
             
     if (!web_rtc::PeerManager::exists(peerID))
     {
@@ -233,9 +232,9 @@ void Signaler::onPeerMessage(std::string &name, json const &m)
     }
 
 
-    if (m.find("start") != m.end())
+    if (m.find("starttime") != m.end())
     {
-        camT.start = m["start"].get<std::string>();
+        camT.start = m["starttime"].get<std::string>();
 
         //                std::string add;
         //               if( !Settings::getNodeState(camT, "rtsp" , add ))
@@ -248,15 +247,15 @@ void Signaler::onPeerMessage(std::string &name, json const &m)
     }
 
 
-    if (m.find("end") != m.end()) { camT.end = m["end"].get<std::string>(); }
-
-    if (m.find("width") != m.end()) { camT.width = std::stoi(m["width"].get<std::string>()); }
-
-    if (m.find("height") != m.end()) { camT.height = std::stoi(m["height"].get<std::string>()); }
-
-    if (m.find("scale") != m.end()) { camT.scale = std::stoi(m["scale"].get<std::string>()); }
-
-    if (m.find("speed") != m.end()) { camT.speed = std::stoi(m["speed"].get<std::string>()); }
+//    if (m.find("end") != m.end()) { camT.end = m["end"].get<std::string>(); }
+//
+//    if (m.find("width") != m.end()) { camT.width = std::stoi(m["width"].get<std::string>()); }
+//
+//    if (m.find("height") != m.end()) { camT.height = std::stoi(m["height"].get<std::string>()); }
+//
+//    if (m.find("scale") != m.end()) { camT.scale = std::stoi(m["scale"].get<std::string>()); }
+//
+//    if (m.find("speed") != m.end()) { camT.speed = std::stoi(m["speed"].get<std::string>()); }
 
     //if (m.find("ai") != m.end()) { camT.ai = m["ai"].get<bool>(); }
 //    if (m.find("encoder") != m.end())
@@ -321,7 +320,7 @@ void Signaler::onPeerMessage(std::string &name, json const &m)
         //if( isChannelReady)
         {
             SInfo << "offer from " << from;
-            createPC(from , room);  
+            createPC(from ,  camT);  
 
             recvSDP( from, m["desc"]);    
         }

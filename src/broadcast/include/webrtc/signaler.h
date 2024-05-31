@@ -46,7 +46,7 @@ protected:
 
     // void onPeerConnected(std::string& peerID,  st_track &trackInfo, std::string &room);
     void onPeerOffer(std::string &peerID, st_track &trackInfo, std::string &room);
-    void createPC(std::string &peerID,  std::string &room);
+    void createPC(std::string &peerID,  st_track &trackInfo);
     void onPeerMessage(std::string &name, json const &m);
     void onPeerDiconnected(std::string &peerID);
 

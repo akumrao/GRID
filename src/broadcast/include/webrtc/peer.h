@@ -84,6 +84,8 @@ public:
 
     //std::string &getRoom() { return room; }
     std::string& getCam( ){return trackInfo.camid;}
+    
+    std::string& getStartTime( ){return trackInfo.start;}
 
     // webrtc::FakeConstraints& constraints();
     webrtc::PeerConnectionFactoryInterface *factory() const;
@@ -151,7 +153,7 @@ public:
     
 public:
 
-    std::map<std::string, st_track> mapcam;  // trackid <> trackinfoclass
+   // std::map<std::string, st_track> mapcam;  // trackid <> trackinfoclass
    // std::mutex mtlock; // lock will happen at when camera source added or deleted
     
     rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel_; 

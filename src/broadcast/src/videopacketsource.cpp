@@ -22,7 +22,7 @@ namespace web_rtc {
     
 
 
-VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *ctx, web_rtc::FrameFilter *next):ctx(ctx),cam(ctx->cam), web_rtc::FrameFilter(name, next)
+VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *ctx, std::string &starttime, web_rtc::FrameFilter *next):ctx(ctx),cam(ctx->cam), web_rtc::FrameFilter(name, next)
     , _rotation(webrtc::kVideoRotation_0)
     , _timestampOffset(0)
 
@@ -69,6 +69,7 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
 
     }
    
+    if(!starttime.empty())
     liveThread = new LiveThread("live", nullptr, ctx);
    
     //ctx->txt = new web_rtc::TextFrameFilter("txt", cam, self);

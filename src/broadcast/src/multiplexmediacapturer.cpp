@@ -111,26 +111,51 @@ void MultiplexMediaCapturer::addMediaTracks(
 //  std::string audioLable = kAudioLabel;
   //std::string videoLable = kVideoLabel;
   //std::string streamId =  kStreamId;
-  
 
 
 //   using std::placeholders::_1;
 //      assert(_videoCapture->video());
 //     auto oparams = _videoCapture->video()->oparams;
    //auto source = new VideoPacketSource();
-   mutexCap.lock(); 
-   std::string &cam = peer->getCam();
+    std::string &starttime = peer->getStartTime();
+    
+    std::string cam;
+    
+    if(!starttime.empty())
+    {
+        mutexCap.lock(); 
+        cam = peer->getCam() + "_" + starttime;
 
-   if( mapvideo_track.find(cam) == mapvideo_track.end())
-   {
-     mapVideoSource[cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  ctx);
-     mapvideo_track[cam] =     factory->CreateVideoTrack(cam, mapVideoSource[cam]);
 
-     #if BYPASSGAME
-     mapVideoSource[cam]->start();
-     #endif
-   }
-   mutexCap.unlock();   
+        if( mapvideo_track.find(cam) == mapvideo_track.end())
+        {
+          mapVideoSource[cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  ctx, starttime);
+          mapvideo_track[cam] =     factory->CreateVideoTrack(cam, mapVideoSource[cam]);
+
+          #if BYPASSGAME
+          mapVideoSource[cam]->start();
+          #endif
+        }
+        mutexCap.unlock();  
+        
+    }
+    else
+    {
+        mutexCap.lock(); 
+        cam = peer->getCam();
+
+
+        if( mapvideo_track.find(cam) == mapvideo_track.end())
+        {
+          mapVideoSource[cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  ctx, starttime);
+          mapvideo_track[cam] =     factory->CreateVideoTrack(cam, mapVideoSource[cam]);
+
+          #if BYPASSGAME
+          mapVideoSource[cam]->start();
+          #endif
+        }
+        mutexCap.unlock();   
+    }
 
 
 
