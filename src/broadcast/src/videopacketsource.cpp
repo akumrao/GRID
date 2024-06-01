@@ -1,7 +1,7 @@
 
 
 #include "webrtc/videopacketsource.h"
-
+#include "recordingthread.h"
 #include "VideoEncoder.h"
 
 #include "webrtc/peermanager.h"
@@ -69,8 +69,11 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
 
     }
    
-    if(!starttime.empty())
-    liveThread = new LiveThread("live", nullptr, ctx);
+    if(starttime.empty())
+        liveThread = new LiveThread("live", nullptr, ctx);
+    else
+        liveThread = new RecordThread("record", nullptr, ctx);
+            
    
     //ctx->txt = new web_rtc::TextFrameFilter("txt", cam, self);
    // info = new web_rtc::InfoFrameFilter("info", nullptr);
@@ -453,10 +456,10 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 //                {
 //                     recording= 0;
 //                }
-
-                if( liveThread->t31rgba->record && frameCount < 0)
+                 
+                if( ((LiveThread*)liveThread)->t31rgba->record && frameCount < 0)
                 {
-                    liveThread->t31rgba->record = false;
+                    ((LiveThread*)liveThread)->t31rgba->record = false;
                     frameCount= 0;
                 }
                 

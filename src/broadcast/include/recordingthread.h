@@ -2,7 +2,7 @@
 #define RECTHREAD_HEADER_GUARD
 
 //#include "live.h"
-//#include "liveserver.h"
+#include "livethread.h"
 #include "base/thread.h"
 #include "framefilter.h"
 #include <list>
@@ -25,7 +25,7 @@ namespace web_rtc {
     
     RecordThread(const char* name, st_track *trackInfo, LiveConnectionContext* ctx);
     
-    void onMessage(json &msg );
+    //void onMessage(json &msg );
     
     
     ~RecordThread();

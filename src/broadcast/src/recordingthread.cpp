@@ -15,21 +15,18 @@
 // #define LIVE_SIGNAL_FRAMES // experimental
 
 
-std::atomic<int>  HDVideo{0} ;
 
 namespace base {
 namespace web_rtc {
     
     RecordThread::RecordThread(const char* name, st_track *trackInfo, LiveConnectionContext* ctx):trackInfo(trackInfo), ctx(ctx)
     {
-          t31rgba = new T31RGBA(trackInfo, ctx) ;
 
     }
     
-    void RecordThread::onMessage(json &msg )
-    {
-        delete t31rgba ;
-    }
+//    void RecordThread::onMessage(json &msg )
+//    {
+//    }
          
     
     RecordThread::~RecordThread(){

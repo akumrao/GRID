@@ -105,7 +105,7 @@ public:
     NULLDecoder *nullDecoder{nullptr};
 
 
-    LiveThread  *liveThread{nullptr}; 
+    base::Thread  *liveThread{nullptr}; 
     LiveConnectionContext *ctx{nullptr};
     
 private:

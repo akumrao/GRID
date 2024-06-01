@@ -62,7 +62,7 @@ namespace web_rtc {
         
         Signaler *signaler{nullptr};
         
-        LiveThread *liveThread{nullptr};
+        base::Thread *liveThread{nullptr};
         
         DummyFrameFilter *fragmp4_filter{nullptr};
         FrameFilter *fragmp4_muxer{nullptr};

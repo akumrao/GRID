@@ -87,8 +87,9 @@ Peer::Peer(
     _config.bundle_policy = webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle;
     _config.type = webrtc::PeerConnectionInterface::kAll;
     _config.candidate_network_policy = webrtc::PeerConnectionInterface::kCandidateNetworkPolicyLowCost;
-    //_config.disable_ipv6 = true;
-   // _config.disable_ipv6_on_wifi = true;
+    _config.disable_ipv6 = true;
+    _config.disable_ipv6_on_wifi = true;
+    _config.tcp_candidate_policy = webrtc::PeerConnectionInterface::kTcpCandidatePolicyDisabled;
 
     // _config.min_port =80000;
     //_config.max_port =100000;
@@ -414,7 +415,7 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
         if(!strncmp(msg, "startrec",   8 )  )
         {
             
-            _manager->ctx->liveThread->t31rgba->record = true;
+           ((LiveThread*)_manager->ctx->liveThread)->t31rgba->record = true;
                      
             //ATOMIC_STORE_BOOL(&gSampleConfiguration->startrec, TRUE); 
 
@@ -473,7 +474,7 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
 	    {
                 
 		  if( _manager->ctx->liveThread)
-		  _manager->ctx->liveThread->onMessage(jsonMsg );
+		  ((LiveThread*)_manager->ctx->liveThread)->onMessage(jsonMsg );
 	    }
 	    
 	    //SInfo << jsonMsg.dump(4);
