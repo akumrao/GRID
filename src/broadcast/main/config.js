@@ -3,7 +3,7 @@
     "dtlsPrivateKeyFile": "/var/tmp/key/private_key.pem",
     "storage": "/mnt/pvi-storage/",
     "qrcode":"room18",
-    "server": "localhost",
+    "server": "ipcamera.adapptonline.com",
     "port": 443,
     "recording": true,
     "cloud": false,

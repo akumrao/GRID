@@ -286,7 +286,7 @@ namespace base {
             if( bps < 500)
              HDVideo =2;
             //else 
-             HDVideo =0;   
+            // HDVideo =0;   
 
       //      SInfo << "bitrate " <<  bps << " resolution " <<  HDVideo;
 

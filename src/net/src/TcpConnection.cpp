@@ -59,11 +59,11 @@ namespace base {
                    
            // SInfo << "onClose " <<  obj->IsClosed(); // this will not fix the close crash problem. This issue only happens when you are debugging browser
            
-            if (obj)
-                obj->on_close();
+//            if (obj)
+//                obj->on_close();
             
-             if(obj->listenerClose)
-             obj->listenerClose->OnTcpConnectionClosed(obj);
+           //  if(obj->listenerClose)
+            // obj->listenerClose->OnTcpConnectionClosed(obj);
                     
             
 //            delete handle;
