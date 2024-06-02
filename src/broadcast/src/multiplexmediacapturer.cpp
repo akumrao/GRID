@@ -124,8 +124,7 @@ void MultiplexMediaCapturer::addMediaTracks(
     if(!starttime.empty())
     {
         mutexCap.lock(); 
-        cam = peer->getCam() + "_" + starttime;
-
+        cam = peer->getCam() ;
 
         if( mapvideo_track.find(cam) == mapvideo_track.end())
         {
@@ -164,22 +163,12 @@ void MultiplexMediaCapturer::addMediaTracks(
 
  mapVideoSource[cam]->myAddRef(peer->peerid());
 
-          
-          
-
 }
-
-
 
 void MultiplexMediaCapturer::remove(web_rtc::Peer* conn )
 {
-    
     std::string cam = conn->getCam();
-    
-    
-    
     std::vector<rtc::scoped_refptr<webrtc::RtpSenderInterface>> senders =     conn->_peerConnection->GetSenders();
-
 
     for (const auto& sender : senders) {
         

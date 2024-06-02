@@ -493,7 +493,7 @@ void Signaler::onFailure(web_rtc::Peer *conn, const std::string &error)
 
 void Signaler::postMessage(const json &m)
 {
-    SDebug << "postMessage " << cnfg::stringify(m);
+    SInfo << "postMessage " << cnfg::stringify(m);
 
     socket->emit("message", m);
 }

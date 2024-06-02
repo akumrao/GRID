@@ -11,8 +11,7 @@
 #if MP4File
 #include "ff/packet.h"
 #endif
-//#include "media/base/videocapturer.h"
-
+#include "recordingthread.h"
 #include "base/packet.h"
 #include "webrtc/peer.h"
 #include "media/base/adapted_video_track_source.h"
@@ -105,7 +104,9 @@ public:
     NULLDecoder *nullDecoder{nullptr};
 
 
-    base::Thread  *liveThread{nullptr}; 
+    LiveThread  *liveThread{nullptr}; 
+    RecordThread *recordThread{nullptr}; 
+ 
     LiveConnectionContext *ctx{nullptr};
     
 private:

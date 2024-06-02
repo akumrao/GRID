@@ -65,7 +65,7 @@ struct st_track
         
       //  if(!trackid.size())
        // trackid = camid+ "_" + start+ "_" + end +"_" + std::to_string(width)+std::to_string(height)+std::to_string(scale)+std::to_string(speed)+encoder;
-        return camid;
+        return camid + start;
             
     }
     

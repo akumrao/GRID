@@ -8,7 +8,6 @@
 #include "base/logger.h"
 #include "base/platform.h"
 #include "Settings.h"
-
 #include "webrtc/signaler.h"
 
 // #define RECONNECT_VERBOSE   // by default, disable

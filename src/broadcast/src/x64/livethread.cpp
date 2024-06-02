@@ -36,7 +36,7 @@ namespace web_rtc {
         join();
     }
 
-#if 1
+#if 0
     void LiveThread::run(){
         
     

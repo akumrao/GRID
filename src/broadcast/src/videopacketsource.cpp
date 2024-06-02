@@ -1,7 +1,6 @@
 
 
 #include "webrtc/videopacketsource.h"
-#include "recordingthread.h"
 #include "VideoEncoder.h"
 
 #include "webrtc/peermanager.h"
@@ -70,17 +69,23 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
     }
    
     if(starttime.empty())
+    {
         liveThread = new LiveThread("live", nullptr, ctx);
+        liveThread->start();
+        this->ctx->liveThread = liveThread;
+    }
     else
-        liveThread = new RecordThread("record", nullptr, ctx);
-            
+    {
+     
+        recordThread = new RecordThread("record", nullptr, ctx);
+        recordThread->start();
+        this->ctx->liveThread = recordThread;
+      
+    }
    
     //ctx->txt = new web_rtc::TextFrameFilter("txt", cam, self);
    // info = new web_rtc::InfoFrameFilter("info", nullptr);
 
-    liveThread->start();
-    
-    this->ctx->liveThread = liveThread;
  
 }
 
@@ -457,14 +462,14 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 //                     recording= 0;
 //                }
                  
-                if( ((LiveThread*)liveThread)->t31rgba->record && frameCount < 0)
+                if( liveThread && liveThread->t31rgba->record && frameCount < 0)
                 {
                     ((LiveThread*)liveThread)->t31rgba->record = false;
                     frameCount= 0;
                 }
                 
 
-               nullDecoder->runNULLEnc( (uint8_t*) &buffer[0], size, (AVPictureType)parser->pict_type , frameCount );
+               nullDecoder->runNULLEnc( (uint8_t*) &buffer[0], size, (AVPictureType)parser->pict_type , frameCount , ctx );
 
 
                // runNative(frame);

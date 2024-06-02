@@ -8,7 +8,7 @@ var pc;
 var turnReady;
 
 let channelSnd;
-
+let starttime;
 
 // Set up audio and video regardless of what devices are present.
 var sdpConstraints = {
@@ -219,7 +219,7 @@ function createPeerConnection() {
             sdpSemantics       : 'unified-plan'
         });
 
-    pc.addTransceiver('audio');
+    //pc.addTransceiver('audio');
     pc.addTransceiver('video');
 
 
@@ -299,6 +299,14 @@ function createPeerConnection() {
             
           }
 
+          case "RECORDING":
+          {
+
+             recordlist(msg.messagePayload);
+
+            break;
+          }
+
         }
     }
 
@@ -369,6 +377,7 @@ function setLocalAndSendMessage(sessionDescription) {
     sendMessage({
         room: room,
         type: sessionDescription.type,
+        starttime:starttime,
         desc: sessionDescription
     });
 }
@@ -407,6 +416,11 @@ function stop() {
     isStarted = false;
     pc.close();
     pc = null;
+
+   isChannelReady = false;
+   isInitiator = false;
+
+
 }
 
 function onIceStateChange(pc, event) {
@@ -516,3 +530,99 @@ function uuidV4() {
   uuid[8] = uuid[13] = uuid[18] = uuid[23] = '-';
   return uuid.map((x) => x.toString(16)).join('');
 }
+
+
+var list = document.getElementById('myUL');
+
+// Add an event listener to the list
+list.addEventListener('click', function(event) {
+  // Get the clicked item
+  var item = event.target;
+
+
+   var selected;
+  
+   if(item.tagName === 'LI') {                                      
+    selected= document.querySelector('li.selected');
+    if(selected) selected.className= ''; 
+     item.className= 'selected';
+   }
+
+
+
+   hangup();
+
+  // Get the item's text
+  var text = item.textContent;
+
+  starttime = text;
+
+
+  isChannelReady = true;
+  isInitiator = true;
+  maybeStart();
+
+  // if( isNaN(item.id ))
+  // {
+  //    return;
+  // }
+
+  // Alert the item's text
+  //var vsend= "starttime:" +  item.id;
+  //alert(item.id);
+  // var  selectBox = document.getElementById("cameraSel");
+  // var camid = selectBox.options[selectBox.selectedIndex].value;
+  // if(channelSnd)
+  // {
+  //    channelSnd.send(vsend);
+  // }
+});
+
+
+function recordlist(data)
+{
+
+
+   console.log('first: %o', data);
+
+   var list = document.getElementById('myUL');
+
+   while (list.firstChild) {
+    list.removeChild(list.firstChild);
+   }
+
+
+   for( var i=0; i < data.length ; ++ i )
+   {
+
+      var li = document.createElement('li');
+
+      if(!i)
+      li.className= 'selected'; 
+
+
+     // const myDate = new Date(Number(data[i]));
+
+      //let dateStr = myDate.getFullYear() + "/" + (myDate.getMonth() + 1) + "/" + myDate.getDate() + "_" + myDate.getHours() + ":" + myDate.getMinutes() + ":" + myDate.getSeconds()
+ 
+      li.innerText = data[i];
+      // li.setAttribute('draggable','true');
+      // li.setAttribute('class','drag');
+      li.setAttribute('id', data[i]);
+ 
+      list.appendChild(li);
+
+    }
+ 
+}
+
+
+
+function startRecording()
+{
+   channelSnd.send("startrec");
+}
+
+
+
+

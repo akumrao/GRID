@@ -25,6 +25,7 @@ namespace base {
 namespace web_rtc {
     
 
+class LiveConnectionContext;
 
 class NULLDecoder
 {
@@ -39,7 +40,7 @@ public:
     
    
      
-    void runNULLEnc(unsigned char *buffer, int size, AVPictureType pict_type, int & recording); 
+    void runNULLEnc(unsigned char *buffer, int size, AVPictureType pict_type, int & recording, LiveConnectionContext  *ctx); 
     
     void resetTimer();
     
@@ -57,6 +58,7 @@ public:
     int height{0};
     int fps;
     
+    void recordingTime(LiveConnectionContext  *ctx);
     
 private:
     std::vector< uint8_t> m_sps;

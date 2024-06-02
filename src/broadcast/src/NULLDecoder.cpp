@@ -5,6 +5,8 @@
 #include "base/datetime.h"
 #include "tools.h"
 #include "base/filesystem.h"
+//#include "livethread.h"
+#include "webrtc/signaler.h"
 
 extern "C" {
     //#include <libavutil/timestamp.h>
@@ -89,7 +91,7 @@ namespace base {
         }
  
 
-        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size, AVPictureType pict_type, int & frameCount ) 
+        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size, AVPictureType pict_type, int & frameCount , LiveConnectionContext  *ctx ) 
         {
 
             bool idr = false;
@@ -241,10 +243,11 @@ namespace base {
                      frameCount = -1;  
                     
                 }
-                else if( frameCount > 250)
+                else if( frameCount == 250)
                 {
                    ++frameCount ;
                    mf.save();
+                   recordingTime(ctx);
                 }
                 else if(idr )
                 {
@@ -343,8 +346,23 @@ namespace base {
            startStreaming = CurrentTime_microseconds();
            vframecount =0;
         }
+        
+        
+        void NULLDecoder::recordingTime(LiveConnectionContext  *ctx )
+        {
+            cnfg::Configuration identity;
+            identity.load(Settings::configuration.storage + "manifest.js");
 
+            if(identity.loaded())
+            {
+                json m;
+                m["messageType"] = "RECORDING";
+                m["messagePayload"] =  identity.root;
+                ctx->signaler->postAppMessage( m);
 
+            }
+        }
+             
 
 
     }// ns web_rtc

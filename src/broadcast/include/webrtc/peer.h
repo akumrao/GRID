@@ -83,7 +83,7 @@ public:
     //bool deltrackInfo(std::string &id);
 
     //std::string &getRoom() { return room; }
-    std::string& getCam( ){return trackInfo.camid;}
+    std::string getCam( ){return trackInfo.getTrackId();}
     
     std::string& getStartTime( ){return trackInfo.start;}
 

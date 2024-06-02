@@ -7,7 +7,7 @@
 #include "pc/media_session.h"
 #include "pc/peer_connection_wrapper.h"
 #include "pc/sdp_utils.h"
-
+#include "Settings.h"
 
 using std::endl;
 
@@ -87,8 +87,8 @@ Peer::Peer(
     _config.bundle_policy = webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle;
     _config.type = webrtc::PeerConnectionInterface::kAll;
     _config.candidate_network_policy = webrtc::PeerConnectionInterface::kCandidateNetworkPolicyLowCost;
-    _config.disable_ipv6 = true;
-    _config.disable_ipv6_on_wifi = true;
+    //_config.disable_ipv6 = false;
+   // _config.disable_ipv6_on_wifi = false;
     _config.tcp_candidate_policy = webrtc::PeerConnectionInterface::kTcpCandidatePolicyDisabled;
 
     // _config.min_port =80000;
@@ -174,7 +174,7 @@ void Peer::createOffer( bool video , bool audio)
 
     webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
 
-    options.offer_to_receive_audio = audio ;
+    options.offer_to_receive_audio = false ;
     options.offer_to_receive_video = video;
 
 
@@ -394,6 +394,17 @@ void Peer::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channe
     if (state == webrtc::DataChannelInterface::kOpen) {
       //if (OnLocalDataChannelReady)
       //  OnLocalDataChannelReady();
+         cnfg::Configuration identity;
+        identity.load(Settings::configuration.storage + "manifest.js");
+
+        if(identity.loaded())
+        {
+            json m;
+            m["messageType"] = "RECORDING";
+            m["messagePayload"] =  identity.root;
+            DataChannelSend(m.dump());
+
+        }
       RTC_LOG(LS_INFO) << "Data channel is open";
     }
   }
