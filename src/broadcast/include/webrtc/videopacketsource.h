@@ -54,7 +54,7 @@ class VideoPacketSource : public rtc::AdaptedVideoTrackSource, public web_rtc::F
 { 
 
 public:                                                                
-      VideoPacketSource(const char *name, LiveConnectionContext  *ctx , std::string &starttime, web_rtc::FrameFilter *next = NULL);
+      VideoPacketSource(const char *name, LiveConnectionContext  *ctx , st_track *trackInfo, bool recording,  web_rtc::FrameFilter *next = NULL);
 
 protected:
     void go(web_rtc::Frame *frame)
@@ -72,7 +72,7 @@ public:
     void runNULLEnc(web_rtc::Frame  *frame);
    
 public:
-    std::string cam;
+    st_track *trackInfo;
    
    // VideoPacketSource(const cricket::VideoFormat& captureFormat);
     virtual ~VideoPacketSource();
@@ -129,8 +129,8 @@ private:
     
     //struct SwsContext *sws_ctx{nullptr};
     
-    uint8_t *dst_data[4];
-    int dst_linesize[4];
+   // uint8_t *dst_data[4];
+    //int dst_linesize[4];
     
    // mutable volatile int ref_count_;
    // std::string playerId;
@@ -157,8 +157,8 @@ private:
     
     int frameCount{-1};
     
-    bool foundsps{false};
-    bool foundpps{false};
+ //   bool foundsps{false};
+   // bool foundpps{false};
 
 };
 

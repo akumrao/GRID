@@ -159,7 +159,7 @@ class T31RGBA:public base::Thread
     int XA_addGallery(std::string jpegBuffBase64, json & registrationImage);
 
 
-    int T31RGBA::XA_addGallery();
+    int XA_addGallery();
 
     void onMessage(json &msg );
 

@@ -32,7 +32,7 @@ class NULLDecoder
 public:
 
 
-    NULLDecoder(std::string  &cam);
+    NULLDecoder();
     ~NULLDecoder();
     
     uint64_t startStreaming{0};
@@ -66,8 +66,7 @@ private:
     
     uint64_t vdelay{0};
     
-    std::string  &cam;
-    
+    //std::string  &cam;
     //BasicFrame basicframe;
     
     std::string dayDate;

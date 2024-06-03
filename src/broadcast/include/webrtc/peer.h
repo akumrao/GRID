@@ -85,7 +85,7 @@ public:
     //std::string &getRoom() { return room; }
     std::string getCam( ){return trackInfo.getTrackId();}
     
-    std::string& getStartTime( ){return trackInfo.start;}
+    st_track& getTrack( ){return trackInfo;}
 
     // webrtc::FakeConstraints& constraints();
     webrtc::PeerConnectionFactoryInterface *factory() const;

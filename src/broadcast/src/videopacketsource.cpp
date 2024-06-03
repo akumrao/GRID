@@ -21,7 +21,7 @@ namespace web_rtc {
     
 
 
-VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *ctx, std::string &starttime, web_rtc::FrameFilter *next):ctx(ctx),cam(ctx->cam), web_rtc::FrameFilter(name, next)
+VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *ctx, st_track *trackInfo, bool recording, web_rtc::FrameFilter *next):ctx(ctx),trackInfo(trackInfo), web_rtc::FrameFilter(name, next)
     , _rotation(webrtc::kVideoRotation_0)
     , _timestampOffset(0)
 
@@ -47,7 +47,7 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
     
     if(Settings::configuration.cloud)
     {
-        ctx->fragmp4_filter = new DummyFrameFilter("fragmp4", cam, nullptr);
+        ctx->fragmp4_filter = new DummyFrameFilter("fragmp4", ctx->cam, nullptr);
         ctx->fragmp4_muxer = new FragMP4MuxFrameFilter("fragmp4muxer", ctx->fragmp4_filter);
 
       	if(ctx->fragmp4_muxer)
@@ -68,20 +68,13 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
 
     }
    
-    if(starttime.empty())
-    {
-        liveThread = new LiveThread("live", nullptr, ctx);
-        liveThread->start();
-        this->ctx->liveThread = liveThread;
-    }
-    else
-    {
-     
-        recordThread = new RecordThread("record", nullptr, ctx);
-        recordThread->start();
-        this->ctx->liveThread = recordThread;
-      
-    }
+
+   
+    liveThread = new LiveThread("live", trackInfo, ctx);
+    liveThread->start();
+    this->ctx->liveThread = liveThread;
+
+   
    
     //ctx->txt = new web_rtc::TextFrameFilter("txt", cam, self);
    // info = new web_rtc::InfoFrameFilter("info", nullptr);
@@ -179,7 +172,7 @@ void VideoPacketSource::StartParser(AVCodecID codeID) {
 VideoPacketSource::~VideoPacketSource()
 {
     
-    SInfo <<  "~VideoPacketSource() "  << cam  ;
+    SInfo <<  "~VideoPacketSource() "  << trackInfo->camid  ;
     if(liveThread)
     liveThread->stop();
     
@@ -225,8 +218,8 @@ VideoPacketSource::~VideoPacketSource()
     fp = NULL;
     }
     #endif
-    if(!dst_data[0])
-    av_freep(&dst_data[0]);
+   // if(!dst_data[0])
+    //av_freep(&dst_data[0]);
    // sws_freeContext(sws_ctx);
 
 
@@ -328,7 +321,7 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 
                 if(!nullDecoder)
                 {
-                    nullDecoder = new NULLDecoder( cam );
+                    nullDecoder = new NULLDecoder( );
 
                     nullDecoder->cb_frame = [&](stFrame* frame) {
 

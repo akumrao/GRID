@@ -37,7 +37,7 @@ extern "C" {
 namespace base {
     namespace web_rtc {
 
-        NULLDecoder::NULLDecoder(std::string  &cam): cam(cam)
+        NULLDecoder::NULLDecoder()
         {
             
             SInfo << "NULLDecoder()";
