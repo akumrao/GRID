@@ -70,7 +70,7 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
    
 
    
-    liveThread = new LiveThread("live", trackInfo, ctx);
+    liveThread = new LiveThread("live", ctx,  trackInfo, recording);
     liveThread->start();
     this->ctx->liveThread = liveThread;
 

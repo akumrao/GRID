@@ -123,13 +123,10 @@ void MultiplexMediaCapturer::addMediaTracks(
    
     mutexCap.lock(); 
     cam = peer->getCam();
-    
-    
-
-
+  
     if( mapvideo_track.find(cam) == mapvideo_track.end())
     {
-      mapVideoSource[cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  ctx, &peer->trackInfo, true ) ;
+      mapVideoSource[cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  ctx, &peer->trackInfo, !peer->trackInfo.start.empty() ) ;
       mapvideo_track[cam] =     factory->CreateVideoTrack(cam, mapVideoSource[cam]);
 
       #if BYPASSGAME

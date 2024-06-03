@@ -42,23 +42,23 @@ class FVideoDecoder : public webrtc::VideoDecoder {
   FVideoDecoder(){}
   virtual ~FVideoDecoder(){};
   int32_t InitDecode(const webrtc::VideoCodec* codec_settings,
-                             int32_t number_of_cores){};
+                             int32_t number_of_cores){return 0;}
 
    int32_t Decode(const webrtc::EncodedImage& input_image,
                          bool missing_frames,
-                         int64_t render_time_ms) {};
+                         int64_t render_time_ms) {return 0;}
 
    int32_t RegisterDecodeCompleteCallback(
-      webrtc::DecodedImageCallback* callback) {};
+      webrtc::DecodedImageCallback* callback) {return 0;}
 
    int32_t Release(){};
 
   // Returns true if the decoder prefer to decode frames late.
   // That is, it can not decode infinite number of frames before the decoded
   // frame is consumed.
-   bool PrefersLateDecoding() const{};
+   bool PrefersLateDecoding() const{return 0;};
 
-    char* ImplementationName() const{};
+    char* ImplementationName() const{ return nullptr;}
 };
         
 

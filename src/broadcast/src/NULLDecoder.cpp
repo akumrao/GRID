@@ -51,7 +51,7 @@ namespace base {
 //            basicframe.codec_id   = AV_CODEC_ID_H264;
 //            basicframe.stream_index  = 0;
             
-            std::string tmp = Settings::configuration.storage +  "/"   ;
+            std::string tmp = Settings::configuration.storage  ;
                   
 
             mf.load(tmp + "manifest.js");
