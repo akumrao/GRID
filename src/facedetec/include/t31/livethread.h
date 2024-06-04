@@ -116,7 +116,7 @@ class T31H264:public base::Thread
 {
     public:
 
-    T31H264( st_track *trackInfo,  LiveConnectionContext *ctx):trackInfo(trackInfo),ctx(ctx)
+    T31H264(  LiveConnectionContext *ctx, st_track *trackInfo ):ctx(ctx),trackInfo(trackInfo)
     {
     }
 
@@ -141,7 +141,7 @@ class T31RGBA:public base::Thread
 {
     public:
         
-    T31RGBA( st_track *trackInfo,  LiveConnectionContext *ctx):trackInfo(trackInfo),ctx(ctx)
+    T31RGBA(  LiveConnectionContext *ctx,  st_track *trackInfo):ctx(ctx),trackInfo(trackInfo)
     {
     }
 
@@ -170,17 +170,40 @@ class T31RGBA:public base::Thread
     ~T31RGBA();
 };
 
+
+class Recording:public base::Thread
+{
+    public:
+
+    Recording( LiveConnectionContext *ctx, st_track *trackInfo ):ctx(ctx),trackInfo(trackInfo)
+    {
+    }
+
+    st_track *trackInfo ;
+    LiveConnectionContext *ctx;
+    
+    BasicFrame basicframe; 
+
+    
+    #define H264_INBUF_SIZE 30000  
+    uint8_t inbuf[H264_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
+
+
+    void run();
+
+
+    ~Recording()
+    {
+    }
+
+};
+    
+
 class LiveThread
 {
     public:
         
-    LiveThread(const char* name, st_track *trackInfo,  LiveConnectionContext *ctx):trackInfo(trackInfo),ctx(ctx)
-    {
-
-        t31h264 =  new  T31H264(trackInfo, ctx);
-        t31rgba =  new  T31RGBA(trackInfo, ctx);
-
-    }
+    LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &recording);
 
     st_track *trackInfo ;
     LiveConnectionContext *ctx;
@@ -206,12 +229,15 @@ class LiveThread
     int XAExit();
     //int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  );
 
-     ~LiveThread();
+    ~LiveThread();
     
+   
 public:
 
     T31H264 *t31h264{nullptr};
     T31RGBA *t31rgba{nullptr};
+    
+    Recording *recording{nullptr};
 
 };
 

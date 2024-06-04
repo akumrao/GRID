@@ -354,6 +354,25 @@ void LiveThread::stop()
 }
 
 
+
+ LiveThread::LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &record):ctx(ctx),trackInfo(trackInfo)
+{
+
+    if(!record)
+    {
+        t31h264 =  new  T31H264(ctx, trackInfo);
+        t31rgba =  new  T31RGBA(ctx, trackInfo);
+    }
+    else
+    {
+       recording =  new  Recording(ctx, trackInfo); 
+    }
+        
+    
+}
+
+
+
 void LiveThread::start()
 {
     if(recording)
@@ -385,9 +404,9 @@ void Recording::run()
     while(!stopped() )
     {
 
-        ncount = ncount%240;
+        ncount = ncount%300;
 
-        sprintf(outPutNameBuffer, "%s/frame-%.3d.h264",date.c_str(), ++ncount);
+        sprintf(outPutNameBuffer, "%s/frame-%.4d.h264",date.c_str(), ++ncount);
 
         FILE *fp = fopen(outPutNameBuffer, "rb");
         if(!fp) {

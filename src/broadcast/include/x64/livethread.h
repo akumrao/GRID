@@ -194,18 +194,7 @@ class LiveThread
 {
     public:
         
-    LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &recording):ctx(ctx),trackInfo(trackInfo)
-    {
-        if(!recording)
-        {
-            t31h264 =  new  T31H264(ctx, trackInfo);
-            t31rgba =  new  T31RGBA(ctx, trackInfo);
-        }
-        else
-           recording =  new  Recording(ctx, trackInfo); 
-        
-        
-    }
+    LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &recording);
 
     st_track *trackInfo ;
     LiveConnectionContext *ctx;

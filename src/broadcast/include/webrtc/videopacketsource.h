@@ -154,6 +154,8 @@ private:
     
     int frameCount{-1};
     
+    bool recording{false};
+    
  //   bool foundsps{false};
    // bool foundpps{false};
 

@@ -232,7 +232,7 @@ function createPeerConnection() {
     
     channelSnd.onmessage = function(event)
     {
-        console.log("event.data " + event.data);
+        //console.log("event.data " + event.data);
 
         var msg = JSON.parse(event.data);
 

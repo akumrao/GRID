@@ -21,7 +21,7 @@ namespace web_rtc {
     
 
 
-VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *ctx, st_track *trackInfo, bool recording, web_rtc::FrameFilter *next):ctx(ctx),trackInfo(trackInfo), web_rtc::FrameFilter(name, next)
+VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *ctx, st_track *trackInfo, bool recording, web_rtc::FrameFilter *next):ctx(ctx),trackInfo(trackInfo), web_rtc::FrameFilter(name, next), recording(recording)
     , _rotation(webrtc::kVideoRotation_0)
     , _timestampOffset(0)
 
@@ -455,7 +455,7 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 //                     recording= 0;
 //                }
                  
-                if( liveThread && liveThread->t31rgba->record && frameCount < 0)
+                if( !recording && liveThread->t31rgba->record && frameCount < 0)
                 {
                     ((LiveThread*)liveThread)->t31rgba->record = false;
                     frameCount= 0;

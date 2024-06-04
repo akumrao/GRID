@@ -6,6 +6,7 @@
 #include <imp/imp_framesource.h>
 #include <imp/imp_encoder.h>
 #include "sample-common.h"
+#include "Settings.h"
 
 #include "base/platform.h"
 #include "base/rgba_bitmap.h"
@@ -1145,6 +1146,23 @@ void LiveThread:: stop()
 }
 
 
+ LiveThread::LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &record):ctx(ctx),trackInfo(trackInfo)
+{
+
+    if(!record)
+    {
+        t31h264 =  new  T31H264(ctx, trackInfo);
+        t31rgba =  new  T31RGBA(ctx, trackInfo);
+    }
+    else
+    {
+       recording =  new  Recording(ctx, trackInfo); 
+    }
+        
+    
+}
+
+
 void LiveThread::start()
 {
      XAInit();
@@ -1157,5 +1175,53 @@ void LiveThread::start()
     t31rgba->start();
 }
 
+
+void Recording::run()
+{
+ 
+
+    char outPutNameBuffer[256]={'\0'};
+
+    int ncount = 0;
+    
+    std::string date = Settings::configuration.storage + trackInfo->start; 
+             
+    while(!stopped() )
+    {
+
+        ncount = ncount%300;
+
+        sprintf(outPutNameBuffer, "%s/frame-%.4d.h264",date.c_str(), ++ncount);
+
+        FILE *fp = fopen(outPutNameBuffer, "rb");
+        if(!fp) {
+             SError << "Error: cannot open: " <<  outPutNameBuffer;
+             return ;
+        }
+
+
+        int bytes_read = (int)fread(inbuf, 1, H264_INBUF_SIZE, fp);
+
+        if(bytes_read) {
+           basicframe.data = inbuf ;
+           basicframe.sz = bytes_read;
+        }
+
+
+       // ctx.muRecFrame.lock();
+        if(ctx->liveFrame)
+        ctx->liveFrame->run(&basicframe); // starts the frame filter chain
+        //ctx->muRecFrame.unlock(); 
+
+        //SInfo << "payload " << bytes_read;
+        basicframe.payload.resize(basicframe.payload.capacity());
+        fclose(fp);
+
+       //  base::sleep(10);   
+    }
+        
+       
+        
+}
 
 }}
