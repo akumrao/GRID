@@ -66,7 +66,7 @@ public:
     }
 protected:
 
-    LocalAudioSource(const char *name, const cricket::AudioOptions& audio_options, std::string &camID,   base::web_rtc::FrameFilter *next = NULL) ;
+    LocalAudioSource(const char *name, LiveConnectionContext  *ctx , st_track *trackInfo, bool recording,   base::web_rtc::FrameFilter *next = NULL) ;
     ~LocalAudioSource() override;
     
     
@@ -87,7 +87,7 @@ public:
     #endif
     
     
-   std::string &camID;
+  // st_track &camID;
     
 protected:
     void go( base::web_rtc::Frame *frame)

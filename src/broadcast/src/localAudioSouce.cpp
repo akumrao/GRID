@@ -129,10 +129,10 @@ void LocalAudioSource::run()
 
 }
 
-LocalAudioSource::LocalAudioSource(const char *name, const cricket::AudioOptions& audio_options, std::string &camID,  base::web_rtc::FrameFilter *next) :  m_Options(audio_options), camID(camID),  base::web_rtc::FrameFilter(name, next)
+LocalAudioSource::LocalAudioSource(const char *name, LiveConnectionContext  *ctx , st_track *trackInfo, bool recording,  base::web_rtc::FrameFilter *next) :   base::web_rtc::FrameFilter(name, next)
 {
     
-   
+    start();
 }
 
 

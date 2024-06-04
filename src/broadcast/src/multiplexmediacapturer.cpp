@@ -135,11 +135,31 @@ void MultiplexMediaCapturer::addMediaTracks(
     }
     mutexCap.unlock();   
     
+    
+    std::string camAud = cam + "audio";
+      
+    mutexCap.lock(); 
+  
+    if( mapaudio_track.find(camAud) == mapaudio_track.end())
+    {
+      mapAudioSource[camAud] = new rtc::RefCountedObject<LocalAudioSource>("mapAudioSource" ,  ctx, &peer->trackInfo, !peer->trackInfo.start.empty() ) ;
+      mapaudio_track[camAud] = factory->CreateAudioTrack(camAud, mapAudioSource[camAud]);
 
 
+    }
+    mutexCap.unlock();  
+    
+
+
+mapaudio_track[camAud]->set_enabled(true);
+conn->AddTrack(mapaudio_track[camAud], {camAud});
+ 
 
  mapvideo_track[cam]->set_enabled(true);
  conn->AddTrack(mapvideo_track[cam], {cam});
+ 
+ 
+ 
 
  mapVideoSource[cam]->myAddRef(peer->peerid());
 
@@ -182,11 +202,45 @@ void MultiplexMediaCapturer::remove(web_rtc::Peer* conn )
         //mapvideo_track[cam]->Release();
        // mapVideoSource[cam]->Release();
        mapVideoSource.erase(vsItr);
-        mutexCap.unlock();
+       mutexCap.unlock();
 
 
     }
  
+    
+    
+    
+   
+    std::string camAud = cam + "audio";
+    
+    std::map< std::string, rtc::scoped_refptr<LocalAudioSource> > ::iterator vsItrAud;
+    vsItrAud = mapAudioSource.find(camAud);
+    if (vsItrAud != mapAudioSource.end() && (rtc::RefCountReleaseStatus::kDroppedLastRef == mapAudioSource[camAud]->myRelease(conn->peerid()))) {
+
+        #if BYPASSGAME
+        mapAudioSource[camAud]->stop();
+        mapAudioSource[camAud]->join();
+        #endif
+        
+        mutexCap.lock();
+//        std::map< std::string, rtc::scoped_refptr<webrtc::VideoTrackInterface> >::iterator it;
+//        it = mapvideo_track.find(cam);
+//        if (it != mapvideo_track.end()) {
+//            SInfo << "MultiplexMediaCapturer::stop()1 cam " << cam;
+//         //   mapvideo_track[cam]->Release();
+//            mapvideo_track.erase(it);
+//        }
+        
+        
+        SInfo << "mapAudioSource::stop() cam " << camAud;
+        mapvideo_track.erase(camAud);
+        //mapvideo_track[camAud]->Release();
+       // mapVideoSource[camAud]->Release();
+       mapAudioSource.erase(vsItrAud);
+       mutexCap.unlock();
+
+
+    }
      
     
 }
@@ -200,6 +254,18 @@ void MultiplexMediaCapturer::stop(std::string & cam , std::set< std::string> & s
    {
        mapVideoSource[cam]->reset( sPeerIds);
    }
+   
+   
+   
+     std::string camAud = cam + "audio";
+    std::map< std::string ,  rtc::scoped_refptr<LocalAudioSource> > ::iterator vsItrAud;
+    vsItrAud=mapAudioSource.find(camAud);
+    
+    if( vsItrAud != mapAudioSource.end()  )
+    {
+       mapAudioSource[camAud]->reset( sPeerIds);
+    }
+   
 
   
 }

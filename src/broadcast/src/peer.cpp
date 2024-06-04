@@ -174,7 +174,7 @@ void Peer::createOffer( bool video , bool audio)
 
     webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
 
-    options.offer_to_receive_audio = false ;
+    options.offer_to_receive_audio = audio ;
     options.offer_to_receive_video = video;
 
 
@@ -198,7 +198,7 @@ void Peer::recvSDP(
 
 
     webrtc::PeerConnectionInterface::RTCOfferAnswerOptions options;
-    options.offer_to_receive_audio = false;
+    options.offer_to_receive_audio = true;
     options.offer_to_receive_video = true;
 
     if (type == "offer")

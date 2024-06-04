@@ -95,7 +95,7 @@ protected:
 
 
 public:
-    std::map<std::string, rtc::scoped_refptr<LocalAudioSource>> mapAudioCapturer;
+    std::map<std::string, rtc::scoped_refptr<LocalAudioSource>> mapAudioSource;
 
     std::map<std::string, rtc::scoped_refptr<VideoPacketSource>> mapVideoSource;
 
