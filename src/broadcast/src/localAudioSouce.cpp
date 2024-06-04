@@ -33,44 +33,42 @@ namespace web_rtc {
 
 void LocalAudioSource::onAnswer()
 {
-   
-               
+              
     ffparser->start();
 
-//     ffparser->registerStreamCall(*ctx); // arvind
-   // ffparser->playStreamCall(*ctx);
-    
+    //     ffparser->registerStreamCall(*ctx); // arvind
+    // ffparser->playStreamCall(*ctx);
   
 }
 
 
-//void LocalAudioSource::run()
-//{
-//       
-//    static const uint8_t kNumberOfChannels = 1;
+void LocalAudioSource::run()
+{
+       
+    static const uint8_t kNumberOfChannels = 1;
+    
+    static const size_t kNumberSamples = 80;
+   // static const size_t kBytesPerSample = sizeof (AudioPacketModule::Sample) * kNumberOfChannels;
+    static const size_t kBufferBytes = 160;//kNumberSamples * kBytesPerSample;
+
+
+    //uint8_t test[kBufferBytes];
+
+  
+
+    FILE* in_file = fopen("/var/tmp/audio/out.ul", "rb");
+    
+    uint8_t encoded[kBufferBytes];
+    
 //    
-//    static const size_t kNumberSamples = 80;
-//   // static const size_t kBytesPerSample = sizeof (AudioPacketModule::Sample) * kNumberOfChannels;
-//    static const size_t kBufferBytes = 160;//kNumberSamples * kBytesPerSample;
-//
-//
-// //   uint8_t test[kBufferBytes];
-//
-//  
-//
-//   // FILE* in_file = fopen("/var/tmp/audio/out.ul", "rb");
+//    memset( encoded, 'a',  kBufferBytes);
 //    
-//    //uint8_t encoded[kBufferBytes];
-//    
-////    
-////    memset( encoded, 'a',  kBufferBytes);
-////    
-////    encoded[0]  = '6';
-////    encoded[81]  = '7';
-////    encoded[82]  = '8';
-////    encoded[159] = '9';
-//    
-//   
+//    encoded[0]  = '6';
+//    encoded[81]  = '7';
+//    encoded[82]  = '8';
+//    encoded[159] = '9';
+    
+   
 //    while(!stopped())
 //    {
 //       int64_t currentTime = rtc::TimeMillis();
@@ -97,8 +95,8 @@ void LocalAudioSource::onAnswer()
 //        
 //        
 //    }
-//   
-/*    
+  
+   
     int sz= 0;
     while(!stopped())
     {
@@ -127,14 +125,14 @@ void LocalAudioSource::onAnswer()
 
     fclose(in_file);
 
-  */
+  
 
-//}
+}
 
 LocalAudioSource::LocalAudioSource(const char *name, const cricket::AudioOptions& audio_options, std::string &camID,  base::web_rtc::FrameFilter *next) :  m_Options(audio_options), camID(camID),  base::web_rtc::FrameFilter(name, next)
 {
     
-    StartLive();
+   
 }
 
 
@@ -144,7 +142,7 @@ LocalAudioSource::~LocalAudioSource()
      sinks_.clear();
     sink_lock_.unlock();
     
-    StopLive();
+
 }    
    
 
@@ -209,95 +207,6 @@ rtc::RefCountReleaseStatus LocalAudioSource::myRelease(  std::string peerid )  {
  
  
  
- 
- 
- 
- 
- 
- 
-void LocalAudioSource::StopLive()
-{
-    
-//    stop();
-            
-    if(ffparser)
-    {
-        if(ffparser)
-        {
-            
-            SInfo << "Stopping LocalAudioSource "  << ctx->cam;
-            
-            std::string state;
-              
-
-            
-          //  Settings::configuration.rtsp[ctx->cam]["state"]= "stopped";
-              
-           // ffparser->stopStream(ctx);
-
-            //ffparser->deregisterStream(ctx);
-            ffparser->stop();
-          //  ffparser->join();
-
-
-            delete ffparser;
-            ffparser =nullptr;
-            
-            if(ctx)
-            delete ctx;
-            ctx = nullptr;
-//            
-//            if(fragmp4_filter)        
-//             delete fragmp4_filter;
-//            fragmp4_filter = nullptr;
-//            
-            //if(fragmp4_muxer)
-            //delete fragmp4_muxer;
-            //fragmp4_muxer = nullptr;
-            
-//            if(info)
-//            delete info;
-//            info = nullptr;
-            
-            if(txt)
-            delete txt;
-            txt = nullptr;
-        }
-    }
-    
-}
-
-
-void LocalAudioSource::StartLive()
-{
-   //fragmp4_filter = new web_rtc::DummyFrameFilter("fragmp4", cam.camid);
-       // fragmp4_muxer = new web_rtc::FragMP4MuxFrameFilter("fragmp4muxer", fragmp4_filter);
-
-  //  info = new web_rtc::InfoFrameFilter("info", nullptr);
-
-     txt = new web_rtc::TextFrameFilter("txt", camID, nullptr);
-  
-
-   // web_rtc::FrameFilter *tmpVc =(web_rtc::FrameFilter *) VideoCapturer.get();
-
-   // std::string  cam = peer->getCam();
-
-    std::string add;
-
-
-     if( Settings::getNodeState(camID, "rtsp" , add ))
-    {
-      //  ctx = new LiveConnectionContext(LiveConnectionType::rtsp, add, slot, camID, tcprequest, this , info, txt); // Request livethread to write into filter info
-        
-        //ffparser =  new LiveThread("live");
-        
-      //  Settings::setNodeAudioState(cam , "streaming" ); // arvind
-         
-       // ffparser->audio = true;  // arvind
-
-
-    }
-}
 
  
 void  LocalAudioSource::run( base::web_rtc::Frame *frame){
@@ -336,6 +245,8 @@ void  LocalAudioSource::run( base::web_rtc::Frame *frame){
      
      //this->OnData(basic_frame->data, 16, 8000,1, 80);
  }
+
+
  
  
 

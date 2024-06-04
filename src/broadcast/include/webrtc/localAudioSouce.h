@@ -12,11 +12,20 @@
 #include "livethread.h"
 #include "muxframe.h"
 
+#define LOCALAUDIO 1
+
+#if LOCALAUDIO
+#include "base/thread.h"
+#endif
 
 namespace base {
 namespace web_rtc {
 
 class LocalAudioSource : public webrtc::LocalAudioSource, public base::web_rtc::FrameFilter 
+#if LOCALAUDIO
+, public base::Thread
+#endif
+
 {
 public:
   
@@ -72,7 +81,11 @@ public:
     
     //void start();
    // void stop();
-  //  void run();
+    
+    #if LOCALAUDIO
+    void run();
+    #endif
+    
     
    std::string &camID;
     
@@ -93,15 +106,15 @@ public:
     std::mutex mutexAudioSource;
     std::mutex  sink_lock_;
     
-    void StartLive();
-    void StopLive();
+    //void StartLive();
+    //void StopLive();
     
     LiveThread  *ffparser{nullptr};
     
     //web_rtc::DummyFrameFilter *fragmp4_filter{nullptr};
    // web_rtc::FrameFilter *fragmp4_muxer{nullptr};;
-    web_rtc::FrameFilter *info{nullptr};;
-    web_rtc::FrameFilter *txt{nullptr};;
+    //web_rtc::FrameFilter *info{nullptr};;
+    //web_rtc::FrameFilter *txt{nullptr};;
     web_rtc::LiveConnectionContext *ctx{nullptr};
     
     void oncommand( std::string & cmd , int first,  int second);

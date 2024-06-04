@@ -142,7 +142,7 @@ class T31RGBA:public base::Thread
     int XA_addGallery();
 
     void onMessage(json &msg );
-    
+
     std::atomic<int> ready_flag {1};
 
     std::atomic<bool> record{false};
