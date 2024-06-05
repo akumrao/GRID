@@ -6,8 +6,9 @@ sudo bash
 
 Take ubuntu 18.04 LTS
 
-apt install build-essential
+apt-get install build-essential cmake 
 
+apt-get install  p7zip-full
 
 Install the gcc-9 packages:
 
@@ -15,9 +16,9 @@ sudo apt-get install -y software-properties-common
 
 compilers
 
-apt-get install gcc-7
+apt-get install gcc-9
 
-apt-get install g++-7
+apt-get install g++-9
 
 apt-get install python
 
@@ -70,11 +71,22 @@ mkdir -p /workspace/
 
 T31 compiler path should look like   /workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software  ( shared at google drive)
 
+mkdir /workspace/adappt/T31 cd /workspace/adappt/T31
+
+
+7z x ISVP-T31-1.1.6-20221229.7z
+
+
 cd /workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software
 
-source ./t31_env_setup.sh 540	
+chmod +x ./t31_env_setup.sh 
 
 ./t31_image_mk.sh
+
+
+source ./t31_env_setup.sh 540	  repeate again if it says
+
+source ./t31_env_setup.sh 540	
 
 
 
