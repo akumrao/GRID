@@ -206,7 +206,7 @@ size_t AudioEncoderPcmUCAM::BytesPerSample() const
 
 webrtc::AudioEncoder::CodecType AudioEncoderPcmUCAM::GetCodecType() const
 {
-    return AudioEncoder::CodecType::kPcmU;
+    return AudioEncoder::CodecType::kPcmA;
 }
 
 }  // namespace web_rtc

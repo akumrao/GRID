@@ -389,15 +389,15 @@ void LocalAudioSource::run()
             
             
             this->OnData(encoded, 16, kSamplesPerSecond,1, 80);
-           // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+          // std::this_thread::sleep_for(std::chrono::milliseconds(20));
             
             int64_t deltaTimeMillis = rtc::TimeMillis() - currentTime;
         
-            if (deltaTimeMillis < 10)
+            if (deltaTimeMillis < 20)
             {
-                    webrtc::SleepMs(10 - deltaTimeMillis);
+                    webrtc::SleepMs(20 - deltaTimeMillis);
             }
-//        
+        
         }
         
         fclose(in_file);

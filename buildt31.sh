@@ -76,12 +76,21 @@ make install
 
 cd ../../
 
+cp /workspace/MagicAI/src/webrtc/patch_t31_full.txt  /workspace/webrtc/src/
+
+
+cd /workspace/webrtc/src/
+
+git apply /workspace/MagicAI/src/webrtc/patch_t31_full.txt
+
 cd /workspace/MagicAI/src/webrtc
 
 ./buildenv540uclibc.sh
 
 
 cd /workspace/MagicAI/src/broadcast/main
+
+git pull
 
 make -f ./Makefile_t31 -j24
 
@@ -90,8 +99,18 @@ make -f ./Makefile_t31 strip
 
 
 
+mkdir /workspace/MagicAI/bin
+
+cp /workspace/MagicAI/src/webrtc/t31/libjingle_peerconnection_so.so    /workspace/MagicAI/bin
 
 
+cp /workspace/MagicAI/src/webrtc/t31/libjingle_peerconnection_so.so    /workspace/MagicAI/bin
+
+cp /workspace/MagicAI/src/broadcast/main/config.js   /workspace/MagicAI/bin
+
+cp /workspace/MagicAI/src/broadcast/main/config.js   /workspace/MagicAI/bin
+
+cp /workspace/MagicAI/src/broadcast/main/runWebrtc   /workspace/MagicAI/bin
 
 
 

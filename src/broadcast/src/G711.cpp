@@ -79,11 +79,11 @@ std::unique_ptr<webrtc::AudioEncoder> AudioEncoderG711_Cam::MakeAudioEncoder(
     }
     case Config::Type::kPcmA:
     {
-        webrtc::AudioEncoderPcmA::Config impl_config;
+        AudioEncoderPcmUCAM::Config impl_config;
         impl_config.num_channels = config.num_channels;
         impl_config.frame_size_ms = config.frame_size_ms;
         impl_config.payload_type = payload_type;
-        return absl::make_unique<webrtc::AudioEncoderPcmA>(impl_config);
+        return absl::make_unique<AudioEncoderPcmUCAM>(impl_config);
     }
     default:
     {
