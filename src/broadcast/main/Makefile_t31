@@ -24,7 +24,7 @@ SSL_ROOT = /workspace/MagicAI/src/openssl/buildt31
 
 
 TARGET=runWebrtc # define the name of the executable
-SOURCES=$(wildcard *.cpp ../src/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp ../../net/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../facedetec/src/*.cpp ../../facedetec/src/t31/*.cpp ../../signal/src/*.cpp)
+SOURCES=$(wildcard *.cpp ../src/*.cpp ../src/t31/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp ../../net/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../facedetec/src/*.cpp ../../facedetec/src/t31/*.cpp ../../signal/src/*.cpp)
 
 CXXFLAGS   := -Os -fdata-sections -ffunction-sections -fno-rtti -std=c++11 -Wno-uninitialized -DNDEBUG -fpermissive
 
