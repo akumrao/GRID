@@ -145,16 +145,16 @@ void T31H264::run()
                       
                     if(ctx->signaler)
                     {
-                        cnfg::Configuration identity;
-
-                        identity.load("./event.json");
-                       // std::string xaidentity = identity.root.dump();
-                        
-                        json m;
-                        
-                        m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
-                        m["messagePayload"] =  identity.root;
-                        ctx->signaler->postAppMessage( m);
+//                        cnfg::Configuration identity;
+//
+//                        identity.load("./event.json");
+//                       // std::string xaidentity = identity.root.dump();
+//                        
+//                        json m;
+//                        
+//                        m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
+//                        m["messagePayload"] =  identity.root;
+//                        ctx->signaler->postAppMessage( m);
 
 
                     }

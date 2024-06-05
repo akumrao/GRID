@@ -9,6 +9,7 @@ var turnReady;
 
 let channelSnd;
 let starttime;
+let inboundStream;
 
 // Set up audio and video regardless of what devices are present.
 var sdpConstraints = {
@@ -219,7 +220,7 @@ function createPeerConnection() {
             sdpSemantics       : 'unified-plan'
         });
 
-    //pc.addTransceiver('audio');
+    pc.addTransceiver('audio');
     pc.addTransceiver('video');
 
 
@@ -324,7 +325,8 @@ function createPeerConnection() {
 
 
     pc.onicecandidate = handleIceCandidate;
-    pc.onaddstream = handleRemoteStreamAdded;
+    //pc.onaddstream = handleRemoteStreamAdded;
+    pc.ontrack = ontrack;
     pc.onremovestream = handleRemoteStreamRemoved;
     console.log('Created RTCPeerConnnection');
   } catch (e) {
@@ -388,11 +390,40 @@ function onCreateSessionDescriptionError(error) {
 }
 
 
-function handleRemoteStreamAdded(event) {
-    console.log('Remote stream added.');
-    //remoteStream = event.stream;
-    remoteVideo.srcObject =  event.stream;
+function ontrack({
+    transceiver,
+    receiver,
+    streams: [stream]
+}) {
+    var track = transceiver.receiver.track;
+    var trackid = stream.id;
+
+    if (!inboundStream) {
+            inboundStream = new MediaStream();
+        }
+        inboundStream.addTrack(track);
+        remoteVideo.srcObject = inboundStream;
+
+       
+        stream.onaddtrack = () => console.log("stream.onaddtrack");
+        stream.onremovetrack = () => console.log("stream.onremovetrack");
+        transceiver.receiver.track.onmute = () => console.log("transceiver.receiver.track.onmute " + track.id);
+        transceiver.receiver.track.onended = () => console.log("transceiver.receiver.track.onended " + track.id);
+        transceiver.receiver.track.onunmute = () => {
+        console.log("transceiver.receiver.track.onunmute " + track.id);
+
+     
+
+  };
+
+
 }
+
+// function handleRemoteStreamAdded(event) {
+//     console.log('Remote stream added.');
+//     //remoteStream = event.stream;
+//     remoteVideo.srcObject =  event.stream;
+// }
 
 function handleRemoteStreamRemoved(event) {
     console.log('Remote stream removed. Event: ', event);
