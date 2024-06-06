@@ -36,7 +36,7 @@ CPPFLAGS   := -I../../signal/include -I../../facedetec/include/  -I../../facedet
 
 LDFLAGS  += -L../../facedetec/xailient-sdk/lib  -L${T31SDK}/lib -L${INSTALLPATH}/mips-linux-gnu/lib -lm  -muclibc 
 
-LDLIBS   +=  -lxailient-fi -L/workspace/MagicAI/src/webrtc/t31 -ljingle_peerconnection_so -lrt -lm -lpthread -latomic
+LDLIBS   +=  -lxailient-fi -L/workspace/MagicAI/src/webrtc/t31 -ljingle_peerconnection_so -lrt -lm -ldl -lpthread -latomic
 
 SLIBS    += ../../libuv/build/libuv_a.a  ${FFMPEG_ROOT}/lib/libavformat.a ${FFMPEG_ROOT}/lib/libavcodec.a ${FFMPEG_ROOT}/lib/libavutil.a ${FFMPEG_ROOT}/lib/libswresample.a ${SSL_ROOT}/lib/libssl.a ${SSL_ROOT}/lib/libcrypto.a ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a
 

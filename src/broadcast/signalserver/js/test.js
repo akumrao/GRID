@@ -448,8 +448,10 @@ function stop() {
     pc.close();
     pc = null;
 
-   isChannelReady = false;
-   isInitiator = false;
+    inboundStream = null;
+
+    isChannelReady = false;
+    isInitiator = false;
 
 
 }
