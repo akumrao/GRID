@@ -34,7 +34,7 @@
 
 
 //#define AI_BASIC_TEST_RECORD_FILE "ai_record.pcm"
-#define AI_BASIC_TEST_RECORD_NUM 500
+//#define AI_BASIC_TEST_RECORD_NUM 500
 
 
 
@@ -180,8 +180,8 @@ void LocalAudioSource::run()
 //    }
 
     
-        int ret = -1;
-	int record_num = 0;
+    int ret = -1;
+	//int record_num = 0;
 
 //	FILE *record_file = fopen(AI_BASIC_TEST_RECORD_FILE, "wb");
 //	if(record_file == NULL) {
@@ -301,6 +301,8 @@ void LocalAudioSource::run()
         {
 		/* Step 6: get audio record frame. */
 
+        int64_t currentTime = rtc::TimeMillis();
+
 		ret = IMP_AI_PollingFrame(devID, chnID, 1000);
 		if (ret != 0 ) {
 			IMP_LOG_ERR(TAG, "Audio Polling Frame Data error\n");
@@ -345,6 +347,19 @@ void LocalAudioSource::run()
 		/* save the encode data to the file. */
 		//fwrite(stream.stream, 1, stream.len, record_file);
 
+		SInfo << " PCMA len " << stream.len;
+
+		this->OnData(stream.stream, 16, kSamplesPerSecond,1, stream.len);
+          // std::this_thread::sleep_for(std::chrono::milliseconds(20));
+//            
+        int64_t deltaTimeMillis = rtc::TimeMillis() - currentTime;
+        
+        if (deltaTimeMillis < 20)
+        {
+            webrtc::SleepMs(20 - deltaTimeMillis);
+        }
+
+
 		/* release stream. */
 		ret = IMP_AENC_ReleaseStream(AeChn, &stream);
 		if(ret != 0) {
@@ -369,8 +384,8 @@ void LocalAudioSource::run()
 			return NULL;
 		}
 
-		if(++record_num >= AI_BASIC_TEST_RECORD_NUM)
-			break;
+		//if(++record_num >= AI_BASIC_TEST_RECORD_NUM)
+			//break;
 	}
 	sleep(3);
 

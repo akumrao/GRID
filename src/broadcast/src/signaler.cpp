@@ -235,21 +235,13 @@ void Signaler::onPeerMessage(std::string &name, json const &m)
     if (m.find("starttime") != m.end())
     {
         camT.start = m["starttime"].get<std::string>();
-
-        //                std::string add;
-        //               if( !Settings::getNodeState(camT, "rtsp" , add ))
-        //               {
-        //                    {
-        //                        postAppMessage("Camera not available.", from , room  );
-        //                        return;
-        //                    }
-        //                }
     }
 
 
-//    if (m.find("end") != m.end()) { camT.end = m["end"].get<std::string>(); }
-//
-//    if (m.find("width") != m.end()) { camT.width = std::stoi(m["width"].get<std::string>()); }
+
+    if (m.find("camAudio") != m.end()) { camT.camAudio = m["camAudio"].get<bool>(); }
+
+    if (m.find("appAudio") != m.end()) { camT.appAudio = m["appAudio"].get<bool>(); }
 //
 //    if (m.find("height") != m.end()) { camT.height = std::stoi(m["height"].get<std::string>()); }
 //

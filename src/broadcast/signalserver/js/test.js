@@ -9,6 +9,10 @@ var turnReady;
 
 let channelSnd;
 let starttime;
+
+let camAudio;
+let appAudio;
+
 let inboundStream;
 
 // Set up audio and video regardless of what devices are present.
@@ -179,7 +183,7 @@ async function maybeStart() {
 
     const stream = await navigator.mediaDevices.getUserMedia({audio: true})
 
-    localVideo.srcObject = stream;
+   // localVideo.srcObject = stream;
 
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
@@ -380,6 +384,8 @@ function setLocalAndSendMessage(sessionDescription) {
         room: room,
         type: sessionDescription.type,
         starttime:starttime,
+        camAudio:camAudio,
+        appAudio:appAudio,
         desc: sessionDescription
     });
 }
@@ -411,8 +417,7 @@ function ontrack({
         transceiver.receiver.track.onended = () => console.log("transceiver.receiver.track.onended " + track.id);
         transceiver.receiver.track.onunmute = () => {
         console.log("transceiver.receiver.track.onunmute " + track.id);
-
-     
+ 
 
   };
 
@@ -445,8 +450,11 @@ function handleRemoteHangup() {
 
 function stop() {
     isStarted = false;
-    pc.close();
-    pc = null;
+    if(pc)
+    {
+       pc.close();
+       pc = null;
+    }
 
     inboundStream = null;
 
@@ -583,17 +591,13 @@ list.addEventListener('click', function(event) {
 
 
 
-   hangup();
+
 
   // Get the item's text
   var text = item.textContent;
-
   starttime = text;
 
-
-  isChannelReady = true;
-  isInitiator = true;
-  maybeStart();
+  resetStreams();
 
   // if( isNaN(item.id ))
   // {
@@ -656,6 +660,36 @@ function startRecording()
    channelSnd.send("startrec");
 }
 
+
+function resetStreams()
+{
+  hangup();
+  isChannelReady = true;
+  isInitiator = true;
+  maybeStart();
+}
+
+function audioFromCam() {
+  var checkBox = document.getElementById("audioFromCam");
+  if (checkBox.checked == true){
+    camAudio = true;
+    resetStreams();
+  } else {
+    camAudio = false;
+     resetStreams();
+  }
+}
+
+function twoWayAudio() {
+  var checkBox = document.getElementById("twoWayAudio");
+  if (checkBox.checked == true){
+    appAudio = true;
+    resetStreams();
+  } else {
+    appAudio = false;
+    resetStreams();
+  }
+}
 
 
 

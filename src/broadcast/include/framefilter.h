@@ -54,7 +54,8 @@ struct st_track
     //int scale{1};
    // int speed{1};
     //bool ai{false};
-    bool camaudio{false};
+    bool camAudio{false};
+    bool appAudio{false};
     
    // std::string encoder;
     

@@ -141,7 +141,7 @@ void MultiplexMediaCapturer::addMediaTracks(
     mapVideoSource[cam]->myAddRef(peer->peerid());
    
     
-    if(peer->trackInfo.camaudio )
+    if(peer->trackInfo.camAudio )
     {
         std::string camAud = cam + "audio";
 
@@ -233,7 +233,7 @@ void MultiplexMediaCapturer::remove(web_rtc::Peer* conn )
         
         
         SInfo << "mapAudioSource::stop() cam " << camAud;
-        mapvideo_track.erase(camAud);
+        mapaudio_track.erase(camAud);
         //mapvideo_track[camAud]->Release();
        // mapVideoSource[camAud]->Release();
        mapAudioSource.erase(vsItrAud);

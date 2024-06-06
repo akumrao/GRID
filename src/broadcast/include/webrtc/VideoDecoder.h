@@ -51,7 +51,7 @@ class FVideoDecoder : public webrtc::VideoDecoder {
    int32_t RegisterDecodeCompleteCallback(
       webrtc::DecodedImageCallback* callback) {return 0;}
 
-   int32_t Release(){};
+   int32_t Release(){return 0;};
 
   // Returns true if the decoder prefer to decode frames late.
   // That is, it can not decode infinite number of frames before the decoded
