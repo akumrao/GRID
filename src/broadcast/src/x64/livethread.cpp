@@ -106,7 +106,7 @@ void T31H264::run()
   //IMP_LOG_DBG(TAG, "OK\n");
 
     T31H264Init(2);
-#if 1 
+#if 0 
     while (!stopped())
     {
 
@@ -183,52 +183,50 @@ void T31H264::run()
         
     }
 #else 
-    void LiveVideo::run(){
-        
            
       //  std::string filepath = "/mnt/test.264";
         
-        char outPutNameBuffer[256]={'\0'};
+    char outPutNameBuffer[256]={'\0'};
 
-        int ncount = 0;
-        
-        while(!stopped() )
-        {
-            
-            ncount = ncount%240;
-            
-            sprintf(outPutNameBuffer, "%s/frame-%.3d.h264",    "./frames/h264", ++ncount);
-                                    
-            FILE *fp = fopen(outPutNameBuffer, "rb");
-            if(!fp) {
-                 SError << "Error: cannot open: " <<  outPutNameBuffer;
-                 return ;
-            }
-            
-            
-            int bytes_read = (int)fread(inbuf, 1, H264_INBUF_SIZE, fp);
+    int ncount = 0;
 
-            if(bytes_read) {
-               basicframe.data = inbuf ;
-               basicframe.sz = bytes_read;
-            }
-           
+    while(!stopped() )
+    {
 
-           // ctx.muRecFrame.lock();
-            if(ctx->liveFrame)
-            ctx->liveFrame->run(&basicframe); // starts the frame filter chain
-            //ctx->muRecFrame.unlock(); 
+        ncount = ncount%240;
 
-            //SInfo << "payload " << bytes_read;
-            basicframe.payload.resize(basicframe.payload.capacity());
-            fclose(fp);
-       
-           //  base::sleep(10);   
+        sprintf(outPutNameBuffer, "%s/frame-%.3d.h264",    "./frames/h264", ++ncount);
+
+        FILE *fp = fopen(outPutNameBuffer, "rb");
+        if(!fp) {
+             SError << "Error: cannot open: " <<  outPutNameBuffer;
+             return ;
         }
+
+
+        int bytes_read = (int)fread(inbuf, 1, H264_INBUF_SIZE, fp);
+
+        if(bytes_read) {
+           basicframe.data = inbuf ;
+           basicframe.sz = bytes_read;
+        }
+
+
+       // ctx.muRecFrame.lock();
+        if(ctx->liveFrame)
+        ctx->liveFrame->run(&basicframe); // starts the frame filter chain
+        //ctx->muRecFrame.unlock(); 
+
+        //SInfo << "payload " << bytes_read;
+        basicframe.payload.resize(basicframe.payload.capacity());
+        fclose(fp);
+
+       //  base::sleep(10);   
+    }
         
        
         
-    }
+    
 #endif
     
     
@@ -404,7 +402,7 @@ void Recording::run()
     while(!stopped() )
     {
 
-        ncount = ncount%300;
+        ncount = ncount%250;
 
         sprintf(outPutNameBuffer, "%s/frame-%.4d.h264",date.c_str(), ++ncount);
 

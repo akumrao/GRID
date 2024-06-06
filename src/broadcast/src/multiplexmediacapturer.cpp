@@ -133,35 +133,35 @@ void MultiplexMediaCapturer::addMediaTracks(
       mapVideoSource[cam]->start();
       #endif
     }
-    mutexCap.unlock();   
+    mutexCap.unlock();
+
+
+    mapvideo_track[cam]->set_enabled(true);
+    conn->AddTrack(mapvideo_track[cam], {cam});
+    mapVideoSource[cam]->myAddRef(peer->peerid());
+   
     
-    
-    std::string camAud = cam + "audio";
-      
-    mutexCap.lock(); 
-  
-    if( mapaudio_track.find(camAud) == mapaudio_track.end())
+    if(peer->trackInfo.camaudio )
     {
-      mapAudioSource[camAud] = new rtc::RefCountedObject<LocalAudioSource>("mapAudioSource" ,  ctx, &peer->trackInfo, !peer->trackInfo.start.empty() ) ;
-      mapaudio_track[camAud] = factory->CreateAudioTrack(camAud, mapAudioSource[camAud]);
+        std::string camAud = cam + "audio";
+
+        mutexCap.lock(); 
+
+        if( mapaudio_track.find(camAud) == mapaudio_track.end())
+        {
+          mapAudioSource[camAud] = new rtc::RefCountedObject<LocalAudioSource>("mapAudioSource" ,  ctx, &peer->trackInfo, !peer->trackInfo.start.empty() ) ;
+          mapaudio_track[camAud] = factory->CreateAudioTrack(camAud, mapAudioSource[camAud]);
 
 
+        }
+        mutexCap.unlock();  
+
+        mapaudio_track[camAud]->set_enabled(true);
+        conn->AddTrack(mapaudio_track[camAud], {camAud});
+         mapAudioSource[camAud]->myAddRef(peer->peerid());
     }
-    mutexCap.unlock();  
-    
-
-
-mapaudio_track[camAud]->set_enabled(true);
-conn->AddTrack(mapaudio_track[camAud], {camAud});
  
 
- mapvideo_track[cam]->set_enabled(true);
- conn->AddTrack(mapvideo_track[cam], {cam});
- 
- 
- 
-
- mapVideoSource[cam]->myAddRef(peer->peerid());
 
 }
 

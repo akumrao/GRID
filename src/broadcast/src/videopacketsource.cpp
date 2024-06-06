@@ -464,7 +464,6 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 
                nullDecoder->runNULLEnc( (uint8_t*) &buffer[0], size, (AVPictureType)parser->pict_type , frameCount , ctx );
 
-
                // runNative(frame);
                // return;
             }

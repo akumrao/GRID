@@ -48,13 +48,13 @@ struct st_track
     std::string camid;
     std::string peerID;
     std::string start;
-    std::string end;
-    int width{0};
-    int height{0};
-    int scale{1};
-    int speed{1};
+   // std::string end;
+    //int width{0};
+   // int height{0};
+    //int scale{1};
+   // int speed{1};
     //bool ai{false};
-    bool audio{false};
+    bool camaudio{false};
     
    // std::string encoder;
     
