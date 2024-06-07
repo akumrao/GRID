@@ -24,11 +24,11 @@ namespace base
 namespace web_rtc
 {
 
-typedef struct DecodeContext
-{
-    AVBufferRef *hw_device_ref;
-    int NVSurface{0};
-} DecodeContext;
+//typedef struct DecodeContext
+//{
+//    AVBufferRef *hw_device_ref;
+//    int NVSurface{0};
+//} DecodeContext;
 
 class Store
 {
@@ -151,47 +151,7 @@ public:
 private:
 };
 
-class H264FrameBuffer : public webrtc::VideoFrameBuffer
-{
-public:
-    // FRawFrameBuffer( std::vector<uint8_t> & f , int w ,  int h, uint frameNo, bool idr, uint32_t fps);
-    H264FrameBuffer(AVCodecContext *dec_ctx, AVFrame *qframe, int w, int h, std::string &txt);
 
-    ~H264FrameBuffer();
-
-    Type type() const override { return Type::kNative; }
-
-    virtual int width() const override { return width_; }
-
-    virtual int height() const override { return height_; }
-
-    rtc::scoped_refptr<webrtc::I420BufferInterface> ToI420() override
-    {
-        assert(1);
-        return nullptr;
-    }
-
-    //        std::vector<uint8_t> & getFrame(  )
-    //        {
-    //            return payload1;
-    //        }
-
-    uint32_t fps;
-    int width_{0};
-    int height_{0};
-
-    // int frmNo;
-
-    AVFrame *qframe{nullptr};
-
-    AVCodecContext *dec_ctx{nullptr};
-
-    /// std::vector<uint8_t> payload1;
-    // webrtc::VideoFrameType _frameType1{webrtc::VideoFrameType::kVideoFrameDelta};
-    std::string txt;
-
-private:
-};
 
 
 }  // namespace web_rtc

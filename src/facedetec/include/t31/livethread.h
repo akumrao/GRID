@@ -186,7 +186,7 @@ class Recording:public base::Thread
 
     
     #define H264_INBUF_SIZE 30000  
-    uint8_t inbuf[H264_INBUF_SIZE + AV_INPUT_BUFFER_PADDING_SIZE];
+    uint8_t inbuf[H264_INBUF_SIZE];
 
 
     void run();

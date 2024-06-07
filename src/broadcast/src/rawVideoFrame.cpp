@@ -25,31 +25,6 @@ NULLEncBuffer::NULLEncBuffer(stFrame *qframe, int w, int h, uint32_t fps, bool &
 }
 
 
-H264FrameBuffer::H264FrameBuffer(AVCodecContext *dec_ctx, AVFrame *qframe, int w, int h, std::string &txt)
-    : dec_ctx(dec_ctx),
-      qframe(qframe),
-      width_(w),
-      height_(h),
-      txt(txt)
-{
-    // std::cout <<  " FRawFrameBuffer frame w"  <<   w  <<  " frame h "  << h  << std::endl << std::flush;
-
-    DecodeContext *decode = (DecodeContext *) dec_ctx->opaque;
-    ++decode->NVSurface;
-
-    // frmNo = qframe->pts;
-    // SInfo << "H264FrameBuffer() surface " << frmNo << " "  <<   decode->NVSurface<< std::flush;
-}
-
-H264FrameBuffer::~H264FrameBuffer()
-{
-    av_frame_free(&qframe);
-    qframe = nullptr;
-
-    DecodeContext *decode = (DecodeContext *) dec_ctx->opaque;
-    --decode->NVSurface;
-    // SInfo << " H264FrameBuffer~() " << frmNo   << std::flush;
-}
 
 
 stFrame::~stFrame()

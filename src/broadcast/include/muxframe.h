@@ -5,17 +5,13 @@
 #include <iostream>
 #include  <vector>
 
-extern "C"
-{
-//#include <libavutil/timestamp.h>
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-}
 
 //#include "micro.h"
 #include "codec.h"
 
 #include "constant.h"
+#include <cstring>
+
 
 namespace base {
 namespace web_rtc {
@@ -180,7 +176,7 @@ public: // frame essentials
     BasicFrame& operator= ( const BasicFrame &cpy )
     {
         
-       this->codec_id = cpy.codec_id;
+      // this->codec_id = cpy.codec_id;
        this->payload.resize(cpy.payload.size());
        memcpy(this->payload.data(), cpy.payload.data(), cpy.payload.size());
     }
@@ -192,7 +188,7 @@ public:                                         // redefined virtual
     virtual std::string dumpPayload();
     virtual void dumpPayloadToFile(std::ofstream &fout);
     virtual void reset();      ///< Reset the internal data
-    virtual bool isSeekable(); ///< for H264 true if sps, other codecs, always true
+    //virtual bool isSeekable(); ///< for H264 true if sps, other codecs, always true
 
 public:                                // payload handling
     void reserve(std::size_t n_bytes); ///< Reserve space for internal payload
@@ -200,8 +196,8 @@ public:                                // payload handling
 
 public:                           // frame variables
     std::vector<uint8_t> payload; ///< Raw payload data (use .data() to get the pointer from std::vector)
-    AVMediaType media_type;       ///< Type of the media (video/audio)
-    AVCodecID codec_id;           ///< AVCodeCID of the media
+  //  AVMediaType media_type;       ///< Type of the media (video/audio)
+//    AVCodecID codec_id;           ///< AVCodeCID of the media
 
 public:                 // codec-dependent parameters
     H265Pars h265_pars; ///< H265 parameters, extracted from the payload
@@ -216,8 +212,8 @@ public:                  // codec-dependent functions
     void copyBuf( uint8_t* buf  ,unsigned size );
 
 public:
-    void fillAVPacket(AVPacket *avpkt);                                                                    ///< Copy payload to AVPacket structure
-    void copyFromAVPacket(AVPacket *avpkt);                                                                ///< Copy data from AVPacket structure
+    //void fillAVPacket(AVPacket *avpkt);                                                                    ///< Copy payload to AVPacket structure
+//    void copyFromAVPacket(AVPacket *avpkt);                                                                ///< Copy data from AVPacket structure
    // void filterFromAVPacket(AVPacket *avpkt, AVCodecContext *codec_ctx, AVBitStreamFilterContext *filter); ///< Copy data from AVPacket structure  //arvind
 
 public:                                                  // frame serialization
@@ -269,8 +265,8 @@ public:                                // payload handling
 
 public:
     std::vector<uint8_t> payload; ///< Raw payload data (use .data() to get the pointer from std::vector)
-    AVMediaType media_type;       ///< Type of the media (video/audio) of the underlying elementary stream
-    AVCodecID codec_id;           ///< AVCodeCID of the underlying elementary stream
+ //   AVMediaType media_type;       ///< Type of the media (video/audio) of the underlying elementary stream
+//    AVCodecID codec_id;           ///< AVCodeCID of the underlying elementary stream
 
 public:
     std::vector<uint8_t> meta_blob; ///< Byte blob that is casted to correct metadata struct
@@ -289,92 +285,7 @@ enum class SetupFrameType
 };
 
 
-/** Setup frame
- * 
- * "Setup Frame" is not maybe the most transparent name.  This frame class carries general information between Threads
- * 
- * - For decoders and muxers signals instantiation and initialization
- * - May carry additional metadata of the stream if necessary (in the future)
- * - Carries information about file stream states (play, stop, seek, etc.)
- * 
- * Copiable/Queable : yes.  uses default copy-constructor and copy-assignment
- * 
- * @ingroup frames_tag
- */
-class SetupFrame : public Frame
-{
 
-public:
-    SetupFrame();          ///< Default ctor
-    virtual ~SetupFrame(); ///< Default virtual dtor
-    //frame_essentials(FrameClass::setup, SetupFrame);
-    //frame_essentials(FrameClass::setup, SetupFrame);
-    /*
-  SetupFrame(const SetupFrame &f); ///< Default copy ctor
-  
-public: // frame essentials
-  virtual FrameClass getFrameClass();         ///< Returns the subclass frame type.  See Frame::frameclass
-  virtual void copyFrom(Frame *f);            ///< Copies data to this frame from a frame of the same type
-  */
-     virtual std::string type(){return "SetupFrame";}
-public:                                         // redefined virtual
-    virtual void print(std::ostream &os) const; ///< How to print this frame to output stream
-    virtual void reset();                       ///< Reset the internal data
-
-public:                      // managed objects
-    SetupFrameType sub_type; ///< Type of the SetupFrame
-
-    AVMediaType media_type; ///< For subtype stream_init
-    AVCodecID codec_id;     ///< For subtype stream_init
-
-    AbstractFileState stream_state; ///< For subtype stream_state
-};
-
-
-/** Decoded Frame in FFmpeg format
- * 
- * - The decoded frame is in FFmpeg/libav format in AVMediaFrame::av_frame
- * - Constructor does not reserve data for frames.  This is done by classes using this class
- * 
- * Copiable/Queable : no
- * 
- * @ingroup frames_tag
- */
-class AVMediaFrame : public Frame
-{
-
-public:
-    AVMediaFrame();          ///< Default ctor
-    virtual ~AVMediaFrame(); ///< Default virtual dtor
-    ////frame_essentials(FrameClass::avmedia,AVMediaFrame); // now this is a virtual class ..
-    ////frame_essentials(FrameClass::avmedia,AVMediaFrame);
-    /*AVMediaFrame(const AVMediaFrame &f); ///< Default copy ctor
-    
-    public: // frame essentials
-    virtual FrameClass getFrameClass(); ///< Returns the subclass frame type.  See Frame::frameclass
-    virtual void copyFrom(Frame *f);    ///< Copies data to this frame from a frame of the same type
-    */
-
-/*
-public:
-    virtual void updateAux() = 0; ///< update any helper objects
-    virtual void update() = 0;
-*/
-    
-     virtual std::string type(){return "AVMediaFrame";}
-
-public: // redefined virtual
-    virtual std::string dumpPayload();
-    virtual void print(std::ostream &os) const; ///< How to print this frame to output stream
-    virtual void reset();                       ///< Reset the internal data
-
-public:                     // helper objects : values should correspond to member av_frame
-    AVMediaType media_type; ///< helper object: media type
-    AVCodecID codec_id;     ///< helper object: codec id
-
-public:                // managed objects
-    //AVFrame *av_frame; ///< The decoded frame
-};
 
 /** Decoded YUV/RGB frame in FFMpeg format
  * 

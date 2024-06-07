@@ -1,13 +1,13 @@
 
 
 #include "webrtc/videopacketsource.h"
-#include "VideoEncoder.h"
+//#include "VideoEncoder.h"
 
 #include "webrtc/peermanager.h"
 
 #include "webrtc/rawVideoFrame.h"
 
-#include "muxer.h"
+//#include "muxer.h"
 #include "tools.h"
 
 #include "Settings.h"
@@ -47,24 +47,7 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
     
     if(Settings::configuration.cloud)
     {
-        ctx->fragmp4_filter = new DummyFrameFilter("fragmp4", ctx->cam, nullptr);
-        ctx->fragmp4_muxer = new FragMP4MuxFrameFilter("fragmp4muxer", ctx->fragmp4_filter);
-
-      	if(ctx->fragmp4_muxer)
-      	ctx->fragmp4_muxer->deActivate();
-
-
-      	SetupFrame setupframe;
-
-      	// prepare setup frame
-      	setupframe.sub_type             =SetupFrameType::stream_init;
-      	setupframe.media_type           =AVMEDIA_TYPE_VIDEO;
-      	setupframe.codec_id             =AV_CODEC_ID_H264;   // what frame types are to be expected from this stream
-      	setupframe.stream_index     = 0;
-      	setupframe.mstimestamp      = CurrentTime_milliseconds();
-      	// send setup frame
-      	if(ctx->fragmp4_muxer)
-      	ctx->fragmp4_muxer->run(&setupframe);
+    
 
     }
    
@@ -84,84 +67,8 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
 
 
 
-void VideoPacketSource::StartParser(AVCodecID codeID) {
-
-  
-
-     if (!codec)
-         codec = avcodec_find_decoder(codeID);
-
-     if (codec == NULL) {
-         SError << "avcodec_find_decoder failed";
-
-     }
-
-     if ((cdc_ctx = avcodec_alloc_context3(codec)) == NULL) {
-         SError << "avcodec_alloc_context3 failed";
-
-     }
-
-     if (codec->capabilities & AV_CODEC_CAP_TRUNCATED) {
-         cdc_ctx->flags |= AV_CODEC_CAP_TRUNCATED;
-     }
-
-     int ret;
-     if ((ret = avcodec_open2(cdc_ctx, codec, NULL)) < 0) {
-         SError << "avcodec_open2 failed";
-
-     }
-
-     if ((avframe = av_frame_alloc()) == NULL) {
-         SError << "av_frame_alloc failed";
-     }
 
 
-     if ((parser = av_parser_init(codec->id)) == NULL) {
-
-         SError << "av_parser_init failed";
-     }
-
-
- }
-
- void VideoPacketSource::StopParser() {
-//     SInfo << "stopParser for cam:"  << camID;
-
-
-     if (parser) {
-         av_parser_close(parser);
-         parser = NULL;
-     }
-
-     if (cdc_ctx) {
-         avcodec_close(cdc_ctx);
-         avcodec_free_context(&cdc_ctx);
-         av_free(cdc_ctx);
-         cdc_ctx = NULL;
-     }
-
-     if (avframe) {
-         av_frame_free(&avframe);
-         av_free(avframe);
-         avframe = NULL;
-     }
-
-    
-
-
-#if BYPASSGAME
-     if (fp) {
-         fclose(fp);
-         fp = NULL;
-     }
-#endif
-//            if (!dst_data[0])
-//                av_freep(&dst_data[0]);
-//            sws_freeContext(sws_ctx);
-
-     SInfo << "stoppedParser";
- }
-        
 
 
 
@@ -193,13 +100,6 @@ VideoPacketSource::~VideoPacketSource()
            
            
             
-    
-    #if BYPASSGAME
-    StopParser();
-    #else
-//    StopLive();
-    StopParser();
-    #endif
 
     
     
@@ -292,10 +192,7 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
     #endif
     
     web_rtc::BasicFrame *basic_frame = static_cast<web_rtc::BasicFrame *> (frame);
-    
-    if (!codec) {
-        StartParser(AV_CODEC_ID_H264);
-    }
+ 
 
     uint8_t* data = NULL;
     int size = 0;
@@ -461,7 +358,7 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
                 }
                 
 
-               nullDecoder->runNULLEnc( (uint8_t*) basic_frame->data,  basic_frame->sz, (AVPictureType)parser->pict_type , frameCount , ctx );
+               nullDecoder->runNULLEnc( (uint8_t*) basic_frame->data,  basic_frame->sz,  frameCount , ctx );
 
                // runNative(frame);
                // return;

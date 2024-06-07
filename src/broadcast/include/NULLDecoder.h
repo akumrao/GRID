@@ -8,15 +8,6 @@
 
 #include  <queue>
 
-extern "C" {
-#include "libavutil/opt.h"
-#include "libavcodec/avcodec.h"
-#include "libavutil/channel_layout.h"
-#include "libavutil/common.h"
-#include "libavutil/imgutils.h"
-#include "libavutil/mathematics.h"
-#include "libavutil/samplefmt.h"
-};
 
 #include <functional>
 
@@ -40,7 +31,7 @@ public:
     
    
      
-    void runNULLEnc(unsigned char *buffer, int size, AVPictureType pict_type, int & recording, LiveConnectionContext  *ctx); 
+    void runNULLEnc(unsigned char *buffer, int size,  int & recording, LiveConnectionContext  *ctx); 
     
     void resetTimer();
     

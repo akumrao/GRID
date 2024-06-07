@@ -278,13 +278,13 @@ int T31H264::T31H264Init( int ch)
 
 int LiveThread::T31Init()
 {
-    
+    return 0;
 }
 
 
 int LiveThread::T31Exit()
 {
-    
+    return 0; 
 }
 
 

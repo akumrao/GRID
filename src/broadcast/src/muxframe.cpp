@@ -68,7 +68,7 @@ void Frame::update() {
 
 
   
-BasicFrame::BasicFrame() : Frame(), codec_id(AV_CODEC_ID_NONE), media_type(AVMEDIA_TYPE_UNKNOWN), h264_pars(H264Pars()) {
+BasicFrame::BasicFrame() : Frame() {
 }
 
 
@@ -80,8 +80,7 @@ BasicFrame::~BasicFrame() {
 void BasicFrame::print(std::ostream &os) const {
   os << "<BasicFrame: timestamp="<<mstimestamp<<" stream_index="<<stream_index<<" slot="<<n_slot<<" / ";  //<<std::endl;
   os << "payload size="<<payload.size()<<" / ";
-  if (codec_id==AV_CODEC_ID_H264) {os << h264_pars;}
-  else if (codec_id==AV_CODEC_ID_PCM_MULAW) {os << "PCMU: ";}
+  
   os << ">";
 }
 
@@ -102,36 +101,14 @@ void BasicFrame::dumpPayloadToFile(std::ofstream& fout) {
 
 void BasicFrame::reset() {
   Frame::reset();
-  codec_id   =AV_CODEC_ID_NONE;
-  media_type =AVMEDIA_TYPE_UNKNOWN;
+  //codec_id   =AV_CODEC_ID_NONE;
+ // media_type =AVMEDIA_TYPE_UNKNOWN;
   
   payload.clear();
 }
 
 
-bool BasicFrame::isSeekable() {
-    fillPars();
-    
-    /* // nopes
-    if (force_seekable) { // this only for filesystem debuggin
-        return true;
-    }
-    */
-    
-    switch(codec_id) {
-        case AV_CODEC_ID_H264:
-            if (h264_pars.slice_type == H264SliceType::sps) {
-                return true;
-            }
-            else {
-                return false;
-            }
-            break;
-        default:
-            return true;
-            break;
-    }
-}
+
 
 
 
@@ -145,53 +122,7 @@ void BasicFrame::resize(std::size_t n_bytes) {
 }
 
 
-void BasicFrame::fillPars() {
-  if (codec_id==AV_CODEC_ID_H264) {
-    fillH264Pars();
-  }
-}
 
-
-void BasicFrame::fillH264Pars() {
-  if (payload.size()>(nalstamp.size()+1)) { 
-    h264_pars.slice_type = ( payload[nalstamp.size()] & 31 );
-    h264_pars.frameType =  (( payload[nalstamp.size()] & 96) >> 5);
-  }
-}
-
-
-void BasicFrame::fillAVPacket(AVPacket *avpkt) {
-  avpkt->data         =payload.data(); // +4; that four is just for debugging..
-  avpkt->size         =payload.size(); // -4;
-  avpkt->stream_index =stream_index;
-
-  if (codec_id==AV_CODEC_ID_H264 && h264_pars.slice_type==H264SliceType::sps) { // we assume that frames always come in the following sequence: sps, pps, i, etc.
-    avpkt->flags=AV_PKT_FLAG_KEY;
-  }
-
-  // std::cout << "Frame : useAVPacket : pts =" << pts << std::endl;
-//
-//  if (mstimestamp>=0) {
-//    avpkt->pts=(int64_t)mstimestamp;
-//  }
-//  else {
-//    avpkt->pts=AV_NOPTS_VALUE;
- // }
-
-  // std::cout << "Frame : useAVPacket : final pts =" << pts << std::endl;
-
-  avpkt->dts=AV_NOPTS_VALUE; // let muxer set it automagically 
-}
-
-
-void BasicFrame::copyFromAVPacket(AVPacket *pkt) {
-  payload.resize(pkt->size);
-  memcpy(payload.data(),pkt->data,pkt->size);
-  // TODO: optimally, this would be done only once - in copy-on-write when writing to fifo, at the thread border
-//  stream_index=pkt->stream_index;
-  // frametype=FrameType::h264; // not here .. avpkt carries no information about the codec
- // mstimestamp=(long int)pkt->pts;
-}
 
 
 void BasicFrame::copyBuf( uint8_t* buf , unsigned size )
@@ -225,11 +156,6 @@ void BasicFrame::copyBuf( uint8_t* buf , unsigned size )
 //}
 
 
-std::size_t BasicFrame::calcSize() {
-    // device_id (std::size_t) stream_index (int) mstimestamp (long int) media_type (AVMediaType) codec_id (AVCodecId) size (std::size_t) payload (char)
-    // TODO: should use typedefs more
-    return sizeof(IdNumber) + sizeof(stream_index) + sizeof(mstimestamp) + sizeof(media_type) + sizeof(codec_id) + sizeof(std::size_t) + payload.size();
-}
 
 
 #define dump_bytes(var) raw_writer.dump( (const char*)&var, sizeof(var));
@@ -303,8 +229,7 @@ std::size_t BasicFrame::calcSize() {
 
 
 MuxFrame::MuxFrame() : Frame(), 
-    codec_id(AV_CODEC_ID_NONE), 
-    media_type(AVMEDIA_TYPE_UNKNOWN),  
+
     meta_type(MuxMetaType::none)
     {}
 
@@ -336,8 +261,8 @@ void MuxFrame::dumpPayloadToFile(std::ofstream& fout) {
 
 void MuxFrame::reset() {
     Frame::reset();
-    codec_id   =AV_CODEC_ID_NONE;
-    media_type =AVMEDIA_TYPE_UNKNOWN;
+  //  codec_id   =AV_CODEC_ID_NONE;
+//    media_type =AVMEDIA_TYPE_UNKNOWN;
     meta_type  =MuxMetaType::none;
 }
 
@@ -350,71 +275,6 @@ void MuxFrame::reserve(std::size_t n_bytes) {
 
 void MuxFrame::resize(std::size_t n_bytes) {
     this->payload.resize(n_bytes, 0);
-}
-
-
-SetupFrame::SetupFrame() : Frame(), sub_type(SetupFrameType::stream_init), media_type(AVMEDIA_TYPE_UNKNOWN), codec_id(AV_CODEC_ID_NONE), stream_state(AbstractFileState::none) {
-  // reset(); // done at Frame ctor
-}
-  
-  
-SetupFrame::~SetupFrame() {
-}
-
-//frame_essentials(FrameClass::setup, SetupFrame);
-
-void SetupFrame::print(std::ostream &os) const {
-    os << "<SetupFrame: timestamp="<<mstimestamp<<" stream_index="<<stream_index<<" slot="<<n_slot<<" / ";  //<<std::endl;
-    if (sub_type == SetupFrameType::stream_init) {
-        os << "media_type=" << int(media_type) << " codec_id=" << int(codec_id);
-    }
-    else if (sub_type == SetupFrameType::stream_state) {
-        os << "stream_state=" << int(stream_state);
-    }
-    os << ">";
-}
-
-
-void SetupFrame::reset() {
-  Frame::reset();
-  media_type=AVMEDIA_TYPE_UNKNOWN;
-  codec_id  =AV_CODEC_ID_NONE;
-}
-
-
-
-AVMediaFrame::AVMediaFrame() : media_type(AVMEDIA_TYPE_UNKNOWN), codec_id(AV_CODEC_ID_NONE) { // , mediatype(MediaType::none) {
-  //av_frame =av_frame_alloc();
-}
-
-
-AVMediaFrame::~AVMediaFrame() {
- // av_frame_free(&av_frame);
- // av_free(av_frame); // needs this as well?
-}
-
-
-//frame_essentials(FrameClass::avmedia, AVMediaFrame);
-
-
-void AVMediaFrame::print(std::ostream& os) const {
-  os << "<AVMediaFrame: timestamp="<<mstimestamp<<" stream_index="<<stream_index<<" slot="<<n_slot<<" / ";
-  os << "media_type=" << media_type << std::endl;
-  os << ">";
-}
-
-
-std::string AVMediaFrame::dumpPayload() {
-  std::stringstream tmp;
-  return tmp.str();
-}
-
-
-void AVMediaFrame::reset() {
-  Frame::reset();
-  media_type   =AVMEDIA_TYPE_UNKNOWN; 
-  codec_id     =AV_CODEC_ID_NONE;
-  // TODO: reset AVFrame ?
 }
 
 

@@ -18,17 +18,6 @@
 
 #include <queue>
 
-extern "C"
-{
-#include "libavutil/opt.h"
-#include "libavcodec/avcodec.h"
-#include "libavutil/channel_layout.h"
-#include "libavutil/common.h"
-#include "libavutil/imgutils.h"
-#include "libavutil/mathematics.h"
-#include "libavutil/samplefmt.h"
-};
-
     //#include "base/thread.h"
 
 #include "webrtc/rawVideoFrame.h"
@@ -47,10 +36,7 @@ public:
 public:
     typedef struct
     {
-        AVCodec *codec = nullptr;
-        AVFrame *frame = nullptr;
-        AVCodecContext *context = nullptr;
-        AVPacket *pkt = nullptr;
+   
     } CodecCtx;
 
 

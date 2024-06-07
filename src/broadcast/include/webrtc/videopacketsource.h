@@ -7,10 +7,6 @@
 #include "NULLDecoder.h"
 
 
-
-#if MP4File
-#include "ff/packet.h"
-#endif
 #include "base/packet.h"
 #include "webrtc/peer.h"
 #include "media/base/adapted_video_track_source.h"
@@ -23,11 +19,7 @@
 #include "livethread.h"
 
 
-extern "C"
-{
 
-  #include <libswscale/swscale.h>
-}
 
 #if BYPASSGAME
 #include "base/thread.h"
@@ -142,13 +134,13 @@ protected:
 
 private:
     
-    AVCodec *codec{nullptr};
-    AVCodecContext *cdc_ctx{nullptr};
+    //AVCodec *codec{nullptr};
+    //AVCodecContext *cdc_ctx{nullptr};
    // AVPacket *videopkt{nullptr};   
-    AVFrame *avframe{nullptr};
-    AVCodecParserContext *parser{nullptr};
-    void StartParser(AVCodecID codeID);
-    void StopParser(); 
+    //AVFrame *avframe{nullptr};
+   // AVCodecParserContext *parser{nullptr};
+    //void StartParser(AVCodecID codeID);
+   // void StopParser(); 
     
     std::vector<uint8_t> buffer;
     

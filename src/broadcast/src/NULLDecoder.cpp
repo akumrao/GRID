@@ -8,13 +8,6 @@
 //#include "livethread.h"
 #include "webrtc/signaler.h"
 
-extern "C" {
-    //#include <libavutil/timestamp.h>
-#include <libavformat/avformat.h>
-#include <libavcodec/avcodec.h>
-#include <libavutil/imgutils.h>
-#include <libavutil/parseutils.h>
-}
 
 
 
@@ -91,7 +84,7 @@ namespace base {
         }
  
 
-        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size, AVPictureType pict_type, int & frameCount , LiveConnectionContext  *ctx ) 
+        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size,  int & frameCount , LiveConnectionContext  *ctx ) 
         {
 
             bool idr = false;

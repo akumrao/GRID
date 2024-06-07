@@ -21,7 +21,7 @@
 #include "http/HTTPResponder.h"
 #include "http/HttpClient.h"
 #include "http/HttpServer.h"
-#include "muxer.h"
+//#include "muxer.h"
 #include "net/netInterface.h"
 
 #include "json/json.h"

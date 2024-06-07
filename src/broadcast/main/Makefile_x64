@@ -1,7 +1,7 @@
 ################################################################################
 ### CUSTOMIZE BELOW HERE #######################################################
 
-FFMPEG_ROOT = /workspace/MagicAI/3rdparty/installx64
+#FFMPEG_ROOT = /workspace/MagicAI/3rdparty/installx64
 WEBRTC_PATH = /workspace/webrtc/src/
 SSL_ROOT = /workspace/MagicAI/src/openssl/buildx64
 
@@ -13,12 +13,12 @@ SOURCES=$(wildcard *.cpp ../src/*.cpp ../src/x64/*.cpp ../../libuv/src/*.cpp ../
 CXXFLAGS   := -g -fno-rtti -std=c++11 -Wno-uninitialized
 
 
-CPPFLAGS   := -I../../signal/include -I../../facedetec/include/ -I${SSL_ROOT}/include -I/${FFMPEG_ROOT}/include  -I../include  -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../webrtc/include   -I../include/x64  -DWEBRTC_POSIX -I${WEBRTC_PATH}  -I${WEBRTC_PATH}/third_party/abseil-cpp -DHTTPSSL
+CPPFLAGS   := -I../../signal/include -I../../facedetec/include/ -I${SSL_ROOT}/include  -I../include  -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../webrtc/include   -I../include/x64  -DWEBRTC_POSIX -I${WEBRTC_PATH}  -I${WEBRTC_PATH}/third_party/abseil-cpp -DHTTPSSL
 #LDFLAGS   := -L/export/views/video/ffmpeg/Obj/
 
 LDLIBS    := -lpthread -lm -ldl -lz -lbz2 -L/workspace/MagicAI/src/webrtc/build -L/workspace/MagicAI/src/openssl/buildx64/lib -ljingle_peerconnection_so -ljpeg -lssl -lcrypto
 
-SLIBS     := ${FFMPEG_ROOT}/lib/libavformat.a  ${FFMPEG_ROOT}/lib/libavcodec.a ${FFMPEG_ROOT}/lib/libavutil.a ${FFMPEG_ROOT}/lib/libswresample.a
+#SLIBS     := ${FFMPEG_ROOT}/lib/libavformat.a  ${FFMPEG_ROOT}/lib/libavcodec.a ${FFMPEG_ROOT}/lib/libavutil.a ${FFMPEG_ROOT}/lib/libswresample.a
 
 #  ${SSL_ROOT}/lib/libssl.a ${SSL_ROOT}/lib/libcrypto.a   
 
