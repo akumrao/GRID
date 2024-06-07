@@ -71,7 +71,9 @@ public:
     };
 
 
-    NULLEncoder();
+    NULLEncoder(bool recording);
+    bool recording;
+    
     ~NULLEncoder() override;
 
 
@@ -114,7 +116,7 @@ public:
         return info;
     }
 
-    static int nativeInstance;
+    //static int nativeInstance;
 
 private:
     webrtc::CodecSpecificInfo CodecSpecific;

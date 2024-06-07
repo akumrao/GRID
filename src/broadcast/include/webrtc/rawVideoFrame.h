@@ -119,7 +119,7 @@ class NULLEncBuffer : public webrtc::VideoFrameBuffer
 {
 public:
     // FRawFrameBuffer( std::vector<uint8_t> & f , int w ,  int h, uint frameNo, bool idr, uint32_t fps);
-    NULLEncBuffer(stFrame *qframe, int w, int h, uint32_t fps, std::string &txt);
+    NULLEncBuffer(stFrame *qframe, int w, int h, uint32_t fps, bool &recording);
 
     Type type() const override { return Type::kNative; }
 
@@ -146,7 +146,7 @@ public:
 
     /// std::vector<uint8_t> payload1;
     // webrtc::VideoFrameType _frameType1{webrtc::VideoFrameType::kVideoFrameDelta};
-    std::string txt;
+    bool recording;
 
 private:
 };

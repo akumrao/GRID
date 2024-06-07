@@ -172,7 +172,7 @@ void VideoPacketSource::StartParser(AVCodecID codeID) {
 VideoPacketSource::~VideoPacketSource()
 {
     
-    SInfo <<  "~VideoPacketSource() "  << trackInfo->camid  ;
+    SInfo <<  "~VideoPacketSource() ";
     if(liveThread)
     liveThread->stop();
     
@@ -300,19 +300,19 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
     uint8_t* data = NULL;
     int size = 0;
 
-    std::copy(basic_frame->data, basic_frame->data + basic_frame->sz, std::back_inserter(buffer));
+ //   std::copy(basic_frame->data, basic_frame->data + basic_frame->sz, std::back_inserter(buffer));
 
 
-    while (buffer.size() > 0)
+    //while (buffer.size() > 0)
     {
-        int len = av_parser_parse2(parser, cdc_ctx, &data, &size, &buffer[0], buffer.size(), 0, 0, AV_NOPTS_VALUE);
+       // int len = av_parser_parse2(parser, cdc_ctx, &data, &size, &buffer[0], buffer.size(), 0, 0, AV_NOPTS_VALUE);
 
-        if (size == 0 && len >= 0) {
-            return;
-        }
+       // if (size == 0 && len >= 0) {
+         //   return;
+      //  }
 
   // Iterate through the map and print the elements
-        if (len )
+       // if (len )
         {   
           //  if(trackInfo.encType == EN_NATIVE)
             {
@@ -325,8 +325,7 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 
                     nullDecoder->cb_frame = [&](stFrame* frame) {
 
-                     std::string txtCpy;// // this code is for video analysis
-//                    
+                   
 //                    mutextxt.lock();
 //        
 //                    txtCpy = metaData;
@@ -334,7 +333,7 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 //                    mutextxt.unlock();
 //        
                                 
-                    rtc::scoped_refptr<NULLEncBuffer> Buffer = new rtc::RefCountedObject<NULLEncBuffer>( frame ,nullDecoder->width, nullDecoder->height, nullDecoder->fps , txtCpy);
+                    rtc::scoped_refptr<NULLEncBuffer> Buffer = new rtc::RefCountedObject<NULLEncBuffer>( frame ,nullDecoder->width, nullDecoder->height, nullDecoder->fps , recording);
 
                     int64_t TimestampUs = rtc::TimeMicros();
                       
@@ -462,7 +461,7 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
                 }
                 
 
-               nullDecoder->runNULLEnc( (uint8_t*) &buffer[0], size, (AVPictureType)parser->pict_type , frameCount , ctx );
+               nullDecoder->runNULLEnc( (uint8_t*) basic_frame->data,  basic_frame->sz, (AVPictureType)parser->pict_type , frameCount , ctx );
 
                // runNative(frame);
                // return;
@@ -478,8 +477,8 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
            
              
         } // len
-        if(len)
-        buffer.erase(buffer.begin(), buffer.begin() + len);
+       // if(len)
+       // buffer.erase(buffer.begin(), buffer.begin() + len);
         
     }// while buffer
     

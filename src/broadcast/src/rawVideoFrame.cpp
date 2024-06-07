@@ -14,12 +14,12 @@ namespace web_rtc
 //       std::endl << std::flush;
 // }
 
-NULLEncBuffer::NULLEncBuffer(stFrame *qframe, int w, int h, uint32_t fps, std::string &txt)
+NULLEncBuffer::NULLEncBuffer(stFrame *qframe, int w, int h, uint32_t fps, bool &recording)
     : qframe(qframe),
       width_(w),
       height_(h),
       fps(fps),
-      txt(txt)
+      recording(recording)
 {
     // std::cout <<  " FRawFrameBuffer frame w"  <<   w  <<  " frame h "  << h  << std::endl << std::flush;
 }

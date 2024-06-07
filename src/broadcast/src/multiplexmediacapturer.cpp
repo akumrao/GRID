@@ -55,7 +55,7 @@ MultiplexMediaCapturer::MultiplexMediaCapturer(LiveConnectionContext  *ctx, Sign
     
 
 
-    //      local_video_observer_.reset(new VideoObserver());
+   mapVideoSource[ctx->cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  ctx, nullptr, false ) ;
 }
 
 
@@ -126,7 +126,11 @@ void MultiplexMediaCapturer::addMediaTracks(
   
     if( mapvideo_track.find(cam) == mapvideo_track.end())
     {
-      mapVideoSource[cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  ctx, &peer->trackInfo, !peer->trackInfo.start.empty() ) ;
+      if( mapVideoSource.find(cam) == mapVideoSource.end())
+      {
+        mapVideoSource[cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  ctx, &peer->trackInfo, !peer->trackInfo.start.empty() ) ;
+      }
+      
       mapvideo_track[cam] =     factory->CreateVideoTrack(cam, mapVideoSource[cam]);
 
       #if BYPASSGAME
@@ -201,6 +205,7 @@ void MultiplexMediaCapturer::remove(web_rtc::Peer* conn )
         mapvideo_track.erase(cam);
         //mapvideo_track[cam]->Release();
        // mapVideoSource[cam]->Release();
+       if(!conn->trackInfo.start.empty()) 
        mapVideoSource.erase(vsItr);
        mutexCap.unlock();
 
@@ -217,10 +222,8 @@ void MultiplexMediaCapturer::remove(web_rtc::Peer* conn )
     vsItrAud = mapAudioSource.find(camAud);
     if (vsItrAud != mapAudioSource.end() && (rtc::RefCountReleaseStatus::kDroppedLastRef == mapAudioSource[camAud]->myRelease(conn->peerid()))) {
 
-        #if BYPASSGAME
         mapAudioSource[camAud]->stop();
         mapAudioSource[camAud]->join();
-        #endif
         
         mutexCap.lock();
 //        std::map< std::string, rtc::scoped_refptr<webrtc::VideoTrackInterface> >::iterator it;
@@ -257,7 +260,7 @@ void MultiplexMediaCapturer::stop(std::string & cam , std::set< std::string> & s
    
    
    
-     std::string camAud = cam + "audio";
+    std::string camAud = cam + "audio";
     std::map< std::string ,  rtc::scoped_refptr<LocalAudioSource> > ::iterator vsItrAud;
     vsItrAud=mapAudioSource.find(camAud);
     

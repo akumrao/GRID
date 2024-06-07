@@ -79,12 +79,12 @@ namespace base {
     namespace web_rtc {
 
 
-       int NULLEncoder::nativeInstance = 0;
+      // int NULLEncoder::nativeInstance = 0;
             
-        NULLEncoder::NULLEncoder()//:
+        NULLEncoder::NULLEncoder( bool recording):recording(recording)//:
         {
 
-            ++nativeInstance;
+           // ++nativeInstance;
 
             //	check(PlayerSession);
             //
@@ -101,7 +101,7 @@ namespace base {
         }
 
         NULLEncoder::~NULLEncoder() {
-              --nativeInstance;
+              //--nativeInstance;
                          
             SInfo << "~NULLEncoder()";
               
@@ -285,8 +285,8 @@ namespace base {
 
             if( bps < 500)
              HDVideo =2;
-            //else 
-            // HDVideo =0;   
+            else 
+             HDVideo =0;   
 
       //      SInfo << "bitrate " <<  bps << " resolution " <<  HDVideo;
 
@@ -476,7 +476,8 @@ namespace base {
             NULLEncBuffer* RawFrame = static_cast<NULLEncBuffer*> (input_frame.video_frame_buffer().get());
             
             
-            if( webrtc::VideoFrameBuffer::Type::kI420  ==  RawFrame->type()) // pause or muted condtion
+            
+            if( webrtc::VideoFrameBuffer::Type::kI420  ==  RawFrame->type()  ||   RawFrame->recording  !=  recording ) // pause or muted condtion
             {
                   return WEBRTC_VIDEO_CODEC_OK;
             }

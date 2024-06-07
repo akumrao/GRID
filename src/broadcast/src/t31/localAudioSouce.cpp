@@ -348,16 +348,25 @@ void LocalAudioSource::run()
 		//fwrite(stream.stream, 1, stream.len, record_file);
 
 		SInfo << " PCMA len " << stream.len;
+                 
+                std::copy(stream.stream, stream.stream +  stream.len, std::back_inserter(buffer));
 
-		this->OnData(stream.stream, 16, kSamplesPerSecond,1, stream.len);
-          // std::this_thread::sleep_for(std::chrono::milliseconds(20));
-//            
-        int64_t deltaTimeMillis = rtc::TimeMillis() - currentTime;
-        
-        if (deltaTimeMillis < 20)
-        {
-            webrtc::SleepMs(20 - deltaTimeMillis);
-        }
+
+                while( buffer.size() >= 160)
+                {
+                      this->OnData(&buffer[0], 16, kSamplesPerSecond,1, 80);
+                      
+                      buffer.erase(buffer.begin(), buffer.begin() + 160);
+                }
+		
+                // std::this_thread::sleep_for(std::chrono::milliseconds(20));
+           
+                int64_t deltaTimeMillis = rtc::TimeMillis() - currentTime;
+
+                if (deltaTimeMillis < 20)
+                {
+                    webrtc::SleepMs(20 - deltaTimeMillis);
+                }
 
 
 		/* release stream. */

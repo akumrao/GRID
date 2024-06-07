@@ -178,7 +178,11 @@ namespace base {
 //                    cb_mp4(&basicframe, false); 
           
                 }
-            }// end for
+                else
+                {
+                    continue;
+                }
+       
                     // 
 
                     //                rtc::scoped_refptr<webrtc::EncodedImageBufferInterface> encodedData = webrtc::EncodedImageBuffer::Create((uint8_t*) buffer, frameSize);
@@ -217,7 +221,7 @@ namespace base {
                     
                  
                     
-            if( pict_type == AV_PICTURE_TYPE_I  )
+            if( idr  )
             {
                // SInfo << "  AV_PICTURE_TYPE_I " ;
                qframe->clear();
@@ -291,9 +295,14 @@ namespace base {
             }
             
             
+             delayFrame();
+            
+            }// end for
+            
+            
             
 
-            delayFrame();
+           
 
             return;
         }

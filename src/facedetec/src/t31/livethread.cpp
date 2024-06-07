@@ -1127,19 +1127,31 @@ void LiveThread:: stop()
 {
     SInfo << "LiveThread:: stop";
 
-    t31rgba->stop();
-
-    t31h264->stop();
-
-    t31rgba->join();
-
-    t31h264->join();
     
+      
+    if( recording)
+    {
+        recording->stop();
+        recording->join();
+        delete recording ;
+        recording = nullptr;
+    }
+    else
+    {
+        t31rgba->stop();
 
-    delete t31h264 ;
-    t31h264 = nullptr;
-    delete t31rgba ;
-    t31rgba = nullptr;
+        t31h264->stop();
+
+        t31rgba->join();
+
+        t31h264->join();
+
+
+        delete t31h264 ;
+        t31h264 = nullptr;
+        delete t31rgba ;
+        t31rgba = nullptr;
+    }
 
     SInfo << "LiveThread:: stop over";
    
@@ -1165,14 +1177,22 @@ void LiveThread:: stop()
 
 void LiveThread::start()
 {
-     XAInit();
-     T31Init();
+    
+    if( recording)
+    {
+        recording->start();
+    }
+    else
+    {
+        XAInit();
+        T31Init();
 
 
-    t31rgba->T31RGBAInit();
+       t31rgba->T31RGBAInit();
 
-    t31h264->start();
-    t31rgba->start();
+       t31h264->start();
+       t31rgba->start();
+    }
 }
 
 

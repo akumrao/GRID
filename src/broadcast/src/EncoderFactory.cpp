@@ -80,9 +80,9 @@ std::vector<webrtc::SdpVideoFormat> EncoderFactory::GetSupportedFormats() const
 
 
 
-    if (NULLEncoder::nativeInstance < Settings::encSetting.native)
+//    if (NULLEncoder::nativeInstance < Settings::encSetting.native)
     {
-        SInfo << NULLEncoder::nativeInstance;
+        //SInfo << NULLEncoder::nativeInstance;
 
         const absl::optional<std::string> profile_string = webrtc::H264::ProfileLevelIdToString(
             webrtc::H264::ProfileLevelId(webrtc::H264::kProfileMain, webrtc::H264::kLevel3_1));
@@ -197,10 +197,17 @@ std::unique_ptr<webrtc::VideoEncoder> EncoderFactory::CreateVideoEncoder(const w
     }
     else
     {
-       // std::map<std::string, std::string> parameters = format.parameters;
-       // if (parameters["Enc"] == "NATIVE")
+        std::map<std::string, std::string> parameters = format.parameters;
+        if (  parameters.find("Enc") !=  parameters.end()  &&    parameters["Enc"].size() )
+        { 
+            std::string tmp  =  parameters["Enc"];
+            auto VideoEncoder = make_unique<NULLEncoder>(true);  // for cam encoders
+            return VideoEncoder;
+            
+        }
+        else
         {
-            auto VideoEncoder = make_unique<NULLEncoder>();  // for cam encoders
+            auto VideoEncoder = make_unique<NULLEncoder>(false);  // for cam encoders
             return VideoEncoder;
         }
 
