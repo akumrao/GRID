@@ -59,15 +59,15 @@ namespace base {
                    
            // SInfo << "onClose " <<  obj->IsClosed(); // this will not fix the close crash problem. This issue only happens when you are debugging browser
            
-//            if (obj)
-//                obj->on_close();
+            if (obj)
+              obj->on_close();
             
-           //  if(obj->listenerClose)
-            // obj->listenerClose->OnTcpConnectionClosed(obj);
+            if(obj->listenerClose)
+             obj->listenerClose->OnTcpConnectionClosed(obj);
                     
             
-//            delete handle;
-//              handle = nullptr;
+             // delete handle;
+             // handle = nullptr;
         }
 
         inline static void onShutdown(uv_shutdown_t* req, int /*status*/) {
@@ -245,18 +245,26 @@ namespace base {
             req->data = this;
 
             if (!addrs) {
-                if (IP::GetFamily(ip) == AF_INET6) {
+                int ipret = IP::GetFamily(ip); 
+                if (ipret == AF_INET6)
+                {
                     ASSERT(0 == uv_ip6_addr(ip.c_str(), port, &addr6));
 
                     // this->localAddr = (sockaddr_storage *) addr6;
                     err = uv_tcp_connect(req, this->uvHandle, reinterpret_cast<struct sockaddr*> (&addr6), static_cast<uv_connect_cb> (onconnect));
 
 
-                } else {
+                } else if (ipret == AF_INET)
+                {  
                     ASSERT(0 == uv_ip4_addr(ip.c_str(), port, &addr));
 
                     err = uv_tcp_connect(req, this->uvHandle, reinterpret_cast<struct sockaddr*> (&addr), static_cast<uv_connect_cb> (onconnect));
 
+                }
+                else
+                {
+                    Close();
+                    return;
                 }
             } else {
 

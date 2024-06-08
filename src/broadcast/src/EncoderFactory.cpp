@@ -210,9 +210,7 @@ std::unique_ptr<webrtc::VideoEncoder> EncoderFactory::CreateVideoEncoder(const w
             auto VideoEncoder = make_unique<NULLEncoder>(false);  // for cam encoders
             return VideoEncoder;
         }
-
-
-   
+  
     }
 
     return nullptr;

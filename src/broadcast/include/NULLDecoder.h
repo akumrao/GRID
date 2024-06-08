@@ -45,7 +45,7 @@ public:
     
     void WriteTofile( unsigned char *buf , int size,  int& frameCount);
     
-    int  width{0};
+    int width{0};
     int height{0};
     int fps;
     

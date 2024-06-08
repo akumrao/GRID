@@ -203,7 +203,10 @@ namespace base
             else if (uv_inet_pton(AF_INET6, ip.c_str(), &ia) == 0)
                 return AF_INET6;
             else
-                throw std::runtime_error("Invalid IP address format: " + ip);
+            {
+                SError << "Invalid IP address format: "<<   ip;
+                return PF_UNSPEC;
+            }
         }
 
 

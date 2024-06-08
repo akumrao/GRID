@@ -166,10 +166,10 @@ namespace base {
         }
 
         void SocketioClient::timeout_reconnect() {
-            STrace << "timeout=reconnect" ;
+            SInfo << "timeout=reconnect" ;
             
             if (m_con_state == con_closed) {
-                m_con_state = con_opening;
+               // m_con_state = con_opening;
                 //m_client->Close();
                 //delete m_client;
                 m_sid.clear();
@@ -186,7 +186,7 @@ namespace base {
         ////////////////////////////////////////////////////////////////////
 
         void SocketioClient::close(int const& code, string const& reason) {
-            LTrace("Close by reason: ", reason);
+            LInfo("Close by reason: ", reason);
 
             if (bReconnec) {
                 m_con_state = con_closed;
@@ -204,10 +204,10 @@ namespace base {
                 }
 
                 m_client->Close();
-                delete m_client;
-
-                m_reconn_timer.cb_timeout = std::bind(&SocketioClient::timeout_reconnect, this);
-                m_reconn_timer.Start(4000, 4000);
+               // delete m_client;
+               // m_client = nullptr;
+               
+                m_reconn_timer.Restart();
             } else {
                 m_con_state = con_closed;
                 clear_timers();
@@ -357,6 +357,10 @@ namespace base {
             reset();
 
             sendHandshakeRequest();
+            
+           m_reconn_timer.cb_timeout = std::bind(&SocketioClient::timeout_reconnect, this);
+           m_reconn_timer.Start(4000,4000);
+             
         }
 
         std::string const& SocketioClient::get_sessionid() {
@@ -364,7 +368,7 @@ namespace base {
         }
 
         void SocketioClient::sendHandshakeRequest() {
-            LTrace("sendHandshakeRequest")
+            LInfo("sendHandshakeRequest")
 
             //TraceL << "Send handshake request" << endl;	
             //bool ssl = false;
@@ -395,6 +399,13 @@ namespace base {
                 std::string body = m_client->readStream() ? m_client->readStream()->str():"";
                 STrace << "SocketIO handshake response:" << "Reason: " << reason << " Response: " << body;
             };
+            
+            m_client->fnConnect = [&](HttpBase * con ) {
+                
+                m_con_state = con_opened;
+                m_reconn_timer.Stop();
+             };
+            
 
             m_client->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
                 //STrace << "client->fnPayload " << std::string(data,sz) ;
@@ -406,6 +417,9 @@ namespace base {
                 STrace << "client->fnClose " << str ;
                 close(0,"exit");
                 //on_close();
+                delete m_client;
+                m_client = nullptr;
+                m_con_state = con_closed;
             };
             
             //  conn->_request.setKeepAlive(false);
@@ -421,9 +435,9 @@ namespace base {
             // Note: Only reset session related variables here.
             // Do not reset host and port variables.
             //_timer.Timeout -= sdelegate(this, &SocketioClient::onHeartBeatTimer);
-            m_ping_timer.Stop();
-            m_ping_timeout_timer.Stop();
-            m_reconn_timer.Stop();
+            m_ping_timer.Reset();
+            m_ping_timeout_timer.Reset();
+            m_reconn_timer.Reset();
       
         }
 
@@ -509,7 +523,7 @@ namespace base {
 
         void Socket::on_error(error_listener const& l) {
 
-            STrace << "on_error " ;
+            SInfo << "on_error " ;
             m_error_listener = l;
         }
 
