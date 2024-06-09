@@ -10,7 +10,7 @@
 #include "ff/audiobuffer.h"
 #include "ff/packet.h"
 #endif
-#include "base/packet.h"
+//#include "base/packet.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ref_counted_object.h"
@@ -294,7 +294,7 @@ namespace base {
         static rtc::scoped_refptr < AudioPacketModule > Create();
 
         /// Handles input packets from the capture for sending.
-        void onAudioCaptured(IPacket & packet);
+       // void onAudioCaptured(IPacket & packet);
 
         /// Following functions are inherited from `webrtc::AudioDeviceModule`.
         /// Only functions called by `Peer` are implemented, the rest do

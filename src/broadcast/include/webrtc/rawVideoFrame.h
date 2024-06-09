@@ -29,6 +29,7 @@ namespace web_rtc
 //    AVBufferRef *hw_device_ref;
 //    int NVSurface{0};
 //} DecodeContext;
+const char startcode[] = { 00, 00, 00, 01 };
 
 class Store
 {
@@ -44,8 +45,10 @@ public:
         // if we reserve the std::vector first and the problem is gone, big chances that this is the reason behind.
         //there might be a memeory relocation problem, say: one thread insert a value, causing the vector to enlarge it's size and relocate all it's elements in another memory range. However, another thread stll owns some ref(pointer) to the original memory range of this vector, this might cause the seg fault.
 
-        payload.resize(sz);
-        memcpy(payload.data(), p, sz);
+        payload.resize(sz+4);
+        
+        memcpy(payload.data(), startcode, 4);
+        memcpy(&payload.data()[4], p, sz);
 
         if (idr)
             _frameType = webrtc::VideoFrameType::kVideoFrameKey;
@@ -98,8 +101,6 @@ public:
 
     void clear();
     
-    std::vector< uint8_t> m_sps;
-    std::vector< uint8_t> m_pps;
 
 private:
     uv_rwlock_t rwlock_t;
@@ -112,7 +113,8 @@ private:
 
     int Ifrm{0};
   
-    
+    std::vector< uint8_t> m_sps;
+    std::vector< uint8_t> m_pps;
 };
 
 class NULLEncBuffer : public webrtc::VideoFrameBuffer

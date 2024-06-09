@@ -2,7 +2,7 @@
 #include "framefilter.h"
 //#include "tools.h"
 #include "base/logger.h"
-#include "restApi.h"
+//#include "restApi.h"
 #include "base/datetime.h"
 #include "base/filesystem.h"
 #include "Settings.h"
@@ -198,7 +198,7 @@ void DummyFrameFilter::go(Frame *frame)
 
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////
-
+/*
 TextFrameFilter::TextFrameFilter(const char *name,  std::string &cam, RestApi *conn, FrameFilter *next) : FrameFilter(name, next), cam(cam), conn(conn)  
 {
 }
@@ -210,11 +210,11 @@ void TextFrameFilter::go(Frame *frame)
     TextFrame *txt = (TextFrame *) frame;
     SDebug << "Send Text Message : " << this->name << " : got frame : " << txt->txt;
     
-    if(conn)
-    conn->postAppMessage(cam, txt->frameType, txt->txt );
+  //  if(conn)
+   // conn->postAppMessage(cam, txt->frameType, txt->txt );
 
 }
-
+*/
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 

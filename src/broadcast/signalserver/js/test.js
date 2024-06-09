@@ -45,10 +45,10 @@ var browserName = (function(agent) {
 })(window.navigator.userAgent.toLowerCase());
 
 // Could prompt for room name:
-var room = prompt('Enter camera name:', '65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0');
+var roomId = prompt('Enter camera name:', '65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0');
 
-if (room === '') {
-  room = '65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0';
+if (roomId === '') {
+  roomId = '65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0';
 }
 
 var socket = io.connect();
@@ -62,14 +62,17 @@ socket.on('join', function(room, id, numClients) {
     isChannelReady = true;
 });
 
-
-
-socket.emit('createorjoin', room , true);
-console.log('Attempted to createorjoin room', room);
-
-socket.on('full', function(room) {
-  console.log('Room ' + room + ' is full');
+socket.on('joined', function(roomId) {
+  console.log('joined: ' + roomId);
+  isChannelReady = true;
+  isInitiator = true;
+  maybeStart();
 });
+
+socket.emit('createorjoin', roomId , true);
+console.log('Attempted to createorjoin roomId', roomId);
+
+
 
 // socket.on('join', function (room){
 //   console.log('Another peer made a request to join room ' + room);
@@ -77,12 +80,7 @@ socket.on('full', function(room) {
 //   isChannelReady = true;
 // });
 
-socket.on('joined', function(room) {
-  console.log('joined: ' + room);
-  isChannelReady = true;
-  isInitiator = true;
-  maybeStart();
-});
+
 
 socket.on('log', function(array) {
   console.log.apply(console, array);
@@ -102,9 +100,7 @@ socket.on('message', function(message) {
   //log('Client received message:', message);
 
 
-  if (message === 'got user media') {
-    maybeStart();
-  } else if (message.type === 'offer') {
+   if (message.type === 'offer') {
     if (!isInitiator && !isStarted) {
       maybeStart();
     }
@@ -204,7 +200,7 @@ async function maybeStart() {
 
 window.onbeforeunload = function() {
     sendMessage({
-        room: room,
+        room: roomId,
         type: 'bye'
     });
 };
@@ -344,8 +340,7 @@ function handleIceCandidate(event) {
   console.log('icecandidate event: ', event);
   if (event.candidate) {
     sendMessage({
-      room: room,
-      //to: remotePeerID,
+      room: roomId,
       type: 'candidate',
       candidate: event.candidate
     });
@@ -376,12 +371,14 @@ function setLocalAndSendMessage(sessionDescription) {
     // sessionDescription.sdp = sessionDescription.sdp.replace("useinbandfec=1", "useinbandfec=1; minptime=10; cbr=1; stereo=1; sprop-stereo=1; maxaveragebitrate=510000");
     // sessionDescription.sdp = sessionDescription.sdp.replace("useinbandfec=1", "useinbandfec=1; minptime=10; stereo=1; maxaveragebitrate=510000");
 
-    //sessionDescription.sdp = sessionDescription.sdp.replaceAll("level-asymmetry-allowed=1", "level-asymmetry-allowed=1; Enc=" + encType);
+    if( starttime && starttime.length)
+    sessionDescription.sdp = sessionDescription.sdp.replaceAll("level-asymmetry-allowed=1", "level-asymmetry-allowed=1; Enc=" + starttime);
+
     pc.setLocalDescription(sessionDescription);
     console.log('setLocalAndSendMessage sending message', sessionDescription);
 
     sendMessage({
-        room: room,
+        room: roomId,
         type: sessionDescription.type,
         starttime:starttime,
         camAudio:camAudio,
@@ -438,7 +435,7 @@ function hangup() {
     console.log('Hanging up.');
     stop();
     sendMessage({
-        room: room,
+        room: roomId,
         type: 'bye'
     });
 }

@@ -11,9 +11,12 @@ var pc;
 
 var encType;
 
-let starttime = null;
+let starttime;
 
 let channelSnd;
+
+let camAudio;
+let appAudio;
 
 const dataChannelOptions = {ordered: true};
 
@@ -130,16 +133,16 @@ async function createPeerConnection() {
 }
 
 function handleIceCandidate(event) {
-    console.log('icecandidate event: ', event);
-    if (event.candidate) {
-        sendMessage({
-            room: roomId,
-            type: 'candidate',
-            candidate: event.candidate
-        });
-    } else {
-        console.log('End of candidates.');
-    }
+  console.log('icecandidate event: ', event);
+  if (event.candidate) {
+    sendMessage({
+      room: roomId,
+      type: 'candidate',
+      candidate: event.candidate
+    });
+  } else {
+    console.log('End of candidates.');
+  }
 }
 
 function handleCreateOfferError(event) {
@@ -164,13 +167,18 @@ function setLocalAndSendMessage(sessionDescription) {
     // sessionDescription.sdp = sessionDescription.sdp.replace("useinbandfec=1", "useinbandfec=1; minptime=10; cbr=1; stereo=1; sprop-stereo=1; maxaveragebitrate=510000");
     // sessionDescription.sdp = sessionDescription.sdp.replace("useinbandfec=1", "useinbandfec=1; minptime=10; stereo=1; maxaveragebitrate=510000");
 
-    sessionDescription.sdp = sessionDescription.sdp.replaceAll("level-asymmetry-allowed=1", "level-asymmetry-allowed=1; Enc=" + encType);
+    if( starttime && starttime.length)
+    sessionDescription.sdp = sessionDescription.sdp.replaceAll("level-asymmetry-allowed=1", "level-asymmetry-allowed=1; Enc=" + starttime);
+
     pc.setLocalDescription(sessionDescription);
     console.log('setLocalAndSendMessage sending message', sessionDescription);
 
     sendMessage({
         room: roomId,
         type: sessionDescription.type,
+        starttime:starttime,
+        camAudio:camAudio,
+        appAudio:appAudio,
         desc: sessionDescription
     });
 }
@@ -607,8 +615,8 @@ function setupDataChannel(pc, label, options, starttime)
           datachannel.onopen = function (e) {
             console.log(`data channel (${label}) connect`)
 
-            if(starttime)
-             datachannel.send('recDates');
+            //if(starttime)
+             //datachannel.send('recDates');
              
           }
 
@@ -619,7 +627,7 @@ function setupDataChannel(pc, label, options, starttime)
           datachannel.onmessage = function (e) {
             console.log(`Got message (${label})`, e.data)
 
-            recordlist(e.data);
+            //recordlist(e.data);
            
           }
 

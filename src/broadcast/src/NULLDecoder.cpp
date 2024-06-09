@@ -11,13 +11,13 @@
 
 
 
-#include "rtc_base/ref_counted_object.h"
-#include "rtc_base/atomic_ops.h"
+//#include "rtc_base/ref_counted_object.h"
+//#include "rtc_base/atomic_ops.h"
 #include <chrono>
 #include "base/platform.h"
 #include "tools.h"
-#include "common_video/h264/sps_parser.h"
-#include "common_video/h264/h264_common.h"
+//#include "common_video/h264/sps_parser.h"
+//#include "common_video/h264/h264_common.h"
 
 #include "H264Framer.h"
 #include "Settings.h"
@@ -30,6 +30,124 @@
 namespace base {
     namespace web_rtc {
 
+static  unsigned char *find_start_code( unsigned char *h264_data, int h264_data_bytes, int *zcount)
+{
+    unsigned char  *eof = h264_data + h264_data_bytes;
+    unsigned char  *p = h264_data;
+    do
+    {
+        int zero_cnt = 1;
+        unsigned char * found = (uint8_t*)memchr(p, 0, eof - p);
+        p = found ? found : eof;
+        while (p + zero_cnt < eof && !p[zero_cnt]) zero_cnt++;
+        if (zero_cnt >= 2 && p[zero_cnt] == 1)
+        {
+            *zcount = zero_cnt + 1;
+            return p + zero_cnt + 1;
+        }
+        p += zero_cnt;
+    } while (p < eof);
+    *zcount = 0;
+    return eof;
+}
+
+/**
+*   Locate NAL unit in given buffer, and calculate it's length
+*/
+/*
+static const uint8_t *find_nal_unit(const uint8_t *h264_data, int h264_data_bytes, int *pnal_unit_bytes)
+{
+    const uint8_t *eof = h264_data + h264_data_bytes;
+    int zcount;
+    const uint8_t *start = find_start_code(h264_data, h264_data_bytes, &zcount);
+    const uint8_t *stop = start;
+    if (start)
+    {
+        stop = find_start_code(start, (int)(eof - start), &zcount);
+        while (stop > start && !stop[-1])
+        {
+            stop--;
+        }
+    }
+
+    *pnal_unit_bytes = (int)(stop - start - zcount);
+    return start;
+}*/
+
+
+    //////////////////////////////////////////////////////////////////////
+int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &sizeof_nal, int &frameType, int &startofNal )
+{
+
+    if( length <  5 )
+    return 0;
+    
+
+    const unsigned char *eof = *nal + length;
+    int zcount;
+    unsigned char *start = find_start_code(*nal, length, &zcount);
+
+    *nal = start;
+    
+    length = length - zcount;
+
+    if( zcount )
+    {
+        payload_type = start[0] & 31;
+        frameType =  (( start[0] & 96) >> 5);
+
+        switch( payload_type)
+        {
+        case 7:
+             //printf("sps\n");
+            break;
+        case 8:
+           // return 1;
+           // printf("pps\n");
+            break;
+        case 5:
+             //printf("idr\n");
+             sizeof_nal = length;
+             return 1;
+           break;
+
+         case 1:
+             //printf("nonidr\n");
+              sizeof_nal = length;
+             return 1;
+           break;
+
+        default:
+              //printf("unknown\n");
+            break;
+        };
+
+    }
+    else
+        return 0;
+
+
+
+
+    const uint8_t *stop = start;
+    if (start)
+    {
+        stop = find_start_code(start, (int)(eof - start), &zcount);
+        while (stop > start && !stop[-1])
+        {
+            stop--;
+        }
+    }
+
+    sizeof_nal = (int)(stop - start - zcount);
+    
+    length = length - sizeof_nal;
+            
+    return 1;          
+    
+     
+}
+        
         NULLDecoder::NULLDecoder()
         {
             
@@ -64,12 +182,12 @@ namespace base {
         }
 
         
-        void NULLDecoder::WriteTofile( unsigned char *buf , int size , int& frameCount)
+        void NULLDecoder::WriteTofile( unsigned char *buf , int size , int& recframeCount)
         {
           
             char filePath[128];
              
-            sprintf(filePath, "%s/frame-%.4d.h264", pathDate.c_str() , ++frameCount);
+            sprintf(filePath, "%s/frame-%.4d.h264", pathDate.c_str() , ++recframeCount);
 
                             
             in_file = fopen(filePath,"wb");
@@ -84,25 +202,30 @@ namespace base {
         }
  
 
-        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size,  int & frameCount , LiveConnectionContext  *ctx ) 
+        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size,  int & recframeCount , LiveConnectionContext  *ctx ) 
         {
 
             bool idr = false;
 
+            
+            SInfo << " size " << size;
+            
             //bool slice = false;
             int cfg = 0;
+                
+            int payload_type; 
+            int sizeof_nal;
+            int frameType;
+            int nextNal;
+             
+            while ( parse_nal(&buffer, size,  payload_type,  sizeof_nal,  frameType, nextNal ))
+            {
+   
+                if (payload_type ==  7 && cfg < 2) {
 
-
-            std::vector<webrtc::H264::NaluIndex> naluIndexes = webrtc::H264::FindNaluIndices( buffer, size);
-
-            for (webrtc::H264::NaluIndex index : naluIndexes) {
-                webrtc::H264::NaluType nalu_type = webrtc::H264::ParseNaluType(buffer[index.payload_start_offset]);
-                // SInfo << __FUNCTION__ << " nalu:" << nalu_type << " payload_start_offset:" << index.payload_start_offset << " start_offset:" << index.start_offset << " size:" << index.payload_size;
-                if (nalu_type == webrtc::H264::NaluType::kSps && cfg < 2) {
-
-                    m_sps.resize(index.payload_size + index.payload_start_offset - index.start_offset);
-
-                    memcpy(&m_sps[0], &buffer[index.start_offset], index.payload_size + index.payload_start_offset - index.start_offset);
+                    m_sps.resize(sizeof_nal+4);
+                    memcpy(&m_sps[0], startcode, 4);
+                    memcpy(&m_sps[4], buffer, sizeof_nal);
 
 //                           unsigned char *tmp = m_sps.data() + 4;
                     qframe->pushsps(m_sps);
@@ -111,7 +234,7 @@ namespace base {
     
 
                     H264Framer obj;
-                    obj.analyze_seq_parameter_set_data(&buffer[index.payload_start_offset], index.payload_size, num_units_in_tick, time_scale);
+                    obj.analyze_seq_parameter_set_data(buffer, sizeof_nal, num_units_in_tick, time_scale);
 
                     //SInfo <<  " Got SPS fps "  << obj.fps << " width "  << obj.width  <<  " height " << obj.height ;
 
@@ -137,23 +260,29 @@ namespace base {
 //                    basicframe.payload.insert(basicframe.payload.begin(), m_sps.begin(), m_sps.end());
 //                    basicframe.fillPars();
 //                    cb_mp4(&basicframe, false); 
+                      cfg++;
+                      buffer = buffer + sizeof_nal;
+                      continue;
                     
-                    
-                    cfg++;
-                } else if (nalu_type == webrtc::H264::NaluType::kPps && cfg < 2) {
+                   
+                } else if (payload_type == 8 && cfg < 2) {
 
-                    m_pps.resize(index.payload_size + index.payload_start_offset - index.start_offset);
+                    m_pps.resize(sizeof_nal+4);
                     // m_pps = webrtc::EncodedImageBuffer::Create((uint8_t*) & buffer[index.start_offset], index.payload_size + index.payload_start_offset - index.start_offset);
-                    memcpy(&m_pps[0], &buffer[index.start_offset], index.payload_size + index.payload_start_offset - index.start_offset);
+                    memcpy(&m_pps[0], startcode, 4);
+                    memcpy(&m_pps[4],  buffer, sizeof_nal);
                     qframe->pushpps(m_pps);
                     
 //                    basicframe.payload.resize(m_pps.size());
 //                    basicframe.payload.insert(basicframe.payload.begin(), m_pps.begin(), m_pps.end());
 //                    basicframe.fillPars(); 
 //                    cb_mp4(&basicframe, false); 
+                    
                             
-                    cfg++;
-                } else if (nalu_type == webrtc::H264::NaluType::kIdr) {
+                      cfg++;
+                      buffer = buffer + sizeof_nal;
+                      continue;
+                } else if (payload_type == 5) {
                     idr = true;
                     SDebug << " idr:" << idr << " cfg:" << cfg << "  sps " << m_sps.size() << " pps  " << m_pps.size() << " vframecount " << vframecount << " width " << width << " height  " << height << " fps " << fps;
                     
@@ -162,9 +291,9 @@ namespace base {
 //                    basicframe.fillPars();
 //                    cb_mp4(&basicframe, true); 
                     
-                } else if (nalu_type == webrtc::H264::NaluType::kSlice) {
+                } else if (payload_type == 1) {
                     //slice = true;
-                    
+                    int x = 1;
 //                    basicframe.payload.resize(index.payload_size + index.payload_start_offset - index.start_offset);
 //                    basicframe.payload.insert(basicframe.payload.begin(),  &buffer[index.start_offset],   &buffer[index.start_offset] + index.payload_size + index.payload_start_offset - index.start_offset);
 //                    basicframe.fillPars();
@@ -173,6 +302,8 @@ namespace base {
                 }
                 else
                 {
+                    buffer = buffer + sizeof_nal;
+                   // size =  size - sizeof_nal;
                     continue;
                 }
        
@@ -221,41 +352,47 @@ namespace base {
             }
             
             
-           // if (  pict_type == AV_PICTURE_TYPE_I)
-            {    
-                Store *store = new Store(&buffer[0], size, width, height, vframecount, idr);
-
-                qframe->push(store);
-
-
-                cb_frame(qframe); 
-
-
-            }
-            
-            if(  frameCount > 1  )
+             if( width == 0 || height == 0)
             {
-                if( frameCount > 2500)
+              exit(0);
+            } 
+             
+            if(m_sps.size() && m_pps.size() ) 
+            {
+               // SInfo << " index.start_offset " << index.start_offset  << " size " << index.payload_size + index.payload_start_offset - index.start_offset;
+                
+                            
+                
+                Store *store = new Store(buffer, sizeof_nal, width, height, vframecount, idr);
+                qframe->push(store);
+                cb_frame(qframe); 
+            }
+                
+                
+            
+            if(  recframeCount > 1  )
+            {
+                if( recframeCount > 2500)
                 {
-                     frameCount = -1;  
+                     recframeCount = -1;  
                     
                 }
-                else if( frameCount == 250)
+                else if( recframeCount == 250)
                 {
-                   ++frameCount ;
+                   ++recframeCount ;
                    mf.save();
                    recordingTime(ctx);
                 }
                 else if(idr )
                 {
-                    WriteTofile(&buffer[0], size, frameCount);
+                    WriteTofile(&buffer[0], size, recframeCount);
                 }
-                else if ( frameCount > 2)
+                else if ( recframeCount > 2)
                 {
-                    WriteTofile(&buffer[0], size, frameCount);
+                    WriteTofile(&buffer[0], size, recframeCount);
                 }
             }
-            else if( Settings::configuration.recording && !frameCount )
+            else if( Settings::configuration.recording && !recframeCount )
             {
                 Timestamp ts;
                 Timestamp::TimeVal time = ts.epochMicroseconds();
@@ -277,11 +414,11 @@ namespace base {
                     
                     mf.root.push_back(dayDate);
                  
-                    WriteTofile(&qframe->m_sps[0], m_sps.size(), frameCount);
-                    WriteTofile(&qframe->m_pps[0], m_pps.size(), frameCount);
+                    WriteTofile(&m_sps[0], m_sps.size(), recframeCount);
+                    WriteTofile(&m_pps[0], m_pps.size(), recframeCount);
                     if(idr )
                     {
-                        WriteTofile(&buffer[0], size, frameCount);
+                        WriteTofile(&buffer[0], size, recframeCount);
                     }
                     
                 }
@@ -289,6 +426,7 @@ namespace base {
             
             
              delayFrame();
+             break;
             
             }// end for
             

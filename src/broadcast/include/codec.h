@@ -92,27 +92,27 @@ struct H265Pars { ///< H264 parameters
     ///short unsigned frameType;
 };
 
-inline std::ostream& operator<<(std::ostream& os, H265Pars const& m)
-{
-    return os << "H265:  slice_type=" << m.slice_type;
-}
-
-inline std::ostream& operator<<(std::ostream& os, H264Pars const& m)
-{
-    return os << "H264: frame_type=" << m.frameType << " slice_type=" << m.slice_type;
-}
-
-struct SetupPars { ///< Setup parameters for decoders and muxers (outdated)
-    // AVCodecID codec_id; //https://ffmpeg.org/doxygen/3.0/group__lavc__core.html#gaadca229ad2c20e060a14fec08a5cc7ce
-    SetupPars()
-        : mediatype(MediaType::none)
-        , codec(Codec::none){};
-    MediaType mediatype;
-    Codec codec;
-};
-inline std::ostream& operator<<(std::ostream& os, SetupPars const& m)
-{
-    return os << "Setup: mediatype=" << int(m.mediatype) << " codec=" << int(m.codec);
-}
+//inline std::ostream& operator<<(std::ostream& os, H265Pars const& m)
+//{
+//    return os << "H265:  slice_type=" << m.slice_type;
+//}
+//
+//inline std::ostream& operator<<(std::ostream& os, H264Pars const& m)
+//{
+//    return os << "H264: frame_type=" << m.frameType << " slice_type=" << m.slice_type;
+//}
+//
+//struct SetupPars { ///< Setup parameters for decoders and muxers (outdated)
+//    // AVCodecID codec_id; //https://ffmpeg.org/doxygen/3.0/group__lavc__core.html#gaadca229ad2c20e060a14fec08a5cc7ce
+//    SetupPars()
+//        : mediatype(MediaType::none)
+//        , codec(Codec::none){};
+//    MediaType mediatype;
+//    Codec codec;
+//};
+//inline std::ostream& operator<<(std::ostream& os, SetupPars const& m)
+//{
+//    return os << "Setup: mediatype=" << int(m.mediatype) << " codec=" << int(m.codec);
+//}
 
 #endif

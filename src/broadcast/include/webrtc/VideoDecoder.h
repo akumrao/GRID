@@ -49,7 +49,7 @@ class FVideoDecoder : public webrtc::VideoDecoder {
   // frame is consumed.
    bool PrefersLateDecoding() const{return 0;};
 
-    char* ImplementationName() const{ return nullptr;}
+    //char* ImplementationName() const{ return nullptr;}
 };
         
 

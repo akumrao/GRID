@@ -162,7 +162,7 @@ void MultiplexMediaCapturer::addMediaTracks(
 
         mapaudio_track[camAud]->set_enabled(true);
         conn->AddTrack(mapaudio_track[camAud], {camAud});
-         mapAudioSource[camAud]->myAddRef(peer->peerid());
+        mapAudioSource[camAud]->myAddRef(peer->peerid());
     }
  
 
@@ -190,7 +190,6 @@ void MultiplexMediaCapturer::remove(web_rtc::Peer* conn )
         mapVideoSource[cam]->stop();
         mapVideoSource[cam]->join();
         #endif
-        
         mutexCap.lock();
 //        std::map< std::string, rtc::scoped_refptr<webrtc::VideoTrackInterface> >::iterator it;
 //        it = mapvideo_track.find(cam);
@@ -201,8 +200,8 @@ void MultiplexMediaCapturer::remove(web_rtc::Peer* conn )
 //        }
         
         
-        SInfo << "mapVideoSource::stop() cam " << cam;
-        mapvideo_track.erase(cam);
+       SInfo << "mapVideoSource::stop() cam " << cam;
+       mapvideo_track.erase(cam);
         //mapvideo_track[cam]->Release();
        // mapVideoSource[cam]->Release();
        if(!conn->trackInfo.start.empty()) 
