@@ -8,8 +8,8 @@
 #include "base/application.h"
 #include "base/filesystem.h"
 
-#include "GenToken.h"
-#include "SecurityToken.h"
+//#include "GenToken.h"
+//#include "SecurityToken.h"
 #include "base/uuid.h"
 
 namespace base {
@@ -244,86 +244,86 @@ namespace base {
             connection()->tcpsend( res.c_str(), res.size(), cb );
         }
         
-        bool BasicResponder::authcheck(net::Request& request, std::string &ret, bool tokenOnly) 
-        {
-           // return true;
-            
-            if(request.has("key"))
-            {
-                std::string key =  request.get("key");
-               
-                if(request.has("token"))
-                {
-                    
-                    std::string token =  request.get("token");
-                    
-                    std::string perm;
-                    uint32_t statusCode;
-
-
-                     MS_SecurityToken obj(token);
-                     obj.validate(key, ret, perm, statusCode, false);
-                     
-                     if(statusCode == 200)
-                     return true;      
-                     else
-                     return false;
-                }
-                else if( !tokenOnly && request.has("exp") && request.has("perm") )
-                {
-                    std::string cam;
-                    if(request.has("cam"))
-                    {
-                       cam =  request.get("cam");
-                    }
-                    else
-                    {
-                        cam = uuid4::uuid();
-                    }
-                    
-                    std::string exp =  request.get("exp");
-                    
-                    
-                    unsigned long iexp = 450;
-                    
-                    try
-                    {
-                        iexp = std::stol(exp);
-                    }
-                    catch(...)
-                    {
-                        
-                    }
-                    
-                    std::string perm =  request.get("perm");
-                    
-                    
-                   ret= SecToken::createSecurityToken(cam, perm, key, iexp);
-                    
-                     return true;   
-                    
-                }
-                else
-                {
-                   if( tokenOnly)
-                    ret = "token missing";
-                   else
-                   ret = "(expiring(secs) or permission missing. Please set exp as 360 and perm as w ";
-                   return false;
-                    
-                }
-               
-           }
-           else
-           {
-                ret = "key missing. Please set key as admin@passsword";
-                return false;
-           }
-          
-            
-            
-        }
-         
+//        bool BasicResponder::authcheck(net::Request& request, std::string &ret, bool tokenOnly) 
+//        {
+//           // return true;
+//            
+//            if(request.has("key"))
+//            {
+//                std::string key =  request.get("key");
+//               
+//                if(request.has("token"))
+//                {
+//                    
+//                    std::string token =  request.get("token");
+//                    
+//                    std::string perm;
+//                    uint32_t statusCode;
+//
+//
+//                     MS_SecurityToken obj(token);
+//                     obj.validate(key, ret, perm, statusCode, false);
+//                     
+//                     if(statusCode == 200)
+//                     return true;      
+//                     else
+//                     return false;
+//                }
+//                else if( !tokenOnly && request.has("exp") && request.has("perm") )
+//                {
+//                    std::string cam;
+//                    if(request.has("cam"))
+//                    {
+//                       cam =  request.get("cam");
+//                    }
+//                    else
+//                    {
+//                        cam = uuid4::uuid();
+//                    }
+//                    
+//                    std::string exp =  request.get("exp");
+//                    
+//                    
+//                    unsigned long iexp = 450;
+//                    
+//                    try
+//                    {
+//                        iexp = std::stol(exp);
+//                    }
+//                    catch(...)
+//                    {
+//                        
+//                    }
+//                    
+//                    std::string perm =  request.get("perm");
+//                    
+//                    
+//                   ret= SecToken::createSecurityToken(cam, perm, key, iexp);
+//                    
+//                     return true;   
+//                    
+//                }
+//                else
+//                {
+//                   if( tokenOnly)
+//                    ret = "token missing";
+//                   else
+//                   ret = "(expiring(secs) or permission missing. Please set exp as 360 and perm as w ";
+//                   return false;
+//                    
+//                }
+//               
+//           }
+//           else
+//           {
+//                ret = "key missing. Please set key as admin@passsword";
+//                return false;
+//           }
+//          
+//            
+//            
+//        }
+//         
 
         void BasicResponder::onRequest(net::Request& request, net::Response& response) {
             STrace << "On complete" << std::endl;

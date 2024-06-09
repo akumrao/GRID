@@ -620,22 +620,22 @@ rtc::scoped_refptr<AudioPacketModule> AudioPacketModule::Create()
     return capture_module;
 }
 
-void AudioPacketModule::onAudioCaptured(IPacket &pack)
-{
-    //            ff::AudioPacket& packet = (ff::AudioPacket&)pack;
-    //
-    //            LTrace("Audio frame captured")
-    //
-    //            // assert(_processThread->IsCurrent());
-    //            rtc::CritScope cs(&_critCallback);
-    //            if (!_audioCallback || !_recording) {
-    //                return;
-    //            }
-    //
-    //            // TODO: Implement planar formats
-    //            auto data = packet.data();
-    //            _sendFifo.write((void**) &data, packet.numSamples);
-}
+//void AudioPacketModule::onAudioCaptured(IPacket &pack)
+//{
+//    //            ff::AudioPacket& packet = (ff::AudioPacket&)pack;
+//    //
+//    //            LTrace("Audio frame captured")
+//    //
+//    //            // assert(_processThread->IsCurrent());
+//    //            rtc::CritScope cs(&_critCallback);
+//    //            if (!_audioCallback || !_recording) {
+//    //                return;
+//    //            }
+//    //
+//    //            // TODO: Implement planar formats
+//    //            auto data = packet.data();
+//    //            _sendFifo.write((void**) &data, packet.numSamples);
+//}
 
 void AudioPacketModule::OnMessage(rtc::Message *msg)
 {

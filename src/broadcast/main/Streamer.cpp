@@ -16,7 +16,7 @@
 #include "base/idler.h"
 #include "base/logger.h"
 #include "Settings.h"
-#include "restApi.h"
+//#include "restApi.h"
 #include "json/configuration.h"
 #include "rtc_base/ssl_adapter.h"
 #include "webrtc/signaler.h"

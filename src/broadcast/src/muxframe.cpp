@@ -122,7 +122,18 @@ void BasicFrame::resize(std::size_t n_bytes) {
 }
 
 
+void BasicFrame::fillPars() {
 
+    fillH264Pars();
+}
+
+
+void BasicFrame::fillH264Pars() {
+  if (payload.size()>(nalstamp.size()+1)) { 
+    h264_pars.slice_type = ( payload[nalstamp.size()] & 31 );
+    h264_pars.frameType =  (( payload[nalstamp.size()] & 96) >> 5);
+  }
+}
 
 
 void BasicFrame::copyBuf( uint8_t* buf , unsigned size )
