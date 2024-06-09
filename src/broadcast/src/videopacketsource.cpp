@@ -119,16 +119,7 @@ VideoPacketSource::~VideoPacketSource()
     }
     
     
-    
-    #if BYPASSGAME
-    if(fp) {
-    fclose(fp);
-    fp = NULL;
-    }
-    #endif
-   // if(!dst_data[0])
-    //av_freep(&dst_data[0]);
-   // sws_freeContext(sws_ctx);
+     SInfo <<  "~VideoPacketSource() over ";
 
 
 }

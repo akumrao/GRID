@@ -65,7 +65,7 @@ private:
     FILE *in_file{nullptr};
     base::cnfg::Configuration mf;
     
-    int cfg{0};
+
     
     bool &recording;
 

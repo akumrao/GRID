@@ -947,7 +947,7 @@ typedef void(*xa_fi_log_cb_t)(xa_fi_log_type_t, const char*);
 void logXaFi(xa_fi_log_type_t, const char*)
 {
 
-  printf("never gets called \n");
+  //printf("never gets called \n");
 
 }
 
@@ -955,7 +955,7 @@ void logXaFi(xa_fi_log_type_t, const char*)
 void logXa(xa_fi_log_type_t log_level, const char * log_string)
 {
 
-   printf("arvind log testing  \n");
+   //printf("arvind log testing  \n");
 
 }
 
@@ -1010,7 +1010,7 @@ int LiveThread::XAInit()
 
     //xa_fi_log_cb_t cb = &logXaFi;
 
-   // xa_sdk_register_log_callback(log_function);
+    xa_sdk_register_log_callback(log_function);
 
    // xa_fi_set_log_callback(cb);
 
@@ -1131,10 +1131,12 @@ void LiveThread:: stop()
       
     if( recording)
     {
+         SInfo << "recording:: stop";
         recording->stop();
         recording->join();
         delete recording ;
         recording = nullptr;
+        SInfo << "recording:: over";
     }
     else
     {

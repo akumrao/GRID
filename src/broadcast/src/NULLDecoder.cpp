@@ -226,7 +226,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
         void NULLDecoder::runNULLEnc(unsigned char *buffer, int size,  int & recframeCount , LiveConnectionContext  *ctx ) 
         {
 
-             
+            int cfg{0}; 
             bool idr = false;
 
             
