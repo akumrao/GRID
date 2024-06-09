@@ -162,6 +162,11 @@ int main(int argc, char** argv) {
         std::_Exit(-1);
     } 
     
+    if (!base::fs::exists(Settings::configuration.storage))
+    {
+        base::fs::mkdir(Settings::configuration.storage);
+    }
+
     
 //    base::cnfg::Configuration encconfig;
 //    encconfig.load("./webrtcStats.js");
@@ -203,7 +208,7 @@ int main(int argc, char** argv) {
 
     //std::string sourceFile(sampleDataDir("test.mp3"));
 
-    web_rtc::LiveConnectionContext  *ctx = new web_rtc::LiveConnectionContext(web_rtc::LiveConnectionType::rtsp, "address", 1, Settings::configuration.cam,  Settings::configuration.tcpRtsp, nullptr ) ; // Request livethread to write into filter info
+    web_rtc::LiveConnectionContext  *ctx = new web_rtc::LiveConnectionContext( Settings::configuration.cam,  nullptr ) ; // Request livethread to write into filter info
 
     base::web_rtc::Signaler sig(ctx);
 
@@ -247,9 +252,9 @@ int main(int argc, char** argv) {
     rtc::CleanupSSL();
     Logger::destroy();
     
-    if(ctx->txt)
-    delete ctx->txt;
-    ctx->txt = nullptr;
+//    if(ctx->txt)
+//    delete ctx->txt;
+//    ctx->txt = nullptr;
     
 //    restApi->stop();
         

@@ -4,12 +4,12 @@
 CC	= gcc
 CXX     = g++
 TARGET=runTest # define the name of the executable
-SOURCES=$(wildcard *.cpp ../src/json.cpp ../src/configuration.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp  ../../net/src/*.cpp ../../http/src/*.cpp ../../net/uv_multiplex/src/*.cpp ../../http_parser/*.cpp    )
+SOURCES=$(wildcard test.cpp Settings.cpp  ../src/json.cpp ../src/configuration.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp  ../../net/src/*.cpp ../../http/src/*.cpp ../../net/uv_multiplex/src/*.cpp ../../http_parser/*.cpp    )
 
 CXXFLAGS   := -g  -std=c++11 -Wno-inconsistent-missing-override -Wno-uninitialized -fpermissive
  
 
-CPPFLAGS   := -I../../facedetec/include/  -I../../base/token/  -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../net/uv_multiplex/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
+CPPFLAGS   := -I./ -I../../facedetec/include/  -I../../base/token/  -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../net/uv_multiplex/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
 -I../xailient-sdk/include/  -DHTTPSSL=1
               
 LDFLAGS   := -L/data/sound/lib -L/usr/lib/x86_64-linux-gnu

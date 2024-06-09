@@ -475,9 +475,8 @@ namespace base {
 
             NULLEncBuffer* RawFrame = static_cast<NULLEncBuffer*> (input_frame.video_frame_buffer().get());
             
-            
-            
-            if( webrtc::VideoFrameBuffer::Type::kI420  ==  RawFrame->type()  ||   RawFrame->recording  !=  recording ) // pause or muted condtion
+          
+            if( webrtc::VideoFrameBuffer::Type::kI420  ==  RawFrame->type()  ||   (RawFrame->recording  !=  recording) ) // pause or muted condtion
             {
                   return WEBRTC_VIDEO_CODEC_OK;
             }
@@ -532,7 +531,8 @@ namespace base {
 
                 Store payload;
 
-                  
+                std::vector< uint8_t> m_sps; 
+                std::vector< uint8_t> m_pps;    
 
                 if (frame_types != nullptr) {
                     // Skip frame?
@@ -546,10 +546,13 @@ namespace base {
                     if ((*frame_types)[i] == webrtc::VideoFrameType::kVideoFrameKey) {
                         SWarn << " webrtc::VideoFrameType::kVideoFrameKey";
                         
-                        if(!RawFrame->qframe->key((long)this, &payload))
+                        if(!RawFrame->qframe->key((long)this, &payload, m_sps, m_pps ))
                         {
                              return WEBRTC_VIDEO_CODEC_OK;
                         }
+
+                       SInfo << "RawFrame->recording " << RawFrame->recording <<  " recording "  << recording;
+          
                       
                     }
                     else
@@ -625,7 +628,72 @@ namespace base {
                     // Split encoded image up into fragments. This also updates
                     // |encoded_image_|.
                     webrtc::RTPFragmentationHeader frag_header;
-                    RtpFragmentize(&encoded_images_[i], &encoded_image_buffers_[i], payload.width_, payload.height_, payload.payload ,   &frag_header);
+                    int index =0;
+                    
+                    webrtc::EncodedImage *encoded_image = &encoded_images_[i];
+                    
+                    ////////////////////////////////
+                    
+                    int required_size = payload.payload.size() + 1024*4;
+
+
+
+                    if (encoded_image->size() < required_size) 
+                    {
+                    // Increase buffer size. Allocate enough to hold an unencoded image, this
+                    // should be more than enough to hold any encoded data of future frames of
+                    // the same size (avoiding possible future reallocation due to variations in
+                    // required size).
+
+
+                        encoded_image->Allocate(required_size);
+                     }
+
+                     encoded_image->set_size(0);
+       
+                           
+                    
+                    
+                    
+                    
+                    if ((*frame_types)[i] == webrtc::VideoFrameType::kVideoFrameKey)
+                    {
+                        frag_header.VerifyAndAllocateFragmentationHeader(3);
+                        
+                        int x = m_sps.size()- 4;
+                        unsigned char *p = m_sps.data();
+                        
+                        memcpy(encoded_image->data() + encoded_image->size(), start_code, sizeof (startcode));
+                        encoded_image->set_size(encoded_image->size() + sizeof (start_code));
+                        frag_header.fragmentationOffset[index] = encoded_image->size();
+                        memcpy(encoded_image->data() + encoded_image->size(), m_sps.data() + 4, m_sps.size()- 4 );
+                         encoded_image->set_size(encoded_image->size() + m_sps.size() -4);
+                        frag_header.fragmentationLength[index] = static_cast<size_t> ( m_sps.size() -4);
+                        
+                        ++index;
+                                
+                        memcpy(encoded_image->data() + encoded_image->size(), start_code, sizeof (startcode));
+                        encoded_image->set_size(encoded_image->size() + sizeof (start_code));
+                        frag_header.fragmentationOffset[index] = encoded_image->size();
+                        memcpy(encoded_image->data() + encoded_image->size(), m_pps.data() + 4, m_pps.size() -4 );
+                        encoded_image->set_size(encoded_image->size() + m_pps.size() -4);
+                        frag_header.fragmentationLength[index] = static_cast<size_t> ( m_pps.size() -4);
+                        
+                        ++index;
+                    }
+                    else
+                       frag_header.VerifyAndAllocateFragmentationHeader(1);
+                    
+                    
+                    memcpy(encoded_image->data() + encoded_image->size(), start_code, sizeof (startcode));
+                    encoded_image->set_size(encoded_image->size() + sizeof (start_code));
+                    frag_header.fragmentationOffset[index] = encoded_image->size();
+                     memcpy(encoded_image->data() + encoded_image->size(), payload.payload.data() + 4, payload.payload.size() -4 );
+                     encoded_image->set_size(encoded_image->size() + payload.payload.size() -4);
+                    frag_header.fragmentationLength[index] = static_cast<size_t> ( payload.payload.size() -4);
+                
+                    
+                   // RtpFragmentize(&encoded_images_[i], &encoded_image_buffers_[i], payload.width_, payload.height_, payload.payload ,   &frag_header);
                     // av_packet_unref(encoders_[i]->pkt);
                     // Encoder can skip frames to save bandwidth in which case
                     // |encoded_images_[i]._length| == 0.

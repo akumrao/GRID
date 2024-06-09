@@ -235,6 +235,7 @@ void Signaler::onPeerMessage(std::string &name, json const &m)
     if (m.find("starttime") != m.end())
     {
         camT.start = m["starttime"].get<std::string>();
+        camT.recording = true;
     }
 
 

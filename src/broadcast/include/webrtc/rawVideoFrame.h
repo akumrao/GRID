@@ -40,15 +40,14 @@ public:
           vframecount(vframecount),
           idr(idr)
     {
-        payload.reserve(360000);  // __memmove_avx_unaligned segfaul
+       // payload.reserve(sz);  // __memmove_avx_unaligned segfaul
              
         // if we reserve the std::vector first and the problem is gone, big chances that this is the reason behind.
         //there might be a memeory relocation problem, say: one thread insert a value, causing the vector to enlarge it's size and relocate all it's elements in another memory range. However, another thread stll owns some ref(pointer) to the original memory range of this vector, this might cause the seg fault.
 
-        payload.resize(sz+4);
+        payload.resize(sz);
         
-        memcpy(payload.data(), startcode, 4);
-        memcpy(&payload.data()[4], p, sz);
+        memcpy(payload.data(), p, sz);
 
         if (idr)
             _frameType = webrtc::VideoFrameType::kVideoFrameKey;
@@ -57,9 +56,11 @@ public:
     }
 
     Store() {
-        payload.reserve(360000); 
+       // payload.reserve(360000); 
     }
-
+        
+//    ~Store();
+  
     webrtc::VideoFrameType _frameType{webrtc::VideoFrameType::kVideoFrameDelta};
     std::vector<uint8_t> payload;
     int width_;
@@ -92,7 +93,7 @@ public:
     //            }
 
     bool next(long ptr, Store *s);
-    bool key(long ptr, Store *s);
+    bool key(long ptr, Store *s , std::vector< uint8_t> &sps,  std::vector< uint8_t> &pps );
     
     void pushsps(std::vector< uint8_t> & sps);
 

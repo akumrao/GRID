@@ -23,7 +23,7 @@ class NULLDecoder
 public:
 
 
-    NULLDecoder();
+    NULLDecoder(bool &recording );
     ~NULLDecoder();
     
     uint64_t startStreaming{0};
@@ -64,6 +64,10 @@ private:
     std::string pathDate;
     FILE *in_file{nullptr};
     base::cnfg::Configuration mf;
+    
+    int cfg{0};
+    
+    bool &recording;
 
         
 };

@@ -30,6 +30,7 @@
 namespace base {
     namespace web_rtc {
 
+ /*
 static  unsigned char *find_start_code( unsigned char *h264_data, int h264_data_bytes, int *zcount)
 {
     unsigned char  *eof = h264_data + h264_data_bytes;
@@ -51,32 +52,10 @@ static  unsigned char *find_start_code( unsigned char *h264_data, int h264_data_
     return eof;
 }
 
-/**
-*   Locate NAL unit in given buffer, and calculate it's length
-*/
-/*
-static const uint8_t *find_nal_unit(const uint8_t *h264_data, int h264_data_bytes, int *pnal_unit_bytes)
-{
-    const uint8_t *eof = h264_data + h264_data_bytes;
-    int zcount;
-    const uint8_t *start = find_start_code(h264_data, h264_data_bytes, &zcount);
-    const uint8_t *stop = start;
-    if (start)
-    {
-        stop = find_start_code(start, (int)(eof - start), &zcount);
-        while (stop > start && !stop[-1])
-        {
-            stop--;
-        }
-    }
-
-    *pnal_unit_bytes = (int)(stop - start - zcount);
-    return start;
-}*/
 
 
     //////////////////////////////////////////////////////////////////////
-int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &sizeof_nal, int &frameType, int &startofNal )
+int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &sizeof_nal, int &frameType )
 {
 
     if( length <  5 )
@@ -99,22 +78,20 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
         switch( payload_type)
         {
         case 7:
-             //printf("sps\n");
+            // printf("sps\n");
             break;
         case 8:
            // return 1;
-           // printf("pps\n");
+            printf("pps\n");
             break;
         case 5:
-             //printf("idr\n");
-             sizeof_nal = length;
-             return 1;
+             printf("idr\n");
+             //return 1;
            break;
 
          case 1:
-             //printf("nonidr\n");
-              sizeof_nal = length;
-             return 1;
+              printf("nonidr\n");
+             //return 1;
            break;
 
         default:
@@ -147,8 +124,52 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
     
      
 }
+   */
         
-        NULLDecoder::NULLDecoder()
+        
+            //////////////////////////////////////////////////////////////////////
+        int parse_nal(  unsigned char *nal, int length , int & payload_type,  int &frameType )
+        {
+
+            if( length <  5 )
+            return 0;
+
+            if( !memcmp(nal, startcode, 4  ))
+            {      
+                payload_type = nal[4] & 31;
+                frameType =  (( nal[4] & 96) >> 5);
+
+                switch( payload_type)
+                {
+                case 7:
+                     printf("sps\n");
+                    break;
+                case 8:
+                    printf("pps\n");
+                    break;
+                case 5:
+                    printf("idr\n");
+         
+                   break;
+
+                 case 1:
+                  //    printf("nonidr\n");
+                    
+                   break;
+
+                default:
+                      printf("unknown\n");
+                      return 0;
+                    break;
+                };
+
+            }
+
+            return 1;          
+
+        }
+        
+        NULLDecoder::NULLDecoder( bool &recording ):recording(recording)
         {
             
             SInfo << "NULLDecoder()";
@@ -187,7 +208,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
           
             char filePath[128];
              
-            sprintf(filePath, "%s/frame-%.4d.h264", pathDate.c_str() , ++recframeCount);
+            sprintf(filePath, "%s/frame-%.3d.h264", pathDate.c_str() , ++recframeCount);
 
                             
             in_file = fopen(filePath,"wb");
@@ -205,38 +226,38 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
         void NULLDecoder::runNULLEnc(unsigned char *buffer, int size,  int & recframeCount , LiveConnectionContext  *ctx ) 
         {
 
+             
             bool idr = false;
 
             
-            SInfo << " size " << size;
+          //  SInfo << " full buffer size " << size;
             
-            //bool slice = false;
-            int cfg = 0;
+            bool slice = false;
+           
                 
             int payload_type; 
-            int sizeof_nal;
             int frameType;
-            int nextNal;
              
-            while ( parse_nal(&buffer, size,  payload_type,  sizeof_nal,  frameType, nextNal ))
+            while ( parse_nal(buffer, size,  payload_type,   frameType ))
             {
+                
+
    
                 if (payload_type ==  7 && cfg < 2) {
 
-                    m_sps.resize(sizeof_nal+4);
-                    memcpy(&m_sps[0], startcode, 4);
-                    memcpy(&m_sps[4], buffer, sizeof_nal);
+                    m_sps.resize(size);
+
+                    memcpy(&m_sps[0], buffer, size);
 
 //                           unsigned char *tmp = m_sps.data() + 4;
                     qframe->pushsps(m_sps);
                     unsigned num_units_in_tick, time_scale;
-                    
-    
+                      
 
                     H264Framer obj;
-                    obj.analyze_seq_parameter_set_data(buffer, sizeof_nal, num_units_in_tick, time_scale);
+                    obj.analyze_seq_parameter_set_data(buffer+4, size - 4 , num_units_in_tick, time_scale);
 
-                    //SInfo <<  " Got SPS fps "  << obj.fps << " width "  << obj.width  <<  " height " << obj.height ;
+                    SInfo   <<  "Got SPS fps "  << obj.fps << " width "  << obj.width  <<  " height " << obj.height ;
 
                     //absl::optional<webrtc::SpsParser::SpsState> sps_;
                     //static_cast<bool> (sps_ = webrtc::SpsParser::ParseSps(&buffer[index.start_offset + index.payload_start_offset + webrtc::H264::kNaluTypeSize], index.payload_size - webrtc::H264::kNaluTypeSize));
@@ -261,16 +282,15 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
 //                    basicframe.fillPars();
 //                    cb_mp4(&basicframe, false); 
                       cfg++;
-                      buffer = buffer + sizeof_nal;
-                      continue;
+
+                      break;
                     
                    
                 } else if (payload_type == 8 && cfg < 2) {
 
-                    m_pps.resize(sizeof_nal+4);
+                    m_pps.resize(size);
                     // m_pps = webrtc::EncodedImageBuffer::Create((uint8_t*) & buffer[index.start_offset], index.payload_size + index.payload_start_offset - index.start_offset);
-                    memcpy(&m_pps[0], startcode, 4);
-                    memcpy(&m_pps[4],  buffer, sizeof_nal);
+                    memcpy(&m_pps[0],  buffer, size);
                     qframe->pushpps(m_pps);
                     
 //                    basicframe.payload.resize(m_pps.size());
@@ -280,11 +300,11 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
                     
                             
                       cfg++;
-                      buffer = buffer + sizeof_nal;
-                      continue;
+                     
+                      break;
                 } else if (payload_type == 5) {
                     idr = true;
-                    SDebug << " idr:" << idr << " cfg:" << cfg << "  sps " << m_sps.size() << " pps  " << m_pps.size() << " vframecount " << vframecount << " width " << width << " height  " << height << " fps " << fps;
+                     SInfo << " idr:" << idr << " recording " << recording << " this " << this <<  " cfg:" << cfg << "  sps " << m_sps.size() << " pps  " << m_pps.size() << " vframecount " << vframecount << " width " << width << " height  " << height << " fps " << fps;
                     
 //                    basicframe.payload.resize(index.payload_size + index.payload_start_offset - index.start_offset);
 //                    basicframe.payload.insert(basicframe.payload.begin(),  &buffer[index.start_offset],   &buffer[index.start_offset] + index.payload_size + index.payload_start_offset - index.start_offset);
@@ -292,7 +312,10 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
 //                    cb_mp4(&basicframe, true); 
                     
                 } else if (payload_type == 1) {
-                    //slice = true;
+                   
+                    
+                   // SInfo << "slice";
+
                     int x = 1;
 //                    basicframe.payload.resize(index.payload_size + index.payload_start_offset - index.start_offset);
 //                    basicframe.payload.insert(basicframe.payload.begin(),  &buffer[index.start_offset],   &buffer[index.start_offset] + index.payload_size + index.payload_start_offset - index.start_offset);
@@ -302,45 +325,12 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
                 }
                 else
                 {
-                    buffer = buffer + sizeof_nal;
+      
                    // size =  size - sizeof_nal;
-                    continue;
+                    break;
                 }
        
-                    // 
 
-                    //                rtc::scoped_refptr<webrtc::EncodedImageBufferInterface> encodedData = webrtc::EncodedImageBuffer::Create((uint8_t*) buffer, frameSize);
-                    //                delete [] buffer;
-                    //            // add last SPS/PPS if not present before an IDR
-                    //            if (idr && (m_sps.size() != 0) && (m_pps.size() != 0)) {
-                    //                //char * newBuffer = new char[frameSize + m_sps.size() + m_pps.size()];
-                    //                // memcpy(newBuffer, &m_sps[0], m_sps.size());
-                    //                // memcpy(newBuffer + m_sps.size(), &m_pps[0], m_pps.size());
-                    //                //memcpy(newBuffer + m_sps.size() + m_pps.size(), buffer, frameSize);
-                    //                // encodedData = webrtc::EncodedImageBuffer::Create((uint8_t*) newBuffer, encodedData->size() + m_sps->size() + m_pps->size());
-                    //                // delete [] newBuffer;
-                    //                // if(!frameNo)
-                    //                {
-                    //                    //std::cout << " payload size " <<   basic_frame->payload.size()  << std::endl << std::flush;
-                    //
-                    //                   // basic_frame->payload.insert(basic_frame->payload.begin(), m_pps.begin(), m_pps.end());
-                    //
-                    //                    //  std::cout << " payload size " <<   basic_frame->payload.size()  << std::endl << std::flush;
-                    //
-                    //                   // basic_frame->payload.insert(basic_frame->payload.begin(), m_sps.begin(), m_sps.end());
-                    //
-                    //                    frameNo++;
-                    //
-                    //                }
-                    //
-                    //
-                    //            } else if (slice && frameNo) {
-                    //                frameNo++;
-                    //            } 
-                    //            else
-                    //            {
-                    //              
-                    //            }
                     
                     
                  
@@ -352,23 +342,24 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
             }
             
             
-             if( width == 0 || height == 0)
-            {
-              exit(0);
-            } 
+//             if( width == 0 || height == 0)
+//            {
+//              exit(0);
+//            } 
              
             if(m_sps.size() && m_pps.size() ) 
             {
                // SInfo << " index.start_offset " << index.start_offset  << " size " << index.payload_size + index.payload_start_offset - index.start_offset;
                 
-                            
+                if(recording)
+                {
+                    int x = 0;
+                }
                 
-                Store *store = new Store(buffer, sizeof_nal, width, height, vframecount, idr);
+                Store *store = new Store(buffer, size, width, height, vframecount, idr);
                 qframe->push(store);
                 cb_frame(qframe); 
             }
-                
-                
             
             if(  recframeCount > 1  )
             {
@@ -426,7 +417,9 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
             
             
              delayFrame();
+             
              break;
+             
             
             }// end for
             

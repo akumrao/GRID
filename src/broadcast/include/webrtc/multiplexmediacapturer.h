@@ -54,7 +54,7 @@ public:
 
     void openFile(const std::string &dir, const std::string &file, const std::string &type, bool loop = true);
 
-    std::string random_string();
+   // std::string random_string();
 
    void addMediaTracks(webrtc::PeerConnectionFactoryInterface* factory,
                         webrtc::PeerConnectionInterface* conn, web_rtc::Peer *peer);

@@ -42,7 +42,7 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
     #endif
     
     
-    this->ctx->liveFrame = this;
+
     //ctx = new web_rtc::LiveConnectionContext(LiveConnectionType::rtsp, "address", 1, cam, cam, Settings::configuration.tcpRtsp, this ) ; // Request livethread to write into filter info
     
     if(Settings::configuration.cloud)
@@ -55,8 +55,16 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
    
     liveThread = new LiveThread("live", ctx,  trackInfo, recording);
     liveThread->start();
-    this->ctx->liveThread = liveThread;
-
+    if(recording)
+    {
+        this->ctx->recFrame= this;
+        //this->ctx->liveFrame = nullptr; 
+    }
+    else
+    {
+        this->ctx->liveThread = liveThread;
+        this->ctx->liveFrame = this;
+    }    
    
    
     //ctx->txt = new web_rtc::TextFrameFilter("txt", cam, self);
@@ -87,17 +95,17 @@ VideoPacketSource::~VideoPacketSource()
     liveThread =nullptr;
                    
            
-    if(ctx->fragmp4_filter)
-    {
-
-        delete ctx->fragmp4_filter;
-        ctx->fragmp4_filter = nullptr;
-    }
-//            
-    if(ctx->fragmp4_muxer)
-    delete ctx->fragmp4_muxer;
-    ctx->fragmp4_muxer = nullptr;
-           
+//    if(ctx->fragmp4_filter)
+//    {
+//
+//        delete ctx->fragmp4_filter;
+//        ctx->fragmp4_filter = nullptr;
+//    }
+////            
+//    if(ctx->fragmp4_muxer)
+//    delete ctx->fragmp4_muxer;
+//    ctx->fragmp4_muxer = nullptr;
+//           
            
             
 
@@ -218,7 +226,7 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 
                 if(!nullDecoder)
                 {
-                    nullDecoder = new NULLDecoder( );
+                    nullDecoder = new NULLDecoder( recording );
 
                     nullDecoder->cb_frame = [&](stFrame* frame) {
 

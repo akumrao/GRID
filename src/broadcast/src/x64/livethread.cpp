@@ -145,16 +145,16 @@ void T31H264::run()
                       
                     if(ctx->signaler)
                     {
-//                        cnfg::Configuration identity;
-//
-//                        identity.load("./event.json");
-//                       // std::string xaidentity = identity.root.dump();
-//                        
-//                        json m;
-//                        
-//                        m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
-//                        m["messagePayload"] =  identity.root;
-//                        ctx->signaler->postAppMessage( m);
+                        cnfg::Configuration identity;
+
+                        identity.load("./event.json");
+                       // std::string xaidentity = identity.root.dump();
+                        
+                        json m;
+                        
+                        m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
+                        m["messagePayload"] =  identity.root;
+                        ctx->signaler->postAppMessage( m);
 
 
                     }
@@ -194,6 +194,25 @@ void T31H264::run()
     {
 
         ncount = ncount%240;
+        
+        if( ncount == 150 )
+        {
+             if(ctx->signaler)
+             {
+                cnfg::Configuration identity;
+
+                identity.load("./event.json");
+               // std::string xaidentity = identity.root.dump();
+
+                json m;
+
+                m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
+                m["messagePayload"] =  identity.root;
+                ctx->signaler->postAppMessage( m);
+
+
+            }
+        }
 
         sprintf(outPutNameBuffer, "%s/frame-%.3d.h264",    "./frames/h264", ++ncount);
 
@@ -210,7 +229,6 @@ void T31H264::run()
            basicframe.data = inbuf ;
            basicframe.sz = bytes_read;
         }
-
 
        // ctx.muRecFrame.lock();
         if(ctx->liveFrame)
@@ -404,7 +422,7 @@ void Recording::run()
 
         ncount = ncount%250;
 
-        sprintf(outPutNameBuffer, "%s/frame-%.4d.h264",date.c_str(), ++ncount);
+        sprintf(outPutNameBuffer, "%s/frame-%.3d.h264",date.c_str(), ++ncount);
 
         FILE *fp = fopen(outPutNameBuffer, "rb");
         if(!fp) {
@@ -422,8 +440,8 @@ void Recording::run()
 
 
        // ctx.muRecFrame.lock();
-        if(ctx->liveFrame)
-        ctx->liveFrame->run(&basicframe); // starts the frame filter chain
+        if(ctx->recFrame)
+        ctx->recFrame->run(&basicframe); // starts the frame filter chain
         //ctx->muRecFrame.unlock(); 
 
         //SInfo << "payload " << bytes_read;

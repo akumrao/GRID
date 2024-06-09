@@ -1209,9 +1209,9 @@ void Recording::run()
     while(!stopped() )
     {
 
-        ncount = ncount%300;
+        ncount = ncount%250;
 
-        sprintf(outPutNameBuffer, "%s/frame-%.4d.h264",date.c_str(), ++ncount);
+        sprintf(outPutNameBuffer, "%s/frame-%.3d.h264",date.c_str(), ++ncount);
 
         FILE *fp = fopen(outPutNameBuffer, "rb");
         if(!fp) {
@@ -1229,8 +1229,8 @@ void Recording::run()
 
 
        // ctx.muRecFrame.lock();
-        if(ctx->liveFrame)
-        ctx->liveFrame->run(&basicframe); // starts the frame filter chain
+        if(ctx->recFrame)
+        ctx->recFrame->run(&basicframe); // starts the frame filter chain
         //ctx->muRecFrame.unlock(); 
 
         //SInfo << "payload " << bytes_read;

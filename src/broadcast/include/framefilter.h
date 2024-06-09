@@ -53,7 +53,7 @@ struct st_track
    // int height{0};
     //int scale{1};
    // int speed{1};
-    //bool ai{false};
+    bool recording{false};
     bool camAudio{false};
     bool appAudio{false};
     
@@ -66,7 +66,14 @@ struct st_track
         
       //  if(!trackid.size())
        // trackid = camid+ "_" + start+ "_" + end +"_" + std::to_string(width)+std::to_string(height)+std::to_string(scale)+std::to_string(speed)+encoder;
+        if(recording)
+        {
+            return "recording";
+           
+        }
+        
         return camid + start;
+        
             
     }
     

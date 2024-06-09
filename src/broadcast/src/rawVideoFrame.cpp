@@ -25,6 +25,10 @@ NULLEncBuffer::NULLEncBuffer(stFrame *qframe, int w, int h, uint32_t fps, bool &
 }
 
 
+//Store::~Store()
+//{
+//    printf("release~store\n");
+//}
 
 
 stFrame::~stFrame()
@@ -106,7 +110,8 @@ void stFrame::push(Store *store)
     // SInfo << "push() " <<  queue.size();
 }
 
-bool stFrame::key(long ptr, Store *s)
+bool stFrame::key(long ptr, Store *s , std::vector< uint8_t> &sps,  std::vector< uint8_t> &pps )
+                          
 {
    bool ret =  next( ptr, s);
     
@@ -114,8 +119,14 @@ bool stFrame::key(long ptr, Store *s)
     {
          SWarn << "Not a possible state";
     }
-    
    
+   sps.resize( m_sps.size());
+   pps.resize( m_pps.size());
+   
+   memcpy(&sps[0],  &m_sps[0], m_sps.size());
+   memcpy(&pps[0], &m_pps[0], m_pps.size());
+   
+   /**
    char * newBuffer = new char[s->payload.size() + m_sps.size() + m_pps.size()];
    memcpy(newBuffer, &m_sps[0], m_sps.size());
    memcpy(newBuffer + m_sps.size(), &m_pps[0], m_pps.size());
@@ -124,6 +135,7 @@ bool stFrame::key(long ptr, Store *s)
     s->payload.resize(m_sps.size() + m_pps.size()+ s->payload.size() );
     memcpy( &s->payload[0], newBuffer, m_sps.size() + m_pps.size()+ s->payload.size() );
     delete [] newBuffer;
+    */
    return ret;
 }
 bool stFrame::next(long ptr, Store *s)

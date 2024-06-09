@@ -71,21 +71,21 @@ void MultiplexMediaCapturer::openFile(
 }
 
 
-std::string MultiplexMediaCapturer::random_string()
-{
-    //    std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
-    //
-    //    std::random_device rd;
-    //    std::mt19937 generator(rd());
-    //
-    //    std::shuffle(str.begin(), str.end(), generator);
-    //
-    //    return str.substr(0, 8);    // assumes 32 < number of characters in str
-
-    std::string str = std::to_string(++PlayerID);
-
-    return str;
-}
+//std::string MultiplexMediaCapturer::random_string()
+//{
+//    //    std::string str("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
+//    //
+//    //    std::random_device rd;
+//    //    std::mt19937 generator(rd());
+//    //
+//    //    std::shuffle(str.begin(), str.end(), generator);
+//    //
+//    //    return str.substr(0, 8);    // assumes 32 < number of characters in str
+//
+//    std::string str = std::to_string(++PlayerID);
+//
+//    return str;
+//}
 
 rtc::scoped_refptr<AudioPacketModule> MultiplexMediaCapturer::getAudioModule()
 {
@@ -128,7 +128,7 @@ void MultiplexMediaCapturer::addMediaTracks(
     {
       if( mapVideoSource.find(cam) == mapVideoSource.end())
       {
-        mapVideoSource[cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  ctx, &peer->trackInfo, !peer->trackInfo.start.empty() ) ;
+        mapVideoSource[cam] = new rtc::RefCountedObject<VideoPacketSource>("mapVideoSource" ,  ctx, &peer->trackInfo, peer->trackInfo.recording ) ;
       }
       
       mapvideo_track[cam] =     factory->CreateVideoTrack(cam, mapVideoSource[cam]);
@@ -153,7 +153,7 @@ void MultiplexMediaCapturer::addMediaTracks(
 
         if( mapaudio_track.find(camAud) == mapaudio_track.end())
         {
-          mapAudioSource[camAud] = new rtc::RefCountedObject<LocalAudioSource>("mapAudioSource" ,  ctx, &peer->trackInfo, !peer->trackInfo.start.empty() ) ;
+          mapAudioSource[camAud] = new rtc::RefCountedObject<LocalAudioSource>("mapAudioSource" ,  ctx, &peer->trackInfo, peer->trackInfo.recording  ) ;
           mapaudio_track[camAud] = factory->CreateAudioTrack(camAud, mapAudioSource[camAud]);
 
 
@@ -204,7 +204,7 @@ void MultiplexMediaCapturer::remove(web_rtc::Peer* conn )
        mapvideo_track.erase(cam);
         //mapvideo_track[cam]->Release();
        // mapVideoSource[cam]->Release();
-       if(!conn->trackInfo.start.empty()) 
+       if(conn->trackInfo.recording ) 
        mapVideoSource.erase(vsItr);
        mutexCap.unlock();
 
