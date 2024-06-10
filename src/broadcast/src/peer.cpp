@@ -189,11 +189,11 @@ void Peer::recvSDP(
     std::string &vtrackid,
     std::string &atrackid)
 {
-    LDebug( trackInfo.peerID, ": Received answer ", type, ": ", sdp)
+    SDebug << "Received SDP " <<  type  <<   ": " <<  sdp ;
 
         webrtc::SdpParseError error;
     webrtc::SessionDescriptionInterface *desc(webrtc::CreateSessionDescription(type, sdp, &error));
-    if (!desc) { throw std::runtime_error("Can't parse remote SDP: " + error.description); }
+    if (!desc) { SError << "Can't parse remote SDP: " <<  error.description; }
     _peerConnection->SetRemoteDescription(DummySetSessionDescriptionObserver::Create(), desc);
 
 
@@ -204,7 +204,8 @@ void Peer::recvSDP(
     if (type == "offer")
     {
         // assert(_mode == Answer);
-        SError <<  trackInfo.peerID << ": wrong state Received " <<  type  <<  ": " << sdp;
+        SInfo <<  trackInfo.peerID << ": wrong state Received " <<  type ;
+                
         _peerConnection->CreateAnswer(this, options);
     }
     else
@@ -285,7 +286,7 @@ void Peer::recvCandidate(const std::string &mid, int mlineindex, const std::stri
     webrtc::SdpParseError error;
     std::unique_ptr<webrtc::IceCandidateInterface> candidate(
         webrtc::CreateIceCandidate(mid, mlineindex, sdp, &error));
-    if (!candidate) { throw std::runtime_error("Can't parse remote candidate: " + error.description); }
+    if (!candidate) { SError << "Can't parse remote candidate: " <<  error.description; }
     _peerConnection->AddIceCandidate(candidate.get());
 }
 

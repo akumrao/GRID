@@ -190,7 +190,7 @@ class LiveThread
 {
     public:
         
-    LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &recording);
+    LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &record);
 
     st_track *trackInfo ;
     LiveConnectionContext *ctx;
@@ -225,6 +225,8 @@ public:
     T31RGBA *t31rgba{nullptr};
     
     Recording *recording{nullptr};
+
+    bool &record;
 
 };
 

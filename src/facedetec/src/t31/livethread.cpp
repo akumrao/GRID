@@ -1114,22 +1114,25 @@ int LiveThread::XAExit()
 
  LiveThread::~LiveThread() {
 
+  if(!record)
+  {
 
-  T31Exit();
-  XAExit();
+    T31Exit();
+    XAExit();
+  }
 
   SInfo << "~LiveThread";
 
 }
 
 
-void LiveThread:: stop()
+void LiveThread::stop()
 {
     SInfo << "LiveThread:: stop";
 
     
       
-    if( recording)
+    if( record)
     {
          SInfo << "recording:: stop";
         recording->stop();
@@ -1160,7 +1163,7 @@ void LiveThread:: stop()
 }
 
 
- LiveThread::LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &record):ctx(ctx),trackInfo(trackInfo)
+ LiveThread::LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &record):ctx(ctx),trackInfo(trackInfo),record(record)
 {
 
     if(!record)
@@ -1180,7 +1183,7 @@ void LiveThread:: stop()
 void LiveThread::start()
 {
     
-    if( recording)
+    if( record)
     {
         recording->start();
     }
@@ -1242,7 +1245,8 @@ void Recording::run()
        //  base::sleep(10);   
     }
         
-       
+      
+    SInfo << "Recording::run() over";
         
 }
 

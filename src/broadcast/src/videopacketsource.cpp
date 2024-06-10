@@ -110,7 +110,7 @@ VideoPacketSource::~VideoPacketSource()
             
 
     
-    
+     SInfo <<  "delete nullDecoder";
 
     if(nullDecoder)
     {

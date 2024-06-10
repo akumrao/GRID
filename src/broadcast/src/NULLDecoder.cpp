@@ -142,13 +142,13 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
                 switch( payload_type)
                 {
                 case 7:
-                     printf("sps\n");
+                   //  printf("sps\n");
                     break;
                 case 8:
-                    printf("pps\n");
+                   // printf("pps\n");
                     break;
                 case 5:
-                    printf("idr\n");
+                   // printf("idr\n");
          
                    break;
 
@@ -198,8 +198,11 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
 
         NULLDecoder::~NULLDecoder() {
             
-            delete qframe;
             SInfo << "~NULLDecoder()";
+            qframe->clear();
+            SInfo << "~NULLDecoder()1";
+            delete qframe;
+            SInfo << "~NULLDecoder() over";
         }
 
         
@@ -257,7 +260,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
                     H264Framer obj;
                     obj.analyze_seq_parameter_set_data(buffer+4, size - 4 , num_units_in_tick, time_scale);
 
-                    SInfo   <<  "Got SPS fps "  << obj.fps << " width "  << obj.width  <<  " height " << obj.height ;
+                    STrace  <<  "Got SPS fps "  << obj.fps << " width "  << obj.width  <<  " height " << obj.height ;
 
                     //absl::optional<webrtc::SpsParser::SpsState> sps_;
                     //static_cast<bool> (sps_ = webrtc::SpsParser::ParseSps(&buffer[index.start_offset + index.payload_start_offset + webrtc::H264::kNaluTypeSize], index.payload_size - webrtc::H264::kNaluTypeSize));
@@ -304,7 +307,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
                       break;
                 } else if (payload_type == 5) {
                     idr = true;
-                     SInfo << " idr:" << idr << " recording " << recording << " this " << this <<  " cfg:" << cfg << "  sps " << m_sps.size() << " pps  " << m_pps.size() << " vframecount " << vframecount << " width " << width << " height  " << height << " fps " << fps;
+                   //  SInfo << " idr:" << idr << " recording " << recording << " this " << this <<  " cfg:" << cfg << "  sps " << m_sps.size() << " pps  " << m_pps.size() << " vframecount " << vframecount << " width " << width << " height  " << height << " fps " << fps;
                     
 //                    basicframe.payload.resize(index.payload_size + index.payload_start_offset - index.start_offset);
 //                    basicframe.payload.insert(basicframe.payload.begin(),  &buffer[index.start_offset],   &buffer[index.start_offset] + index.payload_size + index.payload_start_offset - index.start_offset);
