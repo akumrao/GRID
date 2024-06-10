@@ -204,7 +204,7 @@ void Peer::recvSDP(
     if (type == "offer")
     {
         // assert(_mode == Answer);
-        SInfo <<  trackInfo.peerID << ": wrong state Received " <<  type ;
+        //SInfo <<  trackInfo.peerID << ": wrong state Received " <<  type ;
                 
         _peerConnection->CreateAnswer(this, options);
     }
@@ -565,7 +565,7 @@ void Peer::OnIceCandidate(const webrtc::IceCandidateInterface *candidate)
         return;
     }
 
-    LDebug( trackInfo.peerID, sdp);
+    SInfo << "Sending " << trackInfo.peerID <<  " " <<  sdp;
     _manager->sendCandidate(this, candidate->sdp_mid(), candidate->sdp_mline_index(), sdp);
 }
 

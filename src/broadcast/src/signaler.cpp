@@ -304,7 +304,7 @@ void Signaler::onPeerMessage(std::string &name, json const &m)
 //    Settings::encSetting.native = Settings::configuration.native;
         
 
-    LInfo("Peer message: ", from, " ", type)
+   // LInfo("Peer message: ", from, " ", type)
 
     if (std::string("offer") == type)
     {
