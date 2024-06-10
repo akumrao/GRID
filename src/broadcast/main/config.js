@@ -3,7 +3,7 @@
     "dtlsPrivateKeyFile": "/var/tmp/key/private_key.pem",
     "storage": "/mnt/pvi-storage/",
     "qrcode":"65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0",
-    "server": "localhost",
+    "server": "192.168.0.19",
     "port": 443,
     "recording": true,
     "cloud": false,

@@ -1128,7 +1128,7 @@ int LiveThread::XAExit()
 
 void LiveThread::stop()
 {
-    SInfo << "LiveThread:: stop";
+    SInfo << "LiveThread:: stop" << record  << " recording " << recording;
 
     
       
@@ -1143,6 +1143,8 @@ void LiveThread::stop()
     }
     else
     {
+        SInfo << "t31rgba-:: stop";
+
         t31rgba->stop();
 
         t31h264->stop();
@@ -1156,6 +1158,8 @@ void LiveThread::stop()
         t31h264 = nullptr;
         delete t31rgba ;
         t31rgba = nullptr;
+
+         SInfo << "t31rgba-:: over";
     }
 
     SInfo << "LiveThread:: stop over";

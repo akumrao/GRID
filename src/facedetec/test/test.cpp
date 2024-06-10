@@ -54,7 +54,9 @@ void RestAPI(std::string method, std::string uri)
 
    //  m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
                 
-    std::string sendMe = "{}"; // m.dump();
+    std::string sendMe = m.dump();
+    
+    SInfo <<  sendMe;
 
     
       //ClientConnecton *conn = new HttpsClient( "https", "ipcamera.adapptonline.com", 8080, uri);

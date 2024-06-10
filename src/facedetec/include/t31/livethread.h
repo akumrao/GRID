@@ -226,7 +226,7 @@ public:
     
     Recording *recording{nullptr};
 
-    bool &record;
+    bool record;
 
 };
 
