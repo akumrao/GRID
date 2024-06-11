@@ -16,9 +16,9 @@ CXXFLAGS   := -g -fno-rtti -std=c++11 -Wno-uninitialized
 CPPFLAGS   := -I../../signal/include -I../../facedetec/include/ -I${SSL_ROOT}/include  -I../include  -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../webrtc/include   -I../include/x64  -DWEBRTC_POSIX -I${WEBRTC_PATH}  -I${WEBRTC_PATH}/third_party/abseil-cpp -DHTTPSSL
 #LDFLAGS   := -L/export/views/video/ffmpeg/Obj/
 
-LDLIBS    := -lpthread -lm -ldl -lz -lbz2 -L/workspace/MagicAI/src/webrtc/build -L/workspace/MagicAI/src/openssl/buildx64/lib -ljingle_peerconnection_so -ljpeg -lssl -lcrypto
+LDLIBS    := -lpthread -lm -ldl -lz -lbz2 -L/workspace/MagicAI/src/openssl/buildx64/lib -ljpeg -lssl -lcrypto
 
-#SLIBS     := ${FFMPEG_ROOT}/lib/libavformat.a  ${FFMPEG_ROOT}/lib/libavcodec.a ${FFMPEG_ROOT}/lib/libavutil.a ${FFMPEG_ROOT}/lib/libswresample.a
+SLIBS     := /workspace/MagicAI/src/webrtc/build/libjingle_peerconnection_so.a
 
 #  ${SSL_ROOT}/lib/libssl.a ${SSL_ROOT}/lib/libcrypto.a   
 
