@@ -47,7 +47,7 @@ void RestAPI(std::string method, std::string uri)
 {
     json m;
     
-    m["deviceId"]= "surya";
+    m["xailientDeviceID"]= "surya";
 
     
    //  json m;
@@ -56,7 +56,7 @@ void RestAPI(std::string method, std::string uri)
                 
     std::string sendMe = m.dump();
     
-    SInfo <<  sendMe;
+    SInfo <<  "sendit " << sendMe;
 
     
       //ClientConnecton *conn = new HttpsClient( "https", "ipcamera.adapptonline.com", 8080, uri);
@@ -69,10 +69,12 @@ void RestAPI(std::string method, std::string uri)
       //  STrace << "Post API reponse" << "Reason: " << reason << " Response: " << body;
     };
 
-    conn->fnConnect = [&](HttpBase * con) {
+    conn->fnConnect = [&, sendMe](HttpBase * con) {
+        
+         SInfo <<  "sendit " << sendMe;
         
         con->send( sendMe.c_str(), sendMe.length());
-        std::cout << "fnConnect:";
+        
     };
 
     conn->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
@@ -158,7 +160,8 @@ int main(int argc, char** argv) {
 //   LTrace("sendHandshakeRequest over")
 
 
-
+    std::cout << "done:" << std::endl << std::flush;
+    sleep(500);
 
     app.waitForShutdown([&](void*) {
 
