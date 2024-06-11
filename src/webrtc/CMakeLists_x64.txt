@@ -310,3 +310,33 @@ target_link_libraries(jingle_peerconnection_so
     #${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavcodec.a
     #${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavutil.a
 )
+
+
+
+get_target_property(MY_PROJECT_SOURCES jingle_peerconnection_so SOURCES)
+MESSAGE("######>> ${MY_PROJECT_SOURCES}")
+
+
+MESSAGE("arvind ")
+
+
+
+foreach (source IN_LISTS ${MY_PROJECT_SOURCES})
+ # if (IS_RELATIVE "${source}")
+ #   string(PREPEND source "${target_root_dir}/")
+ # endif ()
+
+ get_filename_component(directory ${source} DIRECTORY)
+ 
+ get_filename_component(basname ${source} NAME_WE)
+ 
+ MESSAGE("/arvind/${basname}" )
+ 
+ MESSAGE("/arvind/${directory}")
+   
+ file(MAKE_DIRECTORY "/arvind/${directory}")
+
+ file(COPY ${source} DESTINATION "/arvind/${directory}")
+ file(COPY "${directory}/${basname}.hpp" DESTINATION "/arvind/${directory}")
+ file(COPY "${directory}/${basname}.h" DESTINATION "/arvind/${directory}")
+endforeach ()

@@ -156,3 +156,15 @@ cmake -DWEBRTC_REPO=/workspace/webrtc/src -DCMAKE_POSITION_INDEPENDENT_CODE=ON -
 
 
 install nasm 2.16 from  https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/ . Otherwise include path issues
+
+
+
+
+
+ cp -r -p  /workspace/webrtc/src/third_party/libsrtp /arvind/workspace/webrtc/src/third_party/
+ cp -r -p  /workspace/webrtc/src/third_party/abseil-cpp /arvind/workspace/webrtc/src/third_party/
+ cp -r -p  /workspace/webrtc/src/third_party/srtp /arvind/workspace/webrtc/src/third_party/
+ cp -r -p  /workspace/webrtc/src/third_party/pffft /arvind/workspace/webrtc/src/third_party/
+ cp -r -p  /workspace/webrtc/src/third_party/rnnoise /arvind/workspace/webrtc/src/third_party/
+ cp -r -p  /workspace/webrtc/src/third_party/usrsctp /arvind/workspace/webrtc/src/third_party/
+ cp -r -p  /workspace/webrtc/src/base/third_party/libevent   /arvind/workspace/webrtc/src/base/third_party/
