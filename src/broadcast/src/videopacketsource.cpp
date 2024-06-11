@@ -54,7 +54,6 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
 
    
     liveThread = new LiveThread("live", ctx,  trackInfo, recording);
-    liveThread->start();
     if(recording)
     {
         this->ctx->recFrame= this;
@@ -66,6 +65,7 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
         this->ctx->liveFrame = this;
     }    
    
+    liveThread->start();
    
     //ctx->txt = new web_rtc::TextFrameFilter("txt", cam, self);
    // info = new web_rtc::InfoFrameFilter("info", nullptr);

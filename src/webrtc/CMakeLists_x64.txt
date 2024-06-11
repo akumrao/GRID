@@ -76,6 +76,8 @@ add_definitions(-DHAVE_NETINET_IN_H)
 include_directories(
     ${WEBRTC_REPO}
 
+    /workspace/webrtc/src
+
     #${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen
 
     ${WEBRTC_REPO}/third_party/abseil-cpp
@@ -262,7 +264,7 @@ list(FILTER src_video EXCLUDE REGEX
     ".*_loopback.cc|.*replay.cc|.*video_analyzer.cc|.*video_loopback_main.cc|.*video_stream_decoder_impl.cc"
 )
 
-add_library(jingle_peerconnection_so SHARED
+add_library(jingle_peerconnection_so STATIC
     ${src_api}
     ${src_audio}
     ${src_call}
@@ -281,6 +283,7 @@ add_library(jingle_peerconnection_so SHARED
     ${src_video}
     ${header_api}
 )
+
 
 target_link_libraries(jingle_peerconnection_so
     absl::optional
@@ -312,31 +315,3 @@ target_link_libraries(jingle_peerconnection_so
 )
 
 
-
-get_target_property(MY_PROJECT_SOURCES jingle_peerconnection_so SOURCES)
-MESSAGE("######>> ${MY_PROJECT_SOURCES}")
-
-
-MESSAGE("arvind ")
-
-
-
-foreach (source IN_LISTS ${MY_PROJECT_SOURCES})
- # if (IS_RELATIVE "${source}")
- #   string(PREPEND source "${target_root_dir}/")
- # endif ()
-
- get_filename_component(directory ${source} DIRECTORY)
- 
- get_filename_component(basname ${source} NAME_WE)
- 
- MESSAGE("/arvind/${basname}" )
- 
- MESSAGE("/arvind/${directory}")
-   
- file(MAKE_DIRECTORY "/arvind/${directory}")
-
- file(COPY ${source} DESTINATION "/arvind/${directory}")
- file(COPY "${directory}/${basname}.hpp" DESTINATION "/arvind/${directory}")
- file(COPY "${directory}/${basname}.h" DESTINATION "/arvind/${directory}")
-endforeach ()

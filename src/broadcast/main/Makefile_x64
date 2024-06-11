@@ -1,7 +1,7 @@
 ################################################################################
 ### CUSTOMIZE BELOW HERE #######################################################
 
-#FFMPEG_ROOT = /workspace/MagicAI/3rdparty/installx64
+WEBRTC_LIBS = /workspace/MagicAI/src/webrtc/build/
 WEBRTC_PATH = /workspace/webrtc/src/
 SSL_ROOT = /workspace/MagicAI/src/openssl/buildx64
 
@@ -18,9 +18,12 @@ CPPFLAGS   := -I../../signal/include -I../../facedetec/include/ -I${SSL_ROOT}/in
 
 LDLIBS    := -lpthread -lm -ldl -lz -lbz2 -L/workspace/MagicAI/src/openssl/buildx64/lib -ljpeg -lssl -lcrypto
 
-SLIBS     := /workspace/MagicAI/src/webrtc/build/libjingle_peerconnection_so.a
+SLIBS     := ${WEBRTC_LIBS}/libjingle_peerconnection_so.a ${WEBRTC_LIBS}/third_party/usrsctp/libusrsctp.a  ${WEBRTC_LIBS}/third_party/libevent/libevent.a  ${WEBRTC_LIBS}/third_party/libsrtp/libsrtp.a   ${WEBRTC_LIBS}/third_party/libyuv/libyuv/libyuv.a ${WEBRTC_LIBS}/third_party/pffft/libpffft.a  ${WEBRTC_LIBS}/third_party/rnnoise/librnnoise.a \
+${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/strings/libabsl_absl_strings.a \
+${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/types/libabsl_absl_bad_variant_access.a \
+${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/types/libabsl_absl_bad_optional_access.a \
+${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/base/libabsl_absl_throw_delegate.a
 
-#  ${SSL_ROOT}/lib/libssl.a ${SSL_ROOT}/lib/libcrypto.a   
 
 
 

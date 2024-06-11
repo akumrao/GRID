@@ -6,8 +6,16 @@
 #include "base/logger.h"
 #include "Settings.h"
 
+#include "http/url.h"
+#include "base/filesystem.h"
+#include "http/HttpClient.h"
+#include "http/HttpsClient.h"
+#include "base/platform.h"
+
+
 
 using namespace base;
+using namespace base::net;
 using namespace base::cnfg;
 
 
@@ -21,6 +29,60 @@ namespace base {
 namespace web_rtc {
     
 
+    
+void RestAPI(std::string method, std::string uri,json &m)
+{
+    Application app;
+
+       
+     std::string sendMe = m.dump();
+    
+      //ClientConnecton *conn = new HttpsClient( "https", "ipcamera.adapptonline.com", 8080, uri);
+    ClientConnecton *conn = new HttpsClient( "https", "backend.adapptonline.com/eventsToCloudX", 443, uri);
+    //Client *conn = new Client("http://zlib.net/index.html");
+    conn->fnComplete = [&](const Response & response) {
+        std::string reason = response.getReason();
+        StatusCode statuscode = response.getStatus();
+     //   std::string body = conn->readStream() ? conn->readStream()->str() : "";
+      //  STrace << "Post API reponse" << "Reason: " << reason << " Response: " << body;
+    };
+
+    conn->fnConnect = [&, sendMe](HttpBase * con) {
+        
+        
+       
+          
+        SInfo << sendMe.length();
+        
+        con->send( sendMe.c_str(), sendMe.length());
+        
+    };
+
+    conn->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
+
+        std::cout << "client->fnPayload " << data << std::endl << std::flush;
+    };
+
+    conn->fnUpdateProgess = [&](const std::string str) {
+        std::cout << "final test " << str << std::endl << std::flush;
+    };
+
+    conn->_request.setMethod(method);
+    conn->_request.setKeepAlive(false);
+    
+    conn->_request.setContentLength(sendMe.size());
+    conn->_request.setContentType("application/x-www-form-urlencoded");
+    
+    
+    conn->setReadStream(new std::stringstream);
+    conn->send();
+    
+    
+    app.run();
+       
+    int x = 1;   
+    
+}
 
 void T31RGBA::run() {
     
@@ -82,8 +144,6 @@ T31RGBA::~T31RGBA()
 
 void T31H264::play( unsigned char *str, int len)
 {
-
-
 
 
   basicframe.data = str ;
@@ -195,10 +255,12 @@ void T31H264::run()
 
         ncount = ncount%240;
         
-        if( ncount == 150 )
+        if(  ctx->liveThread->t31rgba->record ==true)
         {
-             if(ctx->signaler)
-             {
+           // ctx->liveThread->t31rgba->record = false;
+            
+            if(ctx->signaler)
+            {
                 cnfg::Configuration identity;
 
                 identity.load("./event.json");
@@ -208,7 +270,10 @@ void T31H264::run()
 
                 m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
                 m["messagePayload"] =  identity.root;
+                m["camid"] = ctx->cam;
                 ctx->signaler->postAppMessage( m);
+                
+                RestAPI("POST", "/", m); 
 
 
             }
