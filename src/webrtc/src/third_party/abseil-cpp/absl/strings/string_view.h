@@ -352,9 +352,11 @@ class string_view {
   // `n`) as another string_view. This function throws `std::out_of_bounds` if
   // `pos > size`.
   string_view substr(size_type pos, size_type n = npos) const {
-    if (ABSL_PREDICT_FALSE(pos > length_))
-      base_internal::ThrowStdOutOfRange("absl::string_view::substr");
-    n = (std::min)(n, length_ - pos);
+//    if (ABSL_PREDICT_FALSE(pos > length_))
+//      base_internal::ThrowStdOutOfRange("absl::string_view::substr");
+   // n = (std::min)(n, length_ - pos);
+    
+    exit(0);
     return string_view(ptr_ + pos, n);
   }
 
