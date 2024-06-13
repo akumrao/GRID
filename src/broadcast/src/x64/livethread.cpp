@@ -29,16 +29,14 @@ namespace base {
 namespace web_rtc {
     
 
-    
-void RestAPI(std::string method, std::string uri,json &m)
+void RestAPI(std::string method, std::string ip, std::string uri,json &m)
 {
     Application app;
 
-       
-     std::string sendMe = m.dump();
+    std::string sendMe = m.dump();
     
-      //ClientConnecton *conn = new HttpsClient( "https", "ipcamera.adapptonline.com", 8080, uri);
-    ClientConnecton *conn = new HttpsClient( "https", "backend.adapptonline.com/eventsToCloudX", 443, uri);
+    //ClientConnecton *conn = new HttpsClient( "https", "ipcamera.adapptonline.com", 8080, uri);
+    ClientConnecton *conn = new HttpsClient("https", ip, 443, uri);
     //Client *conn = new Client("http://zlib.net/index.html");
     conn->fnComplete = [&](const Response & response) {
         std::string reason = response.getReason();
@@ -77,7 +75,6 @@ void RestAPI(std::string method, std::string uri,json &m)
     
     app.run();
        
-    int x = 1;   
     
 }
 
@@ -270,7 +267,8 @@ void T31H264::run()
                 m["camid"] = ctx->cam;
                 ctx->signaler->postAppMessage( m);
                 
-                RestAPI("POST", "/", m); 
+                
+                RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
 
 
             }

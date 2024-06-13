@@ -41,26 +41,15 @@ using namespace base::net;
 using namespace base::cnfg;
 
 
-
-
-void RestAPI(std::string method, std::string uri)
+void RestAPI(std::string method, std::string ip, std::string uri,json &m)
 {
-    json m;
-    
-    m["xailientDeviceID"]= "surya";
+    //Application app;
 
-    
-   //  json m;
-
-   //  m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
-                
-    std::string sendMe = m.dump();
-    
-    SInfo <<  "sendit " << sendMe;
-
+       
+     std::string sendMe = m.dump();
     
       //ClientConnecton *conn = new HttpsClient( "https", "ipcamera.adapptonline.com", 8080, uri);
-    ClientConnecton *conn = new HttpsClient( "https", "backend.adapptonline.com/eventsToCloudX", 443, uri);
+    ClientConnecton *conn = new HttpsClient("https", ip, 443, uri);
     //Client *conn = new Client("http://zlib.net/index.html");
     conn->fnComplete = [&](const Response & response) {
         std::string reason = response.getReason();
@@ -71,9 +60,9 @@ void RestAPI(std::string method, std::string uri)
 
     conn->fnConnect = [&, sendMe](HttpBase * con) {
         
-         SInfo <<  "sendit " << sendMe;
+        SInfo << sendMe.length();
         
-        con->send( sendMe.c_str(), sendMe.length());
+        con->send( sendMe.c_str(), sendMe.length(), false);
         
     };
 
@@ -90,11 +79,15 @@ void RestAPI(std::string method, std::string uri)
     conn->_request.setKeepAlive(false);
     
     conn->_request.setContentLength(sendMe.size());
-    conn->_request.setContentType("application/x-www-form-urlencoded");
+    conn->_request.setContentType("application/json");
     
     
     conn->setReadStream(new std::stringstream);
     conn->send();
+    
+    
+    //app.run();
+       
     
 }
 
@@ -117,10 +110,20 @@ int main(int argc, char** argv) {
 
     
     
-   // RestAPI("GET", "/"); //GET, POST, PUT, DELETE
-    
-    RestAPI("POST", "/"); //GET, POST, PUT, DELETE
-    
+  cnfg::Configuration identity;
+
+    identity.load("./event.json");
+   // std::string xaidentity = identity.root.dump();
+
+    json m;
+
+    m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
+    m["messagePayload"] =  identity.root;
+    m["camid"] = "room17";
+
+
+    RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m); 
+
 //    
 //
 //   net::ClientConnecton *m_client = new HttpsClient("wss", "192.168.0", 443, "/");
