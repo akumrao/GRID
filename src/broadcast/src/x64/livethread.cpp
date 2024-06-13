@@ -249,7 +249,6 @@ void T31H264::run()
         
         if(  ctx->liveThread->t31rgba->record ==true)
         {
-           // ctx->liveThread->t31rgba->record = false;
             
             if(ctx->signaler)
             {

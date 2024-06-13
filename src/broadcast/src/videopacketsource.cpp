@@ -264,9 +264,11 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
 //                     recording= 0;
 //                }
                  
-                if( !recording && liveThread->t31rgba->record && frameCount < 0)
+                if( !recording && liveThread->t31rgba->record )
                 {
                     ((LiveThread*)liveThread)->t31rgba->record = false;
+                    
+                    if(frameCount < 0)
                     frameCount= 0;
                 }
                 

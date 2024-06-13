@@ -34,8 +34,9 @@ file(GLOB SOURCES "*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../../libuv/src/*.c
 #set(CMAKE_C_COMPILER "gcc")
 #set(CMAKE_CXX_COMPILER "g++")
 
-set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+set(CMAKE_BUILD_TYPE MinSizeRel)
+
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
 
 
 
@@ -72,3 +73,8 @@ target_link_libraries(runWebrtc PRIVATE jingle_peerconnection_so  rnnoise
 
 
 add_subdirectory(webrtc)
+
+
+if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+    target_compile_options(runWebrtc PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections)
+endif()

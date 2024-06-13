@@ -371,11 +371,14 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
                      recframeCount = -1;  
                     
                 }
-                else if( recframeCount == 250)
+                else if( recframeCount >= 250)
                 {
-                   ++recframeCount ;
-                   mf.save();
-                   recordingTime(ctx);
+                    
+                   if(recframeCount++ == 250)
+                   {
+                        mf.save();
+                        recordingTime(ctx);
+                   }
                 }
                 else if(idr )
                 {
