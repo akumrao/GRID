@@ -20,7 +20,7 @@
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
-#include "third_party/libyuv/include/libyuv.h"
+// #include "third_party/libyuv/include/libyuv.h" // ravind
 
 namespace webrtc {
 namespace videocapturemodule {
@@ -125,12 +125,17 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
   TRACE_EVENT1("webrtc", "VC::IncomingFrame", "capture_time", captureTime);
 
   // Not encoded, convert to I420.
-  if (frameInfo.videoType != VideoType::kMJPEG &&
-      CalcBufferSize(frameInfo.videoType, width, abs(height)) !=
-          videoFrameLength) {
-    RTC_LOG(LS_ERROR) << "Wrong incoming frame length.";
-    return -1;
-  }
+//  if (frameInfo.videoType != VideoType::kMJPEG &&
+//      CalcBufferSize(frameInfo.videoType, width, abs(height)) !=
+//          videoFrameLength) {
+//    RTC_LOG(LS_ERROR) << "Wrong incoming frame length.";
+//    return -1;
+//  }
+  
+  
+  exit(0);
+  
+  // ravind
 
   int stride_y = width;
   int stride_uv = (width + 1) / 2;
@@ -157,36 +162,41 @@ int32_t VideoCaptureImpl::IncomingFrame(uint8_t* videoFrame,
   rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(
       target_width, target_height, stride_y, stride_uv, stride_uv);
 
-  libyuv::RotationMode rotation_mode = libyuv::kRotate0;
-  if (apply_rotation) {
-    switch (_rotateFrame) {
-      case kVideoRotation_0:
-        rotation_mode = libyuv::kRotate0;
-        break;
-      case kVideoRotation_90:
-        rotation_mode = libyuv::kRotate90;
-        break;
-      case kVideoRotation_180:
-        rotation_mode = libyuv::kRotate180;
-        break;
-      case kVideoRotation_270:
-        rotation_mode = libyuv::kRotate270;
-        break;
-    }
-  }
+//  libyuv::RotationMode rotation_mode = libyuv::kRotate0;
+//  if (apply_rotation) {
+//    switch (_rotateFrame) {
+//      case kVideoRotation_0:
+//        rotation_mode = libyuv::kRotate0;
+//        break;
+//      case kVideoRotation_90:
+//        rotation_mode = libyuv::kRotate90;
+//        break;
+//      case kVideoRotation_180:
+//        rotation_mode = libyuv::kRotate180;
+//        break;
+//      case kVideoRotation_270:
+//        rotation_mode = libyuv::kRotate270;
+//        break;
+//    }
+//  }
 
-  const int conversionResult = libyuv::ConvertToI420(
-      videoFrame, videoFrameLength, buffer.get()->MutableDataY(),
-      buffer.get()->StrideY(), buffer.get()->MutableDataU(),
-      buffer.get()->StrideU(), buffer.get()->MutableDataV(),
-      buffer.get()->StrideV(), 0, 0,  // No Cropping
-      width, height, target_width, target_height, rotation_mode,
-      ConvertVideoType(frameInfo.videoType));
-  if (conversionResult < 0) {
-    RTC_LOG(LS_ERROR) << "Failed to convert capture frame from type "
-                      << static_cast<int>(frameInfo.videoType) << "to I420.";
-    return -1;
-  }
+   // ravind
+    exit(0);
+    
+//  const int conversionResult = libyuv::ConvertToI420(
+//      videoFrame, videoFrameLength, buffer.get()->MutableDataY(),
+//      buffer.get()->StrideY(), buffer.get()->MutableDataU(),
+//      buffer.get()->StrideU(), buffer.get()->MutableDataV(),
+//      buffer.get()->StrideV(), 0, 0,  // No Cropping
+//      width, height, target_width, target_height, rotation_mode,
+//      ConvertVideoType(frameInfo.videoType));
+  
+//  
+//  if (conversionResult < 0) {
+//    RTC_LOG(LS_ERROR) << "Failed to convert capture frame from type "
+//                      << static_cast<int>(frameInfo.videoType) << "to I420.";
+//    return -1;
+//  }
 
   VideoFrame captureFrame =
       VideoFrame::Builder()

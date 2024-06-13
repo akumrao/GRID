@@ -63,9 +63,12 @@ target_compile_features(runWebrtc PRIVATE cxx_std_11)
 
 #target_link_directories(runWebrtc PRIVATE ${xstore}/appliance/build/root/usr/lib64/ ${NVR}/deliverables/staging/rootfs/opt/americandynamics/venvr/lib/ /opt/intel/mediasdk/lib64 /opt/intel/mediasdk/lib/lin_x64)
 
-target_link_libraries(runWebrtc PRIVATE jingle_peerconnection_so ${WEBRTC_LIBS}/third_party/libyuv/libyuv/libyuv.a  ${WEBRTC_LIBS}/third_party/usrsctp/libusrsctp.a  ${WEBRTC_LIBS}/third_party/libevent/libevent.a ${WEBRTC_LIBS}/third_party/libsrtp/libsrtp.a   ${WEBRTC_LIBS}/third_party/pffft/libpffft.a  ${WEBRTC_LIBS}/third_party/rnnoise/librnnoise.a ${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/strings/libabsl_absl_strings.a ${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/types/libabsl_absl_bad_variant_access.a ${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/types/libabsl_absl_bad_optional_access.a  pthread m dl z jpeg ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  )
+target_link_libraries(runWebrtc PRIVATE jingle_peerconnection_so  rnnoise
+    srtp   usrsctp  event    absl::optional    absl::variant    absl::strings
+    pffft pthread m dl z  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  )
 
 
+#${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/strings/libabsl_absl_strings.a #${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/types/libabsl_absl_bad_variant_access.a #${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/types/libabsl_absl_bad_optional_access.a  
 
 
 add_subdirectory(webrtc)
