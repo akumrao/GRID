@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.4.1)
 
 include_directories(
-    ${WEBRTC_REPO}/third_party/boringssl/src/include
+    /workspace/MagicAI/src/openssl/buildt31/include/
     ${WEBRTC_REPO}/third_party/libsrtp/config
     ${WEBRTC_REPO}/third_party/libsrtp/crypto/include
     ${WEBRTC_REPO}/third_party/libsrtp/include

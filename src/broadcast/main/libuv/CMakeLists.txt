@@ -381,6 +381,12 @@ target_compile_options(uv_a PRIVATE ${uv_cflags})
 target_include_directories(uv_a PUBLIC include PRIVATE src)
 target_link_libraries(uv_a ${uv_libraries})
 
+set(CMAKE_BUILD_TYPE MinSizeRel)
+
+if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+    target_compile_options(uv PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections)
+endif()
+
 
 
 if(UNIX)

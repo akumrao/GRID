@@ -21,16 +21,12 @@ export LDFLAGS="-Os -fdata-sections -ffunction-sections -muclibc -L${INSTALLPATH
 
 mkdir -p t31
 
-rm CMakeLists.txt
-cp CMakeLists_t31.txt CMakeLists.txt
+rm ./webrtc/CMakeLists.txt
+cp ./webrtc/CMakeLists_t31.txt ./webrtc/CMakeLists.txt
 
 cd t31
 
-cmake -DUSE_MUCLIBC=ON -DWEBRTC_REPO=/workspace/webrtc/src -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DWEBRTC_BUILD_DIR=out/arm64 -DANDROID_ABI=mipsel ..
+cmake -DUSE_MUCLIBC=ON .. 
 
 make -j$(nproc)
 
-${STRIP} libjingle_peerconnection_so.so
-
-
-cd ..

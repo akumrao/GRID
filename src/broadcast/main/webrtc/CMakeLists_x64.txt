@@ -7,6 +7,8 @@ set(CMAKE_C_COMPILER_WORKS 1)
 
 set(CMAKE_CXX_COMPILER_WORKS 1)
 
+SET(WEBRTC_REPO "/workspace/MagicAI/src/webrtc/src")
+SET(ANDROID_ABI "x86_64")
 
 # Use C++11
 set(CMAKE_CXX_STANDARD 11)
@@ -68,8 +70,8 @@ add_definitions(-DWEBRTC_INTELLIGIBILITY_ENHANCER=0 -DWEBRTC_NS_FIXED)
 
 add_definitions(-DWEBRTC_APM_DEBUG_DUMP=0)
 
-set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+#set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
 
 add_definitions(-DHAVE_NETINET_IN_H)
 
@@ -89,7 +91,7 @@ include_directories(
     ${WEBRTC_REPO}/third_party/libsrtp/config
     ${WEBRTC_REPO}/third_party/libsrtp/crypto/include
     ${WEBRTC_REPO}/third_party/libsrtp/include
-    ${WEBRTC_REPO}/third_party/libyuv/include
+    #${WEBRTC_REPO}/third_party/libyuv/include
     #${WEBRTC_REPO}/third_party/libvpx/source/libvpx
     #${WEBRTC_REPO}/third_party/opus/src/include
     #${WEBRTC_REPO}/third_party/protobuf/src
@@ -221,8 +223,6 @@ list(FILTER src_rtc_base EXCLUDE REGEX
     ".*mac_utils.cc|.*mac_ifaddrs_converter.cc|.*test_echo_server.cc|.*task_queue_gcd.cc|.*task_queue_stdlib.cc|.*task_queue_for_test.cc|.*virtual_socket_server.cc|.*nat_socket_factory.cc|.*nat_server.cc|.*strings/json.cc"
 )
 
-
-
 list(FILTER src_rtc_base EXCLUDE REGEX 
     ".*system/thread_registry.cc|.*system/warn_current_thread_is_deadlocked.cc"
 )
@@ -291,27 +291,15 @@ target_link_libraries(jingle_peerconnection_so
     absl::strings
     #crypto
     event
-    #json
-    #opus
     pffft
-    #protobuf_lite
     rnnoise
     srtp
-    #ssl
     usrsctp
-    #vpx
-    yuv
-
-    #android
-    #log
-    #GLESv2
-    #OpenSLES
-
-    #z
-    #${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libswresample.a
-    #${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavformat.a
-    #${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavcodec.a
-    #${WEBRTC_REPO}/sdk/libs/ffmpeg/lib/Android/${ANDROID_ABI}/libavutil.a
-)
+    )
 
 
+set(CMAKE_BUILD_TYPE MinSizeRel)
+
+if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+    target_compile_options(jingle_peerconnection_so PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections)
+endif()

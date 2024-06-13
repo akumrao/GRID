@@ -3,8 +3,12 @@ cmake_minimum_required(VERSION 3.7)
 
 set(WEBRTC_LIBS "/workspace/MagicAI/src/webrtc/build/")
 SET(WEBRTC_PATH "/workspace/webrtc/src/")
-SET(SSL_ROOT "/workspace/MagicAI/src/openssl/buildx64")
-SET(SSL_LIB "/workspace/MagicAI/src/openssl/buildx64/lib")
+#SET(SSL_ROOT "/workspace/MagicAI/src/openssl/buildx64")
+#SET(SSL_LIB "/workspace/MagicAI/src/openssl/buildx64/lib")
+
+SET(SSL_ROOT "/workspace/MagicAI/src/openssl/buildt31")
+SET(SSL_LIB "/workspace/MagicAI/src/openssl/buildt31/lib")
+
 
 
 #cmake_minimum_required(VERSION 3.4.1)
@@ -25,9 +29,8 @@ SET(xstore "${NVR}/xStore")
 
 
 
+file(GLOB SOURCES "*.cpp" "../src/*.cpp" "../src/t31/*.cpp" "../../base/src/*.cpp"  "../../net/src/*.cpp" "../../http/src/*.cpp" "../../http_parser/*.cpp" "../../facedetec/src/*.cpp" "../../facedetec/src/t31/*.cpp" "../../signal/src/*.cpp")
 
-
-file(GLOB SOURCES "*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../../base/src/*.cpp"  "../../net/src/*.cpp" "../../http/src/*.cpp" "../../http_parser/*.cpp" "../../facedetec/src/configuration.cpp" "../../signal/src/*.cpp" )
 
 
 
@@ -54,7 +57,7 @@ add_executable(runWebrtc  ${SOURCES})
 target_compile_definitions(runWebrtc PRIVATE HTTPSSL  WEBRTC_POSIX  )
 
 
-target_include_directories(runWebrtc PRIVATE   ../../signal/include ../../facedetec/include/ ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include   ../include/x64 ${WEBRTC_PATH}    ${WEBRTC_PATH}/third_party/abseil-cpp  )
+target_include_directories(runWebrtc PRIVATE   ../../signal/include ../../facedetec/include/ ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include   ../include/x64 ${WEBRTC_PATH}    ${WEBRTC_PATH}/third_party/abseil-cpp   ../include/t31 ${WEBRTC_PATH}/third_party/abseil-cpp ../../facedetec/xailient-sdk/include/ ${T31SDK}/include ${T31SDK}/samples/libimp-sample/)
 
 
 #target_link_options(runWebrtc PRIVATE -no-pie)
@@ -62,11 +65,11 @@ target_include_directories(runWebrtc PRIVATE   ../../signal/include ../../facede
 #target_compile_options(runWebrtc PRIVATE -Wno-return-type -Wno-format-overflow -Wno-format -Wno-unused-but-set-variable -Wno-write-strings -no-pie)
 target_compile_features(runWebrtc PRIVATE cxx_std_11)
 
-#target_link_directories(runWebrtc PRIVATE ${xstore}/appliance/build/root/usr/lib64/ ${NVR}/deliverables/staging/rootfs/opt/americandynamics/venvr/lib/ /opt/intel/mediasdk/lib64 /opt/intel/mediasdk/lib/lin_x64)
+target_link_directories(runWebrtc PRIVATE  ${T31SDK}/lib ${INSTALLPATH}/mips-linux-gnu/lib)
 
 target_link_libraries(runWebrtc PRIVATE jingle_peerconnection_so  rnnoise
     srtp   usrsctp  event    absl::optional    absl::variant    absl::strings uv
-    pffft pthread m dl z  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  )
+    pffft xailient-fi  rt m dl -pthread atomic  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a )
 
 
 #${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/strings/libabsl_absl_strings.a #${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/types/libabsl_absl_bad_variant_access.a #${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/types/libabsl_absl_bad_optional_access.a  
@@ -80,3 +83,11 @@ set(CMAKE_BUILD_TYPE MinSizeRel)
 if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
     target_compile_options(runWebrtc PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections)
 endif()
+
+
+
+
+
+
+
+

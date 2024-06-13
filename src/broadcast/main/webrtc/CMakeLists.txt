@@ -298,3 +298,8 @@ target_link_libraries(jingle_peerconnection_so
     )
 
 
+set(CMAKE_BUILD_TYPE MinSizeRel)
+
+if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+    target_compile_options(jingle_peerconnection_so PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections)
+endif()
