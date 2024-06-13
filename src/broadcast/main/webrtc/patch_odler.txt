@@ -1,0 +1,382 @@
+diff --git a/api/video/builtin_video_bitrate_allocator_factory.cc b/api/video/builtin_video_bitrate_allocator_factory.cc
+index 8991367339..873a343fdc 100644
+--- a/api/video/builtin_video_bitrate_allocator_factory.cc
++++ b/api/video/builtin_video_bitrate_allocator_factory.cc
+@@ -38,7 +38,8 @@ class BuiltinVideoBitrateAllocatorFactory
+         rate_allocator.reset(new SimulcastRateAllocator(codec));
+         break;
+       case kVideoCodecVP9:
+-        rate_allocator.reset(new SvcRateAllocator(codec));
++       // rate_allocator.reset(new SvcRateAllocator(codec));  
++       exit(0); //arvind
+         break;
+       default:
+         rate_allocator.reset(new DefaultVideoBitrateAllocator(codec));
+diff --git a/logging/rtc_event_log/rtc_event_log_impl.cc b/logging/rtc_event_log/rtc_event_log_impl.cc
+index 7881190b3c..629a6bc62e 100644
+--- a/logging/rtc_event_log/rtc_event_log_impl.cc
++++ b/logging/rtc_event_log/rtc_event_log_impl.cc
+@@ -61,10 +61,16 @@ std::unique_ptr<RtcEventLogEncoder> CreateEncoder(
+   switch (type) {
+     case RtcEventLog::EncodingType::Legacy:
+       RTC_LOG(LS_INFO) << "Creating legacy encoder for RTC event log.";
+-      return absl::make_unique<RtcEventLogEncoderLegacy>();
++      //return absl::make_unique<RtcEventLogEncoderLegacy>();
++       return std::unique_ptr<RtcEventLogEncoder>(nullptr);
++      //exit(0);
++
+     case RtcEventLog::EncodingType::NewFormat:
+       RTC_LOG(LS_INFO) << "Creating new format encoder for RTC event log.";
+-      return absl::make_unique<RtcEventLogEncoderNewFormat>();
++     // return absl::make_unique<RtcEventLogEncoderNewFormat>();
++
++      exit(0);
++      
+     default:
+       RTC_LOG(LS_ERROR) << "Unknown RtcEventLog encoder type (" << int(type)
+                         << ")";
+diff --git a/media/engine/webrtc_media_engine_defaults.cc b/media/engine/webrtc_media_engine_defaults.cc
+index 1660873e8b..314509aab5 100644
+--- a/media/engine/webrtc_media_engine_defaults.cc
++++ b/media/engine/webrtc_media_engine_defaults.cc
+@@ -35,9 +35,11 @@ void SetMediaEngineDefaults(cricket::MediaEngineDependencies* deps) {
+     deps->audio_processing = AudioProcessingBuilder().Create();
+ 
+   if (deps->video_encoder_factory == nullptr)
+-    deps->video_encoder_factory = CreateBuiltinVideoEncoderFactory();
++//    deps->video_encoder_factory = CreateBuiltinVideoEncoderFactory();
++    exit(0);
+   if (deps->video_decoder_factory == nullptr)
+-    deps->video_decoder_factory = CreateBuiltinVideoDecoderFactory();
++   // deps->video_decoder_factory = CreateBuiltinVideoDecoderFactory();
++     exit(0); //arvind
+ }
+ 
+ }  // namespace webrtc
+diff --git a/media/engine/webrtc_voice_engine.cc b/media/engine/webrtc_voice_engine.cc
+index 55a2826ca9..3587a21e3d 100644
+--- a/media/engine/webrtc_voice_engine.cc
++++ b/media/engine/webrtc_voice_engine.cc
+@@ -576,13 +576,16 @@ void WebRtcVoiceEngine::UnregisterChannel(WebRtcVoiceMediaChannel* channel) {
+ 
+ bool WebRtcVoiceEngine::StartAecDump(rtc::PlatformFile file,
+                                      int64_t max_size_bytes) {
+-  RTC_DCHECK(worker_thread_checker_.IsCurrent());
+-  auto aec_dump = webrtc::AecDumpFactory::Create(
+-      file, max_size_bytes, low_priority_worker_queue_.get());
+-  if (!aec_dump) {
+-    return false;
+-  }
+-  apm()->AttachAecDump(std::move(aec_dump));
++
++  exit(0);
++
++  // RTC_DCHECK(worker_thread_checker_.IsCurrent());
++  // auto aec_dump = webrtc::AecDumpFactory::Create(
++  //     file, max_size_bytes, low_priority_worker_queue_.get());
++  // if (!aec_dump) {
++  //   return false;
++  // }
++  // apm()->AttachAecDump(std::move(aec_dump));
+   return true;
+ }
+ 
+diff --git a/modules/audio_device/audio_device_impl.cc b/modules/audio_device/audio_device_impl.cc
+index aaba49a46e..0821fd6cc5 100644
+--- a/modules/audio_device/audio_device_impl.cc
++++ b/modules/audio_device/audio_device_impl.cc
+@@ -254,7 +254,8 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
+   RTC_LOG(WARNING) << "PulseAudio is disabled using build flag.";
+   if ((audio_layer == kLinuxAlsaAudio) ||
+       (audio_layer == kPlatformDefaultAudio)) {
+-    audio_device_.reset(new AudioDeviceLinuxALSA());
++//    audio_device_.reset(new AudioDeviceLinuxALSA());
++    exit(0);
+     RTC_LOG(INFO) << "Linux ALSA APIs will be utilized.";
+   }
+ #else
+diff --git a/modules/audio_processing/aec_dump/write_to_file_task.h b/modules/audio_processing/aec_dump/write_to_file_task.h
+index 2877777cff..9f96f17e40 100644
+--- a/modules/audio_processing/aec_dump/write_to_file_task.h
++++ b/modules/audio_processing/aec_dump/write_to_file_task.h
+@@ -22,6 +22,7 @@
+ #include "rtc_base/platform_file.h"
+ #include "rtc_base/system/file_wrapper.h"
+ 
++#if WEBRTC_ENABLE_PROTOBUF
+ // Files generated at build-time by the protobuf compiler.
+ RTC_PUSH_IGNORING_WUNDEF()
+ #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
+@@ -30,6 +31,8 @@ RTC_PUSH_IGNORING_WUNDEF()
+ #include "modules/audio_processing/debug.pb.h"
+ #endif
+ RTC_POP_IGNORING_WUNDEF()
++#endif
++
+ 
+ namespace webrtc {
+ 
+diff --git a/modules/video_coding/video_codec_initializer.cc b/modules/video_coding/video_codec_initializer.cc
+index 486d1cdc46..7de265d982 100644
+--- a/modules/video_coding/video_codec_initializer.cc
++++ b/modules/video_coding/video_codec_initializer.cc
+@@ -156,69 +156,70 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
+       break;
+     }
+     case kVideoCodecVP9: {
+-      if (!config.encoder_specific_settings) {
+-        *video_codec.VP9() = VideoEncoder::GetDefaultVp9Settings();
+-      }
+-
+-      video_codec.VP9()->numberOfTemporalLayers = static_cast<unsigned char>(
+-          streams.back().num_temporal_layers.value_or(
+-              video_codec.VP9()->numberOfTemporalLayers));
+-      RTC_DCHECK_GE(video_codec.VP9()->numberOfTemporalLayers, 1);
+-      RTC_DCHECK_LE(video_codec.VP9()->numberOfTemporalLayers,
+-                    kMaxTemporalStreams);
+-
+-      RTC_DCHECK(config.spatial_layers.empty() ||
+-                 config.spatial_layers.size() ==
+-                     video_codec.VP9()->numberOfSpatialLayers);
+-
+-      std::vector<SpatialLayer> spatial_layers;
+-      if (!config.spatial_layers.empty()) {
+-        // Layering is set explicitly.
+-        spatial_layers = config.spatial_layers;
+-      } else {
+-        spatial_layers = GetSvcConfig(
+-            video_codec.width, video_codec.height, video_codec.maxFramerate,
+-            video_codec.VP9()->numberOfSpatialLayers,
+-            video_codec.VP9()->numberOfTemporalLayers,
+-            video_codec.mode == VideoCodecMode::kScreensharing);
+-
+-        // If there was no request for spatial layering, don't limit bitrate
+-        // of single spatial layer.
+-        const bool no_spatial_layering =
+-            video_codec.VP9()->numberOfSpatialLayers <= 1;
+-        if (no_spatial_layering) {
+-          // Use codec's bitrate limits.
+-          spatial_layers.back().minBitrate = video_codec.minBitrate;
+-          spatial_layers.back().targetBitrate = video_codec.maxBitrate;
+-          spatial_layers.back().maxBitrate = video_codec.maxBitrate;
+-        }
+-
+-        for (size_t spatial_idx = 0;
+-             spatial_idx < config.simulcast_layers.size() &&
+-             spatial_idx < spatial_layers.size();
+-             ++spatial_idx) {
+-          spatial_layers[spatial_layers.size() - spatial_idx - 1].active =
+-              config.simulcast_layers[spatial_idx].active;
+-        }
+-      }
+-
+-      RTC_DCHECK(!spatial_layers.empty());
+-      for (size_t i = 0; i < spatial_layers.size(); ++i) {
+-        video_codec.spatialLayers[i] = spatial_layers[i];
+-      }
+-
+-      // Update layering settings.
+-      video_codec.VP9()->numberOfSpatialLayers =
+-          static_cast<unsigned char>(spatial_layers.size());
+-      RTC_DCHECK_GE(video_codec.VP9()->numberOfSpatialLayers, 1);
+-      RTC_DCHECK_LE(video_codec.VP9()->numberOfSpatialLayers,
+-                    kMaxSpatialLayers);
+-
+-      video_codec.VP9()->numberOfTemporalLayers = static_cast<unsigned char>(
+-          spatial_layers.back().numberOfTemporalLayers);
+-      RTC_DCHECK_GE(video_codec.VP9()->numberOfTemporalLayers, 1);
+-      RTC_DCHECK_LE(video_codec.VP9()->numberOfTemporalLayers,
+-                    kMaxTemporalStreams);
++exit(0);
++      // if (!config.encoder_specific_settings) {
++      //   *video_codec.VP9() = VideoEncoder::GetDefaultVp9Settings();
++      // }
++
++      // video_codec.VP9()->numberOfTemporalLayers = static_cast<unsigned char>(
++      //     streams.back().num_temporal_layers.value_or(
++      //         video_codec.VP9()->numberOfTemporalLayers));
++      // RTC_DCHECK_GE(video_codec.VP9()->numberOfTemporalLayers, 1);
++      // RTC_DCHECK_LE(video_codec.VP9()->numberOfTemporalLayers,
++      //               kMaxTemporalStreams);
++
++      // RTC_DCHECK(config.spatial_layers.empty() ||
++      //            config.spatial_layers.size() ==
++      //                video_codec.VP9()->numberOfSpatialLayers);
++
++      // std::vector<SpatialLayer> spatial_layers;
++      // if (!config.spatial_layers.empty()) {
++      //   // Layering is set explicitly.
++      //   spatial_layers = config.spatial_layers;
++      // } else {
++      //   spatial_layers = GetSvcConfig(
++      //       video_codec.width, video_codec.height, video_codec.maxFramerate,
++      //       video_codec.VP9()->numberOfSpatialLayers,
++      //       video_codec.VP9()->numberOfTemporalLayers,
++      //       video_codec.mode == VideoCodecMode::kScreensharing);
++
++      //   // If there was no request for spatial layering, don't limit bitrate
++      //   // of single spatial layer.
++      //   const bool no_spatial_layering =
++      //       video_codec.VP9()->numberOfSpatialLayers <= 1;
++      //   if (no_spatial_layering) {
++      //     // Use codec's bitrate limits.
++      //     spatial_layers.back().minBitrate = video_codec.minBitrate;
++      //     spatial_layers.back().targetBitrate = video_codec.maxBitrate;
++      //     spatial_layers.back().maxBitrate = video_codec.maxBitrate;
++      //   }
++
++      //   for (size_t spatial_idx = 0;
++      //        spatial_idx < config.simulcast_layers.size() &&
++      //        spatial_idx < spatial_layers.size();
++      //        ++spatial_idx) {
++      //     spatial_layers[spatial_layers.size() - spatial_idx - 1].active =
++      //         config.simulcast_layers[spatial_idx].active;
++      //   }
++      // }
++
++      // RTC_DCHECK(!spatial_layers.empty());
++      // for (size_t i = 0; i < spatial_layers.size(); ++i) {
++      //   video_codec.spatialLayers[i] = spatial_layers[i];
++      // }
++
++      // // Update layering settings.
++      // video_codec.VP9()->numberOfSpatialLayers =
++      //     static_cast<unsigned char>(spatial_layers.size());
++      // RTC_DCHECK_GE(video_codec.VP9()->numberOfSpatialLayers, 1);
++      // RTC_DCHECK_LE(video_codec.VP9()->numberOfSpatialLayers,
++      //               kMaxSpatialLayers);
++
++      // video_codec.VP9()->numberOfTemporalLayers = static_cast<unsigned char>(
++      //     spatial_layers.back().numberOfTemporalLayers);
++      // RTC_DCHECK_GE(video_codec.VP9()->numberOfTemporalLayers, 1);
++      // RTC_DCHECK_LE(video_codec.VP9()->numberOfTemporalLayers,
++      //               kMaxTemporalStreams);
+ 
+       break;
+     }
+diff --git a/rtc_base/cpu_time.cc b/rtc_base/cpu_time.cc
+index b95bcb136e..1fe4745cbd 100644
+--- a/rtc_base/cpu_time.cc
++++ b/rtc_base/cpu_time.cc
+@@ -71,9 +71,17 @@ int64_t GetProcessCpuTimeNanos() {
+   return 0;
+ #else
+   // Not implemented yet.
+-  static_assert(
+-      false, "GetProcessCpuTimeNanos() platform support not yet implemented.");
+-#endif
++ // static_assert(
++    //  false, "GetProcessCpuTimeNanos() platform support not yet implemented.");  // arvind
++
++  struct timespec ts;
++  if (clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts) == 0) {
++    return ts.tv_sec * kNumNanosecsPerSec + ts.tv_nsec;
++  } else {
++    RTC_LOG_ERR(LS_ERROR) << "clock_gettime() failed.";
++  }
++
++  #endif
+   return -1;
+ }
+ 
+@@ -116,8 +124,15 @@ int64_t GetThreadCpuTimeNanos() {
+   return 0;
+ #else
+   // Not implemented yet.
+-  static_assert(
+-      false, "GetThreadCpuTimeNanos() platform support not yet implemented.");
++ // static_assert(
++ //     false, "GetThreadCpuTimeNanos() platform support not yet implemented."); //arvind
++  struct timespec ts;
++  if (clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts) == 0) {
++    return ts.tv_sec * kNumNanosecsPerSec + ts.tv_nsec;
++  } else {
++    RTC_LOG_ERR(LS_ERROR) << "clock_gettime() failed.";
++  }
++
+ #endif
+   return -1;
+ }
+diff --git a/rtc_base/memory_usage.cc b/rtc_base/memory_usage.cc
+index 20db9f3bf4..67e8ede4ad 100644
+--- a/rtc_base/memory_usage.cc
++++ b/rtc_base/memory_usage.cc
+@@ -63,10 +63,13 @@ int64_t GetProcessResidentSizeBytes() {
+   RTC_LOG_ERR(LS_ERROR) << "GetProcessResidentSizeBytes() not implemented";
+   return 0;
+ #else
++  exit(0);
+   // Not implemented yet.
+-  static_assert(false,
+-                "GetProcessVirtualMemoryUsageBytes() platform support not yet "
+-                "implemented.");
++  // static_assert(false,
++  //               "GetProcessVirtualMemoryUsageBytes() platform support not yet "  //arvind
++  //               "implemented.");
++return -1;
++
+ #endif
+ }
+ 
+diff --git a/rtc_base/network.cc b/rtc_base/network.cc
+index 6dddbc0caa..51d18dd897 100644
+--- a/rtc_base/network.cc
++++ b/rtc_base/network.cc
+@@ -901,11 +901,16 @@ IPAddress BasicNetworkManager::QueryDefaultLocalAddress(int family) const {
+   RTC_DCHECK(thread_ == Thread::Current());
+   RTC_DCHECK(thread_->socketserver() != nullptr);
+   RTC_DCHECK(family == AF_INET || family == AF_INET6);
++ 
++ if( family == AF_INET6)
++ {
++   return IPAddress();
++ }
+ 
+   std::unique_ptr<AsyncSocket> socket(
+       thread_->socketserver()->CreateAsyncSocket(family, SOCK_DGRAM));
+   if (!socket) {
+-    RTC_LOG_ERR(LERROR) << "Socket creation failed";
++    RTC_LOG_ERR(LERROR) << "Socket creation failed "  << family;
+     return IPAddress();
+   }
+ 
+diff --git a/rtc_base/platform_thread_types.cc b/rtc_base/platform_thread_types.cc
+index 15d48618bd..47559b0a1f 100644
+--- a/rtc_base/platform_thread_types.cc
++++ b/rtc_base/platform_thread_types.cc
+@@ -31,7 +31,9 @@ PlatformThreadId CurrentThreadId() {
+   return syscall(__NR_gettid);
+ #else
+   // Default implementation for nacl and solaris.
+-  return reinterpret_cast<pid_t>(pthread_self());
++  //return reinterpret_cast<pid_t>(pthread_self());
++  // return reinterpret_cast<pid_t>(pthread_self()); arvind
++ return static_cast<pid_t>((intptr_t)pthread_self());
+ #endif
+ #endif  // defined(WEBRTC_POSIX)
+ }
+diff --git a/video/video_stream_encoder.cc b/video/video_stream_encoder.cc
+index 013ad8f853..c536a5e3da 100644
+--- a/video/video_stream_encoder.cc
++++ b/video/video_stream_encoder.cc
+@@ -669,13 +669,14 @@ void VideoStreamEncoder::ReconfigureEncoder() {
+ 
+   // Set min_bitrate_bps, max_bitrate_bps, and max padding bit rate for VP9.
+   if (encoder_config_.codec_type == kVideoCodecVP9) {
++    exit(0);
+     // Lower max bitrate to the level codec actually can produce.
+-    streams[0].max_bitrate_bps = std::min<int>(
+-        streams[0].max_bitrate_bps, SvcRateAllocator::GetMaxBitrateBps(codec));
+-    streams[0].min_bitrate_bps = codec.spatialLayers[0].minBitrate * 1000;
+-    // target_bitrate_bps specifies the maximum padding bitrate.
+-    streams[0].target_bitrate_bps =
+-        SvcRateAllocator::GetPaddingBitrateBps(codec);
++    // streams[0].max_bitrate_bps = std::min<int>(
++    //     streams[0].max_bitrate_bps, SvcRateAllocator::GetMaxBitrateBps(codec));
++    // streams[0].min_bitrate_bps = codec.spatialLayers[0].minBitrate * 1000;
++    // // target_bitrate_bps specifies the maximum padding bitrate.
++    // streams[0].target_bitrate_bps =
++    //     SvcRateAllocator::GetPaddingBitrateBps(codec);
+   }
+ 
+   codec.startBitrate =
