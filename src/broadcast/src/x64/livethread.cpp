@@ -10,8 +10,6 @@
 #include "base/filesystem.h"
 #include "http/HttpClient.h"
 #include "http/HttpsClient.h"
-#include "base/platform.h"
-
 
 
 using namespace base;
@@ -369,13 +367,13 @@ int LiveThread::T31Exit()
 
 int LiveThread::XAInit()
 {
-
+     return 0;
 }
 
 
 int LiveThread::XAExit()
 {
-
+    return 0;
 
 }
 

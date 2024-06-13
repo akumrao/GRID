@@ -1,5 +1,15 @@
-
 #include "livethread.h"
+#include "base/platform.h"
+// #include "base/base64.hpp"
+#include "webrtc/signaler.h"
+#include "base/logger.h"
+#include "Settings.h"
+
+#include "http/url.h"
+#include "base/filesystem.h"
+#include "http/HttpClient.h"
+#include "http/HttpsClient.h"
+
 #include <imp/imp_log.h>
 #include <imp/imp_common.h>
 #include <imp/imp_system.h>
@@ -24,6 +34,7 @@
 
 #include "base/logger.h"
 using namespace base;
+using namespace base::net;
 using namespace base::cnfg;
 
 
@@ -49,6 +60,54 @@ namespace base {
 namespace web_rtc {
     
 
+void RestAPI(std::string method, std::string ip, std::string uri,json &m)
+{
+    Application app;
+
+    std::string sendMe = m.dump();
+    
+    //ClientConnecton *conn = new HttpsClient( "https", "ipcamera.adapptonline.com", 8080, uri);
+    ClientConnecton *conn = new HttpsClient("https", ip, 443, uri);
+    //Client *conn = new Client("http://zlib.net/index.html");
+    conn->fnComplete = [&](const Response & response) {
+        std::string reason = response.getReason();
+        StatusCode statuscode = response.getStatus();
+     //   std::string body = conn->readStream() ? conn->readStream()->str() : "";
+      //  STrace << "Post API reponse" << "Reason: " << reason << " Response: " << body;
+    };
+
+    conn->fnConnect = [&, sendMe](HttpBase * con) {
+        
+        SInfo << sendMe.length();
+        
+        con->send( sendMe.c_str(), sendMe.length(), false);
+        
+    };
+
+    conn->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
+
+        std::cout << "client->fnPayload " << data << std::endl << std::flush;
+    };
+
+    conn->fnUpdateProgess = [&](const std::string str) {
+        std::cout << "final test " << str << std::endl << std::flush;
+    };
+
+    conn->_request.setMethod(method);
+    conn->_request.setKeepAlive(false);
+    
+    conn->_request.setContentLength(sendMe.size());
+    conn->_request.setContentType("application/json");
+    
+    
+    conn->setReadStream(new std::stringstream);
+    conn->send();
+    
+    
+    app.run();
+       
+    
+}
 
 void T31RGBA::run() {
     
@@ -514,7 +573,9 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
                                   
                                   m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
                                   m["messagePayload"] =  event;
+                                  m["camid"] = ctx->cam;
                                   ctx->signaler->postAppMessage( m);
+                                  RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
                               #endif
                             }
                             else if(event["eventType"].get<std::string>() ==  "IDENTITY_RECOGNIZED")
@@ -531,7 +592,11 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
                                  
                                   m["messageType"] = "IDENTITY_RECOGNIZED";
                                   m["messagePayload"] =  event;
+                                  m["camid"] = ctx->cam;
                                   ctx->signaler->postAppMessage( m);
+
+                                  RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
+
                                   #endif  
                             }
 

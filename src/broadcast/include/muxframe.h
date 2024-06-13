@@ -179,6 +179,7 @@ public: // frame essentials
       // this->codec_id = cpy.codec_id;
        this->payload.resize(cpy.payload.size());
        memcpy(this->payload.data(), cpy.payload.data(), cpy.payload.size());
+       return *this;
     }
 
 
