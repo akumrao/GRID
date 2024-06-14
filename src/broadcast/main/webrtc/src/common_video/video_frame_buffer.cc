@@ -12,7 +12,7 @@
 #include "api/video/i420_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ref_counted_object.h"
-#include "third_party/libyuv/include/libyuv/convert.h"
+//#include "third_party/libyuv/include/libyuv/convert.h"  // ravind
 
 namespace webrtc {
 
@@ -115,12 +115,12 @@ class I444BufferBase : public I444BufferInterface {
 
 rtc::scoped_refptr<I420BufferInterface> I444BufferBase::ToI420() {
   rtc::scoped_refptr<I420Buffer> i420_buffer =
-      I420Buffer::Create(width(), height());
-  libyuv::I444ToI420(DataY(), StrideY(), DataU(), StrideU(), DataV(), StrideV(),
-                     i420_buffer->MutableDataY(), i420_buffer->StrideY(),
-                     i420_buffer->MutableDataU(), i420_buffer->StrideU(),
-                     i420_buffer->MutableDataV(), i420_buffer->StrideV(),
-                     width(), height());
+      I420Buffer::Create(width(), height()); // ravind
+//  libyuv::I444ToI420(DataY(), StrideY(), DataU(), StrideU(), DataV(), StrideV(),
+//                     i420_buffer->MutableDataY(), i420_buffer->StrideY(),
+//                     i420_buffer->MutableDataU(), i420_buffer->StrideU(),
+//                     i420_buffer->MutableDataV(), i420_buffer->StrideV(),
+//                     width(), height());
   return i420_buffer;
 }
 
@@ -186,12 +186,12 @@ class I010BufferBase : public I010BufferInterface {
 
 rtc::scoped_refptr<I420BufferInterface> I010BufferBase::ToI420() {
   rtc::scoped_refptr<I420Buffer> i420_buffer =
-      I420Buffer::Create(width(), height());
-  libyuv::I010ToI420(DataY(), StrideY(), DataU(), StrideU(), DataV(), StrideV(),
-                     i420_buffer->MutableDataY(), i420_buffer->StrideY(),
-                     i420_buffer->MutableDataU(), i420_buffer->StrideU(),
-                     i420_buffer->MutableDataV(), i420_buffer->StrideV(),
-                     width(), height());
+      I420Buffer::Create(width(), height());  // ravind
+//  libyuv::I010ToI420(DataY(), StrideY(), DataU(), StrideU(), DataV(), StrideV(),
+//                     i420_buffer->MutableDataY(), i420_buffer->StrideY(),
+//                     i420_buffer->MutableDataU(), i420_buffer->StrideU(),
+//                     i420_buffer->MutableDataV(), i420_buffer->StrideV(),
+//                     width(), height());
   return i420_buffer;
 }
 

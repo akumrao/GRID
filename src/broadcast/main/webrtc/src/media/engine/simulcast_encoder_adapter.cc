@@ -30,7 +30,7 @@
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
-#include "third_party/libyuv/include/libyuv/scale.h"
+//#include "third_party/libyuv/include/libyuv/scale.h" // // ravind
 
 namespace {
 
@@ -408,15 +408,15 @@ int SimulcastEncoderAdapter::Encode(
       rtc::scoped_refptr<I420Buffer> dst_buffer =
           I420Buffer::Create(dst_width, dst_height);
       rtc::scoped_refptr<I420BufferInterface> src_buffer =
-          input_image.video_frame_buffer()->ToI420();
-      libyuv::I420Scale(src_buffer->DataY(), src_buffer->StrideY(),
-                        src_buffer->DataU(), src_buffer->StrideU(),
-                        src_buffer->DataV(), src_buffer->StrideV(), src_width,
-                        src_height, dst_buffer->MutableDataY(),
-                        dst_buffer->StrideY(), dst_buffer->MutableDataU(),
-                        dst_buffer->StrideU(), dst_buffer->MutableDataV(),
-                        dst_buffer->StrideV(), dst_width, dst_height,
-                        libyuv::kFilterBilinear);
+          input_image.video_frame_buffer()->ToI420(); // ravind
+//      libyuv::I420Scale(src_buffer->DataY(), src_buffer->StrideY(),
+//                        src_buffer->DataU(), src_buffer->StrideU(),
+//                        src_buffer->DataV(), src_buffer->StrideV(), src_width,
+//                        src_height, dst_buffer->MutableDataY(),
+//                        dst_buffer->StrideY(), dst_buffer->MutableDataU(),
+//                        dst_buffer->StrideU(), dst_buffer->MutableDataV(),
+//                        dst_buffer->StrideV(), dst_width, dst_height,
+//                        libyuv::kFilterBilinear);
 
       // UpdateRect is not propagated to lower simulcast layers currently.
       // TODO(ilnik): Consider scaling UpdateRect together with the buffer.
