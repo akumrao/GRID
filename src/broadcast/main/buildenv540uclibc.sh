@@ -27,7 +27,7 @@ cp ./webrtc/CMakeLists_t31.txt ./webrtc/CMakeLists.txt
 
 cd t31
 
-cmake -DUSE_MUCLIBC=ON ..
-
+#cmake -DUSE_MUCLIBC=ON -DBUILD_TESTING=off -DANDROID_ABI=x86_64 ..
+cmake -DUSE_MUCLIBC=ON -DBUILD_TESTING=off -DANDROID_ABI=mipsel ..
 
 make -j$(nproc)
