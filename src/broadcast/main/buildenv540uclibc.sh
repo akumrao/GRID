@@ -22,9 +22,6 @@ export LDFLAGS="-Os -fdata-sections -ffunction-sections -muclibc -L${INSTALLPATH
 rm -rf t31
 mkdir -p t31
 
-rm ./webrtc/CMakeLists.txt
-cp ./webrtc/CMakeLists_t31.txt ./webrtc/CMakeLists.txt
-
 cd t31
 
 #cmake -DUSE_MUCLIBC=ON -DBUILD_TESTING=off -DANDROID_ABI=x86_64 ..
