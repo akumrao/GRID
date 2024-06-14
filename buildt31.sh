@@ -24,14 +24,6 @@ export CPPFLAGS="-Os -fdata-sections -ffunction-sections  -muclibc -fPIC  -I${IN
 export LDFLAGS="-Os -fdata-sections -ffunction-sections -muclibc -L${INSTALLPATH}/lib -L${INSTALLPATH}/mips-linux-gnu/lib/ -L${SDKPATH}/lib/uclibc/"
 
 
-mkdir -p src/libuv/build
-cd  src/libuv/build
-
-cmake .. -DUSE_MUCLIBC=ON
-make -j8
-
-
-cd ../../../
 
 cd src/openssl
 
@@ -55,7 +47,7 @@ no-ui-console \
 no-bf no-blake2 no-scrypt \
 no-ssl-trace no-static-engine no-tests no-ts  no-buildtest-c++ no-crypto-mdebug \
 no-dso no-makedepend no-aria no-async no-autoload-config no-blake2 no-bf no-camellia no-cast no-chacha  no-comp no-ct  no-dh no-ec2m no-engine no-filenames no-gost no-idea no-mdc2 no-md4 no-multiblock no-nextprotoneg no-ocsp no-ocb no-poly1305 no-psk no-rc2 no-rc4 no-rmd160 no-seed no-siphash no-sm2 no-sm3 no-sm4 no-srp  no-ts no-ui-console no-whirlpool no-asm -DOPENSSL_SMALL_FOOTPRINT \
-no-siphash  no-sm2 no-sm3 no-sm4 no-whirlpool --prefix="$TOP/ssrc/openssl/buildt31"
+no-siphash  no-sm2 no-sm3 no-sm4 no-whirlpool --prefix="$TOP/src/openssl/buildt31"
 # no-dsa no-idea no-md4 no-mdc2      \
 # no-asan no-async no-buildtest-c++ no-crypto-mdebug   no-dso no-dynamic-engine no-ec_nistp_64_gcc_128 no-egd  no-ubsan     \
 # no-dso  no-comp no-ct no-des no-dgram no-dh no-dsa no-ec2m no-engine no-filenames no-gost no-idea 

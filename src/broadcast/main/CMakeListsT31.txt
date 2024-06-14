@@ -8,6 +8,7 @@ SET(WEBRTC_PATH "/workspace/webrtc/src/")
 
 SET(SSL_ROOT "/workspace/MagicAI/src/openssl/buildt31")
 SET(SSL_LIB "/workspace/MagicAI/src/openssl/buildt31/lib")
+SET(T31SDK "/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/sdk/5.4.0")
 
 
 
@@ -42,9 +43,6 @@ set(CMAKE_BUILD_TYPE MinSizeRel)
 #set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
 
 
-
-
-
 #set (CMAKE_POSITION_INDEPENDENT_CODE OFF)
 #set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -fno-pie")
 #set (CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -fno-pie")
@@ -57,7 +55,7 @@ add_executable(runWebrtc  ${SOURCES})
 target_compile_definitions(runWebrtc PRIVATE HTTPSSL  WEBRTC_POSIX  )
 
 
-target_include_directories(runWebrtc PRIVATE   ../../signal/include ../../facedetec/include/ ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include   ../include/x64 ${WEBRTC_PATH}    ${WEBRTC_PATH}/third_party/abseil-cpp   ../include/t31 ${WEBRTC_PATH}/third_party/abseil-cpp ../../facedetec/xailient-sdk/include/ ${T31SDK}/include ${T31SDK}/samples/libimp-sample/)
+target_include_directories(runWebrtc PRIVATE   ../../signal/include ../../facedetec/include/ ../../facedetec/include/t31/  ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include   ../include/x64 ${WEBRTC_PATH}    ${WEBRTC_PATH}/third_party/abseil-cpp   ../include/t31 ${WEBRTC_PATH}/third_party/abseil-cpp ../../facedetec/xailient-sdk/include/ ${T31SDK}/include ${T31SDK}/samples/libimp-sample/)
 
 
 #target_link_options(runWebrtc PRIVATE -no-pie)
@@ -65,7 +63,7 @@ target_include_directories(runWebrtc PRIVATE   ../../signal/include ../../facede
 #target_compile_options(runWebrtc PRIVATE -Wno-return-type -Wno-format-overflow -Wno-format -Wno-unused-but-set-variable -Wno-write-strings -no-pie)
 target_compile_features(runWebrtc PRIVATE cxx_std_11)
 
-target_link_directories(runWebrtc PRIVATE  ${T31SDK}/lib ${INSTALLPATH}/mips-linux-gnu/lib)
+target_link_directories(runWebrtc PRIVATE  ../../facedetec/xailient-sdk/lib  ${T31SDK}/lib ${INSTALLPATH}/mips-linux-gnu/lib)
 
 target_link_libraries(runWebrtc PRIVATE jingle_peerconnection_so  rnnoise
     srtp   usrsctp  event    absl::optional    absl::variant    absl::strings uv
@@ -81,7 +79,7 @@ add_subdirectory(libuv)
 set(CMAKE_BUILD_TYPE MinSizeRel)
 
 if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-    target_compile_options(runWebrtc PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections)
+    target_compile_options(runWebrtc PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections -fpermissive)
 endif()
 
 

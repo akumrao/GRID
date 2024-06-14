@@ -15,10 +15,11 @@ export CXX=${CROSS_COMPILE}g++
 export LD=${CROSS_COMPILE}ld
 export AR=${CROSS_COMPILE}ar
 export STRIP=${CROSS_COMPILE}strip
-export CFLAGS="-Os -fdata-sections -ffunction-sections -muclibc -fPIC -Wno-error -I${INSTALLPATH}/include -I${INSTALLPATH}/mips-linux-gnu/include/ -I${SDKPATH}/include/"
-export CPPFLAGS="-Os -fdata-sections -ffunction-sections -muclibc -fPIC  -I${INSTALLPATH}/include -I${INSTALLPATH}/mips-linux-gnu/include/ -I${SDKPATH}/include/"
+export CFLAGS="-Os -fdata-sections -ffunction-sections -muclibc -fPIC -Wno-error -I/workspace/MagicAI/src/openssl/buildt31/include -I${INSTALLPATH}/include -I${INSTALLPATH}/mips-linux-gnu/include/ -I${SDKPATH}/include/"
+export CPPFLAGS="-Os -fdata-sections -ffunction-sections -muclibc -fPIC -I/workspace/MagicAI/src/openssl/buildt31/include -I${INSTALLPATH}/include -I${INSTALLPATH}/mips-linux-gnu/include/ -I${SDKPATH}/include/"
 export LDFLAGS="-Os -fdata-sections -ffunction-sections -muclibc -L${INSTALLPATH}/lib -L${INSTALLPATH}/mips-linux-gnu/lib/ -L${SDKPATH}/lib/uclibc/"
 
+rm -rf t31
 mkdir -p t31
 
 rm ./webrtc/CMakeLists.txt
@@ -26,7 +27,7 @@ cp ./webrtc/CMakeLists_t31.txt ./webrtc/CMakeLists.txt
 
 cd t31
 
-cmake -DUSE_MUCLIBC=ON .. 
+cmake -DUSE_MUCLIBC=ON ..
+
 
 make -j$(nproc)
-
