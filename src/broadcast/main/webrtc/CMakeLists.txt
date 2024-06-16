@@ -8,7 +8,7 @@ set(CMAKE_C_COMPILER_WORKS 1)
 set(CMAKE_CXX_COMPILER_WORKS 1)
 
 SET(WEBRTC_REPO "/workspace/MagicAI/src/broadcast/main/webrtc/src")
-SET(ANDROID_ABI "mipsel")
+#SET(ANDROID_ABI "mipsel")
 
 # Use C++11
 set(CMAKE_CXX_STANDARD 11)
@@ -298,7 +298,7 @@ target_link_libraries(jingle_peerconnection_so
     )
 
 
-
+set(CMAKE_BUILD_TYPE MinSizeRel)
 
 if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
     target_compile_options(jingle_peerconnection_so PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections)
