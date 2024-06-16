@@ -368,8 +368,29 @@ void Peer::OnTrack(rtc::scoped_refptr<webrtc::RtpTransceiverInterface> transceiv
     //        }
     //
     //    }
+    
+/*
+    if (transceiver->media_type() == cricket::MEDIA_TYPE_AUDIO)
+    {
+            webrtc::AudioTrackInterface& AudioTrack = static_cast<webrtc::AudioTrackInterface&>(*transceiver->receiver()->track());
+            AudioTrack.AddSink(this);
+    }
+*/
+
 }
 
+/*
+void Peer::OnData(const void* audio_data,
+                      int bits_per_sample,
+                      int sample_rate,
+                      size_t number_of_channels,
+                      size_t number_of_frames) 
+{
+
+                      SInfo << "bits_per_sample " << bits_per_sample <<  " sample_rate " << sample_rate << " number_of_channels " <<  number_of_channels  <<  " number_of_frames "  << number_of_frames;
+}
+*/
+    
 void Peer::OnRemoveTrack(rtc::scoped_refptr<webrtc::RtpReceiverInterface> receiver)
 {
     LInfo( trackInfo.peerID, ": OnRemoveTrack")

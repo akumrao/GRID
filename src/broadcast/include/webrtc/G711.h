@@ -21,6 +21,8 @@
 #include "rtc_base/system/rtc_export.h"
 #include "api/audio_codecs/g711/audio_encoder_g711.h"
 
+#include "api/audio_codecs/g711/audio_decoder_g711.h"
+
 namespace base
 {
 namespace web_rtc
@@ -55,6 +57,24 @@ struct AudioEncoderG711_Cam
         int payload_type,
         absl::optional<webrtc::AudioCodecPairId> codec_pair_id = absl::nullopt);
 };
+
+
+struct AudioDecoderG711_Cam {
+  struct Config {
+    enum class Type {  kPcmU, kPcmA };
+    bool IsOk() const {
+      return (type == Type::kPcmU || type == Type::kPcmA) && num_channels >= 1;
+    }
+    Type type;
+    int num_channels;
+  };
+  static absl::optional<Config> SdpToConfig(const webrtc::SdpAudioFormat& audio_format);
+  static void AppendSupportedDecoders(std::vector<webrtc::AudioCodecSpec>* specs);
+  static std::unique_ptr<webrtc::AudioDecoder> MakeAudioDecoder(
+      const Config& config,
+      absl::optional<webrtc::AudioCodecPairId> codec_pair_id = absl::nullopt);
+};
+
 
 }  // namespace web_rtc
 }  // namespace base

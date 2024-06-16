@@ -88,7 +88,7 @@ PeerFactoryContext::PeerFactoryContext(webrtc::AudioDeviceModule *default_adm)
         default_adm,
 
         webrtc::CreateAudioEncoderFactory<AudioEncoderG711_Cam>(),
-        webrtc::CreateAudioDecoderFactory<webrtc::AudioDecoderG711>(),
+        webrtc::CreateAudioDecoderFactory<AudioDecoderG711_Cam>(),
 
 #if BYPASSGAME
         webrtc::CreateBuiltinVideoEncoderFactory(),

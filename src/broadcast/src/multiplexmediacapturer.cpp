@@ -36,7 +36,7 @@ MultiplexMediaCapturer::MultiplexMediaCapturer(LiveConnectionContext  *ctx, Sign
 #if MP4File
       _videoCapture(std::make_shared<ff::MediaCapture>()),
 #endif
-      _audioModule(AudioPacketModule::Create()),
+      _audioModule(FakeAudioDeviceModule::Create()),
       PlayerID(0)
 {
     using std::placeholders::_1;
@@ -87,7 +87,7 @@ void MultiplexMediaCapturer::openFile(
 //    return str;
 //}
 
-rtc::scoped_refptr<AudioPacketModule> MultiplexMediaCapturer::getAudioModule()
+rtc::scoped_refptr<FakeAudioDeviceModule> MultiplexMediaCapturer::getAudioModule()
 {
     return _audioModule;
 }

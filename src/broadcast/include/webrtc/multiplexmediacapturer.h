@@ -11,7 +11,8 @@
 
 
 
-#include "webrtc/audiopacketmodule.h"
+#include "webrtc/fakeaudiodevicemodule.h"
+//#include "webrtc/audiopacketmodule.h"
 #include "webrtc/videopacketsource.h"
 
 #include "api/peer_connection_interface.h"
@@ -78,7 +79,7 @@ public:
 
     void onAnswer(web_rtc::Peer *conn, en_EncType &encType, std::string &vtrackId, std::string &atrackId);
 
-    rtc::scoped_refptr<AudioPacketModule> getAudioModule();
+    rtc::scoped_refptr<FakeAudioDeviceModule> getAudioModule();
     
     void startRecording( std::string &cam );
     void stopRecording( std::string &cam );
@@ -91,7 +92,7 @@ protected:
     ff::MediaCapture::Ptr _videoCapture;
 #endif
 
-    rtc::scoped_refptr<AudioPacketModule> _audioModule;
+    rtc::scoped_refptr<FakeAudioDeviceModule> _audioModule;
 
 
 public:

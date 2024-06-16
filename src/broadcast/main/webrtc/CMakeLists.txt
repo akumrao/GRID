@@ -7,7 +7,7 @@ set(CMAKE_C_COMPILER_WORKS 1)
 
 set(CMAKE_CXX_COMPILER_WORKS 1)
 
-SET(WEBRTC_REPO "/workspace/MagicAI/src/webrtc/src")
+SET(WEBRTC_REPO "/workspace/MagicAI/src/broadcast/main/webrtc/src")
 SET(ANDROID_ABI "mipsel")
 
 # Use C++11

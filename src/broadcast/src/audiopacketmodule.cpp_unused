@@ -571,21 +571,7 @@ namespace web_rtc
 
 #else
 // Constants correspond to 10ms of sterio audio at 44kHz.
-static const uint8_t kNumberOfChannels = 1;
-static const int kSamplesPerSecond = 8000;
-static const size_t kNumberSamples = 80;
-static const size_t kBytesPerSample = sizeof(AudioPacketModule::Sample) * kNumberOfChannels;
-static const size_t kBufferBytes = kNumberSamples * kBytesPerSample;
 
-
-static const int kTimePerFrameMs = 10;
-static const int kTotalDelayMs = 0;
-static const int kClockDriftMs = 0;
-static const uint32_t kMaxVolume = 0;
-
-// Same value as src/modules/audio_device/main/source/audio_device_config.h in
-// https://code.google.com/p/webrtc/
-static const int kAdmMaxIdleTimeProcess = 1000;
 
 enum
 {
@@ -602,10 +588,15 @@ AudioPacketModule::AudioPacketModule()
       _recIsInitialized(false),
       _currentMicLevel(kMaxVolume),
       _started(false),
-      _nextFrameTime(0),
-      _sendSamples(kBufferBytes)
+      _nextFrameTime(0)
+//      _sendSamples(kBufferBytes)
 {
-    //   in_file = fopen("/var/tmp/audio/out.ul", "rb");
+        #if DEBUGVOIP
+	stream.open("/tmp/test.pcm", std::ofstream::out | std::ofstream::binary);
+        #endif
+
+	DeviceVoipBuffer.reset(nullptr);
+
 }
 
 AudioPacketModule::~AudioPacketModule()
@@ -676,17 +667,17 @@ void AudioPacketModule::updateProcessing(bool start)
     {
         if (!_processThread)
         {
-            //_processThread = rtc::Thread::Create();
-            //_processThread->Start();
+            _processThread = rtc::Thread::Create();
+            _processThread->Start();
         }
-        //_processThread->Post(RTC_FROM_HERE, this, MSG_START_PROCESS);
+       _processThread->Post(RTC_FROM_HERE, this, MSG_START_PROCESS);
     }
     else
     {
         if (_processThread)
         {
-            //_processThread->Stop();
-            //_processThread.reset(nullptr);
+            _processThread->Stop();
+            _processThread.reset(nullptr);
         }
         _started = false;
     }
@@ -732,75 +723,75 @@ void AudioPacketModule::processFrameP()
 
 void AudioPacketModule::sendFrameP()
 {
-    assert(_processThread->IsCurrent());
-    rtc::CritScope cs(&_critCallback);
-    LDebug("Send audio", _recording) if (!_audioCallback) { return; }
-
-    //            auto samples = &_sendSamples[0];
-    //            if (!_sendFifo.read((void**) &samples, kNumberSamples)) {
-    //                LDebug("No audio frames in send buffer")
-    //                return;
-    //            }
-
-    bool key_pressed = false;
-    uint32_t current_mic_level = 0;
-    MicrophoneVolume(&current_mic_level);
-
-    /// memset( samples, 'a',  kNumberSamples*2);
-
-
-    uint8_t test[kBufferBytes];
-    int sz;
-
-    //            if (( sz = fread(test, 1, kBufferBytes, in_file)) <= 0)
-    //            {
-    //                     printf("Failed to read raw data! \n");
-    //
-    //                   exit(0);
-    //
-    //            }else if(feof(in_file))
-    //            {
-    //                fseek(in_file, 0, SEEK_SET);
-    //                std::cout << " first end " << std::endl << std::flush;
-    //                sz = fread(test, 1, kBufferBytes, in_file);
-    //
-    //            }
-    //
-    //
-    //            if(sz != kBufferBytes)
-    //            {
-    //                 std::cout << " first bad end " << std::endl << std::flush;
-    //            }
-
-
-    //           memset( test, 'a',  160);
-    //
-    //           test[0] = nCount;
-    //           test[159] = nCount;
-    //
-    //          //  std::cout <<  nCount << " first " << (int) test[0]  <<  " "  <<  (int)test[159]<< std::endl
-    //          << std::flush;
-
-    //           ++nCount;
-
-    LTrace("Send audio") if (
-        _audioCallback->RecordedDataIsAvailable(
-            test,
-            kNumberSamples,
-            kBytesPerSample,
-            kNumberOfChannels,
-            kSamplesPerSecond,
-            kTotalDelayMs,
-            kClockDriftMs,
-            current_mic_level,
-            key_pressed,
-            current_mic_level)
-        != 0)
-    {
-        assert(false);
-    }
-
-    SetMicrophoneVolume(current_mic_level);
+//    assert(_processThread->IsCurrent());
+//    rtc::CritScope cs(&_critCallback);
+//    LInfo("Send audio", _recording) if (!_audioCallback) { return; }
+//
+//    //            auto samples = &_sendSamples[0];
+//    //            if (!_sendFifo.read((void**) &samples, kNumberSamples)) {
+//    //                LInfo("No audio frames in send buffer")
+//    //                return;
+//    //            }
+//
+//    bool key_pressed = false;
+//    uint32_t current_mic_level = 0;
+//    MicrophoneVolume(&current_mic_level);
+//
+//    /// memset( samples, 'a',  kNumberSamples*2);
+//
+//
+//    uint8_t test[kBufferBytes];
+//    int sz;
+//
+//    //            if (( sz = fread(test, 1, kBufferBytes, in_file)) <= 0)
+//    //            {
+//    //                     printf("Failed to read raw data! \n");
+//    //
+//    //                   exit(0);
+//    //
+//    //            }else if(feof(in_file))
+//    //            {
+//    //                fseek(in_file, 0, SEEK_SET);
+//    //                std::cout << " first end " << std::endl << std::flush;
+//    //                sz = fread(test, 1, kBufferBytes, in_file);
+//    //
+//    //            }
+//    //
+//    //
+//    //            if(sz != kBufferBytes)
+//    //            {
+//    //                 std::cout << " first bad end " << std::endl << std::flush;
+//    //            }
+//
+//
+//    //           memset( test, 'a',  160);
+//    //
+//    //           test[0] = nCount;
+//    //           test[159] = nCount;
+//    //
+//    //          //  std::cout <<  nCount << " first " << (int) test[0]  <<  " "  <<  (int)test[159]<< std::endl
+//    //          << std::flush;
+//
+//    //           ++nCount;
+//
+//    LTrace("Send audio") if (
+//        _audioCallback->RecordedDataIsAvailable(
+//            test,
+//            kNumberSamples,
+//            kBytesPerSample,
+//            kNumberOfChannels,
+//            kSamplesPerSecond,
+//            kTotalDelayMs,
+//            kClockDriftMs,
+//            current_mic_level,
+//            key_pressed,
+//            current_mic_level)
+//        != 0)
+//    {
+//        assert(false);
+//    }
+//
+//    SetMicrophoneVolume(current_mic_level);
 }
 
 void AudioPacketModule::receiveFrameP()
@@ -808,25 +799,57 @@ void AudioPacketModule::receiveFrameP()
     assert(_processThread->IsCurrent());
     // assert(0 && "playout not implemented");
 
-    // {
-    //   rtc::CritScope cs(&_critCallback);
-    //   if (!_audioCallback) {
-    //     return;
-    //   }
-    //   size_t nSamplesOut = 0;
-    //   int64_t elapsed_time_ms = 0;
-    //   int64_t ntp_time_ms = 0;
-    //   if (_audioCallback->NeedMorePlayData(kNumberSamples,
-    //                                        kBytesPerSample,
-    //                                        kNumberOfChannels,
-    //                                        kSamplesPerSecond,
-    //                                        rec_sendFifo_, nSamplesOut,
-    //                                        &elapsed_time_ms, &ntp_time_ms) !=
-    //                                        0) {
-    //     assert(false);
-    //   }
-    //   assert(nSamplesOut == kNumberSamples);
-    // }
+     {
+       rtc::CritScope cs(&_critCallback);
+       if (!_audioCallback) {
+         return;
+       }
+       size_t nSamplesOut = 0;
+       int64_t elapsed_time_ms = 0;
+       int64_t ntp_time_ms = 0;
+       if (_audioCallback->NeedMorePlayData(kNumberSamples,
+                                            kBytesPerSample,
+                                            kNumberOfChannels,
+                                            kSamplesPerSecond,
+                                            rec_buffer_, nSamplesOut,
+                                            &elapsed_time_ms, &ntp_time_ms) !=
+                                            0) {
+         assert(false);
+       }
+       assert(nSamplesOut == kNumberSamples);
+       
+       
+       size_t number_of_bytes = kNumberOfChannels * nSamplesOut * sizeof(int16_t); //assuming bits_per_sample is 16      
+	
+	//bool foundSound = false;
+	//interleave(rec_buffer_, rec_buffer_, rec_buffer_stereo, foundSound);
+	//if(foundSound)
+	{
+		if (DeviceVoipBuffer)
+		{
+			DeviceVoipBuffer->SetRecordedBuffer(rec_buffer_, nSamplesOut);
+			DeviceVoipBuffer->DeliverRecordedData();
+			//UE_LOG(LogAudioCapturer, VeryVerbose, TEXT("passed %d bytes"), BytesPer10Ms);
+		}
+	}
+	
+	
+     #if DEBUGVOIP
+	//UE_LOG(PixelStreamer, Log, TEXT(" Audocapture %s : number_of_frames=%d, sample_rate=%d "), ANSI_TO_TCHAR(__FUNCTION__), nSamplesOut, kNumberSamples);
+
+
+	//int del =  2 * kNumberSamples * kNumberBytesPerSample;
+
+	//if (foundSound)
+	{
+		stream.write(reinterpret_cast<const char*>(rec_buffer_), 2 * number_of_bytes);// for stereo 
+		//stream.write(reinterpret_cast<const char*>(rec_buffer_), number_of_bytes); // for mono audio
+		stream.flush();
+	}
+       #endif
+       
+       
+     }
 }
 
 // int64_t AudioPacketModule::TimeUntilNextProcess()
@@ -863,14 +886,27 @@ int32_t AudioPacketModule::ActiveAudioLayer(AudioLayer * /*audio_layer*/) const
 int32_t AudioPacketModule::RegisterAudioCallback(webrtc::AudioTransport *audio_callback)
 {
     rtc::CritScope cs(&_critCallback);
+    
+    DeviceVoipBuffer->RegisterAudioCallback(audio_callback);
     _audioCallback = audio_callback;
     return 0;
 }
+
+
+template<typename T, typename... Args>
+std::unique_ptr<T> make_unique(Args&&... args) {
+    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
+}
+    
+
 
 int32_t AudioPacketModule::Init()
 {
     // Initialize is called by the factory method.
     // Safe to ignore this Init call.
+    auto task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
+    DeviceVoipBuffer = make_unique<webrtc::AudioDeviceBuffer>(task_queue_factory.get());
+    
     return 0;
 }
 
@@ -945,6 +981,8 @@ int32_t AudioPacketModule::PlayoutIsAvailable(bool * /*available*/)
 int32_t AudioPacketModule::InitPlayout()
 {
     _playIsInitialized = true;
+    DeviceVoipBuffer->SetRecordingSampleRate(kSamplesPerSecond);
+    DeviceVoipBuffer->SetRecordingChannels(kNumberOfChannels);
     return 0;
 }
 
@@ -972,7 +1010,7 @@ bool AudioPacketModule::RecordingIsInitialized() const
 
 int32_t AudioPacketModule::StartPlayout()
 {
-    LDebug("Start playout") if (!_playIsInitialized) { return -1; }
+    LInfo("Start playout") if (!_playIsInitialized) { return -1; }
     {
         rtc::CritScope cs(&_crit);
         _playing = true;
@@ -984,7 +1022,7 @@ int32_t AudioPacketModule::StartPlayout()
 
 int32_t AudioPacketModule::StopPlayout()
 {
-    LDebug("Stop playout") bool start = false;
+    LInfo("Stop playout") bool start = false;
     {
         rtc::CritScope cs(&_crit);
         _playing = false;
@@ -1002,7 +1040,7 @@ bool AudioPacketModule::Playing() const
 
 int32_t AudioPacketModule::StartRecording()
 {
-    LDebug("Start recording") if (!_recIsInitialized) { return -1; }
+    LInfo("Start recording") if (!_recIsInitialized) { return -1; }
     {
         rtc::CritScope cs(&_crit);
         _recording = true;
@@ -1014,7 +1052,7 @@ int32_t AudioPacketModule::StartRecording()
 
 int32_t AudioPacketModule::StopRecording()
 {
-    LDebug("Stop recording") bool start = false;
+    LInfo("Stop recording") bool start = false;
     {
         rtc::CritScope cs(&_crit);
         _recording = false;

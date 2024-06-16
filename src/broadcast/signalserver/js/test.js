@@ -13,7 +13,7 @@ let starttime;
 let camAudio;
 let appAudio;
 
-let inboundStream;
+let inboundStream = null;
 
 // Set up audio and video regardless of what devices are present.
 var sdpConstraints = {
@@ -136,39 +136,32 @@ socket.on('message', function(message) {
 
 ////////////////////////////////////////////////////
 
-var localVideo = document.querySelector('#localVideo');
 var remoteVideo = document.querySelector('#remoteVideo');
 
-// navigator.mediaDevices.getUserMedia({
-//   audio: true,
-//   video: true
-// })
-// .then(gotStream)
-// .catch(function(e) {
-//   alert('getUserMedia() error: ' + e.name);
-// });
-
-// function gotStream(stream) {
-//   console.log('Adding local stream.');
-//   if ('srcObject' in localVideo) {
-//     localVideo.srcObject = stream;
-//   } else {
-//     // deprecated
-//     localVideo.src = window.URL.createObjectURL(stream);
-//   }
-//   localStream = stream;
-//   //sendMessage('got user media');
-//   if (isInitiator) {
-//    // maybeStart();
-//   }
-// }
-
-// var constraints = {
-//   video: true
-// };
 
 //console.log('Getting user media with constraints', constraints);
 
+function localVideoStream()
+{
+var localVideo = document.querySelector('#localVideo');
+  if( !localVideo)
+  {
+      let el = document.createElement("audio");
+
+      el.setAttribute('playsinline', true);
+      el.setAttribute('autoplay', true);
+      el.muted = false;
+      el.id = 'localVideo';
+     
+      el.controls = true;
+
+
+      var divVid =   document.getElementById("divvideos");
+
+      divVid.appendChild(el);
+    }
+
+}
 
 async function maybeStart() {
   console.log('>>>>>>> maybeStart() ', isStarted, localStream, isChannelReady);
@@ -177,17 +170,44 @@ async function maybeStart() {
     createPeerConnection();
 
 
-    const stream = await navigator.mediaDevices.getUserMedia({audio: true})
+    if( appAudio)
+    {
+      localVideoStream();
+      
+      const stream = await navigator.mediaDevices.getUserMedia({audio: true});
 
-   // localVideo.srcObject = stream;
+      var localVideo = document.querySelector('#localVideo');
+      localVideo.srcObject = stream;
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      const transceiver = pc.getTransceivers().find(t => t.sender && t.sender.track === stream.getAudioTracks()[0]);
+      const {codecs} = RTCRtpSender.getCapabilities('audio');
+      const selectedCodecIndex = codecs.findIndex(c => c.mimeType === 'audio/PCMA');
+      transceiver.setCodecPreferences([codecs[selectedCodecIndex]]);
 
-    stream.getTracks().forEach(track => pc.addTrack(track, stream));
+    }
+    else if (camAudio) 
+    {
 
-    const transceiver = pc.getTransceivers().find(t => t.sender && t.sender.track === stream.getAudioTracks()[0]);
-    const {codecs} = RTCRtpSender.getCapabilities('audio');
-    const selectedCodecIndex = codecs.findIndex(c => c.mimeType === 'audio/PCMA');
-    transceiver.setCodecPreferences([codecs[selectedCodecIndex]]);
+      var tvrs = pc.addTransceiver("audio", {
+                direction: "recvonly"
+      });
 
+
+
+
+      const codecs = RTCRtpReceiver.getCapabilities('audio').codecs;;
+       const selectedCodecIndex = codecs.findIndex(c => c.mimeType === 'audio/PCMA');
+      tvrs.setCodecPreferences([codecs[selectedCodecIndex]]);
+
+      remoteVideo.muted = false;
+
+     // let tcvr = pc.getTransceivers()[0];
+     // let codecs = RTCRtpReceiver.getCapabilities('audio').codecs;
+     // const selectedCodecIndex = codecs.findIndex(c => c.mimeType === 'audio/PCMA');
+      //tcvr.setCodecPreferences([codecs[selectedCodecIndex]]);
+
+    }
+   
 
    // pc.addStream(localStream);
     isStarted = true;
@@ -220,8 +240,12 @@ function createPeerConnection() {
             sdpSemantics       : 'unified-plan'
         });
 
-    pc.addTransceiver('audio');
-    pc.addTransceiver('video');
+   
+    pc.addTransceiver("video", {
+                direction: "recvonly"
+            });
+
+
 
 
     channelSnd = pc.createDataChannel("chat"); // sende PC1 
@@ -328,6 +352,7 @@ function createPeerConnection() {
     //pc.onaddstream = handleRemoteStreamAdded;
     pc.ontrack = ontrack;
     pc.onremovestream = handleRemoteStreamRemoved;
+    pc.addEventListener('iceconnectionstatechange', e => onIceStateChange(pc, e));
     console.log('Created RTCPeerConnnection');
   } catch (e) {
     console.log('Failed to create PeerConnection, exception: ' + e.message);
@@ -406,6 +431,18 @@ function ontrack({
         }
         inboundStream.addTrack(track);
         remoteVideo.srcObject = inboundStream;
+
+        remoteVideo.play()
+            .then(() => {
+                // if (cv) {
+                //     cv.width = el.offsetWidth;;
+                //     cv.height = el.offsetHeight
+                // }
+            })
+            .catch((e) => {
+                console.log("play eror %o ", e);
+            });
+
 
        
         stream.onaddtrack = () => console.log("stream.onaddtrack");
@@ -575,16 +612,16 @@ var list = document.getElementById('myUL');
 // Add an event listener to the list
 list.addEventListener('click', function(event) {
   // Get the clicked item
-  var item = event.target;
+   var item = event.target;
 
 
-   var selected;
+    var selected;
   
-   if(item.tagName === 'LI') {                                      
+    if(item.tagName === 'LI') {                                      
     selected= document.querySelector('li.selected');
     if(selected) selected.className= ''; 
      item.className= 'selected';
-   }
+    }
 
 
 
@@ -593,6 +630,9 @@ list.addEventListener('click', function(event) {
   // Get the item's text
   var text = item.textContent;
   starttime = text;
+
+  camAudio = false;
+  appAudio = false;
 
   resetStreams();
 

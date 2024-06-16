@@ -12,17 +12,20 @@
 #define CODECS_G711_AUDIO_ENCODER_PCM_H_
 
 #include <vector>
+#if  defined(__x86_64__) || defined(__arm64__) 
+#include <fstream>
+#endif
 
 #include "modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 
-
+#include "modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
 namespace base
 {
 namespace web_rtc
 {
 
 
-class AudioEncoderPcmUCAM : public webrtc::AudioEncoderPcm
+class AudioEncoderPcmACAM : public webrtc::AudioEncoderPcm
 {
 public:
     struct Config : public AudioEncoderPcm::Config
@@ -30,7 +33,7 @@ public:
         Config() : AudioEncoderPcm::Config(0) {}
     };
 
-    explicit AudioEncoderPcmUCAM(const Config &config);
+    explicit AudioEncoderPcmACAM(const Config &config);
 
 
     webrtc::AudioEncoder::EncodedInfo
@@ -50,7 +53,7 @@ protected:
 
 private:
     static const int kSampleRateHz = 8000;
-    RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderPcmUCAM);
+    RTC_DISALLOW_COPY_AND_ASSIGN(AudioEncoderPcmACAM);
 
     // FILE* in_file;
 
@@ -71,6 +74,38 @@ private:
     // bool first_frame_ {true};
     // uint32_t last_timestamp_ ;
     uint32_t last_rtp_timestamp_;
+};
+
+
+class AudioDecoderPcmACAM  : public webrtc::AudioDecoder {
+ public:
+  explicit AudioDecoderPcmACAM(size_t num_channels); 
+  
+  ~AudioDecoderPcmACAM();
+  
+  void Reset() override;
+  std::vector<webrtc::AudioDecoder::ParseResult> ParsePayload(rtc::Buffer&& payload,
+                                        uint32_t timestamp) override;
+  int PacketDuration(const uint8_t* encoded, size_t encoded_len) const override;
+  int SampleRateHz() const override;
+  size_t Channels() const override;
+
+ protected:
+  int DecodeInternal(const uint8_t* encoded,
+                     size_t encoded_len,
+                     int sample_rate_hz,
+                     int16_t* decoded,
+                     SpeechType* speech_type) override;
+
+ private:
+  const size_t num_channels_;
+  
+  #if  defined(__x86_64__) || defined(__arm64__) 
+  std::ofstream stream;
+  #endif  
+
+   
+  //RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderPcmACAM);
 };
 
 }  // namespace web_rtc
