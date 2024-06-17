@@ -71,7 +71,17 @@ Peer::Peer(
     //_config.servers.push_back(stun);
 
     stun.uri = "stun:stun.l.google.com:19302";
+    
     _config.servers.push_back(stun);
+    
+    
+    webrtc::PeerConnectionInterface::IceServer turn;
+    turn.uri = "turn:13.235.182.183:3478?transport=udp";
+    turn.username = "test"; 
+    turn.password = "test123";         
+    _config.servers.push_back(turn);        
+      
+      
     //  config_.sdp_semantics = sdp_semantics;
 
     // _constraints.SetMandatoryReceiveAudio(true);

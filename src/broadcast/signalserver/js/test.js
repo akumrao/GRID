@@ -231,14 +231,22 @@ function createPeerConnection() {
   try {
     //pc = new RTCPeerConnection(null);
 
-     pc = new RTCPeerConnection(
-        {
-            iceServers         : [{'urls': 'stun:stun.l.google.com:19302'}],
-            iceTransportPolicy : 'all',
-            bundlePolicy       : 'max-bundle',
-            rtcpMuxPolicy      : 'require',
-            sdpSemantics       : 'unified-plan'
-        });
+
+      pc = new RTCPeerConnection(
+      {
+          iceServers         : [{'urls': 'stun:stun.l.google.com:19302'},
+              {
+
+              'url': 'turn:13.235.182.183:3478?transport=udp',
+              'credential': 'test123',
+              'username': 'test',
+              }
+        ],
+          iceTransportPolicy : 'all',
+          bundlePolicy       : 'max-bundle',
+          rtcpMuxPolicy      : 'require',
+          sdpSemantics       : 'unified-plan'
+      })
 
    
     pc.addTransceiver("video", {
