@@ -85,7 +85,7 @@ include_directories(
 
     ${WEBRTC_REPO}/third_party/abseil-cpp
     #${WEBRTC_REPO}/third_party/boringssl/src/include
-    /workspace/MagicAI/src/openssl/buildt31/include
+    /workspace/MagicAI/src/openssl/buildx64/include
     ${WEBRTC_REPO}/third_party/icu/source/common
     ${WEBRTC_REPO}/sdk/libs/ffmpeg/include
     ${WEBRTC_REPO}/third_party/jsoncpp/source/include
