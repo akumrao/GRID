@@ -34,16 +34,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (${ANDROID_ABI} STREQUAL "x86_64")
 
-file(GLOB SOURCES "*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../../base/src/*.cpp"  "../../net/src/*.cpp" "../../http/src/*.cpp" "../../http_parser/*.cpp" "../../facedetec/src/configuration.cpp" "../../signal/src/*.cpp" )
+file(GLOB SOURCES "*.cpp" "../../libuv/src/*.cpp" "../../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../../base/src/*.cpp"  "../../net/src/*.cpp" "../../http/src/*.cpp" "../../http_parser/*.cpp" "../../facedetec/src/configuration.cpp" "../../signal/src/*.cpp" )
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
  
-file(GLOB SOURCES "*.cpp" "../src/*.cpp" "../src/t31/*.cpp" "../../base/src/*.cpp"  "../../net/src/*.cpp" "../../http/src/*.cpp" "../../http_parser/*.cpp" "../../facedetec/src/*.cpp" "../../facedetec/src/t31/*.cpp" "../../signal/src/*.cpp")
+file(GLOB SOURCES "*.cpp" "../../libuv/src/*.cpp" "../../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/t31/*.cpp" "../../base/src/*.cpp"  "../../net/src/*.cpp" "../../http/src/*.cpp" "../../http_parser/*.cpp" "../../facedetec/src/*.cpp" "../../facedetec/src/t31/*.cpp" "../../signal/src/*.cpp")
 
 endif()
-
-
-
 
 
 
@@ -94,13 +91,13 @@ target_link_directories(runWebrtc PRIVATE  ../../facedetec/xailient-sdk/lib  ${T
 if (${ANDROID_ABI} STREQUAL "x86_64")
 
 target_link_libraries(runWebrtc PRIVATE jingle_peerconnection_so  rnnoise
-    srtp   usrsctp  event    absl::optional    absl::variant    absl::strings uv
+    srtp   usrsctp  event    absl::optional    absl::variant    absl::strings
     pffft pthread m dl z  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  )
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
  
 target_link_libraries(runWebrtc PRIVATE jingle_peerconnection_so  rnnoise
-    srtp   usrsctp  event  absl::optional  absl::variant   absl::strings uv
+    srtp   usrsctp  event  absl::optional  absl::variant   absl::strings 
     pffft xailient-fi  rt m dl -pthread atomic  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a )
 
 endif()
@@ -112,7 +109,7 @@ endif()
 
 
 add_subdirectory(webrtc)
-add_subdirectory(libuv)
+#add_subdirectory(libuv)
 
 set(CMAKE_BUILD_TYPE MinSizeRel)
 #set(CMAKE_BUILD_TYPE Debug)

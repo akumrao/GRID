@@ -41,69 +41,6 @@ set(arm_PLATFORM_CC_FILTER ".*fir_filter_neon.cc|.*sinc_resampler_neon.cc|.*cros
 # add at first, avoid header search path, definition chaos
 add_subdirectory(third_party)
 
-add_definitions(-DWEBRTC_POSIX=1 -DWEBRTC_LINUX=1 -DNDEBUG   )
-#add_definitions(-DWEBRTC_ENABLE_PROTOBUF=1)
-add_definitions(-DWEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
-add_definitions(-DHAVE_PTHREAD -DHAVE_SCTP -DHAVE_WEBRTC_VIDEO -DHAVE_WEBRTC_VOICE)
-#add_definitions(-DUSE_BUILTIN_SW_CODECS)
-#add_definitions(-DENABLE_RTC_EVENT_LOG)
-add_definitions(-DWEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS=0)
-
-if (${ANDROID_ABI} STREQUAL "armeabi-v7a")
-    add_definitions(-DWEBRTC_USE_BUILTIN_ISAC_FIX=1 -DWEBRTC_USE_BUILTIN_ISAC_FLOAT=0)
-else()
-    add_definitions(-DWEBRTC_USE_BUILTIN_ISAC_FIX=0 -DWEBRTC_USE_BUILTIN_ISAC_FLOAT=1)
-endif()
-
-#add_definitions(-DWEBRTC_OPUS_VARIABLE_COMPLEXITY=0)
-
-add_definitions(-DNO_TCMALLOC=1)
-
-if (${ANDROID_ABI} STREQUAL "arm64-v8a")
-    add_definitions(-DWEBRTC_ARCH_ARM64 -DWEBRTC_HAS_NEON)
-elseif (${ANDROID_ABI} STREQUAL "armeabi-v7a")
-    add_definitions(-DWEBRTC_ARCH_ARM -DWEBRTC_ARCH_ARM_V7 -DWEBRTC_HAS_NEON -DARVIND)
-endif()
-
-add_definitions(-DWEBRTC_CODEC_ILBC -DWEBRTC_CODEC_OPUS -DWEBRTC_OPUS_SUPPORT_120MS_PTIME=1 -DWEBRTC_CODEC_ISAC -DWEBRTC_CODEC_RED)
-
-add_definitions(-DWEBRTC_INTELLIGIBILITY_ENHANCER=0 -DWEBRTC_NS_FIXED)
-
-add_definitions(-DWEBRTC_APM_DEBUG_DUMP=0)
-
-#set(CMAKE_BUILD_TYPE Debug)
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
-
-add_definitions(-DHAVE_NETINET_IN_H)
-
-include_directories(
-    ${WEBRTC_REPO}
-
-    /workspace/webrtc/src
-
-    #${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen
-
-    ${WEBRTC_REPO}/third_party/abseil-cpp
-    #${WEBRTC_REPO}/third_party/boringssl/src/include
-    /workspace/MagicAI/src/openssl/buildx64/include
-    ${WEBRTC_REPO}/third_party/icu/source/common
-    ${WEBRTC_REPO}/sdk/libs/ffmpeg/include
-    ${WEBRTC_REPO}/third_party/jsoncpp/source/include
-    ${WEBRTC_REPO}/third_party/libsrtp/config
-    ${WEBRTC_REPO}/third_party/libsrtp/crypto/include
-    ${WEBRTC_REPO}/third_party/libsrtp/include
-    #${WEBRTC_REPO}/third_party/libyuv/include
-    #${WEBRTC_REPO}/third_party/libvpx/source/libvpx
-    #${WEBRTC_REPO}/third_party/opus/src/include
-    #${WEBRTC_REPO}/third_party/protobuf/src
-    ${WEBRTC_REPO}/third_party/usrsctp/usrsctplib
-    #${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni
-    #${webrtc_build_dir}/gen/sdk/android/generated_logging_jni
-    #${webrtc_build_dir}/gen/sdk/android/generated_native_api_jni/
-
-    #${WEBRTC_REPO}/third_party/android_ndk/sysroot/usr/include
-
-)
 
 
 file(GLOB_RECURSE header_api
@@ -264,6 +201,9 @@ list(FILTER src_video EXCLUDE REGEX
     ".*_loopback.cc|.*replay.cc|.*video_analyzer.cc|.*video_loopback_main.cc|.*video_stream_decoder_impl.cc"
 )
 
+
+
+
 add_library(jingle_peerconnection_so STATIC
     ${src_api}
     ${src_audio}
@@ -283,6 +223,64 @@ add_library(jingle_peerconnection_so STATIC
     ${src_video}
     ${header_api}
 )
+
+
+if (${ANDROID_ABI} STREQUAL "armeabi-v7a")
+    target_compile_definitions(jingle_peerconnection_so PRIVATE -DWEBRTC_USE_BUILTIN_ISAC_FIX=1 -DWEBRTC_USE_BUILTIN_ISAC_FLOAT=0)
+else()
+    target_compile_definitions(jingle_peerconnection_so PRIVATE -DWEBRTC_USE_BUILTIN_ISAC_FIX=0 -DWEBRTC_USE_BUILTIN_ISAC_FLOAT=1)
+endif()
+
+
+
+if (${ANDROID_ABI} STREQUAL "arm64-v8a")
+    target_compile_definitions(jingle_peerconnection_so PRIVATE -DWEBRTC_ARCH_ARM64 -DWEBRTC_HAS_NEON)
+elseif (${ANDROID_ABI} STREQUAL "armeabi-v7a")
+    target_compile_definitions(jingle_peerconnection_so PRIVATE -DWEBRTC_ARCH_ARM -DWEBRTC_ARCH_ARM_V7 -DWEBRTC_HAS_NEON -DARVIND)
+endif()
+
+
+
+
+
+target_compile_definitions(jingle_peerconnection_so PRIVATE -DHAVE_NETINET_IN_H  -DWEBRTC_APM_DEBUG_DUMP=0  -DWEBRTC_INTELLIGIBILITY_ENHANCER=0 -DWEBRTC_NS_FIXED -DWEBRTC_CODEC_ILBC -DWEBRTC_CODEC_OPUS -DWEBRTC_OPUS_SUPPORT_120MS_PTIME=1 -DWEBRTC_CODEC_ISAC -DWEBRTC_CODEC_RED 
+-DWEBRTC_POSIX=1 -DWEBRTC_LINUX=1 -DNDEBUG 
+-DWEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE
+-DHAVE_PTHREAD -DHAVE_SCTP -DHAVE_WEBRTC_VIDEO -DHAVE_WEBRTC_VOICE
+-DNO_TCMALLOC=1
+-DWEBRTC_NON_STATIC_TRACE_EVENT_HANDLERS=0
+)
+
+target_include_directories(jingle_peerconnection_so PRIVATE  
+
+    ${WEBRTC_REPO}
+
+    /workspace/webrtc/src
+
+    #${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen
+
+    ${WEBRTC_REPO}/third_party/abseil-cpp
+    #${WEBRTC_REPO}/third_party/boringssl/src/include
+    /workspace/MagicAI/src/openssl/buildx64/include
+    ${WEBRTC_REPO}/third_party/icu/source/common
+    ${WEBRTC_REPO}/sdk/libs/ffmpeg/include
+    ${WEBRTC_REPO}/third_party/jsoncpp/source/include
+    ${WEBRTC_REPO}/third_party/libsrtp/config
+    ${WEBRTC_REPO}/third_party/libsrtp/crypto/include
+    ${WEBRTC_REPO}/third_party/libsrtp/include
+    #${WEBRTC_REPO}/third_party/libyuv/include
+    #${WEBRTC_REPO}/third_party/libvpx/source/libvpx
+    #${WEBRTC_REPO}/third_party/opus/src/include
+    #${WEBRTC_REPO}/third_party/protobuf/src
+    ${WEBRTC_REPO}/third_party/usrsctp/usrsctplib
+    #${webrtc_build_dir}/gen/sdk/android/generated_peerconnection_jni
+    #${webrtc_build_dir}/gen/sdk/android/generated_logging_jni
+    #${webrtc_build_dir}/gen/sdk/android/generated_native_api_jni/
+
+    #${WEBRTC_REPO}/third_party/android_ndk/sysroot/usr/include
+) 
+
+
 
 
 target_link_libraries(jingle_peerconnection_so
