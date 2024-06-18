@@ -347,7 +347,7 @@ void LocalAudioSource::run()
 		/* save the encode data to the file. */
 		//fwrite(stream.stream, 1, stream.len, record_file);
 
-		SInfo << " PCMA len " << stream.len;
+		//SInfo << " PCMA len " << stream.len;
                  
                 std::copy(stream.stream, stream.stream +  stream.len, std::back_inserter(buffer));
 
