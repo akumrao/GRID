@@ -255,7 +255,7 @@ target_include_directories(jingle_peerconnection_so PRIVATE
 
     ${WEBRTC_REPO}
 
-    /workspace/webrtc/src
+    #/workspace/webrtc/src
 
     #${WEBRTC_REPO}/${WEBRTC_BUILD_DIR}/gen
 
