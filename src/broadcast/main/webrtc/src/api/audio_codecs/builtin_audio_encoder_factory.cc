@@ -54,6 +54,8 @@ struct NotAdvertised {
 
 }  // namespace
 
+
+/*
 rtc::scoped_refptr<AudioEncoderFactory> CreateBuiltinAudioEncoderFactory() {
   return CreateAudioEncoderFactory<
 
@@ -69,5 +71,6 @@ rtc::scoped_refptr<AudioEncoderFactory> CreateBuiltinAudioEncoderFactory() {
 
       AudioEncoderG711, NotAdvertised<AudioEncoderL16>>();
 }
+*/
 
 }  // namespace webrtc

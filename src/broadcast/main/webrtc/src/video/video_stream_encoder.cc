@@ -20,7 +20,7 @@
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocator_factory.h"
-#include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
+//#include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
 #include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
