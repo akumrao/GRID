@@ -1122,7 +1122,7 @@ int _zbar_best_format(uint32_t src, uint32_t *dst, const uint32_t *dsts)
 	fprintf(stderr, "\n");
     return (min_cost);
 }
-
+#if ZBAR_VID
 int zbar_negotiate_format(zbar_video_t *vdo, zbar_window_t *win)
 {
     static const uint32_t y800[2] = { fourcc('Y','8','0','0'), 0 };
@@ -1227,3 +1227,4 @@ int zbar_negotiate_format(zbar_video_t *vdo, zbar_window_t *win)
 	    (char *)&min_fmt, min_fmt, min_cost);
     return (zbar_video_init(vdo, min_fmt));
 }
+#endif

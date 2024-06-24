@@ -57,7 +57,7 @@ rtc::SocketFactoryWrapper::CreateUdpSocket(const rtc::SocketAddress &local_addre
 #include "common_video/h264/h264_common.h"
 
 #ifdef WEBRTC_LINUX
-#include <ffnvcodec/nvEncodeAPI.h>
+//#include <ffnvcodec/nvEncodeAPI.h>
 #endif
 
 #include "api/video_codecs/builtin_video_encoder_factory.h"

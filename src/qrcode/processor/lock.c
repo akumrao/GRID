@@ -153,6 +153,7 @@ void _zbar_processor_notify(zbar_processor_t *proc, unsigned events)
     }
 }
 
+#if ZBAR_VID 
 static inline int proc_wait_unthreaded(zbar_processor_t *proc,
 				       proc_waiter_t *waiter,
 				       zbar_timer_t *timeout)
@@ -186,7 +187,9 @@ static inline int proc_wait_unthreaded(zbar_processor_t *proc,
     _zbar_mutex_lock(&proc->mutex);
     return (rc);
 }
+#endif
 
+#if ZBAR_VID
 int _zbar_processor_wait(zbar_processor_t *proc, unsigned events,
 			 zbar_timer_t *timeout)
 {
@@ -226,3 +229,4 @@ int _zbar_processor_wait(zbar_processor_t *proc, unsigned events,
     _zbar_mutex_unlock(&proc->mutex);
     return (rc);
 }
+#endif

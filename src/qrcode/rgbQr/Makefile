@@ -2,7 +2,7 @@
 CC = gcc
 OUT_FILE_NAME = zbar
 
-CFLAGS=  -g -Wall -c -DZBAR_WIN=1
+CFLAGS=  -g -Wall -c -DZBAR_WIN=0
 
 TARGETS=$(OUT_FILE_NAME) $(TARGET)
 
@@ -27,8 +27,8 @@ all: $(TARGETS) main
 
 
 
-# Enumerating of every *.cpp as *.o and using that as dependency ../window/*.c 
-$(OUT_FILE_NAME): $(patsubst %.c,%.o,$(wildcard ../zbar/*.c ../decoder/*.c ../processor/*.c ../qrcode/*.c ../video/*.c  ../window/*.c  ))
+# Enumerating of every *.cpp as *.o and using that as dependency ../video/*.c  ../window/*.c 
+$(OUT_FILE_NAME): $(patsubst %.c,%.o,$(wildcard ../zbar/*.c ../decoder/*.c ../processor/*.c ../qrcode/*.c  ))
 	ar -r -o $(OUT_DIR)/$@ $^
 
 
@@ -48,20 +48,17 @@ dirmake:
 
 
 
-
-
-
 SLIBS = $(OUT_FILE_NAME)
 
 
 
 CC=gcc
-CFLAGSM=$(INC) -g -DZBAR_WIN=1
+CFLAGSM=$(INC) -g -DZBAR_WIN=0
 
 ODIR=obj
 LDIR =../lib
 
-LIBS=-lm -lpthread -lv4l2 -lX11 -lXv -lMagickWand-6.Q16 -lMagickCore-6.Q16
+LIBS=-lm -lpthread -lv4l2
 
 
 main: main.c zbar

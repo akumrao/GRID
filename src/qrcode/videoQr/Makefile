@@ -2,7 +2,7 @@
 CC = gcc
 OUT_FILE_NAME = zbar
 
-CFLAGS=  -g -Wall -c -DZBAR_WIN=1
+CFLAGS=  -g -Wall -c -DZBAR_WIN=1 -DZBAR_VID=1
 
 TARGETS=$(OUT_FILE_NAME) $(TARGET)
 
@@ -56,7 +56,7 @@ SLIBS = $(OUT_FILE_NAME)
 
 
 CC=gcc
-CFLAGSM=$(INC) -g -DZBAR_WIN=1
+CFLAGSM=$(INC) -g -DZBAR_WIN=1 -DZBAR_VID=1
 
 ODIR=obj
 LDIR =../lib
