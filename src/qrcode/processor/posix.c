@@ -171,6 +171,8 @@ int _zbar_event_wait(zbar_event_t *event, zbar_mutex_t *lock,
 
 #endif
 
+
+#if ZBAR_VID
 /* used by poll interface.  lock is already held */
 static int proc_video_handler(zbar_processor_t *proc, int i)
 {
@@ -193,6 +195,7 @@ static int proc_video_handler(zbar_processor_t *proc, int i)
 	zbar_image_destroy(img);
     return (0);
 }
+#endif
 
 static inline void proc_cache_polling(processor_state_t *state)
 {
@@ -310,6 +313,7 @@ int _zbar_processor_cleanup(zbar_processor_t *proc)
     return (0);
 }
 
+#if ZBAR_VID
 int _zbar_processor_enable(zbar_processor_t *proc)
 {
     int vid_fd = zbar_video_get_fd(proc->video);
@@ -323,3 +327,4 @@ int _zbar_processor_enable(zbar_processor_t *proc)
     /* FIXME failure recovery? */
     return (0);
 }
+#endif

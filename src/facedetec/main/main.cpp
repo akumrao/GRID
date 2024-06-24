@@ -1,5 +1,5 @@
 
-#include "base/test.h"
+//#include "base/test.h"
 #include "base/logger.h"
 #include "base/filesystem.h"
 #include "base/platform.h"
@@ -81,10 +81,10 @@ int main(int argc, char** argv) {
     Application app;
 
 
-   
+    bool recording = false;
 
-     LiveThread t31Video("live", nullptr,nullptr );
-     t31Video.start();
+     LiveThread livethread("live", nullptr,nullptr, recording );
+     livethread.start();
 
     
    // RestAPI("GET", "/"); //GET, POST, PUT, DELETE  // Rest API TEst
@@ -133,7 +133,7 @@ int main(int argc, char** argv) {
 
         SInfo << "about to exit application" ;
 
-        t31Video.stop();
+        livethread.stop();
 
     }
 

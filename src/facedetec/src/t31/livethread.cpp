@@ -1,10 +1,12 @@
 #include "livethread.h"
 #include "base/platform.h"
 // #include "base/base64.hpp"
-#include "webrtc/signaler.h"
-#include "base/logger.h"
-#include "Settings.h"
 
+#include "base/logger.h"
+
+
+        
+#include "net/netInterface.h"        
 #include "http/url.h"
 #include "base/filesystem.h"
 #include "http/HttpClient.h"
@@ -16,7 +18,7 @@
 #include <imp/imp_framesource.h>
 #include <imp/imp_encoder.h>
 #include "sample-common.h"
-#include "Settings.h"
+
 
 #include "base/platform.h"
 #include "base/rgba_bitmap.h"
@@ -27,6 +29,7 @@
 #if(DUMPFILE)
 #else
 #include "webrtc/signaler.h"
+#include "Settings.h"
 #endif
 
 #include <xailient-fi/sdk_json_interface.h>
@@ -551,7 +554,7 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
                                  if (identity.loaded()) 
                                  {
                                   
-                                   XA_addGallery(event["registrationImage"].get<std::string>() ,xaidentity ) ;
+                                   //XA_addGallery(event["registrationImage"].get<std::string>() ,xaidentity ) ;
                                    // uint8_t* tmpBuf = new uint8_t [image.width*3*image.height];
                                    // memset(tmpBuf, 0, image.width*3*image.height);
                                    // XAProcess( tmpBuf , image.width, image.height );
@@ -1268,7 +1271,8 @@ void LiveThread::start()
        t31rgba->start();
     }
 }
-
+#if(DUMPFILE)
+#else
 
 void Recording::run()
 {
@@ -1318,5 +1322,7 @@ void Recording::run()
     SInfo << "Recording::run() over";
         
 }
+#endif
+
 
 }}

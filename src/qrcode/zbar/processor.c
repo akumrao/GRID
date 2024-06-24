@@ -148,7 +148,7 @@ error:
     return (err_capture(proc, SEV_ERROR, ZBAR_ERR_UNSUPPORTED, __func__,
 			"unknown image format"));
 }
-    #if ZBAR_WIN
+#if ZBAR_WIN
 int _zbar_processor_handle_input(zbar_processor_t *proc, int input)
 {
     int event = EVENT_INPUT;
@@ -191,7 +191,7 @@ int _zbar_processor_handle_input(zbar_processor_t *proc, int input)
 }
 #endif
 #ifdef ZTHREAD
-
+#if ZBAR_VID
 static ZTHREAD proc_video_thread(void *arg)
 {
     zbar_processor_t *proc = arg;
@@ -239,7 +239,7 @@ static ZTHREAD proc_video_thread(void *arg)
     _zbar_mutex_unlock(&proc->mutex);
     return (0);
 }
-
+#endif
 static ZTHREAD proc_input_thread(void *arg)
 {
     int rc		   = 0;
@@ -335,8 +335,10 @@ int zbar_processor_init(zbar_processor_t *proc, const char *dev,
     int rc = 0;
     int video_threaded, input_threaded;
 
+    #if ZBAR_VID
     if (proc->video)
 	zbar_processor_set_active(proc, 0);
+    #endif
     
     #if ZBAR_WIN
     if (proc->window && !proc->input_thread.started)
@@ -358,10 +360,13 @@ int zbar_processor_init(zbar_processor_t *proc, const char *dev,
    #endif
 
     rc = 0;
+    
+    #if ZBAR_VID
     if (proc->video) {
 	zbar_video_destroy(proc->video);
 	proc->video = NULL;
     }
+    #endif
 
     if (!dev && !enable_display)
 	/* nothing to do */
@@ -378,6 +383,7 @@ int zbar_processor_init(zbar_processor_t *proc, const char *dev,
     }
      #endif 
 
+    #if ZBAR_VID
     if (dev) {
 	proc->video = zbar_video_create();
 	if (!proc->video) {
@@ -397,7 +403,9 @@ int zbar_processor_init(zbar_processor_t *proc, const char *dev,
 	    goto done;
 	}
     }
+    #endif
 
+    #if ZBAR_VID
     /* spawn blocking video thread */
     video_threaded =
 	(proc->threaded && proc->video && zbar_video_get_fd(proc->video) < 0);
@@ -408,6 +416,7 @@ int zbar_processor_init(zbar_processor_t *proc, const char *dev,
 			 "spawning video thread");
 	goto done;
     }
+   # endif
 
     /* spawn input monitor thread */
     input_threaded =
@@ -425,6 +434,7 @@ int zbar_processor_init(zbar_processor_t *proc, const char *dev,
 	goto done;
 #endif
 
+   #if ZBAR_VID
     if (proc->video && proc->force_input) {
 	if (zbar_video_init(proc->video, proc->force_input))
 	    rc = err_copy(proc, proc->video);
@@ -447,7 +457,7 @@ int zbar_processor_init(zbar_processor_t *proc, const char *dev,
 			     "no compatible image format");
 	}
     }
-
+   #endif
 done:
     _zbar_mutex_lock(&proc->mutex);
     proc_leave(proc);
@@ -497,6 +507,7 @@ int zbar_processor_set_config(zbar_processor_t *proc, zbar_symbol_type_t sym,
     return (rc);
 }
 
+#if ZBAR_VID
 int zbar_processor_set_control(zbar_processor_t *proc, const char *control_name,
 			       int value)
 {
@@ -527,6 +538,7 @@ int zbar_processor_get_control(zbar_processor_t *proc, const char *control_name,
     proc_leave(proc);
     return (rc);
 }
+#endif
 
 int zbar_processor_request_size(zbar_processor_t *proc, unsigned width,
 				unsigned height)
@@ -611,7 +623,7 @@ zbar_processor_get_results(const zbar_processor_t *proc)
     proc_leave(ncproc);
     return (syms);
 }
-
+#if ZBAR_VID
 int zbar_processor_user_wait(zbar_processor_t *proc, int timeout)
 {
     int rc = -1;
@@ -636,7 +648,9 @@ int zbar_processor_user_wait(zbar_processor_t *proc, int timeout)
     proc_leave(proc);
     return (rc);
 }
+#endif
 
+#if ZBAR_VID
 int zbar_processor_set_active(zbar_processor_t *proc, int active)
 {
     int rc;
@@ -710,6 +724,7 @@ done:
     proc_leave(proc);
     return (rc);
 }
+#endif 
 
 int zbar_process_image(zbar_processor_t *proc, zbar_image_t *img)
 {
