@@ -1,0 +1,141 @@
+T31SDK =/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/sdk/5.4.0
+
+INSTALLPATH=/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/resource/toolchain/gcc_540/mips-gcc540-glibc222-64bit-r3.3.0
+#export INSTALLPATH="/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/resource/toolchain/gcc_472/mips-gcc472-glibc216-64bit"
+TOOLCHAIN=${INSTALLPATH}/bin
+CROSS_COMPILE=${TOOLCHAIN}/mips-linux-gnu-
+CC=${CROSS_COMPILE}gcc
+CXX=${CROSS_COMPILE}g++
+LD=${CROSS_COMPILE}ld
+AR=${CROSS_COMPILE}ar
+STRIP=${CROSS_COMPILE}strip
+NM=${CROSS_COMPILE}nm
+RANLIB=${CROSS_COMPILE}ranlib
+# CFLAGS="-static -O2  -march=mips32r2 -uClibc++  -std=c++11 -I${INSTALLPATH}/include -I${INSTALLPATH}/_install/include/"
+# export CPPFLAGS="-static -O2  -uClibc++ -std=c++11 -I${INSTALLPATH}/include -I${INSTALLPATH}/_install/include/ -I${INSTALLPATH}/_install/include/ncursesw/"
+# export LDFLAGS="-static -uClibc++ -L${INSTALLPATH}/lib -L${INSTALLPATH}/_install/lib/"
+
+# CFLAGS="-static -O2  -march=mips32r2 -uClibc++  -std=c++11 -I${INSTALLPATH}/include -I${INSTALLPATH}/_install/include/"
+# export CPPFLAGS="-static -O2  -uClibc++ -std=c++11 -I${INSTALLPATH}/include -I${INSTALLPATH}/_install/include/ -I${INSTALLPATH}/_install/include/ncursesw/"
+# export LDFLAGS="-static -uClibc++ -L${INSTALLPATH}/lib -L${INSTALLPATH}/_install/lib/"
+
+
+
+
+OUT_FILE_NAME = zbar
+
+CFLAGS=  -g -Wall -c -DZBAR_WIN=0 -DNDEBUG
+
+TARGETS=$(OUT_FILE_NAME) $(TARGET)
+
+INC = -I../../qrcode/zbar -I../../qrcode/decoder  -I../../qrcode/processor  -I../../qrcode/qrcode  -I../../qrcode/video  -I../../qrcode/window -I../../qrcode/include  -I../../qrcode/  -I/usr/include/ImageMagick-6 -I/usr/include/x86_64-linux-gnu/ImageMagick-6    
+
+#OBJ_DIR=../zbar
+
+OUT_DIR=./
+
+# Enumerating of every *.cpp as *.o and using that as dependency.	
+# filter list of .c files in a directory.
+# FILES =dump_l.c \
+#	kter.c \
+#
+# $(OUT_FILE_NAME): $(patsubst %.c,$(OBJ_DIR)/%.o,$(wildcard $(FILES))) 
+
+
+.DEFAULT_GOAL=all
+.PHONY: all
+all: $(TARGETS) main
+
+
+
+
+# Enumerating of every *.cpp as *.o and using that as dependency ../video/*.c  ../window/*.c 
+$(OUT_FILE_NAME): $(patsubst %.c,%.o,$(wildcard ../../qrcode/zbar/*.c ../../qrcode/decoder/*.c ../../qrcode/processor/*.c ../../qrcode/qrcode/*.c  ))
+	$(AR) -r -o $(OUT_DIR)/$@ $^
+
+
+
+#Compiling every *.cpp to *.o
+%.o: %.c 
+	$(CC) -c $(INC) $(CFLAGS) -o $@  $<
+	
+dirmake:
+	@mkdir -p $(OUT_DIR)
+	
+# clean:
+# 	rm -f $(OBJ_DIR)/*.o $(OUT_DIR)/$(OUT_FILE_NAME) Makefile.bak
+# 	rm -f  $(OBJS)
+
+# rebuild: clean buil
+
+
+
+SLIBS = $(OUT_FILE_NAME)
+
+
+
+# CC=gcc
+# CFLAGSM=$(INC) -g -DZBAR_WIN=0
+
+# ODIR=obj
+# LDIR =../lib
+
+# LIBS=-lm -lpthread
+
+
+# main: main.c zbar
+# 	gcc -o main main.c $(CFLAGSM)  $(SLIBS) $(LIBS)
+
+
+clean1:
+	rm -f  $(OBJS)
+	rm -f $(ODIR)/*.o 
+	rm -f $(OUT_FILE_NAME)
+	rm -f main
+	rm -f $(OBJ_DIR)/*.o $(OUT_DIR)/$(OUT_FILE_NAME) Makefile.bak
+	rm -f  main.o
+
+
+
+
+TARGET = main # define the name of the executable
+SOURCES    = $(wildcard *.cpp  )
+
+CXXFLAGS   := -g -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized -Wno-attributes -Wno-fpermissive -Wno-deprecated-declarations
+ 
+
+CPPFLAGS   := $(INC) -g -DZBAR_WIN=0 -DNDEBUG
+              
+LDFLAGS   := -L/export/views/video/zbar/Obj/
+#/export/views/video/zbar/libavutil/libavutil.a /export/views/video/zbar/libavcodec/libavcodec.a
+LDLIBS    := -lpthread -lm -muclibc
+
+#SLIBS     := $(OUT_FILE_NAME) 
+
+SLIBS     := $(OUT_FILE_NAME)
+
+
+
+# define list of objects
+OBJSC=$(SOURCES:.cpp=.o)
+OBJS=$(OBJSC:.cpp=.o)
+
+# the target is obtained linking all .o files
+all: $(SOURCES) $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(OBJS) $(SLIBS) $(LDFLAGS) $(LDLIBS) -o $(TARGET)
+
+purge: clean
+	rm -f $(TARGET)
+	rm -f $(OUT_FILE_NAME)
+
+
+
+clean:
+	rm -f  $(OBJS)
+	rm -f $(ODIR)/*.o 
+	rm -f $(OUT_FILE_NAME)
+	rm -f main
+	rm -f $(OBJ_DIR)/*.o $(OUT_DIR)/$(OUT_FILE_NAME) Makefile.bak
+	rm -f  main.o

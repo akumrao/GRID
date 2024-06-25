@@ -24,6 +24,17 @@ export CPPFLAGS="-Os -fdata-sections -ffunction-sections  -muclibc -fPIC  -I${IN
 export LDFLAGS="-Os -fdata-sections -ffunction-sections -muclibc -L${INSTALLPATH}/lib -L${INSTALLPATH}/mips-linux-gnu/lib/ -L${SDKPATH}/lib/uclibc/"
 
 
+mkdir -p src/libuv/build
+cd  src/libuv/build
+
+cmake .. -DUSE_MUCLIBC=ON
+make -j8
+
+
+cd ../../../
+
+
+
 
 cd src/openssl
 

@@ -3,72 +3,19 @@
 #include "base/logger.h"
 #include "base/filesystem.h"
 #include "base/platform.h"
-
-
-
-#include "net/netInterface.h"
-#include "http/client.h"
-#include "base/logger.h"
 #include "base/application.h"
-#include "base/platform.h"
-
-#include "http/url.h"
-#include "base/filesystem.h"
-#include "http/HttpClient.h"
-#include "http/HttpsClient.h"
-#include "http/HTTPResponder.h"
-
-
-//#include "json/json.hpp"
-#include <fstream>   // std::ifstream
-#include <iostream>  // std::cout
-
-#include <chrono>
-#include <thread>
-
-
 #include "livethread.h"
 
-using std::cerr;
-using std::cout;
-using std::endl;
+
+// #include <fstream>   // std::ifstream
+// #include <iostream>  // std::cout
+
+// #include <chrono>
+// #include <thread>
+
 
 using namespace base;
-using namespace base::net;
-using namespace base::web_rtc;
 
-void RestAPI(std::string method, std::string uri)
-{
-    
-    ClientConnecton *conn = new HttpsClient( "https", "ipcamera.adapptonline.com", 8080, uri);
-    //Client *conn = new Client("http://zlib.net/index.html");
-    conn->fnComplete = [&](const Response & response) {
-        std::string reason = response.getReason();
-        StatusCode statuscode = response.getStatus();
-     //   std::string body = conn->readStream() ? conn->readStream()->str() : "";
-      //  STrace << "Post API reponse" << "Reason: " << reason << " Response: " << body;
-    };
-
-    conn->fnConnect = [&](HttpBase * con) {
-
-        std::cout << "fnConnect:";
-    };
-
-    conn->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
-
-        std::cout << "client->fnPayload " << data << std::endl << std::flush;
-    };
-
-    conn->fnUpdateProgess = [&](const std::string str) {
-        std::cout << "final test " << str << std::endl << std::flush;
-    };
-
-    conn->_request.setMethod(method);
-    conn->_request.setKeepAlive(false);
-    conn->setReadStream(new std::stringstream);
-    conn->send();
-    
-}
 
 int main(int argc, char** argv) {
     // Logger::instance().add(new RotatingFileChannel("test", "/tmp/test",
@@ -83,7 +30,7 @@ int main(int argc, char** argv) {
 
     bool recording = false;
 
-     LiveThread livethread("live", nullptr,nullptr, recording );
+     base::web_rtc::LiveThread livethread("live", nullptr,nullptr, recording );
      livethread.start();
 
     

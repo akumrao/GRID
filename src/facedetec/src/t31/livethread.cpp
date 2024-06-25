@@ -27,6 +27,9 @@
 #include "base/stb_image.h"
 
 #if(DUMPFILE)
+#include "Settings.h"
+struct Settings::Configuration Settings::configuration;
+
 #else
 #include "webrtc/signaler.h"
 #include "Settings.h"
@@ -54,7 +57,11 @@ static int statime_sp[STREAM_TYPE_NUM] = { 0 };
 static int bitrate_sp[STREAM_TYPE_NUM] = { 0 };
 #endif
 
-//#define DUMPFILE 1
+#include <zbar.h>
+using namespace zbar;
+
+
+
 
 std::atomic<int>  HDVideo {2};
 
@@ -62,6 +69,217 @@ std::atomic<int>  HDVideo {2};
 namespace base {
 namespace web_rtc {
     
+
+
+
+
+//static int notfound = 0, exit_code = 0;
+//static int num_images = 0, num_symbols = 0;
+static int xmllvl  = 0;
+//static int polygon = 0;
+//static int oneshot = 0;
+//static int binary  = 0;
+
+//char *xmlbuf     = NULL;
+unsigned xmlbuflen = 0;
+
+static zbar_processor_t *processor = NULL;
+
+
+
+void saveFile( char *buf, int len)
+{
+   FILE *fp=NULL;
+   
+   fp = fopen( "./test.rgba" , "wb" );
+   if(fp)
+   fwrite(buf , 1 ,len , fp );
+
+   fclose(fp);
+    
+}
+
+
+int readFile(const char* filename,  char *buf, int len)
+{
+   FILE *fp=NULL;
+   
+   fp = fopen( filename , "rb" );
+   
+   if(fp)
+   fread(buf , 1 ,len , fp );
+   else 
+       return -1;
+
+   fclose(fp);
+   
+   return 0;
+    
+}
+
+
+static int scan_image(unsigned char *blob, int width, int height)
+{
+
+    int found        = 0;
+    unsigned seq = 0;
+
+  //if (!MagickSetImageIndex(images, seq) && dump_error(images))
+   //   return (-1);
+
+  zbar_image_t *zimage = zbar_image_create();
+  assert(zimage);
+  zbar_image_set_format(zimage, zbar_fourcc('R', 'G', 'B', '3'));
+
+
+  zbar_image_set_size(zimage, width, height);
+
+  // extract grayscale image pixels
+  // FIXME color!! ...preserve most color w/422P
+  // (but only if it's a color image)
+  size_t bloblen      = width * height*3;
+        
+  //unsigned char *blob = malloc(bloblen);
+  zbar_image_set_data(zimage, blob, bloblen, zbar_image_free_data);
+
+  //if (!MagickGetImagePixels(images, 0, 0, width, height, "RGB", CharPixel,  blob))
+            
+       
+        
+         //saveFile(blob, bloblen );
+
+  if (xmllvl == 1) {
+      xmllvl++;
+     // printf("<source href='%s'>\n", filename);
+  }
+
+  zbar_process_image(processor, zimage);
+
+  // output result data
+  const zbar_symbol_t *sym = zbar_image_first_symbol(zimage);
+  for (; sym; sym = zbar_symbol_next(sym)) {
+      zbar_symbol_type_t typ = zbar_symbol_get_type(sym);
+      unsigned len     = zbar_symbol_get_data_length(sym);
+      if (typ == ZBAR_PARTIAL)
+    continue;
+      else if (xmllvl <= 0) {
+    if (!xmllvl)
+        printf("%s:", zbar_get_symbol_name(typ));
+
+    if (len &&
+        fwrite(zbar_symbol_get_data(sym), len, 1, stdout) != 1) {
+        
+        return (-1);
+    }
+      } 
+//            else
+//            {
+//    if (xmllvl < 3) {
+//        xmllvl++;
+//        printf("<index num='%u'>\n", seq);
+//    }
+//    zbar_symbol_xml(sym, &xmlbuf, &xmlbuflen);
+//    if (fwrite(xmlbuf, xmlbuflen, 1, stdout) != 1) {
+//        exit_code = 1;
+//        return (-1);
+//    }
+//      }
+      found++;
+     // num_symbols++;
+
+     
+      printf("\n");
+     
+  }
+
+  fflush(stdout);
+
+  zbar_image_destroy(zimage);
+
+//  num_images++;
+//  if (zbar_processor_is_visible(processor)) {
+//      int rc = zbar_processor_user_wait(processor, -1);
+//      if (rc < 0 || rc == 'q' || rc == 'Q')
+//    exit_code = 3;
+//  }
+
+    if (xmllvl > 1) {
+  xmllvl--;
+  printf("</source>\n");
+    }
+
+
+
+    //DestroyMagickWand(images);
+    return found;
+}
+
+
+
+int qrcode_scan()
+{
+
+  int width  = 100;
+  int height =100;
+
+ 
+  size_t bloblen      = width * height*3;
+  unsigned char *blob = malloc(bloblen);
+      
+  if(readFile("./test.rgb", blob, bloblen ) )                        
+   return (-1);
+        
+        
+  scan_image( blob, width, height);
+      
+}
+
+int qrcode_init()
+{
+    // option pre-scan
+
+    int i=0;
+    int  display = 0;
+
+
+    processor = zbar_processor_create(0);
+    assert(processor);
+
+
+
+    if (zbar_processor_init(processor, NULL, display)) {
+        zbar_processor_error_spew(processor, 0);
+       return ( -11);
+    }
+
+       
+    zbar_increase_verbosity();
+  
+
+    return (0);
+}
+
+
+int qrcode_exit()
+{
+
+ zbar_processor_destroy(processor);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void RestAPI(std::string method, std::string ip, std::string uri,json &m)
 {
@@ -164,11 +382,15 @@ void T31RGBA::run() {
            // for( int x =0; x < 40 ; ++x)
             {
 
-                XAProcess( rgbBuf, frame->width , frame->height) ;
+                 // qrcode_scan();
+
+                   scan_image( rgbBuf, frame->width , frame->height);
+
+                //XAProcess( rgbBuf, frame->width , frame->height) ;
                // base::sleep(100);
              }
 
-             free(rgbBuf) ;
+             //free(rgbBuf) ;
 
 
             // fwrite((void *)frame->virAddr, frame->size, 1, fp);
@@ -640,10 +862,12 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
 
 int T31RGBA::T31RGBAInit()
 {
+    qrcode_init();
     return 0;
 }
 int T31RGBA::T31RGBAExit()
 {
+     qrcode_exit();
     return 0;
 }
 
@@ -1272,6 +1496,13 @@ void LiveThread::start()
     }
 }
 #if(DUMPFILE)
+
+void Recording::run()
+{
+
+}
+
+
 #else
 
 void Recording::run()

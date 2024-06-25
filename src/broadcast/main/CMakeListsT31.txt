@@ -74,7 +74,7 @@ target_link_libraries(runWebrtc PRIVATE jingle_peerconnection_so  rnnoise
 
 
 add_subdirectory(webrtc)
-add_subdirectory(libuv)
+#add_subdirectory(libuv)
 
 set(CMAKE_BUILD_TYPE MinSizeRel)
 
