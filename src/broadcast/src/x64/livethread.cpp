@@ -428,7 +428,7 @@ void LiveThread::stop()
 
 
 
- LiveThread::LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &record):ctx(ctx),trackInfo(trackInfo)
+ LiveThread::LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &record, bool QRCode ):ctx(ctx),trackInfo(trackInfo), QRCode(QRCode)
 {
 
     if(!record)

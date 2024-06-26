@@ -127,7 +127,7 @@ void IgnoreSignals() {
 }
 
 int main(int argc, char** argv) {
-     //Logger::instance().add(new ConsoleChannel("debug", Level::Info));
+     
     
    // ConsoleChannel *ch =  new ConsoleChannel("debug", Level::Info);
             
@@ -144,6 +144,29 @@ int main(int argc, char** argv) {
     base::cnfg::Configuration config;
 
     config.load("./config.js");
+    
+    if(!config.loaded())
+    {
+        Logger::instance().add(new ConsoleChannel("debug", Level::Info));
+
+        Application app;
+          
+        SInfo << " No config file present";
+        
+        bool recording = false;
+        
+        base::web_rtc::LiveThread livethread("live", nullptr,nullptr, recording, true );
+        livethread.start();
+        
+        app.waitForShutdown([&](void*)
+        {
+            
+            livethread.stop();
+
+        });
+     
+        return 0;
+    }
   
    // json cnfg;
    

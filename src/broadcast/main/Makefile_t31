@@ -21,6 +21,7 @@ RANLIB=${CROSS_COMPILE}ranlib
 WEBRTC_PATH = /workspace/webrtc/src/
 SSL_ROOT = /workspace/MagicAI/src/openssl/buildt31
 
+INC = -I../../qrcode/zbar -I../../qrcode/decoder  -I../../qrcode/processor  -I../../qrcode/qrcode  -I../../qrcode/video  -I../../qrcode/window -I../../qrcode/include  -I../../qrcode/  
 
 
 TARGET=runWebrtc # define the name of the executable
@@ -29,7 +30,7 @@ SOURCES=$(wildcard *.cpp ../src/*.cpp ../src/t31/*.cpp ../../base/src/*.cpp  ../
 CXXFLAGS   := -Os -fdata-sections -ffunction-sections -fno-rtti -std=c++11 -Wno-uninitialized -DNDEBUG -fpermissive
 
 
-CPPFLAGS   := -I../../signal/include -I../../facedetec/include/  -I../../facedetec/include/t31/    -I../include -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../webrtc/include  -DWEBRTC_POSIX  -I${WEBRTC_PATH}  -I${SSL_ROOT}/include  -I../include/t31 -I${WEBRTC_PATH}/third_party/abseil-cpp -DHTTPSSL -I../../facedetec/xailient-sdk/include/ -I${T31SDK}/include -I${T31SDK}/samples/libimp-sample/
+CPPFLAGS   := $(INC) -I../../signal/include -I../../facedetec/include/  -I../../facedetec/include/t31/    -I../include -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../webrtc/include  -DWEBRTC_POSIX  -I${WEBRTC_PATH}  -I${SSL_ROOT}/include  -I../include/t31 -I${WEBRTC_PATH}/third_party/abseil-cpp -DHTTPSSL -I../../facedetec/xailient-sdk/include/ -I${T31SDK}/include -I${T31SDK}/samples/libimp-sample/
 
 
 
@@ -38,7 +39,7 @@ LDFLAGS  += -L../../facedetec/xailient-sdk/lib  -L${T31SDK}/lib -L${INSTALLPATH}
 
 LDLIBS   +=  -lxailient-fi -L/workspace/MagicAI/src/webrtc/t31 -ljingle_peerconnection_so -lrt -lm -ldl -lpthread -latomic
 
-SLIBS    += ../../libuv/build/libuv_a.a ${SSL_ROOT}/lib/libssl.a ${SSL_ROOT}/lib/libcrypto.a ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a
+SLIBS    += ../../libuv/build/libuv_a.a /workspace/MagicAI/src/qrcode/rgbQr/zbar.a ${SSL_ROOT}/lib/libssl.a ${SSL_ROOT}/lib/libcrypto.a ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a
 
 
 

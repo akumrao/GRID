@@ -107,7 +107,7 @@ class T31RGBA:public base::Thread
 {
     public:
         
-    T31RGBA(  LiveConnectionContext *ctx,  st_track *trackInfo):ctx(ctx),trackInfo(trackInfo)
+    T31RGBA(  LiveConnectionContext *ctx,  st_track *trackInfo, bool QRCode):ctx(ctx),trackInfo(trackInfo), QRCode(QRCode)
     {
     }
 
@@ -136,13 +136,11 @@ class T31RGBA:public base::Thread
     
     public: // redefined virtual functions
 
-    //T31RGBA *t31rgba;
+    bool QRCode{false};
     
     private: // internal
      
     BasicFrame basicframe;
-
-    
 
     ~T31RGBA();
 };
@@ -180,7 +178,7 @@ class LiveThread
 {
     public:
         
-    LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &recording);
+    LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &recording, bool QRCode  );
 
     st_track *trackInfo ;
     LiveConnectionContext *ctx;
@@ -215,6 +213,8 @@ public:
     T31RGBA *t31rgba{nullptr};
     
     Recording *recording{nullptr};
+
+    bool QRCode; 
 
 };
 

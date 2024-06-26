@@ -61,16 +61,16 @@ add_executable(runWebrtc  ${SOURCES})
 target_compile_definitions(runWebrtc PRIVATE HTTPSSL  WEBRTC_POSIX NDEBUG )
 
 
-
+set(INC "/workspace/MagicAI/src/qrcode/include")
 
 
 if (${ANDROID_ABI} STREQUAL "x86_64")
 
-target_include_directories(runWebrtc PRIVATE   ../../signal/include ../../facedetec/include/ ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include   ../include/x64 ${WEBRTC_PATH}    ${WEBRTC_PATH}/third_party/abseil-cpp  )
+target_include_directories(runWebrtc PRIVATE  ${INC}  ../../signal/include ../../facedetec/include/ ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include   ../include/x64 ${WEBRTC_PATH}    ${WEBRTC_PATH}/third_party/abseil-cpp  )
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
  
-target_include_directories(runWebrtc PRIVATE   ../../signal/include ../../facedetec/include/ ../../facedetec/include/t31/  ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include   ../include/x64 ${WEBRTC_PATH}    ${WEBRTC_PATH}/third_party/abseil-cpp   ../include/t31 ${WEBRTC_PATH}/third_party/abseil-cpp ../../facedetec/xailient-sdk/include/ ${T31SDK}/include ${T31SDK}/samples/libimp-sample/)
+target_include_directories(runWebrtc PRIVATE  ${INC} ../../signal/include ../../facedetec/include/ ../../facedetec/include/t31/  ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include   ../include/x64 ${WEBRTC_PATH}    ${WEBRTC_PATH}/third_party/abseil-cpp   ../include/t31 ${WEBRTC_PATH}/third_party/abseil-cpp ../../facedetec/xailient-sdk/include/ ${T31SDK}/include ${T31SDK}/samples/libimp-sample/)
 
 endif()
 
@@ -92,13 +92,13 @@ if (${ANDROID_ABI} STREQUAL "x86_64")
 
 target_link_libraries(runWebrtc PRIVATE jingle_peerconnection_so  rnnoise
     srtp   usrsctp  event    absl::optional    absl::variant    absl::strings
-    pffft pthread m dl z  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  )
+    pffft pthread m dl z  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  /workspace/MagicAI/src/qrcode/rgbQr/zbar.a)
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
  
 target_link_libraries(runWebrtc PRIVATE jingle_peerconnection_so  rnnoise
     srtp   usrsctp  event  absl::optional  absl::variant   absl::strings 
-    pffft xailient-fi  rt m dl -pthread atomic  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a )
+    pffft xailient-fi  rt m dl -pthread atomic  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a /workspace/MagicAI/src/qrcode/rgbQr/zbar.a)
 
 endif()
 

@@ -3,7 +3,7 @@
 // #include "base/base64.hpp"
 
 #include "base/logger.h"
-
+#include <sys/reboot.h>
 
         
 #include "net/netInterface.h"        
@@ -87,13 +87,13 @@ static zbar_processor_t *processor = NULL;
 
 
 
-void saveFile( char *buf, int len)
+void saveFile( const char* filename,  std::string str)
 {
    FILE *fp=NULL;
    
-   fp = fopen( "./test.rgba" , "wb" );
+   fp = fopen( filename , "wb" );
    if(fp)
-   fwrite(buf , 1 ,len , fp );
+   fwrite(str.c_str() , 1 ,str.size() , fp );
 
    fclose(fp);
     
@@ -162,16 +162,17 @@ static int scan_image(unsigned char *blob, int width, int height)
       unsigned len     = zbar_symbol_get_data_length(sym);
       if (typ == ZBAR_PARTIAL)
     continue;
-      else if (xmllvl <= 0) {
-    if (!xmllvl)
+      else if (xmllvl <= 0)
+    {
+      if (!xmllvl)
         printf("%s:", zbar_get_symbol_name(typ));
 
-    if (len &&
-        fwrite(zbar_symbol_get_data(sym), len, 1, stdout) != 1) {
-        
-        return (-1);
-    }
-      } 
+      if (len &&
+          fwrite(zbar_symbol_get_data(sym), len, 1, stdout) != 1) 
+      {
+          return (-1);
+      }
+    } 
 //            else
 //            {
 //    if (xmllvl < 3) {
@@ -184,7 +185,51 @@ static int scan_image(unsigned char *blob, int width, int height)
 //        return (-1);
 //    }
 //      }
-      found++;
+
+
+     json root;
+     try
+     { 
+        root = json::parse(zbar_symbol_get_data(sym));
+
+        if(  root.find("s") != root.end()) 
+          saveFile("/configs/.wifipasswd1", root["s"].get<std::string>());
+        if( root.find("p") != root.end()) 
+         saveFile("/configs/.wifissid1", root["p"].get<std::string>() );
+
+
+        json m;
+        
+        m["dtlsCertificateFile"] = "/mnt/key/certificate.crt";
+        m["dtlsPrivateKeyFile"] =  "/mnt/key/private_key.pem";
+        m["storage"]= "/mnt/pvi-storage/";
+        if( root.find("i") != root.end()) 
+        m["qrcode"] = root["i"].get<std::string>();
+        m["server"] =  "ipcamera.adapptonline.com";
+        m["port"]  =  443;
+        m["recording"] = true;
+        m["cloud"] =  false;
+        m["facedetect"]  =  true;
+        m["motionevent"] =  true;
+        m["cam_reconnect"] =  0;
+        m["authtimeout"] =  3600;
+        m["Mp4Size_Key"] =  40;
+        m["SegSize_key"] =  5;
+        m["logLevel"] = "info";
+
+        base::cnfg::saveFile("/mnt/config.js", m );
+
+
+        reboot(RB_AUTOBOOT);
+      }
+      catch(...)
+      {
+          SError << "wrong json format";
+      }
+
+
+
+    found++;
      // num_symbols++;
 
      
@@ -215,7 +260,7 @@ static int scan_image(unsigned char *blob, int width, int height)
 }
 
 
-
+/*
 int qrcode_scan()
 {
 
@@ -233,6 +278,7 @@ int qrcode_scan()
   scan_image( blob, width, height);
       
 }
+*/
 
 int qrcode_init()
 {
@@ -265,17 +311,6 @@ int qrcode_exit()
 
  zbar_processor_destroy(processor);
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -333,6 +368,8 @@ void RestAPI(std::string method, std::string ip, std::string uri,json &m)
 void T31RGBA::run() {
     
 
+
+    SInfo << "T31RGBA::run()";
     int ret = 0;
     int i = 0;
    
@@ -382,16 +419,21 @@ void T31RGBA::run() {
            // for( int x =0; x < 40 ; ++x)
             {
 
-                 // qrcode_scan();
+              if(!QRCode)
+              {
+                 XAProcess( rgbBuf, frame->width , frame->height) ;
+                free(rgbBuf) ;
+               }
+              else
+               scan_image( rgbBuf, frame->width , frame->height);
 
-                   scan_image( rgbBuf, frame->width , frame->height);
 
-                //XAProcess( rgbBuf, frame->width , frame->height) ;
+
+
                // base::sleep(100);
              }
 
-             //free(rgbBuf) ;
-
+             
 
             // fwrite((void *)frame->virAddr, frame->size, 1, fp);
             // fclose(fp);
@@ -495,7 +537,7 @@ void T31RGBA::onMessage(json &jsonMsg )
  
    SInfo << " onMessage "  << rjson.dump();
 
-   std::string  jpegBuffBase64= jsonMsg["registrationImage"].get<std::string>();;
+   std::string  jpegBuffBase64= jsonMsg["registrationImage"].get<std::string>();
 
    XA_addGallery(jpegBuffBase64, rjson);
 
@@ -1410,6 +1452,8 @@ int LiveThread::XAExit()
   {
 
     T31Exit();
+
+    if(!QRCode)
     XAExit();
   }
 
@@ -1459,13 +1503,14 @@ void LiveThread::stop()
 }
 
 
- LiveThread::LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &record):ctx(ctx),trackInfo(trackInfo),record(record)
+ LiveThread::LiveThread(const char* name, LiveConnectionContext *ctx, st_track *trackInfo, bool &record, bool QRCode):ctx(ctx),trackInfo(trackInfo),record(record),QRCode(QRCode)
 {
 
     if(!record)
     {
         t31h264 =  new  T31H264(ctx, trackInfo);
-        t31rgba =  new  T31RGBA(ctx, trackInfo);
+        t31rgba =  new  T31RGBA(ctx, trackInfo, QRCode);
+        
     }
     else
     {
@@ -1485,12 +1530,13 @@ void LiveThread::start()
     }
     else
     {
+       if(!QRCode)
         XAInit();
         T31Init();
 
 
        t31rgba->T31RGBAInit();
-
+        if(!QRCode)
        t31h264->start();
        t31rgba->start();
     }

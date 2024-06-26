@@ -53,7 +53,7 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
    
 
    
-    liveThread = new LiveThread("live", ctx,  trackInfo, recording);
+    liveThread = new LiveThread("live", ctx,  trackInfo, recording, false);
     if(recording)
     {
         this->ctx->recFrame= this;
