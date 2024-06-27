@@ -3,6 +3,10 @@
 #include <imp/imp_audio.h>
 #include "base/logger.h"
 
+ 
+
+#include <sys/ioctl.h>
+
 #define AEC_SAMPLE_RATE 8000
 
 
@@ -41,6 +45,22 @@ int audioPlayerAcquireStream()
 int audioPlayerSetFormat( )
 {
 	
+
+	int speakCtlFd = open("/dev/speakerctl", O_RDWR);
+
+	if (-1 == speakCtlFd)
+	{
+		//printf("err: open pa fail\n");
+
+		SError << "opening /dev/speakerctl failed";
+
+		return -1;
+	}
+
+	unsigned long flag = 0;
+	speakCtlFd = ioctl(speakCtlFd, 1,  &flag);
+
+
 	IMPAudioDecChnAttr chnAttr;
 	chnAttr.type = PT_G711A;
 	chnAttr.bufSize = 20;
@@ -69,6 +89,12 @@ int audioPlayerSetFormat( )
 		return -1;
 	}
 
+	SInfo <<  "samplerate:" <<  attr.samplerate;
+	SInfo <<  "bitwidth:" <<  attr.bitwidth;
+	SInfo <<  "soundmode:" << attr.soundmode;
+	SInfo <<  "frmNum:" << attr.frmNum;
+	SInfo <<  "numPerFrm:" <<  attr.numPerFrm;
+	SInfo <<  "chnCnt:" << attr.chnCnt;
 
 	/* Step 2: enable AO device. */
 	ret = IMP_AO_Enable(devID);
