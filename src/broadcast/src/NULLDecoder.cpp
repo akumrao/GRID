@@ -226,7 +226,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
         }
  
 
-        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size,  int & recframeCount , LiveConnectionContext  *ctx ) 
+        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size,  int & recframeCount , LiveConnectionContext  *ctx , std::string &date) 
         {
 
             int cfg{0}; 
@@ -391,16 +391,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
             }
             else if( Settings::configuration.recording && !recframeCount )
             {
-                Timestamp ts;
-                Timestamp::TimeVal time = ts.epochMicroseconds();
-                int milli = int(time % 1000000) / 1000;
-
-                std::time_t time1 = ts.epochTime();
-                struct std::tm* tms = std::localtime(&time1);
-
-                char date[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
-                int len = std::strftime(date, sizeof (date), "%Y-%m-%d-%H-%M-%S", tms);
-
+              
                 if( dayDate != date)
                 {   dayDate = date;
                     pathDate = Settings::configuration.storage +  "/" + dayDate  ;

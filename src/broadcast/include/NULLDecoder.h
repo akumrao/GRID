@@ -31,7 +31,7 @@ public:
     
    
      
-    void runNULLEnc(unsigned char *buffer, int size,  int & recording, LiveConnectionContext  *ctx); 
+    void runNULLEnc(unsigned char *buffer, int size,  int & recording, LiveConnectionContext  *ctx, std::string &date); 
     
     void resetTimer();
     

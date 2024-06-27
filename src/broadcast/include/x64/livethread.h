@@ -138,6 +138,8 @@ class T31RGBA:public base::Thread
 
     bool QRCode{false};
     
+    std::string m_date;
+    
     private: // internal
      
     BasicFrame basicframe;

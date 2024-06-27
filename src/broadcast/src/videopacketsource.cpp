@@ -273,7 +273,7 @@ void VideoPacketSource::run(web_rtc::Frame *frame)
                 }
                 
 
-               nullDecoder->runNULLEnc( (uint8_t*) basic_frame->data,  basic_frame->sz,  frameCount , ctx );
+               nullDecoder->runNULLEnc( (uint8_t*) basic_frame->data,  basic_frame->sz,  frameCount , ctx, liveThread->t31rgba->m_date );
 
                // runNative(frame);
                // return;

@@ -156,6 +156,8 @@ class T31RGBA:public base::Thread
 
     bool QRCode;
 
+    std::string m_date;
+
     ~T31RGBA();
 };
 
