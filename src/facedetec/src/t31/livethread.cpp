@@ -336,6 +336,8 @@ void RestAPI(std::string method, std::string ip, std::string uri,json &m)
         
         SInfo << sendMe.length();
         
+        //SDebug << " db envent "  <<  sendMe;
+
         con->send( sendMe.c_str(), sendMe.length(), false);
         
     };
@@ -833,6 +835,7 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
 
                               //identity.load("./event.json");
                               // std::string xaidentity = identity.root.dump();
+                                  record = true;
                               
                                   std::string str = event["registrationImage"].get<std::string>();
 

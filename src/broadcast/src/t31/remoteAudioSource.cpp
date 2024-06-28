@@ -48,13 +48,10 @@ int audioPlayerSetFormat( )
 
 	int speakCtlFd = open("/dev/speakerctl", O_RDWR);
 
-	if (-1 == speakCtlFd)
+	if (speakCtlFd != -1)
 	{
-		//printf("err: open pa fail\n");
-
-		SError << "opening /dev/speakerctl failed";
-
-		return -1;
+	    unsigned long flag = 0;
+		speakCtlFd = ioctl(speakCtlFd, 1,  &flag);
 	}
 
 	unsigned long flag = 0;
