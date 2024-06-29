@@ -13,12 +13,10 @@
 #include "net/netInterface.h"
 #include "base/application.h"
 #include "net/UdpSocket.h"
-#include "base/test.h"
+//#include "base/test.h"
 #include "base/time.h"
 #include "hmUdpServer.h"
 #include "tcpUpload.h"
-#include "awsS3upload.h"
-#include "awsDynamodb.h"
 #include <sys/mman.h>
 
 
@@ -77,8 +75,6 @@ void hmUdpServer::resetUdpServer() {
        // SInfo << "Last Packet " << lastPacketNo << " totalPacket " << totalPacket;
        
        // sendTcpPacket(tcpConn, 3, 100);
-        savetoS3();
-        savetoDB();
         curPtr = -1;
         lastPacketNo = 0;
        
@@ -263,16 +259,4 @@ void hmUdpServer::on_fill(Packet & packet) {
 
 }
 
-void hmUdpServer::savetoS3() {
-
-    std::string driverIdTmp = sharedS3File + ".mp4";
-
-    LInfo("Saving S3 file ", "https://uberproject.s3.amazonaws.com/", sharedS3File, ".mp4")
-            const Aws::String object_name = driverIdTmp.c_str();
-    put_s3_object_async(object_name, serverstorage, lastPacketNo-1, lastPacketLen);
-}
-
-void hmUdpServer::savetoDB() {
-    PutItem(driverId, sharedS3File, metadata);
-}
 

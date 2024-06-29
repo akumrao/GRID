@@ -16,8 +16,8 @@
 #include "net/netInterface.h"
 #include "tcpUpload.h"
 #include "hmUdpServer.h"
-#include "awsS3upload.h"
-#include "awsDynamodb.h"
+//#include "awsS3upload.h"
+//#include "awsDynamodb.h"
 
 using std::endl;
 using namespace base;
@@ -78,11 +78,11 @@ public:
     }
     
     void on_read(Listener* connection, const char* data, size_t len) {
-       // STrace << "TCP server on_read: " << data << "len: " << len;
+        STrace << "TCP server on_read: " << data << "len: " << len;
         //connection->send((const char*) send.c_str(), 5);
         
         if (len != sizeof (struct TcpPacket)) {
-            LError("Fatal error: Some part of packet lost. ")
+            SError << "Fatal error: Some part of packet lost. " <<   sizeof (struct TcpPacket) ;
             return;
         }
 
@@ -152,10 +152,10 @@ public:
 
 int main(int argc, char** argv) {
     
-   // Logger::instance().add(new ConsoleChannel("mediaserver", Level::Debug));
-    Logger::instance().add(new FileChannel("mediaserver","/var/log/mediaserver", Level::Debug));
+    Logger::instance().add(new ConsoleChannel("mediaserver", Level::Trace));
+    //Logger::instance().add(new FileChannel("mediaserver","/var/log/mediaserver", Level::Trace));
 
-    Logger::instance().setWriter(new AsyncLogWriter);
+   // Logger::instance().setWriter(new AsyncLogWriter);
     
     // std::string jsonArray = "{filename:driver-1234-1232323.mp4, gps-latitude:28.674109, gps-longitude:77.438009, timestamp:20200309194530, uploadmode:normal}";
     // std::cout << jsonArray << std::endl << std::flush;
@@ -178,7 +178,7 @@ int main(int argc, char** argv) {
         port = atoi(argv[2]);
     }
 
-     awsInit();
+    // awsInit();
 
 
     Application app;
@@ -190,7 +190,7 @@ int main(int argc, char** argv) {
 
     app.waitForShutdown([&](void*) {
         socket.shutdown();
-        awsExit();
+        //awsExit();
     });
 
 

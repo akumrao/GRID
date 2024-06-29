@@ -341,7 +341,7 @@ void hmTcpClient::on_read(Listener* connection, const char* data, size_t len) {
 
 namespace hm {
 
-    std::string ip = "18.228.58.178";
+    std::string ip = "192.168.0.19";
    // std::string ip = "3.21.171.200";
     
    // std::string ip = "127.0.0.1";

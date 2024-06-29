@@ -266,7 +266,7 @@ bool hmUdpClient::upload( std::string fileName, std::string driverId, std::strin
 void hmUdpClient::sendPacket(uint8_t type, uint32_t payloadNo, uint32_t payloadsize, char *payload) {
 
   
-   // SInfo << "Sending "  <<  (int) type <<  " payloadNo " << payloadNo  << " payloadsize " << payloadsize;
+     SInfo << "Sending "  <<  (int) type <<  " payloadNo " << payloadNo  << " payloadsize " << payloadsize;
     //if(type == 0)
    // {
         Packet packet;
