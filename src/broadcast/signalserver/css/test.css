@@ -12,3 +12,15 @@ video {
   color: blue;
   border-left: 4px solid blue;
 }
+
+
+div.progress div.label {
+  display: inline-block;
+  font-weight: 400;
+  width: 8.2em;
+}
+
+
+progress {
+  width: calc(100% - 8.5em);
+}

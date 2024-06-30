@@ -737,4 +737,116 @@ function twoWayAudio() {
 }
 
 
+const fileInput = document.querySelector('input#fileInput');
+const abortButton = document.querySelector('button#abortButton');
+const sendProgress = document.querySelector('progress#sendProgress');
+const statusMessage = document.querySelector('span#status');
+const sendFileButton = document.querySelector('button#sendFile');
+
+
+let bytesPrev = 0;
+let timestampPrev = 0;
+let timestampStart;
+let statsInterval = null;
+let bitrateMax = 0;
+
+let fileReader;
+
+
+sendFileButton.addEventListener('click', () =>  sendData());
+fileInput.addEventListener('change', handleFileInputChange, false);
+
+abortButton.addEventListener('click', () => {
+  if (fileReader && fileReader.readyState === 1) {
+    console.log('Abort read!');
+    fileReader.abort();
+  }
+});
+
+async function handleFileInputChange() {
+  const file = fileInput.files[0];
+  if (!file) {
+    console.log('No file chosen');
+  } else {
+    sendFileButton.disabled = false;
+  }
+}
+
+
+function sendData() {
+  const file = fileInput.files[0];
+  console.log(`File is ${[file.name, file.size, file.type, file.lastModified].join(' ')}`);
+
+  // Handle 0 size files.
+  statusMessage.textContent = '';
+  if (file.size === 0) {
+    statusMessage.textContent = 'File is empty, please select a non-empty file';
+    //closeDataChannels();
+    return;
+  }
+  sendProgress.max = file.size;
+
+  const chunkSize = 16384;
+
+
+  var data = {}; // data object to transmit over data channel
+    
+  data.name = file.name;
+  data.messageType = "OTA";
+  data.size = file.size;
+  channelSnd.send(JSON.stringify(data));
+
+
+  fileReader = new FileReader();
+  let offset = 0;
+  fileReader.addEventListener('error', error => console.error('Error reading file:', error));
+ // fileReader.addEventListener("loadstart", e => { console.log('FileRead.loadstart ', e);  });
+
+  fileReader.addEventListener('abort', event => console.log('File reading aborted:', event));
+
+ // fileReader.addEventListener("loadend", e => { console.log('FileRead.onloaded ', e);  });
+
+  fileReader.addEventListener('load', e => {
+  console.log('FileRead.onload ', e);
+
+
+        
+    channelSnd.send(e.target.result);
+    
+    offset += e.target.result.byteLength;
+    sendProgress.value = offset;
+    if (offset < file.size) {
+      readSlice(offset);
+    }else
+    {
+
+        var data = {}; // data object to transmit over data channel
+    
+        data.name = file.name;
+        data.messageType = "OTA";
+        data.size = 0;
+        channelSnd.send(JSON.stringify(data));
+
+    }
+
+  });
+  const readSlice = o => {
+    console.log('readSlice ', o);
+    const slice = file.slice(offset, o + chunkSize);
+    fileReader.readAsArrayBuffer(slice);
+  };
+  readSlice(0);
+}
+
+function rebootCam() {
+
+
+ var data = {}; // data object to transmit over data channel
+    
+  data.messageType = "REBOOT";
+  channelSnd.send(JSON.stringify(data));
+
+}
+
+
 

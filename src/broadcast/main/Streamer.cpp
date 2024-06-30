@@ -140,6 +140,12 @@ int main(int argc, char** argv) {
        
     //Logger::instance().add(new FileChannel("mediaserver","/var/log/mediaserver", Level::Info));
    // Logger::instance().setWriter(new AsyncLogWriter);
+
+    if (!base::fs::exists("/mnt/OTA"))
+    {
+        base::fs::mkdir("/mnt/OTA");
+    }
+
     
     base::cnfg::Configuration config;
 

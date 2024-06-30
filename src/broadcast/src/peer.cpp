@@ -8,7 +8,7 @@
 #include "pc/peer_connection_wrapper.h"
 #include "pc/sdp_utils.h"
 #include "Settings.h"
-
+#include <sys/reboot.h>
 using std::endl;
 
 namespace base
@@ -493,8 +493,34 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
     }
    else
    {
-  
-  
+        
+    if(binfile)
+    {
+        fwrite(msg, 1, size, binfile);
+
+        OTALen += size;
+        
+        
+        if(OTALen >= OTAsize  )
+        {
+            fclose(binfile);
+            binfile = nullptr;
+
+            if(OTALen != size)
+            {
+               // SError << " OTA file is bad:" << name;
+               // std::remove(name.c_str());
+                OTAsize = -1;
+            }
+            OTALen = 0;
+            OTAsize = 0;
+        }
+        
+        
+        return;
+    }
+        
+       
 
 	json jsonMsg ;
 	try
@@ -515,14 +541,54 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
 	    std::string type = jsonMsg["messageType"].get<std::string>();  
 	    if(type == "identity")
 	    {
-                
+               
 		  if( _manager->ctx->liveThread)
 		  ((LiveThread*)_manager->ctx->liveThread)->onMessage(jsonMsg );
 	    }
-	    
+        else if(type == "OTA")
+        {
+
+            std::string name = jsonMsg["name"].get<std::string>();  
+            name = "/mnt/OTA/" + name;
+            int size  = jsonMsg["size"].get<int>();  
+            if(size)
+            {
+                
+                if(!binfile)
+                {
+                    binfile = fopen(name.c_str(), "wb");
+                    OTAsize = size;  
+                }
+  
+            }
+            else
+            { 
+           // OTA = false;
+                if(binfile)
+                  fclose(binfile);
+                binfile = nullptr;
+            
+                if(OTAsize < 0)
+                {
+                    SError << " OTA file is bad:" << name;
+                    std::remove(name.c_str());
+                }
+                OTALen = 0;
+                OTAsize = 0;
+
+            }
+        }
+        else if(type == "REBOOT")
+        {
+          reboot(RB_AUTOBOOT);
+        }
+          
 	    //SInfo << jsonMsg.dump(4);
 	    
 	}
+
+
+
    }
 
 

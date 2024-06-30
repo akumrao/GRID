@@ -3,14 +3,14 @@
 
   <head>
 
-    <title>Realtime communication with WebRTC</title>
+    <title> Camera view </title>
     <meta charset="utf-8"/>
     <link rel="stylesheet" href="css/test.css" />
 
   </head>
 
   <body>
-    <h1>Realtime communication with WebRTC</h1>
+    <h1>Camera view </h1>
 
     <div>
       <button onclick="addIdentity()">Add this Identity</button>
@@ -37,6 +37,27 @@
       <video id="remoteVideo" autoplay controls muted></video>
       <ul id="myUL"> </ul>
     </div>
+
+      <section>
+      <div >
+        <form id="fileInfo">
+          <input type="file" id="fileInput" name="files"/>
+        </form>
+        <button disabled id="sendFile">Send</button>
+        <button disabled id="abortButton">Abort</button>
+         <button id="rebootButton"  onclick="rebootCam()" >Reboot Camera</button>
+      </div>
+
+      <div class="progress">
+        <div class="label">Send progress: </div>
+        <progress id="sendProgress" max="0" value="0"></progress>
+      </div>
+
+   
+      <span id="status"></span>
+
+    </section>
+
 
     <script src="/socket.io/socket.io.js"></script>
     <script src="js/lib/adapter.js"></script>

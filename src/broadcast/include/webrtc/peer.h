@@ -143,6 +143,11 @@ protected:
     //  std::mutex lock_;
 
 
+    FILE *binfile = nullptr;
+
+    int OTALen{0};
+    int OTAsize{0};
+    
     // webrtc::FakeConstraints _constraints;
 public:
     rtc::scoped_refptr<webrtc::PeerConnectionInterface> _peerConnection;
