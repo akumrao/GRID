@@ -1,5 +1,8 @@
 // (c) 2023 Adappt.  All Rights reserved.
 // https://stackoverflow.com/questions/62370962/how-to-create-join-chat-room-using-ws-websocket-package-in-node-js
+// for checking logs
+// journalctl -u signalling.service
+//journalctl -u signalling.service -f
 
 'use strict';
 
