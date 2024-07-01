@@ -559,7 +559,6 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
                     binfile = fopen(name.c_str(), "wb");
                     OTAsize = size;  
                 }
-  
             }
             else
             { 
@@ -581,6 +580,10 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
         else if(type == "REBOOT")
         {
           reboot(RB_AUTOBOOT);
+        }
+        else if(type == "RESET")
+        {
+          std::remove("/mnt/config.js");
         }
           
 	    //SInfo << jsonMsg.dump(4);

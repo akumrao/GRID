@@ -20,8 +20,8 @@
 
       <label for="audioFromCam">AudioFromCam:</label> 
       <input type="checkbox" id="audioFromCam" onclick="audioFromCam()"></input>
-      <label for="twoWayAudio">AudioFromApp:</label> 
-      <input type="checkbox" id="twoWayAudio" onclick="twoWayAudio()"> </input>
+      <label for="audioFromApp">AudioFromApp:</label> 
+      <input type="checkbox" id="audioFromApp" onclick="audioFromApp()"> </input>
 
     <div>
 
@@ -45,7 +45,9 @@
         </form>
         <button disabled id="sendFile">Send</button>
         <button disabled id="abortButton">Abort</button>
-         <button id="rebootButton"  onclick="rebootCam()" >Reboot Camera</button>
+        <button id="rebootButton"  onclick="rebootCam()" >Reboot Camera</button>
+        <button id="resetButton"  onclick="resetCam()" >Reset Camera</button>
+
       </div>
 
       <div class="progress">

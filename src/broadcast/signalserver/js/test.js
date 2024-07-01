@@ -16,12 +16,6 @@ let appAudio;
 let inboundStream = null;
 
 // Set up audio and video regardless of what devices are present.
-var sdpConstraints = {
-  'mandatory': {
-    'OfferToReceiveAudio': true,
-    'OfferToReceiveVideo': true
-  }
-};
 
 var browserName = (function(agent) {
     switch (true) {
@@ -725,8 +719,8 @@ function audioFromCam() {
   }
 }
 
-function twoWayAudio() {
-  var checkBox = document.getElementById("twoWayAudio");
+function audioFromApp() {
+  var checkBox = document.getElementById("audioFromApp");
   if (checkBox.checked == true){
     appAudio = true;
     resetStreams();
@@ -840,10 +834,19 @@ function sendData() {
 
 function rebootCam() {
 
+  var data = {}; // data object to transmit over data channel
+  data.messageType = "REBOOT";
+  channelSnd.send(JSON.stringify(data));
+
+}
+
+
+function resetCam() {
+
 
  var data = {}; // data object to transmit over data channel
     
-  data.messageType = "REBOOT";
+  data.messageType = "RESET";
   channelSnd.send(JSON.stringify(data));
 
 }
