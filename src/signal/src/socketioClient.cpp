@@ -148,7 +148,7 @@ namespace base {
         /////////////////////////////////////////////////////////////////////
 
         void SocketioClient::ping() {
-            STrace << "ping " ;
+            SDebug << "ping " ;
 
                   packet p(packet::frame_ping);
             m_packet_mgr.encode(p, [&](bool /*isBin*/, shared_ptr<const string> payload) {
@@ -160,7 +160,7 @@ namespace base {
         }
 
         void SocketioClient::timeout_pong() {
-            STrace << "timeout pong " ;
+            SDebug << "timeout pong " ;
 
             close(1, "Pong timeout");
         }
@@ -319,7 +319,7 @@ namespace base {
         }
 
         void SocketioClient::on_pong() {
-            LTrace("on_pong")
+            LDebug("on_pong")
             m_ping_timeout_timer.Stop();
         }
 
