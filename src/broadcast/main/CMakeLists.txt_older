@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.7)
 
 set(WEBRTC_LIBS "/workspace/MagicAI/src/webrtc/build/")
-SET(WEBRTC_PATH "/workspace/webrtc/src/")
+SET(WEBRTC_PATH "/workspace/MagicAI/src/broadcast/main/webrtc/src")
 
 if (${ANDROID_ABI} STREQUAL "x86_64")
 
