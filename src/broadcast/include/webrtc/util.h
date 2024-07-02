@@ -7,7 +7,7 @@
 
 //#include "media/base/videocapturer.h"
 //#include "media/engine/webrtcvideocapturerfactory.h"
-#    include "modules/video_capture/video_capture_factory.h"
+//#    include "modules/video_capture/video_capture_factory.h"
 
 
 namespace base
@@ -16,7 +16,7 @@ namespace web_rtc
 {
 
 
-std::vector<std::string> getVideoCaptureDevices();
+//std::vector<std::string> getVideoCaptureDevices();
 
 // std::unique_ptr<cricket::VideoCapturer> openWebRtcVideoCaptureDevice(const std::string& deviceName = "");
 

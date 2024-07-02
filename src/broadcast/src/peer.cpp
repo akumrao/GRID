@@ -5,7 +5,7 @@
 #include "base/logger.h"
 #include "p2p/base/transport_info.h"
 #include "pc/media_session.h"
-#include "pc/peer_connection_wrapper.h"
+//#include "pc/peer_connection_wrapper.h"
 #include "pc/sdp_utils.h"
 #include "Settings.h"
 #include <sys/reboot.h>

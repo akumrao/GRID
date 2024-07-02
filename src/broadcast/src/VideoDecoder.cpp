@@ -5,8 +5,8 @@
 #include "base/logger.h"
 #include <list>
 
-#include "third_party/openh264/src/codec/api/svc/codec_app_def.h"
-#include "common_video/libyuv/include/webrtc_libyuv.h"
+//#include "third_party/openh264/src/codec/api/svc/codec_app_def.h"
+//#include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 
 #include "common_video/h264/sps_parser.h"

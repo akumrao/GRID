@@ -134,7 +134,7 @@ class AudioEncoderFactoryT : public AudioEncoderFactory {
 // TODO(kwiberg): Point at CreateBuiltinAudioEncoderFactory() for an example of
 // how it is used.
 
-/*
+
 template <typename... Ts>
 rtc::scoped_refptr<AudioEncoderFactory> CreateAudioEncoderFactory() {
   // There's no technical reason we couldn't allow zero template parameters,
@@ -148,7 +148,7 @@ rtc::scoped_refptr<AudioEncoderFactory> CreateAudioEncoderFactory() {
       new rtc::RefCountedObject<
           audio_encoder_factory_template_impl::AudioEncoderFactoryT<Ts...>>());
 }
- */
+ 
 
 }  // namespace webrtc
 

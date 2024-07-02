@@ -68,17 +68,17 @@ VideoEncoderFactory::CodecInfo MultiplexEncoderFactory::QueryVideoEncoder(
 std::unique_ptr<VideoEncoder> MultiplexEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat& format) {
   if (!IsMultiplexCodec(cricket::VideoCodec(format)))
-    return factory_->CreateVideoEncoder(format);
-  const auto& it =
-      format.parameters.find(cricket::kCodecParamAssociatedCodecName);
-  if (it == format.parameters.end()) {
-    RTC_LOG(LS_ERROR) << "No assicated codec for multiplex.";
-    return nullptr;
-  }
-  SdpVideoFormat associated_format = format;
-  associated_format.name = it->second;
-  return std::unique_ptr<VideoEncoder>(new MultiplexEncoderAdapter(
-      factory_.get(), associated_format, supports_augmenting_data_));
+    return factory_->CreateVideoEncoder(format);  // ravind arvind
+//  const auto& it =
+//      format.parameters.find(cricket::kCodecParamAssociatedCodecName);
+//  if (it == format.parameters.end()) {
+//    RTC_LOG(LS_ERROR) << "No assicated codec for multiplex.";
+//    return nullptr;
+//  }
+//  SdpVideoFormat associated_format = format;
+//  associated_format.name = it->second;
+//  return std::unique_ptr<VideoEncoder>(new MultiplexEncoderAdapter(
+//      factory_.get(), associated_format, supports_augmenting_data_));
 }
 
 MultiplexDecoderFactory::MultiplexDecoderFactory(
@@ -105,17 +105,17 @@ std::vector<SdpVideoFormat> MultiplexDecoderFactory::GetSupportedFormats()
 std::unique_ptr<VideoDecoder> MultiplexDecoderFactory::CreateVideoDecoder(
     const SdpVideoFormat& format) {
   if (!IsMultiplexCodec(cricket::VideoCodec(format)))
-    return factory_->CreateVideoDecoder(format);
-  const auto& it =
-      format.parameters.find(cricket::kCodecParamAssociatedCodecName);
-  if (it == format.parameters.end()) {
-    RTC_LOG(LS_ERROR) << "No assicated codec for multiplex.";
-    return nullptr;
-  }
-  SdpVideoFormat associated_format = format;
-  associated_format.name = it->second;
-  return std::unique_ptr<VideoDecoder>(new MultiplexDecoderAdapter(
-      factory_.get(), associated_format, supports_augmenting_data_));
+    return factory_->CreateVideoDecoder(format);   // arvind ravind
+//  const auto& it =
+//      format.parameters.find(cricket::kCodecParamAssociatedCodecName);
+//  if (it == format.parameters.end()) {
+//    RTC_LOG(LS_ERROR) << "No assicated codec for multiplex.";
+//    return nullptr;
+//  }
+//  SdpVideoFormat associated_format = format;
+//  associated_format.name = it->second;
+//  return std::unique_ptr<VideoDecoder>(new MultiplexDecoderAdapter(
+//      factory_.get(), associated_format, supports_augmenting_data_));
 }
 
 }  // namespace webrtc

@@ -8,7 +8,7 @@
 #include "base/logger.h"
 #include "webrtc/webrtc.h"
 //#include "media/engine/webrtcvideocapturerfactory.h"
-#include "modules/video_capture/video_capture_factory.h"
+//#include "modules/video_capture/video_capture_factory.h"
 #include <random>
 #include "Settings.h"
 

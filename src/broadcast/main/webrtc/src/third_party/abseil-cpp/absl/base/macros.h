@@ -34,6 +34,8 @@
 #include "absl/base/optimization.h"
 #include "absl/base/port.h"
 
+#define NDEBUG 1
+
 // ABSL_ARRAYSIZE()
 //
 // Returns the number of elements in an array as a compile-time constant, which

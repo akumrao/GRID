@@ -39,7 +39,7 @@ set(arm_PLATFORM_CC_FILTER ".*fir_filter_neon.cc|.*sinc_resampler_neon.cc|.*cros
 
 
 # add at first, avoid header search path, definition chaos
-add_subdirectory(third_party)
+add_subdirectory( third_party)
 
 
 
@@ -203,6 +203,9 @@ list(FILTER src_video EXCLUDE REGEX
 
 
 
+file(GLOB_RECURSE HEADERS_WEBRTC
+     ${WEBRTC_REPO}*.h
+)
 
 add_library(jingle_peerconnection_so STATIC
     ${src_api}
@@ -222,6 +225,8 @@ add_library(jingle_peerconnection_so STATIC
     ${src_system_wrappers}
     ${src_video}
     ${header_api}
+    ${HEADERS_WEBRTC}
+    
 )
 
 

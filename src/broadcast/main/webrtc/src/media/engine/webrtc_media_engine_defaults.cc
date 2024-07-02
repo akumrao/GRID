@@ -27,10 +27,10 @@ void SetMediaEngineDefaults(cricket::MediaEngineDependencies* deps) {
         CreateDefaultTaskQueueFactory().release();
     deps->task_queue_factory = task_queue_factory;
   }
-  if (deps->audio_encoder_factory == nullptr)
-    deps->audio_encoder_factory = CreateBuiltinAudioEncoderFactory();
-  if (deps->audio_decoder_factory == nullptr)
-    deps->audio_decoder_factory = CreateBuiltinAudioDecoderFactory();
+//  if (deps->audio_encoder_factory == nullptr)
+//    deps->audio_encoder_factory = CreateBuiltinAudioEncoderFactory();   // arvind
+//  if (deps->audio_decoder_factory == nullptr)
+//    deps->audio_decoder_factory = CreateBuiltinAudioDecoderFactory();
   if (deps->audio_processing == nullptr)
     deps->audio_processing = AudioProcessingBuilder().Create();
 
