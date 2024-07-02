@@ -852,4 +852,25 @@ function resetCam() {
 }
 
 
+function debugCam() {
+
+
+ var data = {}; // data object to transmit over data channel
+    
+  data.messageType = "DEBUG";
+  channelSnd.send(JSON.stringify(data));
+
+}
+
+
+
+function setIRCUTCam() {
+
+
+ var data = {}; // data object to transmit over data channel
+    
+  data.messageType = "SETIRCUT";
+  channelSnd.send(JSON.stringify(data));
+
+}
 

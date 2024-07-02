@@ -9,6 +9,9 @@
 #include "pc/sdp_utils.h"
 #include "Settings.h"
 #include <sys/reboot.h>
+#include "sample-common.h"
+
+
 using std::endl;
 
 namespace base
@@ -585,6 +588,21 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
         {
           std::remove("/mnt/config.js");
         }
+        else if(type == "DEBUG")
+        {
+            
+           SInfo << "Set Log Debug " ;
+             
+           base::Logger::instance().get("webrtcserver")->setLevel(Level::Debug);
+        }
+        else if(type == "SETIRCUT")
+        {
+            SInfo << "ircut " << ircut;
+            
+           sample_SetIRCUT(ircut);
+           ircut = !ircut;
+        }  
+            
           
 	    //SInfo << jsonMsg.dump(4);
 	    

@@ -145,6 +145,12 @@ int main(int argc, char** argv) {
     {
         base::fs::mkdir("/mnt/OTA");
     }
+    
+    if (!base::fs::exists("/mnt/log"))
+    {
+        base::fs::mkdir("/mnt/log");
+    }
+
 
     
     base::cnfg::Configuration config;

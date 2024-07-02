@@ -361,6 +361,8 @@ int sample_framesource_ext_rgba_exit();
 
 int IMP_OSD_SetPoolSize(int size);
 
+int sample_SetIRCUT(int enable);
+
 
 #ifdef __cplusplus
 #if __cplusplus

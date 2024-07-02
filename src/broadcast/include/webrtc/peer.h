@@ -142,7 +142,7 @@ protected:
 
     //  std::mutex lock_;
 
-
+    int ircut{0};
     FILE *binfile = nullptr;
 
     int OTALen{0};

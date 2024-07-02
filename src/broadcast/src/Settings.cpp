@@ -13,7 +13,7 @@
 #include <iterator>  // std::ostream_iterator
 #include <sstream>  // std::ostringstream
 
-//#define LOGGING_LOG_TO_FILE 1
+#define LOGGING_LOG_TO_FILE 1
 /* Class variables. */
 
 struct Settings::Configuration Settings::configuration;
@@ -139,7 +139,7 @@ void Settings::SetConfiguration(json &cnfg)
 
 #if LOGGING_LOG_TO_FILE
         base::Logger::instance().add(
-            new base::RotatingFileChannel("webrtcserver", "/var/log/webrtcserver", ld));
+            new base::RotatingFileChannel("webrtcserver", "/mnt/log/webrtc", ld));
         base::Logger::instance().setWriter(new base::AsyncLogWriter);
 #else
         base::Logger::instance().add(new base::ConsoleChannel("webrtcserver", ld));
@@ -172,6 +172,7 @@ void Settings::SetConfiguration(json &cnfg)
     
     if (cnfg.find("recording") != cnfg.end()) { Settings::configuration.recording = cnfg["recording"].get<bool>(); }
     if (cnfg.find("cloud") != cnfg.end()) { Settings::configuration.cloud = cnfg["cloud"].get<bool>(); }
+    if (cnfg.find("ai") != cnfg.end()) { Settings::configuration.ai = cnfg["ai"].get<bool>(); }
     if (cnfg.find("facedetect") != cnfg.end()) { Settings::configuration.facedetect = cnfg["facedetect"].get<bool>(); }
     if (cnfg.find("motionevent") != cnfg.end()) { Settings::configuration.motionevent = cnfg["motionevent"].get<bool>(); }
     if (cnfg.find("port") != cnfg.end()) { Settings::configuration.port = cnfg["port"].get<int>(); }

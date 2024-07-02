@@ -1538,6 +1538,8 @@ void LiveThread::stop()
     if(!record)
     {
         t31h264 =  new  T31H264(ctx, trackInfo);
+        
+        if( Settings::configuration.ai)
         t31rgba =  new  T31RGBA(ctx, trackInfo, QRCode);
         
     }

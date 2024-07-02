@@ -839,5 +839,95 @@ int sample_get_video_stream()
 
 
 
+int sample_SetIRCUT(int enable)
+{
+	int fd, fd79, fd80;
+	char on[4], off[4];
 
+	if (!access("/tmp/setir",0)) {
+		if (enable) {
+			system("/tmp/setir 0 1");
+		} else {
+			system("/tmp/setir 1 0");
+		}
+		return 0;
+	}
 
+	fd = open("/sys/class/gpio/export", O_WRONLY);
+	if(fd < 0) {
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/export error !");
+		return -1;
+	}
+
+	write(fd, "79", 2);
+	write(fd, "80", 2);
+
+	close(fd);
+
+	fd79 = open("/sys/class/gpio/gpio79/direction", O_RDWR);
+	if(fd79 < 0) {
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/gpio79/direction error !");
+		return -1;
+	}
+
+	fd80 = open("/sys/class/gpio/gpio80/direction", O_RDWR);
+	if(fd80 < 0) {
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/gpio80/direction error !");
+		return -1;
+	}
+
+	write(fd79, "out", 3);
+	write(fd80, "out", 3);
+
+	close(fd79);
+	close(fd80);
+
+	fd79 = open("/sys/class/gpio/gpio79/active_low", O_RDWR);
+	if(fd79 < 0) {
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/gpio79/active_low error !");
+		return -1;
+	}
+
+	fd80 = open("/sys/class/gpio/gpio80/active_low", O_RDWR);
+	if(fd80 < 0) {
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/gpio80/active_low error !");
+		return -1;
+	}
+
+	write(fd79, "0", 1);
+	write(fd80, "0", 1);
+
+	close(fd79);
+	close(fd80);
+
+	fd79 = open("/sys/class/gpio/gpio79/value", O_RDWR);
+	if(fd79 < 0) {
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/gpio79/value error !");
+		return -1;
+	}
+
+	fd80 = open("/sys/class/gpio/gpio80/value", O_RDWR);
+	if(fd80 < 0) {
+		IMP_LOG_DBG(TAG, "open /sys/class/gpio/gpio80/value error !");
+		return -1;
+	}
+
+	sprintf(on, "%d", enable);
+	sprintf(off, "%d", !enable);
+
+	write(fd79, "0", 1);
+	usleep(10*1000);
+
+	write(fd79, on, strlen(on));
+	write(fd80, off, strlen(off));
+
+	if (!enable) {
+		usleep(10*1000);
+		write(fd79, off, strlen(off));
+	}
+
+	close(fd79);
+	close(fd80);
+
+	return 0;
+}

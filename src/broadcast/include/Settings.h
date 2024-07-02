@@ -48,6 +48,7 @@ public:
         int port{443};
         bool recording{false};
         bool cloud{false};
+        bool ai{true};
         bool facedetect;
         bool motionevent;
         //json rtsp;
