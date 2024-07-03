@@ -88,6 +88,9 @@ function sendMessage(message) {
     socket.emit('messageToWebrtc', message);
 }
 
+
+ let inputF = document.getElementById("idips");
+
 // This client receives a message
 socket.on('message', function(message) {
   console.log('Client received message:', message);
@@ -106,6 +109,13 @@ socket.on('message', function(message) {
   } else if (message.type === 'answer' && isStarted) {
     pc.setRemoteDescription(new RTCSessionDescription(message.desc));
   } else if (message.type === 'candidate' && isStarted) {
+
+    var myIP = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/.exec(message.candidate.candidate)[1];
+   
+    inputF.value = "ip = "+ myIP +  " " +  inputF.value 
+
+    console.log('camera IP: ', myIP); 
+
     var candidate = new RTCIceCandidate({
       sdpMLineIndex: message.candidate.sdpMLineIndex,
       sdpMid: message.candidate.sdpMid,
