@@ -193,9 +193,9 @@ static int scan_image(unsigned char *blob, int width, int height)
         root = json::parse(zbar_symbol_get_data(sym));
 
         if(  root.find("s") != root.end()) 
-          saveFile("/configs/.wifipasswd1", root["s"].get<std::string>());
+          saveFile("/configs/.wifissid", root["s"].get<std::string>());
         if( root.find("p") != root.end()) 
-         saveFile("/configs/.wifissid1", root["p"].get<std::string>() );
+         saveFile("/configs/.wifipasswd", root["p"].get<std::string>() );
 
 
         json m;
