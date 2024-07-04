@@ -9,8 +9,11 @@
 #include "pc/sdp_utils.h"
 #include "Settings.h"
 #include <sys/reboot.h>
-#include "sample-common.h"
 
+#if defined(__x86_64__)
+#else
+#include "sample-common.h"
+#endif
 
 using std::endl;
 
@@ -599,7 +602,7 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
         {
             SInfo << "ircut " << ircut;
             
-           sample_SetIRCUT(ircut);
+           //sample_SetIRCUT(ircut);
            ircut = !ircut;
         }  
             

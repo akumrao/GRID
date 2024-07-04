@@ -99,6 +99,50 @@ void saveFile( const char* filename,  std::string str)
     
 }
 
+/*
+// blue
+echo 0 > /sys/class/gpio/gpio39/value  
+echo 1 > /sys/class/gpio/gpio38/value
+
+// red
+echo 1 > /sys/class/gpio/gpio39/value  
+echo 0 > /sys/class/gpio/gpio38/value
+
+
+
+// no color 
+echo 1 > /sys/class/gpio/gpio39/value  
+echo 1 > /sys/class/gpio/gpio38/value
+
+// orange
+echo 0 > /sys/class/gpio/gpio39/value  
+echo 0 > /sys/class/gpio/gpio38/value
+*/
+
+void blueLed( )
+{
+   int f39 = open("/sys/class/gpio/gpio39/value", O_RDWR);
+   
+    if( f39 >= 0 )
+    {
+      write(f39, "0", 1);
+      close(f39);
+    }
+   
+   
+    int f38 = open("/sys/class/gpio/gpio38/value", O_RDWR);
+    if( f38 >= 0 )
+    {
+      write(f38, "1", 1);
+      close(f38);
+    }
+   
+    
+}
+
+
+
+        
 
 int readFile(const char* filename,  char *buf, int len)
 {
@@ -198,29 +242,33 @@ static int scan_image(unsigned char *blob, int width, int height)
          saveFile("/configs/.wifipasswd", root["p"].get<std::string>() );
 
 
-        json m;
-        
-        m["dtlsCertificateFile"] = "/mnt/key/certificate.crt";
-        m["dtlsPrivateKeyFile"] =  "/mnt/key/private_key.pem";
-        m["storage"]= "/mnt/pvi-storage/";
         if( root.find("i") != root.end()) 
-        m["qrcode"] = root["i"].get<std::string>();
-        m["server"] =  "ipcamera.adapptonline.com";
-        m["port"]  =  443;
-        m["recording"] = true;
-        m["cloud"] =  false;
-        m["facedetect"]  =  true;
-        m["motionevent"] =  true;
-        m["cam_reconnect"] =  0;
-        m["authtimeout"] =  3600;
-        m["Mp4Size_Key"] =  40;
-        m["SegSize_key"] =  5;
-        m["logLevel"] = "info";
+        {     
+            json m;
 
-        base::cnfg::saveFile("/mnt/config.js", m );
+            m["dtlsCertificateFile"] = "/mnt/key/certificate.crt";
+            m["dtlsPrivateKeyFile"] =  "/mnt/key/private_key.pem";
+            m["storage"]= "/mnt/pvi-storage/";
+            m["qrcode"] = root["i"].get<std::string>();
+            m["server"] =  "ipcamera.adapptonline.com";
+            m["port"]  =  443;
+            m["recording"] = true;
+            m["cloud"] =  false;
+            m["facedetect"]  =  true;
+            m["motionevent"] =  true;
+            m["cam_reconnect"] =  0;
+            m["authtimeout"] =  3600;
+            m["Mp4Size_Key"] =  40;
+            m["SegSize_key"] =  5;
+            m["logLevel"] = "info";
 
+            base::cnfg::saveFile("/mnt/config.js", m );
+        
+            blueLed();
 
-        reboot(RB_AUTOBOOT);
+            reboot(RB_AUTOBOOT);
+        }
+        
       }
       catch(...)
       {
@@ -391,6 +439,29 @@ void T31RGBA::run() {
     }
 
    #endif
+
+    
+    
+    Timestamp ts;
+    Timestamp::TimeVal time = ts.epochMicroseconds();
+    int milli = int(time % 1000000) / 1000;
+
+    std::time_t time1 = ts.epochTime();
+    struct std::tm* tms = std::localtime(&time1);
+
+    char date[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
+    int len = std::strftime(date, sizeof (date), "%Y-%m-%d-%H-%M-%S", tms);
+
+    json m;
+
+    m["messageType"] = "INIT";
+    m["messagePayload"] =  "INIT";
+    m["camid"] = ctx->cam;
+    m["ts"] =  date;
+
+
+    RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
+
 
     while (!stopped()) {
         /* Snap RGBA */
@@ -933,12 +1004,24 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
 
 int T31RGBA::T31RGBAInit()
 {
+    
+    if(ctx )
+    {
+        blueLed();
+    
+       
+    }
+    else
     qrcode_init();
     return 0;
 }
 int T31RGBA::T31RGBAExit()
 {
-     qrcode_exit();
+    if(!ctx )
+    {
+      qrcode_exit();
+    }
+
     return 0;
 }
 

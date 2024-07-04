@@ -20,7 +20,7 @@
 #include "rs.h"
 #include "svg.h"
 #include "util.h"
-
+#include <fcntl.h>
 #include "qrdec.h"
 
 typedef int qr_line[3];
@@ -3854,6 +3854,49 @@ static const unsigned char QR_RS_NBLOCKS[40][4] = {
     { 25, 49, 68, 81 }
 };
 
+void redLed( )
+{
+   int f39 = open("/sys/class/gpio/gpio39/value", O_RDWR);
+   
+    if( f39 >= 0 )
+    {
+      write(f39, "1", 1);
+      close(f39);
+    }
+   
+   
+    int f38 = open("/sys/class/gpio/gpio38/value", O_RDWR);
+    if( f38 >= 0 )
+    {
+      write(f38, "0", 1);
+      close(f38);
+    }
+    
+}
+
+
+void orangeLed( )
+{
+   int f39 = open("/sys/class/gpio/gpio39/value", O_RDWR);
+   
+    if( f39 >= 0 )
+    {
+      write(f39, "0", 1);
+      close(f39);
+    }
+   
+   
+    int f38 = open("/sys/class/gpio/gpio38/value", O_RDWR);
+    if( f38 >= 0 )
+    {
+      write(f38, "0", 1);
+      close(f38);
+    }
+    
+}
+
+
+
 /*Attempts to fully decode a QR code.
   _qrdata:   Returns the parsed code data.
   _gf:       Used for Reed-Solomon error correction.
@@ -3933,6 +3976,15 @@ static int qr_code_decode(qr_code_data *_qrdata, const rs_gf256 *_gf,
       Versions 1-Q, 1-H, and 3-L reserve 1 parity byte for detection.
       We can ignore the version 3-L restriction because it has an odd number of
        parity bytes, and we don't support erasure detection.*/
+
+
+       
+
+        if(ret<0)
+          redLed();
+        else
+          orangeLed();
+
 	if (ret < 0 || _version == 1 && ret > ecc_level + 1 << 1 ||
 	    _version == 2 && ecc_level == 0 && ret > 4) {
 	    ret = -1;
