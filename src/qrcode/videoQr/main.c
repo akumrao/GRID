@@ -193,6 +193,8 @@ int main(int argc, const char *argv[])
     }
     zbar_processor_set_data_handler(proc, data_handler, NULL);
 
+    zbar_increase_verbosity();
+            
     video_device = "";
 #ifdef HAVE_DBUS
     int dbus = 1;
