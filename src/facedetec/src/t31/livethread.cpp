@@ -423,44 +423,51 @@ void T31RGBA::run() {
     int ret = 0;
     int i = 0;
    
-    
-    XA_addGallery();
-    
     IMPFrameInfo *frame;
 
-   #if(DUMPFILE)
+    if(!QRCode)
+    {
 
-    FILE *fp;
+      
+      XA_addGallery();
+    
+    
 
-    fp = fopen("/tmp/snap.rgba", "wb");
-    if(fp == NULL) {
-        SError<<"file open error ";
-        return ;
+     #if(DUMPFILE)
+
+      FILE *fp;
+
+      fp = fopen("/tmp/snap.rgba", "wb");
+      if(fp == NULL) {
+          SError<<"file open error ";
+          return ;
+      }
+
+      #endif
+
+    
+    
+      Timestamp ts;
+      Timestamp::TimeVal time = ts.epochMicroseconds();
+      int milli = int(time % 1000000) / 1000;
+
+      std::time_t time1 = ts.epochTime();
+      struct std::tm* tms = std::localtime(&time1);
+
+      char date[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
+      int len = std::strftime(date, sizeof (date), "%Y-%m-%d-%H-%M-%S", tms);
+
+      json m;
+
+      m["messageType"] = "INIT";
+      m["messagePayload"] =  "INIT";
+      m["camid"] = ctx->cam;
+      m["ts"] =  date;
+       RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
     }
 
-   #endif
 
-    
-    
-    Timestamp ts;
-    Timestamp::TimeVal time = ts.epochMicroseconds();
-    int milli = int(time % 1000000) / 1000;
-
-    std::time_t time1 = ts.epochTime();
-    struct std::tm* tms = std::localtime(&time1);
-
-    char date[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
-    int len = std::strftime(date, sizeof (date), "%Y-%m-%d-%H-%M-%S", tms);
-
-    json m;
-
-    m["messageType"] = "INIT";
-    m["messagePayload"] =  "INIT";
-    m["camid"] = ctx->cam;
-    m["ts"] =  date;
-
-
-    RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
+   
 
 
     while (!stopped()) {

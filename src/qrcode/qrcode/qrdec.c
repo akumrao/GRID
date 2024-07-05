@@ -3881,7 +3881,7 @@ void orangeLed( )
    
     if( f39 >= 0 )
     {
-      write(f39, "0", 1);
+      write(f39, "1", 1);
       close(f39);
     }
    
@@ -3889,7 +3889,7 @@ void orangeLed( )
     int f38 = open("/sys/class/gpio/gpio38/value", O_RDWR);
     if( f38 >= 0 )
     {
-      write(f38, "0", 1);
+      write(f38, "1", 1);
       close(f38);
     }
     
@@ -3979,11 +3979,15 @@ static int qr_code_decode(qr_code_data *_qrdata, const rs_gf256 *_gf,
 
 
        
+       static int nx = 0;    
+       if(nx)
+         redLed();
+       else
+         orangeLed();
 
-        if(ret<0)
-          redLed();
-        else
-          orangeLed();
+       nx = !nx;
+
+         
 
 	if (ret < 0 || _version == 1 && ret > ecc_level + 1 << 1 ||
 	    _version == 2 && ecc_level == 0 && ret > 4) {
