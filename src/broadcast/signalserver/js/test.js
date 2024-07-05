@@ -52,7 +52,7 @@ socket.on('created', function(room) {
 });
 
 socket.on('join', function(room, id, numClients) {
-    console.log('New peer, room: ' + room + ', ' + " client id: " + id);
+    console.log('New peer joins, room: ' + room + ', ' + " client id: " + id);
     isChannelReady = true;
 });
 
