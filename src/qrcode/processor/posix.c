@@ -179,14 +179,16 @@ static int proc_video_handler(zbar_processor_t *proc, int i)
     _zbar_mutex_lock(&proc->mutex);
     _zbar_processor_lock(proc);
     _zbar_mutex_unlock(&proc->mutex);
-
+    int retResult=0;
     zbar_image_t *img = NULL;
     if (proc->streaming) {
 	/* not expected to block */
+        
 	img = zbar_video_next_image(proc->video);
 	if (img)
-	    _zbar_process_image(proc, img);
+	    _zbar_process_image(proc, img, &retResult);
     }
+    printf("result %d \n", retResult);
 
     _zbar_mutex_lock(&proc->mutex);
     _zbar_processor_unlock(proc, 0);

@@ -971,7 +971,7 @@ extern int zbar_process_one(zbar_processor_t *processor, int timeout);
  * @returns >0 if symbols were successfully decoded,
  * 0 if no symbols were found or -1 if an error occurs
  */
-extern int zbar_process_image(zbar_processor_t *processor, zbar_image_t *image);
+extern int zbar_process_image(zbar_processor_t *processor, zbar_image_t *image, int *retResult);
 
 /** enable dbus IPC API.
  * @returns 0 successful
@@ -1344,7 +1344,7 @@ zbar_image_scanner_get_results(const zbar_image_scanner_t *scanner);
  * @see zbar_image_convert()
  * @since 0.9 - changed to only accept grayscale images
  */
-extern int zbar_scan_image(zbar_image_scanner_t *scanner, zbar_image_t *image);
+extern int zbar_scan_image(zbar_image_scanner_t *scanner, zbar_image_t *image, int *retResult);
 
 /*@}*/
 

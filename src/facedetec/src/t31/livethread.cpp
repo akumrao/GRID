@@ -141,6 +141,47 @@ void blueLed( )
 }
 
 
+void noLed( )
+{
+   int f39 = open("/sys/class/gpio/gpio39/value", O_RDWR);
+   
+    if( f39 >= 0 )
+    {
+      write(f39, "1", 1);
+      close(f39);
+    }
+   
+   
+    int f38 = open("/sys/class/gpio/gpio38/value", O_RDWR);
+    if( f38 >= 0 )
+    {
+      write(f38, "1", 1);
+      close(f38);
+    }
+   
+    
+}
+
+void redLed( )
+{
+   int f39 = open("/sys/class/gpio/gpio39/value", O_RDWR);
+   
+    if( f39 >= 0 )
+    {
+      write(f39, "1", 1);
+      close(f39);
+    }
+   
+   
+    int f38 = open("/sys/class/gpio/gpio38/value", O_RDWR);
+    if( f38 >= 0 )
+    {
+      write(f38, "0", 1);
+      close(f38);
+    }
+   
+    
+}
 
         
 
@@ -197,7 +238,13 @@ static int scan_image(unsigned char *blob, int width, int height)
      // printf("<source href='%s'>\n", filename);
   }
 
-  zbar_process_image(processor, zimage);
+  int retResult =0 ;
+  zbar_process_image(processor, zimage, &retResult);
+  
+  noLed();
+  
+  if(retResult < 0)
+      redLed();
 
   // output result data
   const zbar_symbol_t *sym = zbar_image_first_symbol(zimage);
@@ -592,6 +639,7 @@ void T31RGBA::run() {
             return ;
         }
 
+         if(!QRCode)
          base::sleep(700);
     }
 

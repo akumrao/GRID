@@ -864,7 +864,7 @@ static void zbar_send_code_via_dbus(zbar_image_scanner_t *iscn,
 	p += (dx) + ((uintptr_t)(dy)*w); \
     } while (0);
 
-static void *_zbar_scan_image(zbar_image_scanner_t *iscn, zbar_image_t *img)
+static void *_zbar_scan_image(zbar_image_scanner_t *iscn, zbar_image_t *img , int * retResult )
 {
     zbar_symbol_set_t *syms;
     const uint8_t *data;
@@ -1031,7 +1031,7 @@ static void *_zbar_scan_image(zbar_image_scanner_t *iscn, zbar_image_t *img)
     iscn->img = NULL;
 
 #if ENABLE_QRCODE == 1
-    _zbar_qr_decode(iscn->qr, iscn, img);
+    _zbar_qr_decode(iscn->qr, iscn, img, retResult);
 #endif
 
 #if ENABLE_SQCODE == 1
@@ -1119,12 +1119,12 @@ static void *_zbar_scan_image(zbar_image_scanner_t *iscn, zbar_image_t *img)
     return syms;
 }
 
-int zbar_scan_image(zbar_image_scanner_t *iscn, zbar_image_t *img)
+int zbar_scan_image(zbar_image_scanner_t *iscn, zbar_image_t *img , int *retResult)
 {
     zbar_symbol_set_t *syms;
     zbar_image_t *inv = NULL;
 
-    syms = _zbar_scan_image(iscn, img);
+    syms = _zbar_scan_image(iscn, img, retResult);
     if (!syms)
 	return -1;
 
@@ -1136,7 +1136,7 @@ int zbar_scan_image(zbar_image_scanner_t *iscn, zbar_image_t *img)
 		_zbar_image_scanner_recycle_syms(iscn, iscn->cache);
 		iscn->cache = NULL;
 	    }
-	    syms = _zbar_scan_image(iscn, inv);
+	    syms = _zbar_scan_image(iscn, inv, retResult);
 	    _zbar_image_swap_symbols(img, inv);
 	}
     }

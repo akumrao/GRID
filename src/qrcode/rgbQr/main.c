@@ -174,8 +174,14 @@ static int scan_image(unsigned char *blob, int width, int height)
 	   // printf("<source href='%s'>\n", filename);
 	}
 
-	zbar_process_image(processor, zimage);
+        int resultRes = 0;
+        
+	zbar_process_image(processor, zimage, &resultRes);
 
+        if(  resultRes < 0  )
+        {
+                printf("keep the QR code steady \n");
+        }
 	// output result data
 	const zbar_symbol_t *sym = zbar_image_first_symbol(zimage);
 	for (; sym; sym = zbar_symbol_next(sym)) {

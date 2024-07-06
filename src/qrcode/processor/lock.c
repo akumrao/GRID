@@ -175,7 +175,8 @@ static inline int proc_wait_unthreaded(zbar_processor_t *proc,
 
 	    /* FIXME reacquire API lock! (refactor w/video thread?) */
 	    _zbar_mutex_lock(&proc->mutex);
-	    _zbar_process_image(proc, img);
+            int retResult;
+	    _zbar_process_image(proc, img, &retResult);
 	    zbar_image_destroy(img);
 	    _zbar_mutex_unlock(&proc->mutex);
 	}

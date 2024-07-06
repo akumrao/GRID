@@ -52,7 +52,7 @@ static inline int proc_open(zbar_processor_t *proc)
 #endif
 
 /* API lock is already held */
-int _zbar_process_image(zbar_processor_t *proc, zbar_image_t *img)
+int _zbar_process_image(zbar_processor_t *proc, zbar_image_t *img, int *retResult)
 {
     int rc;
     uint32_t force_fmt = proc->force_output;
@@ -82,7 +82,7 @@ int _zbar_process_image(zbar_processor_t *proc, zbar_image_t *img)
 	    proc->syms = NULL;
 	}
 	zbar_image_scanner_recycle_image(proc->scanner, img);
-	nsyms = zbar_scan_image(proc->scanner, tmp);
+	nsyms = zbar_scan_image(proc->scanner, tmp, retResult );
 	_zbar_image_swap_symbols(img, tmp);
 
 	zbar_image_destroy(tmp);
@@ -223,9 +223,12 @@ static ZTHREAD proc_video_thread(void *arg)
 	/* acquire API lock */
 	_zbar_processor_lock(proc);
 	_zbar_mutex_unlock(&proc->mutex);
-
+   
+        
+        int retResult;
+        
 	if (thread->started && proc->streaming)
-	    _zbar_process_image(proc, img);
+	    _zbar_process_image(proc, img, &retResult);
 
 	zbar_image_destroy(img);
 
@@ -726,7 +729,7 @@ done:
 }
 #endif 
 
-int zbar_process_image(zbar_processor_t *proc, zbar_image_t *img)
+int zbar_process_image(zbar_processor_t *proc, zbar_image_t *img, int *retResult)
 {
     int rc = 0;
 
@@ -742,7 +745,7 @@ int zbar_process_image(zbar_processor_t *proc, zbar_image_t *img)
     if (!rc) {
 	zbar_image_scanner_enable_cache(proc->scanner, 0);
 	zbar_image_scanner_request_dbus(proc->scanner, proc->is_dbus_enabled);
-	rc = _zbar_process_image(proc, img);
+	rc = _zbar_process_image(proc, img, retResult);
 	if (proc->streaming)
 	    zbar_image_scanner_enable_cache(proc->scanner, 1);
     }

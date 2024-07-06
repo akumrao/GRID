@@ -3854,47 +3854,6 @@ static const unsigned char QR_RS_NBLOCKS[40][4] = {
     { 25, 49, 68, 81 }
 };
 
-void redLed( )
-{
-   int f39 = open("/sys/class/gpio/gpio39/value", O_RDWR);
-   
-    if( f39 >= 0 )
-    {
-      write(f39, "1", 1);
-      close(f39);
-    }
-   
-   
-    int f38 = open("/sys/class/gpio/gpio38/value", O_RDWR);
-    if( f38 >= 0 )
-    {
-      write(f38, "0", 1);
-      close(f38);
-    }
-    
-}
-
-
-void orangeLed( )
-{
-   int f39 = open("/sys/class/gpio/gpio39/value", O_RDWR);
-   
-    if( f39 >= 0 )
-    {
-      write(f39, "1", 1);
-      close(f39);
-    }
-   
-   
-    int f38 = open("/sys/class/gpio/gpio38/value", O_RDWR);
-    if( f38 >= 0 )
-    {
-      write(f38, "1", 1);
-      close(f38);
-    }
-    
-}
-
 
 
 /*Attempts to fully decode a QR code.
@@ -3912,7 +3871,7 @@ void orangeLed( )
 static int qr_code_decode(qr_code_data *_qrdata, const rs_gf256 *_gf,
 			  const qr_point _ul_pos, const qr_point _ur_pos,
 			  const qr_point _dl_pos, int _version, int _fmt_info,
-			  const unsigned char *_img, int _width, int _height)
+			  const unsigned char *_img, int _width, int _height , int *retResult)
 {
     qr_sampling_grid grid;
     unsigned *data_bits;
@@ -3966,7 +3925,7 @@ static int qr_code_decode(qr_code_data *_qrdata, const rs_gf256 *_gf,
 	block_szi = block_sz + (i >= nshort_blocks);
 	ret = rs_correct(_gf, QR_M0, block_data + ncodewords, block_szi, npar,
 			 NULL, 0);
-	zprintf(1, "Number of errors corrected: %i%s\n", ret,
+	zprintf(1, "version %d,  Number of errors corrected: %i%s\n", _version,   ret, 
 		ret < 0 ? " (data irrecoverable)" : "");
 	/*For version 1 symbols and version 2-L and 3-L symbols, we aren't allowed
        to use all the parity bytes for correction.
@@ -3977,17 +3936,8 @@ static int qr_code_decode(qr_code_data *_qrdata, const rs_gf256 *_gf,
       We can ignore the version 3-L restriction because it has an odd number of
        parity bytes, and we don't support erasure detection.*/
 
-
-       
-       static int nx = 0;    
-       if(nx)
-         redLed();
-       else
-         orangeLed();
-
-       nx = !nx;
-
-         
+       *retResult = ret;
+                
 
 	if (ret < 0 || _version == 1 && ret > ecc_level + 1 << 1 ||
 	    _version == 2 && ecc_level == 0 && ret > 4) {
@@ -4021,7 +3971,7 @@ static int qr_code_decode(qr_code_data *_qrdata, const rs_gf256 *_gf,
 static int qr_reader_try_configuration(qr_reader *_reader,
 				       qr_code_data *_qrdata,
 				       const unsigned char *_img, int _width,
-				       int _height, qr_finder_center *_c[3])
+				       int _height, qr_finder_center *_c[3] , int *retResult)
 {
     int ci[7];
     unsigned maxd;
@@ -4240,7 +4190,7 @@ static int qr_reader_try_configuration(qr_reader *_reader,
 	if (fmt_info < 0 ||
 	    qr_code_decode(_qrdata, &_reader->gf, ul.c->pos, ur.c->pos,
 			   dl.c->pos, ur_version, fmt_info, _img, _width,
-			   _height) < 0) {
+			   _height, retResult) < 0) {
 	    /*The code may be flipped.
         Try again, swapping the UR and DL centers.
         We should get a valid version either way, so it's relatively cheap to
@@ -4270,7 +4220,7 @@ static int qr_reader_try_configuration(qr_reader *_reader,
 	    memcpy(_qrdata->bbox, bbox, sizeof(bbox));
 	    if (qr_code_decode(_qrdata, &_reader->gf, ul.c->pos, dl.c->pos,
 			       ur.c->pos, ur_version, fmt_info, _img, _width,
-			       _height) < 0) {
+			       _height, retResult) < 0) {
 		continue;
 	    }
 	}
@@ -4281,7 +4231,7 @@ static int qr_reader_try_configuration(qr_reader *_reader,
 
 void qr_reader_match_centers(qr_reader *_reader, qr_code_data_list *_qrlist,
 			     qr_finder_center *_centers, int _ncenters,
-			     const unsigned char *_img, int _width, int _height)
+			     const unsigned char *_img, int _width, int _height, int *retResult)
 {
     /*The number of centers should be small, so an O(n^3) exhaustive search of
      which ones go together should be reasonable.*/
@@ -4309,7 +4259,7 @@ void qr_reader_match_centers(qr_reader *_reader, qr_code_data_list *_qrlist,
 		    c[2]    = _centers + k;
 		    version = qr_reader_try_configuration(_reader, &qrdata,
 							  _img, _width, _height,
-							  c);
+							  c, retResult);
 		    if (version >= 0) {
 			int ninside;
 			int l;
@@ -4353,7 +4303,7 @@ void qr_reader_match_centers(qr_reader *_reader, qr_code_data_list *_qrlist,
 			    }
 			    qr_reader_match_centers(_reader, _qrlist, inside,
 						    ninside, _img, _width,
-						    _height);
+						    _height, retResult);
 			    free(inside);
 			}
 			/*Mark _all_ such centers used: codes cannot partially overlap.*/
@@ -4408,7 +4358,7 @@ static inline void qr_svg_centers(const qr_finder_center *centers, int ncenters)
 }
 
 int _zbar_qr_decode(qr_reader *reader, zbar_image_scanner_t *iscn,
-		    zbar_image_t *img)
+		    zbar_image_t *img, int *retResult)
 {
     int nqrdata			= 0, ncenters;
     qr_finder_edge_pt *edge_pts = NULL;
@@ -4433,7 +4383,7 @@ int _zbar_qr_decode(qr_reader *reader, zbar_image_scanner_t *iscn,
 	qr_code_data_list_init(&qrlist);
 
 	qr_reader_match_centers(reader, &qrlist, centers, ncenters, bin,
-				img->width, img->height);
+				img->width, img->height, retResult);
 
 	if (qrlist.nqrdata > 0)
 	    nqrdata = qr_code_data_list_extract_text(&qrlist, iscn, img);
