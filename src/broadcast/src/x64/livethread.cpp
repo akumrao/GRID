@@ -111,29 +111,6 @@ void T31RGBA::onMessage(json &jsonMsg )
 int T31RGBA::T31RGBAInit()
 {
                 
-        if(ctx )
-        {
-            
-            Timestamp ts;
-            Timestamp::TimeVal time = ts.epochMicroseconds();
-            int milli = int(time % 1000000) / 1000;
-
-            std::time_t time1 = ts.epochTime();
-            struct std::tm* tms = std::localtime(&time1);
-
-            char date[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
-            int len = std::strftime(date, sizeof (date), "%Y-%m-%d-%H-%M-%S", tms);
-
-            json m;
-
-            m["messageType"] = "INIT";
-            m["messagePayload"] =  "INIT";
-            m["camid"] = ctx->cam;
-            m["ts"] =  m_date;
-
-
-            RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
-        }
 
     return 0;
 }

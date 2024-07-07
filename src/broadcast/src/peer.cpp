@@ -25,26 +25,26 @@ namespace web_rtc
 {
 
 
-cricket::Candidate CreateLocalUdpCandidate(const rtc::SocketAddress &address)
-{
-    cricket::Candidate candidate;
-    candidate.set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
-    candidate.set_protocol(cricket::UDP_PROTOCOL_NAME);
-    candidate.set_address(address);
-    candidate.set_type(cricket::LOCAL_PORT_TYPE);
-    return candidate;
-}
+// cricket::Candidate CreateLocalUdpCandidate(const rtc::SocketAddress &address)
+// {
+//     cricket::Candidate candidate;
+//     candidate.set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
+//     candidate.set_protocol(cricket::UDP_PROTOCOL_NAME);
+//     candidate.set_address(address);
+//     candidate.set_type(cricket::LOCAL_PORT_TYPE);
+//     return candidate;
+// }
 
-cricket::Candidate CreateLocalTcpCandidate(const rtc::SocketAddress &address)
-{
-    cricket::Candidate candidate;
-    candidate.set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
-    candidate.set_protocol(cricket::TCP_PROTOCOL_NAME);
-    candidate.set_address(address);
-    candidate.set_type(cricket::LOCAL_PORT_TYPE);
-    candidate.set_tcptype(cricket::TCPTYPE_PASSIVE_STR);
-    return candidate;
-}
+// cricket::Candidate CreateLocalTcpCandidate(const rtc::SocketAddress &address)
+// {
+//     cricket::Candidate candidate;
+//     candidate.set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
+//     candidate.set_protocol(cricket::TCP_PROTOCOL_NAME);
+//     candidate.set_address(address);
+//     candidate.set_type(cricket::LOCAL_PORT_TYPE);
+//     candidate.set_tcptype(cricket::TCPTYPE_PASSIVE_STR);
+//     return candidate;
+// }
 
 
 bool AddCandidateToFirstTransport(cricket::Candidate *candidate, webrtc::SessionDescriptionInterface *sdesc)

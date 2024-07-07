@@ -52,45 +52,7 @@
 
 #if ABSL_DYNAMIC_ANNOTATIONS_ENABLED != 0
 
-  /* -------------------------------------------------------------
-     Annotations that suppress errors.  It is usually better to express the
-     program's synchronization using the other annotations, but these can
-     be used when all else fails. */
 
-  /* Report that we may have a benign race at "pointer", with size
-     "sizeof(*(pointer))". "pointer" must be a non-void* pointer.  Insert at the
-     point where "pointer" has been allocated, preferably close to the point
-     where the race happens.  See also ABSL_ANNOTATE_BENIGN_RACE_STATIC. */
-  #define ABSL_ANNOTATE_BENIGN_RACE(pointer, description) \
-    AbslAnnotateBenignRaceSized(__FILE__, __LINE__, pointer, \
-                            sizeof(*(pointer)), description)
-
-  /* Same as ABSL_ANNOTATE_BENIGN_RACE(address, description), but applies to
-     the memory range [address, address+size). */
-  #define ABSL_ANNOTATE_BENIGN_RACE_SIZED(address, size, description) \
-    AbslAnnotateBenignRaceSized(__FILE__, __LINE__, address, size, description)
-
-  /* Enable (enable!=0) or disable (enable==0) race detection for all threads.
-     This annotation could be useful if you want to skip expensive race analysis
-     during some period of program execution, e.g. during initialization. */
-  #define ABSL_ANNOTATE_ENABLE_RACE_DETECTION(enable) \
-    AbslAnnotateEnableRaceDetection(__FILE__, __LINE__, enable)
-
-  /* -------------------------------------------------------------
-     Annotations useful for debugging. */
-
-  /* Report the current thread name to a race detector. */
-  #define ABSL_ANNOTATE_THREAD_NAME(name) \
-    AbslAnnotateThreadName(__FILE__, __LINE__, name)
-
-  /* -------------------------------------------------------------
-     Annotations useful when implementing locks.  They are not
-     normally needed by modules that merely use locks.
-     The "lock" argument is a pointer to the lock object. */
-
-  /* Report that a lock has been created at address "lock". */
-  #define ABSL_ANNOTATE_RWLOCK_CREATE(lock) \
-    AbslAnnotateRWLockCreate(__FILE__, __LINE__, lock)
 
   /* Report that a linker initialized lock has been created at address "lock".
    */
