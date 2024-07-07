@@ -606,9 +606,15 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
           if (jsonMsg.find("enable") != jsonMsg.end())
           { 
 
-             bool ircut = jsonMsg["enable"].get<bool>();  
-             SInfo << "ircut " << ircut;
-              sample_SetIRCUT(ircut);
+            bool ircut = jsonMsg["enable"].get<bool>();  
+            SInfo << "ircut " << ircut;
+             
+            #if defined(__x86_64__)
+            #else
+            sample_SetIRCUT(ircut);
+            #endif
+
+             
            }
         }  
         else if(type == "HD")
