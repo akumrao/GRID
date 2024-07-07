@@ -1,9 +1,6 @@
 
 cmake_minimum_required(VERSION 3.7)
 
-set(WEBRTC_LIBS "/workspace/MagicAI/src/webrtc/build/")
-SET(WEBRTC_PATH "/workspace/webrtc/src/")
-
 if (${ANDROID_ABI} STREQUAL "x86_64")
 
 SET(SSL_ROOT "/workspace/MagicAI/src/openssl/buildx64")
@@ -34,10 +31,6 @@ set(arm_PLATFORM_CC_FILTER ".*fir_filter_neon.cc|.*sinc_resampler_neon.cc|.*cros
 
 
 
-#SET(WEBRTC_PATH_INC "/workspace/webrtc_android/src")
-#SET(WEBRTC_PATH_LIB "/workspace/webrtc_android/src/out/m75/obj")
-#SET(FFMPEG_ROOT "/workspace/ffmpeg")
-#SET(NVR "/workspace/nvrmain/acvs-videoedge-nvr/NVR")
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -80,11 +73,11 @@ set(INC "/workspace/MagicAI/src/qrcode/include")
 
 if (${ANDROID_ABI} STREQUAL "x86_64")
 
-target_include_directories(runWebrtc PRIVATE   ${INC} ../../signal/include ../../facedetec/include/ ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include   ../include/x64 ${WEBRTC_PATH}    ${WEBRTC_PATH}/third_party/abseil-cpp  )
+target_include_directories(runWebrtc PRIVATE   ${INC} ../../signal/include ../../facedetec/include/ ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include ../include/x64  )
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
  
-target_include_directories(runWebrtc PRIVATE  ${INC} ../../signal/include ../../facedetec/include/ ../../facedetec/include/t31/  ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include   ../include/x64 ${WEBRTC_PATH}    ${WEBRTC_PATH}/third_party/abseil-cpp   ../include/t31 ${WEBRTC_PATH}/third_party/abseil-cpp ../../facedetec/xailient-sdk/include/ ${T31SDK}/include ${T31SDK}/samples/libimp-sample/)
+target_include_directories(runWebrtc PRIVATE  ${INC} ../../signal/include ../../facedetec/include/ ../../facedetec/include/t31/  ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include   ../include/x64    ../include/t31 ../../facedetec/xailient-sdk/include/ ${T31SDK}/include ${T31SDK}/samples/libimp-sample/)
 
 endif()
 
@@ -119,7 +112,7 @@ endif()
 
 
 
-#${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/strings/libabsl_absl_strings.a #${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/types/libabsl_absl_bad_variant_access.a #${WEBRTC_LIBS}/third_party/abseil-cpp/abseil-cpp/absl/types/libabsl_absl_bad_optional_access.a  
+
 
 
 
