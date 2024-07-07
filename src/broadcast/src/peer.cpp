@@ -17,6 +17,8 @@
 
 using std::endl;
 
+extern std::atomic<int>  HDVideo ;
+
 namespace base
 {
 namespace web_rtc
@@ -600,17 +602,33 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
         }
         else if(type == "SETIRCUT")
         {
-            SInfo << "ircut " << ircut;
-            
-           //sample_SetIRCUT(ircut);
-           ircut = !ircut;
+
+          if (jsonMsg.find("enable") != jsonMsg.end())
+          { 
+
+             bool ircut = jsonMsg["enable"].get<bool>();  
+             SInfo << "ircut " << ircut;
+              sample_SetIRCUT(ircut);
+           }
         }  
+        else if(type == "HD")
+        {
+          if (jsonMsg.find("enable") != jsonMsg.end())
+          { 
+
+             bool hd = jsonMsg["enable"].get<bool>();  
             
+              if(hd)
+                HDVideo =0;
+              else 
+               HDVideo =2; 
+           }
+        }  
+                
           
 	    //SInfo << jsonMsg.dump(4);
 	    
 	}
-
 
 
    }

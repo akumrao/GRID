@@ -71,7 +71,7 @@ const size_t kVPlaneIndex = 2;
 const uint8_t start_code[4] = {0, 0, 0, 1};
 
 
-extern std::atomic<int>  HDVideo ;
+//extern std::atomic<int>  HDVideo ;
 
 //////////////////////////////////////////////////////////////////////////
 
@@ -283,10 +283,10 @@ namespace base {
 
             uint32_t bps =    parameters.bitrate.get_sum_bps()/1000;
 
-            if( bps < 500)
-             HDVideo =2;
-            else 
-             HDVideo =0;   
+            // if( bps < 500)
+            //  HDVideo =2;
+            // else 
+            //  HDVideo =0;   
 
       //      SInfo << "bitrate " <<  bps << " resolution " <<  HDVideo;
 
@@ -423,7 +423,7 @@ namespace base {
                   if (!dataSize)
                   {
                       SWarn << "no frame size";
-		      return WEBRTC_VIDEO_CODEC_OK;
+                      return WEBRTC_VIDEO_CODEC_OK;
                   }
 
 

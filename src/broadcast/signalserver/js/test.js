@@ -880,6 +880,45 @@ function setIRCUTCam() {
  var data = {}; // data object to transmit over data channel
     
   data.messageType = "SETIRCUT";
+  data.enable=true;
+
+  channelSnd.send(JSON.stringify(data));
+
+}
+
+function resetIRCUTCam() {
+
+
+ var data = {}; // data object to transmit over data channel
+    
+  data.messageType = "SETIRCUT";
+  data.enable=false;
+  
+  channelSnd.send(JSON.stringify(data));
+
+}
+
+
+
+function setHD() {
+
+
+ var data = {}; // data object to transmit over data channel
+    
+  data.messageType = "HD";
+  data.enable=true;
+  channelSnd.send(JSON.stringify(data));
+
+}
+
+
+function setSD() {
+
+
+ var data = {}; // data object to transmit over data channel
+    
+  data.messageType = "HD";
+  data.enable=false;
   channelSnd.send(JSON.stringify(data));
 
 }
