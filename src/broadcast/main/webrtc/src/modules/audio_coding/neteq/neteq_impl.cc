@@ -20,7 +20,7 @@
 
 #include "api/audio_codecs/audio_decoder.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
+//#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "modules/audio_coding/neteq/accelerate.h"
 #include "modules/audio_coding/neteq/background_noise.h"
 #include "modules/audio_coding/neteq/buffer_level_filter.h"
@@ -855,14 +855,15 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
     }
     case kRfc3389Cng:
     case kRfc3389CngNoPacket: {
-      return_value = DoRfc3389Cng(&packet_list, play_dtmf);
+      exit(0); //  return_value = DoRfc3389Cng(&packet_list, play_dtmf);
       break;
     }
     case kCodecInternalCng: {
       // This handles the case when there is no transmission and the decoder
       // should produce internal comfort noise.
       // TODO(hlundin): Write test for codec-internal CNG.
-      DoCodecInternalCng(decoded_buffer_.get(), length);
+      // DoCodecInternalCng(decoded_buffer_.get(), length);
+      exit(0); 
       break;
     }
     case kDtmf: {
@@ -882,9 +883,11 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
     return return_value;
   }
 
-  if (last_mode_ != kModeRfc3389Cng) {
-    comfort_noise_->Reset();
-  }
+   exit(0);
+  
+//  if (last_mode_ != kModeRfc3389Cng) {
+//    comfort_noise_->Reset();
+//  }
 
   // Copy from |algorithm_buffer| to |sync_buffer_|.
   sync_buffer_->PushBack(*algorithm_buffer_);
@@ -1309,9 +1312,12 @@ int NetEqImpl::Decode(PacketList* packet_list,
       decoder->Reset();
 
     // Reset comfort noise decoder.
-    ComfortNoiseDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
-    if (cng_decoder)
-      cng_decoder->Reset();
+//    ComfortNoiseDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
+//    if (cng_decoder)
+//      cng_decoder->Reset();
+    
+    exit(0);
+    
 
     reset_decoder_ = false;
   }
@@ -1724,46 +1730,46 @@ int NetEqImpl::DoPreemptiveExpand(int16_t* decoded_buffer,
   return 0;
 }
 
-int NetEqImpl::DoRfc3389Cng(PacketList* packet_list, bool play_dtmf) {
-  if (!packet_list->empty()) {
-    // Must have exactly one SID frame at this point.
-    assert(packet_list->size() == 1);
-    const Packet& packet = packet_list->front();
-    if (!decoder_database_->IsComfortNoise(packet.payload_type)) {
-      RTC_LOG(LS_ERROR) << "Trying to decode non-CNG payload as CNG.";
-      return kOtherError;
-    }
-    if (comfort_noise_->UpdateParameters(packet) ==
-        ComfortNoise::kInternalError) {
-      algorithm_buffer_->Zeros(output_size_samples_);
-      return -comfort_noise_->internal_error_code();
-    }
-  }
-  int cn_return =
-      comfort_noise_->Generate(output_size_samples_, algorithm_buffer_.get());
-  expand_->Reset();
-  last_mode_ = kModeRfc3389Cng;
-  if (!play_dtmf) {
-    dtmf_tone_generator_->Reset();
-  }
-  if (cn_return == ComfortNoise::kInternalError) {
-    RTC_LOG(LS_WARNING) << "Comfort noise generator returned error code: "
-                        << comfort_noise_->internal_error_code();
-    return kComfortNoiseErrorCode;
-  } else if (cn_return == ComfortNoise::kUnknownPayloadType) {
-    return kUnknownRtpPayloadType;
-  }
-  return 0;
-}
+//int NetEqImpl::DoRfc3389Cng(PacketList* packet_list, bool play_dtmf) {
+//  if (!packet_list->empty()) {
+//    // Must have exactly one SID frame at this point.
+//    assert(packet_list->size() == 1);
+//    const Packet& packet = packet_list->front();
+//    if (!decoder_database_->IsComfortNoise(packet.payload_type)) {
+//      RTC_LOG(LS_ERROR) << "Trying to decode non-CNG payload as CNG.";
+//      return kOtherError;
+//    }
+//    if (comfort_noise_->UpdateParameters(packet) ==
+//        ComfortNoise::kInternalError) {
+//      algorithm_buffer_->Zeros(output_size_samples_);
+//      return -comfort_noise_->internal_error_code();
+//    }
+//  }
+//  int cn_return =
+//      comfort_noise_->Generate(output_size_samples_, algorithm_buffer_.get());
+//  expand_->Reset();
+//  last_mode_ = kModeRfc3389Cng;
+//  if (!play_dtmf) {
+//    dtmf_tone_generator_->Reset();
+//  }
+//  if (cn_return == ComfortNoise::kInternalError) {
+//    RTC_LOG(LS_WARNING) << "Comfort noise generator returned error code: "
+//                        << comfort_noise_->internal_error_code();
+//    return kComfortNoiseErrorCode;
+//  } else if (cn_return == ComfortNoise::kUnknownPayloadType) {
+//    return kUnknownRtpPayloadType;
+//  }
+//  return 0;
+//}
 
-void NetEqImpl::DoCodecInternalCng(const int16_t* decoded_buffer,
-                                   size_t decoded_length) {
-  RTC_DCHECK(normal_.get());
-  normal_->Process(decoded_buffer, decoded_length, last_mode_,
-                   algorithm_buffer_.get());
-  last_mode_ = kModeCodecInternalCng;
-  expand_->Reset();
-}
+//void NetEqImpl::DoCodecInternalCng(const int16_t* decoded_buffer,
+//                                   size_t decoded_length) {
+//  RTC_DCHECK(normal_.get());
+//  normal_->Process(decoded_buffer, decoded_length, last_mode_,
+//                   algorithm_buffer_.get());
+//  last_mode_ = kModeCodecInternalCng;
+//  expand_->Reset();
+//}
 
 int NetEqImpl::DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf) {
   // This block of the code and the block further down, handling |dtmf_switch|
@@ -1999,9 +2005,11 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
 
   last_mode_ = kModeNormal;
 
-  ComfortNoiseDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
-  if (cng_decoder)
-    cng_decoder->Reset();
+  //exit(0);
+  
+//  ComfortNoiseDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
+//  if (cng_decoder)
+//    cng_decoder->Reset();
 
   // Reinit post-decode VAD with new sample rate.
   assert(vad_.get());  // Cannot be NULL here.

@@ -30,7 +30,7 @@
 #include "media/engine/payload_type_mapper.h"
 #include "media/engine/webrtc_media_engine.h"
 #include "modules/audio_device/audio_device_impl.h"
-#include "modules/audio_mixer/audio_mixer_impl.h"
+//#include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/arraysize.h"
@@ -253,7 +253,7 @@ void WebRtcVoiceEngine::Init() {
     if (audio_mixer_) {
       config.audio_mixer = audio_mixer_;
     } else {
-      config.audio_mixer = webrtc::AudioMixerImpl::Create();
+      //config.audio_mixer = webrtc::AudioMixerImpl::Create();  // ravind
     }
     config.audio_processing = apm_;
     config.audio_device_module = adm_;

@@ -18,7 +18,7 @@
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_format.h"
 #include "api/scoped_refptr.h"
-#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
+//#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "modules/audio_coding/neteq/packet.h"
 #include "rtc_base/constructor_magic.h"
 
@@ -165,11 +165,11 @@ class DecoderDatabase {
   // Sets the active comfort noise decoder to be |rtp_payload_type|. If this
   // call results in a change of active comfort noise decoder, the previous
   // active decoder's AudioDecoder object is deleted.
-  virtual int SetActiveCngDecoder(uint8_t rtp_payload_type);
+//  virtual int SetActiveCngDecoder(uint8_t rtp_payload_type);
 
   // Returns the current active comfort noise decoder, or NULL if no active
   // comfort noise decoder exists.
-  virtual ComfortNoiseDecoder* GetActiveCngDecoder() const;
+//  virtual ComfortNoiseDecoder* GetActiveCngDecoder() const;
 
   // The following are utility methods: they will look up DecoderInfo through
   // GetDecoderInfo and call the respective method on that info object, if it
@@ -205,7 +205,7 @@ class DecoderDatabase {
   DecoderMap decoders_;
   int active_decoder_type_;
   int active_cng_decoder_type_;
-  mutable std::unique_ptr<ComfortNoiseDecoder> active_cng_decoder_;
+//  mutable std::unique_ptr<ComfortNoiseDecoder> active_cng_decoder_;
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory_;
   const absl::optional<AudioCodecPairId> codec_pair_id_;
 

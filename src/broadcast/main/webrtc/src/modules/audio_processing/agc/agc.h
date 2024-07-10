@@ -13,7 +13,7 @@
 
 #include <memory>
 
-#include "modules/audio_processing/vad/voice_activity_detector.h"
+//#include "modules/audio_processing/vad/voice_activity_detector.h"
 
 namespace webrtc {
 
@@ -46,7 +46,7 @@ class Agc {
   int target_level_dbfs_;
   std::unique_ptr<LoudnessHistogram> histogram_;
   std::unique_ptr<LoudnessHistogram> inactive_histogram_;
-  VoiceActivityDetector vad_;
+//  VoiceActivityDetector vad_;
 };
 
 }  // namespace webrtc

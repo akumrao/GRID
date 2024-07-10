@@ -229,33 +229,33 @@ AudioDecoder* DecoderDatabase::GetActiveDecoder() const {
   return GetDecoder(active_decoder_type_);
 }
 
-int DecoderDatabase::SetActiveCngDecoder(uint8_t rtp_payload_type) {
-  // Check that |rtp_payload_type| exists in the database.
-  const DecoderInfo* info = GetDecoderInfo(rtp_payload_type);
-  if (!info) {
-    // Decoder not found.
-    return kDecoderNotFound;
-  }
-  if (active_cng_decoder_type_ >= 0 &&
-      active_cng_decoder_type_ != rtp_payload_type) {
-    // Moving from one active CNG decoder to another. Delete the first one.
-    RTC_DCHECK(active_cng_decoder_);
-    active_cng_decoder_.reset();
-  }
-  active_cng_decoder_type_ = rtp_payload_type;
-  return kOK;
-}
-
-ComfortNoiseDecoder* DecoderDatabase::GetActiveCngDecoder() const {
-  if (active_cng_decoder_type_ < 0) {
-    // No active CNG decoder.
-    return NULL;
-  }
-  if (!active_cng_decoder_) {
-    active_cng_decoder_.reset(new ComfortNoiseDecoder);
-  }
-  return active_cng_decoder_.get();
-}
+//int DecoderDatabase::SetActiveCngDecoder(uint8_t rtp_payload_type) {
+//  // Check that |rtp_payload_type| exists in the database.
+//  const DecoderInfo* info = GetDecoderInfo(rtp_payload_type);
+//  if (!info) {
+//    // Decoder not found.
+//    return kDecoderNotFound;
+//  }
+//  if (active_cng_decoder_type_ >= 0 &&
+//      active_cng_decoder_type_ != rtp_payload_type) {
+//    // Moving from one active CNG decoder to another. Delete the first one.
+//    RTC_DCHECK(active_cng_decoder_);
+//    active_cng_decoder_.reset();
+//  }
+//  active_cng_decoder_type_ = rtp_payload_type;
+//  return kOK;
+//}
+//
+//ComfortNoiseDecoder* DecoderDatabase::GetActiveCngDecoder() const {
+//  if (active_cng_decoder_type_ < 0) {
+//    // No active CNG decoder.
+//    return NULL;
+//  }
+//  if (!active_cng_decoder_) {
+//    active_cng_decoder_.reset(new ComfortNoiseDecoder);
+//  }
+//  return active_cng_decoder_.get();
+//}
 
 AudioDecoder* DecoderDatabase::GetDecoder(uint8_t rtp_payload_type) const {
   const DecoderInfo* info = GetDecoderInfo(rtp_payload_type);

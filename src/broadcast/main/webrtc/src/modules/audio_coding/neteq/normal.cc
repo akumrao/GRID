@@ -145,41 +145,8 @@ int Normal::Process(const int16_t* input,
                     (1 << 14) - 32);  // Worst case rouding is a length of 34
     }
   } else if (last_mode == kModeRfc3389Cng) {
-    RTC_DCHECK_EQ(output->Channels(), 1);  // Not adapted for multi-channel yet.
-    static const size_t kCngLength = 48;
-    RTC_DCHECK_LE(8 * fs_mult, kCngLength);
-    int16_t cng_output[kCngLength];
-    ComfortNoiseDecoder* cng_decoder = decoder_database_->GetActiveCngDecoder();
-
-    if (cng_decoder) {
-      // Generate long enough for 48kHz.
-      if (!cng_decoder->Generate(cng_output, 0)) {
-        // Error returned; set return vector to all zeros.
-        memset(cng_output, 0, sizeof(cng_output));
-      }
-    } else {
-      // If no CNG instance is defined, just copy from the decoded data.
-      // (This will result in interpolating the decoded with itself.)
-      (*output)[0].CopyTo(fs_mult * 8, 0, cng_output);
-    }
-    // Interpolate the CNG into the new vector.
-    // (NB/WB/SWB32/SWB48 8/16/32/48 samples.)
-    size_t win_length = samples_per_ms_;
-    int16_t win_slope_Q14 = default_win_slope_Q14_;
-    if (win_length > kCngLength) {
-      win_length = kCngLength;
-      win_slope_Q14 = (1 << 14) / static_cast<int16_t>(win_length);
-    }
-    int16_t win_up_Q14 = 0;
-    for (size_t i = 0; i < win_length; i++) {
-      win_up_Q14 += win_slope_Q14;
-      (*output)[0][i] =
-          (win_up_Q14 * (*output)[0][i] +
-           ((1 << 14) - win_up_Q14) * cng_output[i] + (1 << 13)) >>
-          14;
-    }
-    RTC_DCHECK_GT(win_up_Q14,
-                  (1 << 14) - 32);  // Worst case rouding is a length of 34
+    
+      exit(0);
   }
 
   return static_cast<int>(length);

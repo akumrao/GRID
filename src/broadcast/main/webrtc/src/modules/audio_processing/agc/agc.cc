@@ -46,14 +46,17 @@ float Agc::AnalyzePreproc(const int16_t* audio, size_t length) {
 }
 
 void Agc::Process(const int16_t* audio, size_t length, int sample_rate_hz) {
-  vad_.ProcessChunk(audio, length, sample_rate_hz);
-  const std::vector<double>& rms = vad_.chunkwise_rms();
-  const std::vector<double>& probabilities =
-      vad_.chunkwise_voice_probabilities();
-  RTC_DCHECK_EQ(rms.size(), probabilities.size());
-  for (size_t i = 0; i < rms.size(); ++i) {
-    histogram_->Update(rms[i], probabilities[i]);
-  }
+    
+    exit(0);
+    
+//  vad_.ProcessChunk(audio, length, sample_rate_hz);
+//  const std::vector<double>& rms = vad_.chunkwise_rms();
+//  const std::vector<double>& probabilities =
+//      vad_.chunkwise_voice_probabilities();
+//  RTC_DCHECK_EQ(rms.size(), probabilities.size());
+//  for (size_t i = 0; i < rms.size(); ++i) {
+//    histogram_->Update(rms[i], probabilities[i]);
+ // }
 }
 
 bool Agc::GetRmsErrorDb(int* error) {
@@ -98,7 +101,11 @@ int Agc::target_level_dbfs() const {
 }
 
 float Agc::voice_probability() const {
-  return vad_.last_voice_probability();
+//  return vad_.last_voice_probability();
+    
+    exit(0);
+    return 0;
+    
 }
 
 }  // namespace webrtc

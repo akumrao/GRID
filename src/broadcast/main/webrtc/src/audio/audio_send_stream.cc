@@ -31,7 +31,7 @@
 #include "logging/rtc_event_log/events/rtc_event_audio_send_stream_config.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/rtc_stream_config.h"
-#include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
+//#include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
@@ -612,16 +612,16 @@ bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
 
   // Wrap the encoder in a an AudioEncoderCNG, if VAD is enabled.
   if (spec.cng_payload_type) {
-    AudioEncoderCngConfig cng_config;
-    cng_config.num_channels = encoder->NumChannels();
-    cng_config.payload_type = *spec.cng_payload_type;
-    cng_config.speech_encoder = std::move(encoder);
-    cng_config.vad_mode = Vad::kVadNormal;
-    encoder = CreateComfortNoiseEncoder(std::move(cng_config));
+   // AudioEncoderCngConfig cng_config;
+   // cng_config.num_channels = encoder->NumChannels();
+  //  cng_config.payload_type = *spec.cng_payload_type;
+  //  cng_config.speech_encoder = std::move(encoder);
+  //  cng_config.vad_mode = Vad::kVadNormal;
+  //  encoder = CreateComfortNoiseEncoder(std::move(cng_config));
 
-    stream->RegisterCngPayloadType(
-        *spec.cng_payload_type,
-        new_config.send_codec_spec->format.clockrate_hz);
+//    stream->RegisterCngPayloadType(
+//        *spec.cng_payload_type,
+//        new_config.send_codec_spec->format.clockrate_hz);
   }
 
   // Set currently known overhead (used in ANA, opus only).
@@ -746,12 +746,12 @@ void AudioSendStream::ReconfigureCNG(AudioSendStream* stream,
           old_encoder = std::move(tmp);
         }
         if (new_config.send_codec_spec->cng_payload_type) {
-          AudioEncoderCngConfig config;
-          config.speech_encoder = std::move(old_encoder);
-          config.num_channels = config.speech_encoder->NumChannels();
-          config.payload_type = *new_config.send_codec_spec->cng_payload_type;
-          config.vad_mode = Vad::kVadNormal;
-          *encoder_ptr = CreateComfortNoiseEncoder(std::move(config));
+//          AudioEncoderCngConfig config;
+//          config.speech_encoder = std::move(old_encoder);
+//          config.num_channels = config.speech_encoder->NumChannels();
+//          config.payload_type = *new_config.send_codec_spec->cng_payload_type;
+//          config.vad_mode = Vad::kVadNormal;
+//          *encoder_ptr = CreateComfortNoiseEncoder(std::move(config));
         } else {
           *encoder_ptr = std::move(old_encoder);
         }
