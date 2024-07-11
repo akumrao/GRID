@@ -276,30 +276,30 @@ std::string normalize(const std::string& path)
     return s;
 }
 
-
-std::string transcode(const std::string& path)
-{
-#if defined(_MSC_VER) && defined(base_UNICODE)
-    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>>
-        convert; // conversion between UTF-16 and UTF-8
-    std::wstring uniPath = convert.from_bytes(
-        path); // convert UTF-8 std::string to UTF-16 std::wstring
-    DWORD len = WideCharToMultiByte(
-        CP_ACP, WC_NO_BEST_FIT_CHARS, uniPath.c_str(),
-        static_cast<int>(uniPath.length()), nullptr, 0, nullptr, nullptr);
-    if (len > 0) {
-        std::unique_ptr<char[]> buffer(new char[len]);
-        DWORD rc = WideCharToMultiByte(
-            CP_ACP, WC_NO_BEST_FIT_CHARS, uniPath.c_str(),
-            static_cast<int>(uniPath.length()), buffer.get(),
-            static_cast<int>(len), nullptr, nullptr);
-        if (rc) {
-            return std::string(buffer.get(), len);
-        }
-    }
-#endif
-    return path;
-}
+//
+//std::string transcode(const std::string& path)
+//{
+//#if defined(_MSC_VER) && defined(base_UNICODE)
+//    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>>
+//        convert; // conversion between UTF-16 and UTF-8
+//    std::wstring uniPath = convert.from_bytes(
+//        path); // convert UTF-8 std::string to UTF-16 std::wstring
+//    DWORD len = WideCharToMultiByte(
+//        CP_ACP, WC_NO_BEST_FIT_CHARS, uniPath.c_str(),
+//        static_cast<int>(uniPath.length()), nullptr, 0, nullptr, nullptr);
+//    if (len > 0) {
+//        std::unique_ptr<char[]> buffer(new char[len]);
+//        DWORD rc = WideCharToMultiByte(
+//            CP_ACP, WC_NO_BEST_FIT_CHARS, uniPath.c_str(),
+//            static_cast<int>(uniPath.length()), buffer.get(),
+//            static_cast<int>(len), nullptr, nullptr);
+//        if (rc) {
+//            return std::string(buffer.get(), len);
+//        }
+//    }
+//#endif
+//    return path;
+//}
 
 
 void addsep(std::string& path)

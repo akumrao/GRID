@@ -760,17 +760,17 @@ int uv_chdir(const char* dir) {
   return 0;
 }
 
-
-void uv_disable_stdio_inheritance(void) {
-  int fd;
-
-  /* Set the CLOEXEC flag on all open descriptors. Unconditionally try the
-   * first 16 file descriptors. After that, bail out after the first error.
-   */
-  for (fd = 0; ; fd++)
-    if (uv__cloexec(fd, 1) && fd > 15)
-      break;
-}
+//
+//void uv_disable_stdio_inheritance(void) {
+//  int fd;
+//
+//  /* Set the CLOEXEC flag on all open descriptors. Unconditionally try the
+//   * first 16 file descriptors. After that, bail out after the first error.
+//   */
+//  for (fd = 0; ; fd++)
+//    if (uv__cloexec(fd, 1) && fd > 15)
+//      break;
+//}
 
 
 int uv_fileno(const uv_handle_t* handle, uv_os_fd_t* fd) {

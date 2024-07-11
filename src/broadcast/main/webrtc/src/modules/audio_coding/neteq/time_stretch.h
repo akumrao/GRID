@@ -41,7 +41,7 @@ class TimeStretch {
         fs_mult_(sample_rate_hz / 8000),
         num_channels_(num_channels),
         master_channel_(0),  // First channel is master.
-        background_noise_(background_noise),
+//        background_noise_(background_noise),
         max_input_value_(0) {
     assert(sample_rate_hz_ == 8000 || sample_rate_hz_ == 16000 ||
            sample_rate_hz_ == 32000 || sample_rate_hz_ == 48000);
@@ -91,7 +91,7 @@ class TimeStretch {
   const int fs_mult_;  // Sample rate multiplier = sample_rate_hz_ / 8000.
   const size_t num_channels_;
   const size_t master_channel_;
-  const BackgroundNoise& background_noise_;
+  //const BackgroundNoise& background_noise_;
   int16_t max_input_value_;
   int16_t downsampled_input_[kDownsampledLen];
   // Adding 1 to the size of |auto_correlation_| because of how it is used

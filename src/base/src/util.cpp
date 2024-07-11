@@ -108,12 +108,12 @@ bool isNumber(const std::string& str)
     return true;
 }
 
-
-bool tryParseHex(const std::string& str, unsigned& value)
-{
-    char temp;
-    return std::sscanf(str.c_str(), "%x%c", &value, &temp) == 1;
-}
+//
+//bool tryParseHex(const std::string& str, unsigned& value)
+//{
+//    char temp;
+//    return std::sscanf(str.c_str(), "%x%c", &value, &temp) == 1;
+//}
 
 
 void split(const std::string& s, const std::string& delim,
@@ -261,12 +261,12 @@ void replaceSpecialCharacters(std::string& str, char with, bool allowSpaces)
             str[i] = with;
 }
 
-
-void toUnderscore(std::string& str)
-{
-    replaceSpecialCharacters(str, '_', false);
-    toLower(str);
-}
+//
+//void toUnderscore(std::string& str)
+//{
+//    replaceSpecialCharacters(str, '_', false);
+//    toLower(str);
+//}
 
 
 bool matchNodes(const std::string& node, const std::string& xnode,
@@ -308,62 +308,62 @@ bool matchNodes(const std::vector<std::string>& params,
 }
 
 
-std::streamsize copyStream(std::istream& istr, std::ostream& ostr,
-                           size_t bufferSize)
-{
-    assert(bufferSize > 0);
-
-    std::unique_ptr<char[]> buffer(new char[bufferSize]);
-    std::streamsize len = 0;
-    istr.read(buffer.get(), bufferSize);
-    std::streamsize n = istr.gcount();
-    while (n > 0) {
-        len += n;
-        ostr.write(buffer.get(), n);
-        if (istr && ostr) {
-            istr.read(buffer.get(), bufferSize);
-            n = istr.gcount();
-        } else
-            n = 0;
-    }
-    return len;
-}
-
-
-std::streamsize copyStreamUnbuffered(std::istream& istr, std::ostream& ostr)
-{
-    char c;
-    std::streamsize len = 0;
-    istr.get(c);
-    while (istr && ostr) {
-        ++len;
-        ostr.put(c);
-        istr.get(c);
-    }
-    return len;
-}
-
-
-std::streamsize copyToString(std::istream& istr, std::string& str,
-                             size_t bufferSize)
-{
-    assert(bufferSize > 0);
-
-    std::unique_ptr<char[]> buffer(new char[bufferSize]);
-    std::streamsize len = 0;
-    istr.read(buffer.get(), bufferSize);
-    std::streamsize n = istr.gcount();
-    while (n > 0) {
-        len += n;
-        str.append(buffer.get(), static_cast<std::string::size_type>(n));
-        if (istr) {
-            istr.read(buffer.get(), bufferSize);
-            n = istr.gcount();
-        } else
-            n = 0;
-    }
-    return len;
-}
+//std::streamsize copyStream(std::istream& istr, std::ostream& ostr,
+//                           size_t bufferSize)
+//{
+//    assert(bufferSize > 0);
+//
+//    std::unique_ptr<char[]> buffer(new char[bufferSize]);
+//    std::streamsize len = 0;
+//    istr.read(buffer.get(), bufferSize);
+//    std::streamsize n = istr.gcount();
+//    while (n > 0) {
+//        len += n;
+//        ostr.write(buffer.get(), n);
+//        if (istr && ostr) {
+//            istr.read(buffer.get(), bufferSize);
+//            n = istr.gcount();
+//        } else
+//            n = 0;
+//    }
+//    return len;
+//}
+//
+//
+//std::streamsize copyStreamUnbuffered(std::istream& istr, std::ostream& ostr)
+//{
+//    char c;
+//    std::streamsize len = 0;
+//    istr.get(c);
+//    while (istr && ostr) {
+//        ++len;
+//        ostr.put(c);
+//        istr.get(c);
+//    }
+//    return len;
+//}
+//
+//
+//std::streamsize copyToString(std::istream& istr, std::string& str,
+//                             size_t bufferSize)
+//{
+//    assert(bufferSize > 0);
+//
+//    std::unique_ptr<char[]> buffer(new char[bufferSize]);
+//    std::streamsize len = 0;
+//    istr.read(buffer.get(), bufferSize);
+//    std::streamsize n = istr.gcount();
+//    while (n > 0) {
+//        len += n;
+//        str.append(buffer.get(), static_cast<std::string::size_type>(n));
+//        if (istr) {
+//            istr.read(buffer.get(), bufferSize);
+//            n = istr.gcount();
+//        } else
+//            n = 0;
+//    }
+//    return len;
+//}
 
 
 } // namespace util

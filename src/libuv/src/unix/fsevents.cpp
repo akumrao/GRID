@@ -26,14 +26,14 @@
 /* iOS (currently) doesn't provide the FSEvents-API (nor CoreServices) */
 /* macOS prior to 10.7 doesn't provide the full FSEvents API so use kqueue */
 
-int uv__fsevents_init(uv_fs_event_t* handle) {
-  return 0;
-}
-
-
-int uv__fsevents_close(uv_fs_event_t* handle) {
-  return 0;
-}
+//int uv__fsevents_init(uv_fs_event_t* handle) {
+//  return 0;
+//}
+//
+//
+//int uv__fsevents_close(uv_fs_event_t* handle) {
+//  return 0;
+//}
 
 
 void uv__fsevents_loop_delete(uv_loop_t* loop) {

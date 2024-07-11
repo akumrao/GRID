@@ -89,18 +89,18 @@ int Normal::Process(const int16_t* input,
       }
 
       int local_mute_factor = 16384;  // 1.0 in Q14.
-      if ((energy != 0) && (energy > background_noise_.Energy(channel_ix))) {
-        // Normalize new frame energy to 15 bits.
-        scaling = WebRtcSpl_NormW32(energy) - 16;
-        // We want background_noise_.energy() / energy in Q14.
-        int32_t bgn_energy = WEBRTC_SPL_SHIFT_W32(
-            background_noise_.Energy(channel_ix), scaling + 14);
-        int16_t energy_scaled =
-            static_cast<int16_t>(WEBRTC_SPL_SHIFT_W32(energy, scaling));
-        int32_t ratio = WebRtcSpl_DivW32W16(bgn_energy, energy_scaled);
-        local_mute_factor =
-            std::min(local_mute_factor, WebRtcSpl_SqrtFloor(ratio << 14));
-      }
+//      if ((energy != 0) && (energy > background_noise_.Energy(channel_ix))) {
+//        // Normalize new frame energy to 15 bits.
+//        scaling = WebRtcSpl_NormW32(energy) - 16;
+//        // We want background_noise_.energy() / energy in Q14.
+//        int32_t bgn_energy = WEBRTC_SPL_SHIFT_W32(
+//            background_noise_.Energy(channel_ix), scaling + 14);
+//        int16_t energy_scaled =
+//            static_cast<int16_t>(WEBRTC_SPL_SHIFT_W32(energy, scaling));
+//        int32_t ratio = WebRtcSpl_DivW32W16(bgn_energy, energy_scaled);
+//        local_mute_factor =
+//            std::min(local_mute_factor, WebRtcSpl_SqrtFloor(ratio << 14));
+//      }
       mute_factor = std::max<int16_t>(mute_factor, local_mute_factor);
       RTC_DCHECK_LE(mute_factor, 16384);
       RTC_DCHECK_GE(mute_factor, 0);

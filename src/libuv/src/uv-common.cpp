@@ -100,22 +100,22 @@ void* uv__realloc(void* ptr, size_t size) {
   return NULL;
 }
 
-int uv_replace_allocator(uv_malloc_func malloc_func,
-                         uv_realloc_func realloc_func,
-                         uv_calloc_func calloc_func,
-                         uv_free_func free_func) {
-  if (malloc_func == NULL || realloc_func == NULL ||
-      calloc_func == NULL || free_func == NULL) {
-    return UV_EINVAL;
-  }
-
-  uv__allocator.local_malloc = malloc_func;
-  uv__allocator.local_realloc = realloc_func;
-  uv__allocator.local_calloc = calloc_func;
-  uv__allocator.local_free = free_func;
-
-  return 0;
-}
+//int uv_replace_allocator(uv_malloc_func malloc_func,
+//                         uv_realloc_func realloc_func,
+//                         uv_calloc_func calloc_func,
+//                         uv_free_func free_func) {
+//  if (malloc_func == NULL || realloc_func == NULL ||
+//      calloc_func == NULL || free_func == NULL) {
+//    return UV_EINVAL;
+//  }
+//
+//  uv__allocator.local_malloc = malloc_func;
+//  uv__allocator.local_realloc = realloc_func;
+//  uv__allocator.local_calloc = calloc_func;
+//  uv__allocator.local_free = free_func;
+//
+//  return 0;
+//}
 
 #define XX(uc, lc) case UV_##uc: return sizeof(uv_##lc##_t);
 
@@ -164,13 +164,13 @@ static const char* uv__unknown_err_code(int err) {
 #define UV_ERR_NAME_GEN_R(name, _) \
 case UV_## name: \
   uv__strscpy(buf, #name, buflen); break;
-char* uv_err_name_r(int err, char* buf, size_t buflen) {
-  switch (err) {
-    UV_ERRNO_MAP(UV_ERR_NAME_GEN_R)
-    default: snprintf(buf, buflen, "Unknown system error %d", err);
-  }
-  return buf;
-}
+//char* uv_err_name_r(int err, char* buf, size_t buflen) {
+//  switch (err) {
+//    UV_ERRNO_MAP(UV_ERR_NAME_GEN_R)
+//    default: snprintf(buf, buflen, "Unknown system error %d", err);
+//  }
+//  return buf;
+//}
 #undef UV_ERR_NAME_GEN_R
 
 
@@ -492,15 +492,15 @@ static void uv__print_handles(uv_loop_t* loop, int only_active, FILE* stream) {
   }
 }
 
+//
+//void uv_print_all_handles(uv_loop_t* loop, FILE* stream) {
+//  uv__print_handles(loop, 0, stream);
+//}
 
-void uv_print_all_handles(uv_loop_t* loop, FILE* stream) {
-  uv__print_handles(loop, 0, stream);
-}
-
-
-void uv_print_active_handles(uv_loop_t* loop, FILE* stream) {
-  uv__print_handles(loop, 1, stream);
-}
+//
+//void uv_print_active_handles(uv_loop_t* loop, FILE* stream) {
+//  uv__print_handles(loop, 1, stream);
+//}
 
 
 void uv_ref(uv_handle_t* handle) {
@@ -731,20 +731,20 @@ uv_loop_t* uv_default_loop(void) {
 }
 
 
-uv_loop_t* uv_loop_new(void) {
-  uv_loop_t* loop;
-
-  loop = (uv_loop_t*)uv__malloc(sizeof(*loop));
-  if (loop == NULL)
-    return NULL;
-
-  if (uv_loop_init(loop)) {
-    uv__free(loop);
-    return NULL;
-  }
-
-  return loop;
-}
+//uv_loop_t* uv_loop_new(void) {
+//  uv_loop_t* loop;
+//
+//  loop = (uv_loop_t*)uv__malloc(sizeof(*loop));
+//  if (loop == NULL)
+//    return NULL;
+//
+//  if (uv_loop_init(loop)) {
+//    uv__free(loop);
+//    return NULL;
+//  }
+//
+//  return loop;
+//}
 
 
 int uv_loop_close(uv_loop_t* loop) {
@@ -776,19 +776,19 @@ int uv_loop_close(uv_loop_t* loop) {
   return 0;
 }
 
-
-void uv_loop_delete(uv_loop_t* loop) {
-  uv_loop_t* default_loop;
-  int err;
-
-  default_loop = default_loop_ptr;
-
-  err = uv_loop_close(loop);
-  (void) err;    /* Squelch compiler warnings. */
-  assert(err == 0);
-  if (loop != default_loop)
-    uv__free(loop);
-}
+//
+//void uv_loop_delete(uv_loop_t* loop) {
+//  uv_loop_t* default_loop;
+//  int err;
+//
+//  default_loop = default_loop_ptr;
+//
+//  err = uv_loop_close(loop);
+//  (void) err;    /* Squelch compiler warnings. */
+//  assert(err == 0);
+//  if (loop != default_loop)
+//    uv__free(loop);
+//}
 
 
 void uv_os_free_environ(uv_env_item_t* envitems, int count) {

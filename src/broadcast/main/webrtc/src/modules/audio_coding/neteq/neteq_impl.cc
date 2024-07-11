@@ -96,7 +96,7 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       packet_buffer_(std::move(deps.packet_buffer)),
       red_payload_splitter_(std::move(deps.red_payload_splitter)),
       timestamp_scaler_(std::move(deps.timestamp_scaler)),
-      vad_(new PostDecodeVad()),
+//      vad_(new PostDecodeVad()),
       expand_factory_(std::move(deps.expand_factory)),
       accelerate_factory_(std::move(deps.accelerate_factory)),
       preemptive_expand_factory_(std::move(deps.preemptive_expand_factory)),
@@ -137,10 +137,10 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
   if (create_components) {
     SetSampleRateAndChannels(fs, 1);  // Default is 1 channel.
   }
-  RTC_DCHECK(!vad_->enabled());
-  if (config.enable_post_decode_vad) {
-    vad_->Enable();
-  }
+//  RTC_DCHECK(!vad_->enabled());
+//  if (config.enable_post_decode_vad) {
+//    vad_->Enable();
+//  }
 }
 
 NetEqImpl::~NetEqImpl() = default;
@@ -220,9 +220,9 @@ int NetEqImpl::GetAudio(AudioFrame* audio_frame,
       audio_frame->sample_rate_hz_,
       rtc::dchecked_cast<int>(audio_frame->samples_per_channel_ * 100));
   RTC_DCHECK_EQ(*muted, audio_frame->muted());
-  SetAudioFrameActivityAndType(vad_->enabled(), LastOutputType(),
-                               last_vad_activity_, audio_frame);
-  last_vad_activity_ = audio_frame->vad_activity_;
+//  SetAudioFrameActivityAndType(vad_->enabled(), LastOutputType(),
+//                               last_vad_activity_, audio_frame);
+//  last_vad_activity_ = audio_frame->vad_activity_;
   last_output_sample_rate_hz_ = audio_frame->sample_rate_hz_;
   RTC_DCHECK(last_output_sample_rate_hz_ == 8000 ||
              last_output_sample_rate_hz_ == 16000 ||
@@ -363,13 +363,13 @@ NetEqOperationsAndState NetEqImpl::GetOperationsAndState() const {
 void NetEqImpl::EnableVad() {
   rtc::CritScope lock(&crit_sect_);
   assert(vad_.get());
-  vad_->Enable();
+//  vad_->Enable();
 }
 
 void NetEqImpl::DisableVad() {
   rtc::CritScope lock(&crit_sect_);
   assert(vad_.get());
-  vad_->Disable();
+//  vad_->Disable();
 }
 
 absl::optional<uint32_t> NetEqImpl::GetPlayoutTimestamp() const {
@@ -413,8 +413,8 @@ void NetEqImpl::FlushBuffers() {
   assert(sync_buffer_.get());
   assert(expand_.get());
   sync_buffer_->Flush();
-  sync_buffer_->set_next_index(sync_buffer_->next_index() -
-                               expand_->overlap_length());
+//  sync_buffer_->set_next_index(sync_buffer_->next_index() -
+//                               expand_->overlap_length());
   // Set to wait for new codec.
   first_packet_ = true;
 }
@@ -804,8 +804,8 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
 
   assert(vad_.get());
   bool sid_frame_available = (operation == kRfc3389Cng && !packet_list.empty());
-  vad_->Update(decoded_buffer_.get(), static_cast<size_t>(length), speech_type,
-               sid_frame_available, fs_hz_);
+//  vad_->Update(decoded_buffer_.get(), static_cast<size_t>(length), speech_type,
+//               sid_frame_available, fs_hz_);
 
   // This is the criterion that we did decode some data through the speech
   // decoder, and the operation resulted in comfort noise.
@@ -943,7 +943,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
       (last_mode_ == kModePreemptiveExpandFail) ||
       (last_mode_ == kModeRfc3389Cng) ||
       (last_mode_ == kModeCodecInternalCng)) {
-    background_noise_->Update(*sync_buffer_, *vad_.get());
+//    background_noise_->Update(*sync_buffer_, *vad_.get());
   }
 
   if (operation == kDtmf) {
@@ -1985,9 +1985,9 @@ int NetEqImpl::ExtractPackets(size_t required_samples,
 
 void NetEqImpl::UpdatePlcComponents(int fs_hz, size_t channels) {
   // Delete objects and create new ones.
-  expand_.reset(expand_factory_->Create(background_noise_.get(),
-                                        sync_buffer_.get(), &random_vector_,
-                                        stats_.get(), fs_hz, channels));
+//  expand_.reset(expand_factory_->Create(background_noise_.get(),
+//                                        sync_buffer_.get(), &random_vector_,
+//                                        stats_.get(), fs_hz, channels));
   merge_.reset(new Merge(fs_hz, channels, expand_.get(), sync_buffer_.get()));
 }
 
@@ -2013,7 +2013,7 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
 
   // Reinit post-decode VAD with new sample rate.
   assert(vad_.get());  // Cannot be NULL here.
-  vad_->Init();
+//  vad_->Init();
 
   // Delete algorithm buffer and create a new one.
   algorithm_buffer_.reset(new AudioMultiVector(channels));
@@ -2022,7 +2022,7 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   sync_buffer_.reset(new SyncBuffer(channels, kSyncBufferSize * fs_mult_));
 
   // Delete BackgroundNoise object and create a new one.
-  background_noise_.reset(new BackgroundNoise(channels));
+//  background_noise_.reset(new BackgroundNoise(channels));
 
   // Reset random vector.
   random_vector_.Reset();
@@ -2030,19 +2030,19 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   UpdatePlcComponents(fs_hz, channels);
 
   // Move index so that we create a small set of future samples (all 0).
-  sync_buffer_->set_next_index(sync_buffer_->next_index() -
-                               expand_->overlap_length());
+  //sync_buffer_->set_next_index(sync_buffer_->next_index() -
+                               //expand_->overlap_length());
 
-  normal_.reset(new Normal(fs_hz, decoder_database_.get(), *background_noise_,
-                           expand_.get()));
-  accelerate_.reset(
-      accelerate_factory_->Create(fs_hz, channels, *background_noise_));
-  preemptive_expand_.reset(preemptive_expand_factory_->Create(
-      fs_hz, channels, *background_noise_, expand_->overlap_length()));
+//  normal_.reset(new Normal(fs_hz, decoder_database_.get(), *background_noise_,
+//                           expand_.get()));
+//  accelerate_.reset(
+//      accelerate_factory_->Create(fs_hz, channels, *background_noise_));
+  //preemptive_expand_.reset(preemptive_expand_factory_->Create(
+//      fs_hz, channels, *background_noise_, expand_->overlap_length()));
 
   // Delete ComfortNoise object and create a new one.
-  comfort_noise_.reset(
-      new ComfortNoise(fs_hz, decoder_database_.get(), sync_buffer_.get()));
+//  comfort_noise_.reset(
+ //     new ComfortNoise(fs_hz, decoder_database_.get(), sync_buffer_.get()));
 
   // Verify that |decoded_buffer_| is long enough.
   if (decoded_buffer_length_ < kMaxFrameSize * channels) {
@@ -2069,8 +2069,9 @@ NetEqImpl::OutputType NetEqImpl::LastOutputType() {
     return OutputType::kPLCCNG;
   } else if (last_mode_ == kModeExpand) {
     return OutputType::kPLC;
-  } else if (vad_->running() && !vad_->active_speech()) {
-    return OutputType::kVadPassive;
+  //}
+//  else if (vad_->running() && !vad_->active_speech()) {
+//    return OutputType::kVadPassive;
   } else {
     return OutputType::kNormalSpeech;
   }

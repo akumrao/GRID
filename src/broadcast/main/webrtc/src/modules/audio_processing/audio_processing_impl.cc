@@ -270,7 +270,7 @@ struct AudioProcessingImpl::ApmPublicSubmodules {
   std::unique_ptr<LevelEstimatorImpl> level_estimator;
   std::unique_ptr<NoiseSuppressionImpl> noise_suppression;
   std::unique_ptr<NoiseSuppressionProxy> noise_suppression_proxy;
-  std::unique_ptr<VoiceDetectionImpl> voice_detection;
+  //std::unique_ptr<VoiceDetectionImpl> voice_detection;
   std::unique_ptr<GainControlImpl> gain_control;
   std::unique_ptr<GainControlForExperimentalAgc>
       gain_control_for_experimental_agc;
@@ -414,8 +414,8 @@ AudioProcessingImpl::AudioProcessingImpl(
       new NoiseSuppressionImpl(&crit_capture_));
   public_submodules_->noise_suppression_proxy.reset(new NoiseSuppressionProxy(
       this, public_submodules_->noise_suppression.get()));
-  public_submodules_->voice_detection.reset(
-      new VoiceDetectionImpl(&crit_capture_));
+//  public_submodules_->voice_detection.reset(
+//      new VoiceDetectionImpl(&crit_capture_));
   public_submodules_->gain_control_for_experimental_agc.reset(
       new GainControlForExperimentalAgc(
           public_submodules_->gain_control.get()));
@@ -553,11 +553,11 @@ int AudioProcessingImpl::InitializeLocked() {
   InitializeLowCutFilter();
   public_submodules_->noise_suppression->Initialize(num_proc_channels(),
                                                     proc_sample_rate_hz());
-  public_submodules_->voice_detection->Initialize(proc_split_sample_rate_hz());
-  if (private_submodules_->voice_detector) {
-    private_submodules_->voice_detector->Initialize(
-        proc_split_sample_rate_hz());
-  }
+  //public_submodules_->voice_detection->Initialize(proc_split_sample_rate_hz());
+//  if (private_submodules_->voice_detector) {
+//    private_submodules_->voice_detector->Initialize(
+//        proc_split_sample_rate_hz());
+//  }
   public_submodules_->level_estimator->Initialize();
   InitializeResidualEchoDetector();
   InitializeEchoController();
@@ -725,16 +725,16 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
         new LevelEstimatorImpl(&crit_capture_));
     private_submodules_->output_level_estimator->Enable(true);
   }
-
-  if (config_.voice_detection.enabled && !private_submodules_->voice_detector) {
-    private_submodules_->voice_detector.reset(
-        new VoiceDetectionImpl(&crit_capture_));
-    private_submodules_->voice_detector->Enable(true);
-    private_submodules_->voice_detector->set_likelihood(
-        VoiceDetection::kVeryLowLikelihood);
-    private_submodules_->voice_detector->Initialize(
-        proc_split_sample_rate_hz());
-  }
+//
+//  if (config_.voice_detection.enabled && !private_submodules_->voice_detector) {
+//    private_submodules_->voice_detector.reset(
+//        new VoiceDetectionImpl(&crit_capture_));
+//    private_submodules_->voice_detector->Enable(true);
+//    private_submodules_->voice_detector->set_likelihood(
+//        VoiceDetection::kVeryLowLikelihood);
+//    private_submodules_->voice_detector->Initialize(
+//        proc_split_sample_rate_hz());
+//  }
 }
 
 void AudioProcessingImpl::ApplyAgc1Config(
@@ -1393,14 +1393,14 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     public_submodules_->noise_suppression->ProcessCaptureAudio(capture_buffer);
   }
 
-  public_submodules_->voice_detection->ProcessCaptureAudio(capture_buffer);
-  if (config_.voice_detection.enabled) {
-    private_submodules_->voice_detector->ProcessCaptureAudio(capture_buffer);
-    capture_.stats.voice_detected =
-        private_submodules_->voice_detector->stream_has_voice();
-  } else {
-    capture_.stats.voice_detected = absl::nullopt;
-  }
+//  public_submodules_->voice_detection->ProcessCaptureAudio(capture_buffer);
+//  if (config_.voice_detection.enabled) {
+//    private_submodules_->voice_detector->ProcessCaptureAudio(capture_buffer);
+//    capture_.stats.voice_detected =
+//        private_submodules_->voice_detector->stream_has_voice();
+//  } else {
+//    capture_.stats.voice_detected = absl::nullopt;
+//  }
 
   if (constants_.use_experimental_agc &&
       public_submodules_->gain_control->is_enabled() &&
@@ -1767,7 +1767,8 @@ NoiseSuppression* AudioProcessingImpl::noise_suppression() const {
 }
 
 VoiceDetection* AudioProcessingImpl::voice_detection() const {
-  return public_submodules_->voice_detection.get();
+  // return public_submodules_->voice_detection.get();
+    return nullptr;
 }
 
 void AudioProcessingImpl::MutateConfig(
@@ -1794,7 +1795,7 @@ bool AudioProcessingImpl::UpdateActiveSubmoduleStates() {
       public_submodules_->gain_control->is_enabled(),
       config_.gain_controller2.enabled, config_.pre_amplifier.enabled,
       capture_nonlocked_.echo_controller_enabled,
-      public_submodules_->voice_detection->is_enabled(),
+      false, // public_submodules_->voice_detection->is_enabled(),
       config_.voice_detection.enabled,
       public_submodules_->level_estimator->is_enabled(),
       capture_.transient_suppressor_enabled);

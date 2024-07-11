@@ -355,7 +355,7 @@ class NetEqImpl : public webrtc::NetEq {
       RTC_GUARDED_BY(crit_sect_);
   const std::unique_ptr<TimestampScaler> timestamp_scaler_
       RTC_GUARDED_BY(crit_sect_);
-  const std::unique_ptr<PostDecodeVad> vad_ RTC_GUARDED_BY(crit_sect_);
+  //const std::unique_ptr<PostDecodeVad> vad_ RTC_GUARDED_BY(crit_sect_);
   const std::unique_ptr<ExpandFactory> expand_factory_
       RTC_GUARDED_BY(crit_sect_);
   const std::unique_ptr<AccelerateFactory> accelerate_factory_
@@ -364,7 +364,7 @@ class NetEqImpl : public webrtc::NetEq {
       RTC_GUARDED_BY(crit_sect_);
   const std::unique_ptr<StatisticsCalculator> stats_ RTC_GUARDED_BY(crit_sect_);
 
-  std::unique_ptr<BackgroundNoise> background_noise_ RTC_GUARDED_BY(crit_sect_);
+  //std::unique_ptr<BackgroundNoise> background_noise_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<DecisionLogic> decision_logic_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<AudioMultiVector> algorithm_buffer_
       RTC_GUARDED_BY(crit_sect_);
@@ -376,7 +376,7 @@ class NetEqImpl : public webrtc::NetEq {
   std::unique_ptr<PreemptiveExpand> preemptive_expand_
       RTC_GUARDED_BY(crit_sect_);
   RandomVector random_vector_ RTC_GUARDED_BY(crit_sect_);
-  std::unique_ptr<ComfortNoise> comfort_noise_ RTC_GUARDED_BY(crit_sect_);
+  //std::unique_ptr<ComfortNoise> comfort_noise_ RTC_GUARDED_BY(crit_sect_);
   int fs_hz_ RTC_GUARDED_BY(crit_sect_);
   int fs_mult_ RTC_GUARDED_BY(crit_sect_);
   int last_output_sample_rate_hz_ RTC_GUARDED_BY(crit_sect_);

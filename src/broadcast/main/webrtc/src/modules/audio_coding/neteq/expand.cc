@@ -292,9 +292,9 @@ int Expand::Process(AudioMultiVector* output) {
     }
 
     // Background noise part.
-    background_noise_->GenerateBackgroundNoise(
-        random_vector, channel_ix, channel_parameters_[channel_ix].mute_slope,
-        TooManyExpands(), current_lag, unvoiced_array_memory);
+//    background_noise_->GenerateBackgroundNoise(
+//        random_vector, channel_ix, channel_parameters_[channel_ix].mute_slope,
+//        TooManyExpands(), current_lag, unvoiced_array_memory);
 
     // Add background noise to the combined voiced-unvoiced signal.
     for (size_t i = 0; i < current_lag; i++) {
@@ -359,7 +359,7 @@ void Expand::InitializeForAnExpandPeriod() {
     channel_parameters_[ix].current_voice_mix_factor = 16384;  // 1.0 in Q14.
     channel_parameters_[ix].mute_factor = 16384;               // 1.0 in Q14.
     // Start with 0 gain for background noise.
-    background_noise_->SetMuteFactor(ix, 0);
+//    background_noise_->SetMuteFactor(ix, 0);
   }
 }
 

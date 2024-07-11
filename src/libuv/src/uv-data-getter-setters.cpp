@@ -41,17 +41,17 @@ const char* uv_req_type_name(uv_req_type type) {
   return NULL;
 }
 
-uv_req_type uv_req_get_type(const uv_req_t* req) {
-  return req->type;
-}
+//uv_req_type uv_req_get_type(const uv_req_t* req) {
+//  return req->type;
+//}
 
-void* uv_req_get_data(const uv_req_t* req) {
-  return req->data;
-}
+//void* uv_req_get_data(const uv_req_t* req) {
+//  return req->data;
+//}
 
-void uv_req_set_data(uv_req_t* req, void* data) {
-  req->data = data;
-}
+//void uv_req_set_data(uv_req_t* req, void* data) {
+//  req->data = data;
+//}
 
 size_t uv_stream_get_write_queue_size(const uv_stream_t* stream) {
   return stream->write_queue_size;

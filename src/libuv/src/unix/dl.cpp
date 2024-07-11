@@ -49,12 +49,12 @@ void uv_dlclose(uv_lib_t* lib) {
   }
 }
 
-
-int uv_dlsym(uv_lib_t* lib, const char* name, void** ptr) {
-  dlerror(); /* Reset error status. */
-  *ptr = dlsym(lib->handle, name);
-  return uv__dlerror(lib);
-}
+//
+//int uv_dlsym(uv_lib_t* lib, const char* name, void** ptr) {
+//  dlerror(); /* Reset error status. */
+//  *ptr = dlsym(lib->handle, name);
+//  return uv__dlerror(lib);
+//}
 
 
 const char* uv_dlerror(const uv_lib_t* lib) {

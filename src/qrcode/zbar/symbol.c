@@ -303,10 +303,10 @@ const zbar_symbol_set_t *zbar_symbol_get_components(const zbar_symbol_t *sym)
     return (sym->syms);
 }
 
-const zbar_symbol_t *zbar_symbol_first_component(const zbar_symbol_t *sym)
-{
-    return ((sym && sym->syms) ? sym->syms->head : NULL);
-}
+//const zbar_symbol_t *zbar_symbol_first_component(const zbar_symbol_t *sym)
+//{
+//    return ((sym && sym->syms) ? sym->syms->head : NULL);
+//}
 
 unsigned base64_encode(char *dst, const char *src, unsigned srclen)
 {
