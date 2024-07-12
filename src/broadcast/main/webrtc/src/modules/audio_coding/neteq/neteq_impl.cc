@@ -22,7 +22,7 @@
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 //#include "modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "modules/audio_coding/neteq/accelerate.h"
-#include "modules/audio_coding/neteq/background_noise.h"
+//#include "modules/audio_coding/neteq/background_noise.h"
 #include "modules/audio_coding/neteq/buffer_level_filter.h"
 #include "modules/audio_coding/neteq/comfort_noise.h"
 #include "modules/audio_coding/neteq/decision_logic.h"
@@ -32,13 +32,13 @@
 #include "modules/audio_coding/neteq/delay_peak_detector.h"
 #include "modules/audio_coding/neteq/dtmf_buffer.h"
 #include "modules/audio_coding/neteq/dtmf_tone_generator.h"
-#include "modules/audio_coding/neteq/expand.h"
+//#include "modules/audio_coding/neteq/expand.h"
 #include "modules/audio_coding/neteq/merge.h"
 #include "modules/audio_coding/neteq/nack_tracker.h"
 #include "modules/audio_coding/neteq/normal.h"
 #include "modules/audio_coding/neteq/packet.h"
 #include "modules/audio_coding/neteq/packet_buffer.h"
-#include "modules/audio_coding/neteq/post_decode_vad.h"
+//#include "modules/audio_coding/neteq/post_decode_vad.h"
 #include "modules/audio_coding/neteq/preemptive_expand.h"
 #include "modules/audio_coding/neteq/red_payload_splitter.h"
 #include "modules/audio_coding/neteq/statistics_calculator.h"
@@ -77,9 +77,9 @@ NetEqImpl::Dependencies::Dependencies(
           new PacketBuffer(config.max_packets_in_buffer, tick_timer.get())),
       red_payload_splitter(new RedPayloadSplitter),
       timestamp_scaler(new TimestampScaler(*decoder_database)),
-      accelerate_factory(new AccelerateFactory),
-      expand_factory(new ExpandFactory),
-      preemptive_expand_factory(new PreemptiveExpandFactory) {}
+      accelerate_factory(new AccelerateFactory)
+    //  expand_factory(new ExpandFactory),
+       {}
 
 NetEqImpl::Dependencies::~Dependencies() = default;
 
@@ -97,9 +97,9 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       red_payload_splitter_(std::move(deps.red_payload_splitter)),
       timestamp_scaler_(std::move(deps.timestamp_scaler)),
 //      vad_(new PostDecodeVad()),
-      expand_factory_(std::move(deps.expand_factory)),
+//      expand_factory_(std::move(deps.expand_factory)),
       accelerate_factory_(std::move(deps.accelerate_factory)),
-      preemptive_expand_factory_(std::move(deps.preemptive_expand_factory)),
+     // preemptive_expand_factory_(std::move(deps.preemptive_expand_factory)),
       stats_(std::move(deps.stats)),
       last_mode_(kModeNormal),
       decoded_buffer_length_(kMaxFrameSize),
@@ -112,12 +112,12 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
       enable_fast_accelerate_(config.enable_fast_accelerate),
       nack_enabled_(false),
       enable_muted_state_(config.enable_muted_state),
-      expand_uma_logger_("WebRTC.Audio.ExpandRatePercent",
-                         10,  // Report once every 10 s.
-                         tick_timer_.get()),
-      speech_expand_uma_logger_("WebRTC.Audio.SpeechExpandRatePercent",
-                                10,  // Report once every 10 s.
-                                tick_timer_.get()),
+//      expand_uma_logger_("WebRTC.Audio.ExpandRatePercent",
+//                         10,  // Report once every 10 s.
+//                         tick_timer_.get()),
+//      speech_expand_uma_logger_("WebRTC.Audio.SpeechExpandRatePercent",
+//                                10,  // Report once every 10 s.
+//                                tick_timer_.get()),
       no_time_stretching_(config.for_test_no_time_stretching),
       enable_rtx_handling_(config.enable_rtx_handling) {
   RTC_LOG(LS_INFO) << "NetEq config: " << config.ToString();
@@ -764,31 +764,31 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
   tick_timer_->Increment();
   stats_->IncreaseCounter(output_size_samples_, fs_hz_);
   const auto lifetime_stats = stats_->GetLifetimeStatistics();
-  expand_uma_logger_.UpdateSampleCounter(lifetime_stats.concealed_samples,
-                                         fs_hz_);
-  speech_expand_uma_logger_.UpdateSampleCounter(
-      lifetime_stats.concealed_samples -
-          lifetime_stats.silent_concealed_samples,
-      fs_hz_);
+//  expand_uma_logger_.UpdateSampleCounter(lifetime_stats.concealed_samples,
+//                                         fs_hz_);
+//  speech_expand_uma_logger_.UpdateSampleCounter(
+//      lifetime_stats.concealed_samples -
+//          lifetime_stats.silent_concealed_samples,
+//      fs_hz_);
 
   // Check for muted state.
-  if (enable_muted_state_ && expand_->Muted() && packet_buffer_->Empty()) {
-    RTC_DCHECK_EQ(last_mode_, kModeExpand);
-    audio_frame->Reset();
-    RTC_DCHECK(audio_frame->muted());  // Reset() should mute the frame.
-    playout_timestamp_ += static_cast<uint32_t>(output_size_samples_);
-    audio_frame->sample_rate_hz_ = fs_hz_;
-    audio_frame->samples_per_channel_ = output_size_samples_;
-    audio_frame->timestamp_ =
-        first_packet_
-            ? 0
-            : timestamp_scaler_->ToExternal(playout_timestamp_) -
-                  static_cast<uint32_t>(audio_frame->samples_per_channel_);
-    audio_frame->num_channels_ = sync_buffer_->Channels();
-    stats_->ExpandedNoiseSamples(output_size_samples_, false);
-    *muted = true;
-    return 0;
-  }
+//  if (enable_muted_state_ && expand_->Muted() && packet_buffer_->Empty()) {
+//    RTC_DCHECK_EQ(last_mode_, kModeExpand);
+//    audio_frame->Reset();
+//    RTC_DCHECK(audio_frame->muted());  // Reset() should mute the frame.
+//    playout_timestamp_ += static_cast<uint32_t>(output_size_samples_);
+//    audio_frame->sample_rate_hz_ = fs_hz_;
+//    audio_frame->samples_per_channel_ = output_size_samples_;
+//    audio_frame->timestamp_ =
+//        first_packet_
+//            ? 0
+//            : timestamp_scaler_->ToExternal(playout_timestamp_) -
+//                  static_cast<uint32_t>(audio_frame->samples_per_channel_);
+//    audio_frame->num_channels_ = sync_buffer_->Channels();
+//    stats_->ExpandedNoiseSamples(output_size_samples_, false);
+//    *muted = true;
+//    return 0;
+//  }
   int return_value = GetDecision(&operation, &packet_list, &dtmf_event,
                                  &play_dtmf, action_override);
   if (return_value != 0) {
@@ -836,8 +836,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
       if (!current_rtp_payload_type_ || !DoCodecPlc()) {
         return_value = DoExpand(play_dtmf);
       }
-      RTC_DCHECK_GE(sync_buffer_->FutureLength() - expand_->overlap_length(),
-                    output_size_samples_);
+//      RTC_DCHECK_GE(sync_buffer_->FutureLength() - expand_->overlap_length(),      output_size_samples_);
       break;
     }
     case kAccelerate:
@@ -907,16 +906,16 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
   sync_buffer_->GetNextAudioInterleaved(num_output_samples_per_channel,
                                         audio_frame);
   audio_frame->sample_rate_hz_ = fs_hz_;
-  if (sync_buffer_->FutureLength() < expand_->overlap_length()) {
-    // The sync buffer should always contain |overlap_length| samples, but now
-    // too many samples have been extracted. Reinstall the |overlap_length|
-    // lookahead by moving the index.
-    const size_t missing_lookahead_samples =
-        expand_->overlap_length() - sync_buffer_->FutureLength();
-    RTC_DCHECK_GE(sync_buffer_->next_index(), missing_lookahead_samples);
-    sync_buffer_->set_next_index(sync_buffer_->next_index() -
-                                 missing_lookahead_samples);
-  }
+//  if (sync_buffer_->FutureLength() < expand_->overlap_length()) {
+//    // The sync buffer should always contain |overlap_length| samples, but now
+//    // too many samples have been extracted. Reinstall the |overlap_length|
+//    // lookahead by moving the index.
+//    const size_t missing_lookahead_samples =
+//        expand_->overlap_length() - sync_buffer_->FutureLength();
+//    RTC_DCHECK_GE(sync_buffer_->next_index(), missing_lookahead_samples);
+//    sync_buffer_->set_next_index(sync_buffer_->next_index() -
+//                                 missing_lookahead_samples);
+//  }
   if (audio_frame->samples_per_channel_ != output_size_samples_) {
     RTC_LOG(LS_ERROR) << "audio_frame->samples_per_channel_ ("
                       << audio_frame->samples_per_channel_
@@ -928,7 +927,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
   }
 
   // Should always have overlap samples left in the |sync_buffer_|.
-  RTC_DCHECK_GE(sync_buffer_->FutureLength(), expand_->overlap_length());
+//  RTC_DCHECK_GE(sync_buffer_->FutureLength(), expand_->overlap_length());
 
   // TODO(yujo): For muted frames, this can be a copy rather than an addition.
   if (play_dtmf) {
@@ -1012,37 +1011,17 @@ int NetEqImpl::GetDecision(Operations* operation,
                                        decision_logic_->noise_fast_forward()
                                  : 0;
 
-  if (decision_logic_->CngRfc3389On() || last_mode_ == kModeRfc3389Cng) {
-    // Because of timestamp peculiarities, we have to "manually" disallow using
-    // a CNG packet with the same timestamp as the one that was last played.
-    // This can happen when using redundancy and will cause the timing to shift.
-    while (packet && decoder_database_->IsComfortNoise(packet->payload_type) &&
-           (end_timestamp >= packet->timestamp ||
-            end_timestamp + generated_noise_samples > packet->timestamp)) {
-      // Don't use this packet, discard it.
-      if (packet_buffer_->DiscardNextPacket(stats_.get()) !=
-          PacketBuffer::kOK) {
-        assert(false);  // Must be ok by design.
-      }
-      // Check buffer again.
-      if (!new_codec_) {
-        packet_buffer_->DiscardOldPackets(end_timestamp, 5 * fs_hz_,
-                                          stats_.get());
-      }
-      packet = packet_buffer_->PeekNextPacket();
-    }
-  }
 
-  assert(expand_.get());
-  const int samples_left = static_cast<int>(sync_buffer_->FutureLength() -
-                                            expand_->overlap_length());
+//  assert(expand_.get());
+//  const int samples_left = static_cast<int>(sync_buffer_->FutureLength() -
+//                                            expand_->overlap_length());
   if (last_mode_ == kModeAccelerateSuccess ||
       last_mode_ == kModeAccelerateLowEnergy ||
       last_mode_ == kModePreemptiveExpandSuccess ||
       last_mode_ == kModePreemptiveExpandLowEnergy) {
     // Subtract (samples_left + output_size_samples_) from sampleMemory.
-    decision_logic_->AddSampleMemory(
-        -(samples_left + rtc::dchecked_cast<int>(output_size_samples_)));
+  //  decision_logic_->AddSampleMemory(
+     //   -(samples_left + rtc::dchecked_cast<int>(output_size_samples_)));
   }
 
   // Check if it is time to play a DTMF event.
@@ -1060,9 +1039,9 @@ int NetEqImpl::GetDecision(Operations* operation,
           ? generated_noise_stopwatch_->ElapsedTicks() * output_size_samples_ +
                 decision_logic_->noise_fast_forward()
           : 0;
-  *operation = decision_logic_->GetDecision(
-      *sync_buffer_, *expand_, decoder_frame_length_, packet, last_mode_,
-      *play_dtmf, generated_noise_samples, &reset_decoder_);
+//  *operation = decision_logic_->GetDecision(
+//      *sync_buffer_, *expand_, decoder_frame_length_, packet, last_mode_,
+//      *play_dtmf, generated_noise_samples, &reset_decoder_);
 
   // Disallow time stretching if this packet is DTX, because such a decision may
   // be based on earlier buffer level estimate, as we do not update buffer level
@@ -1081,14 +1060,14 @@ int NetEqImpl::GetDecision(Operations* operation,
   // Check if we already have enough samples in the |sync_buffer_|. If so,
   // change decision to normal, unless the decision was merge, accelerate, or
   // preemptive expand.
-  if (samples_left >= rtc::dchecked_cast<int>(output_size_samples_) &&
-      *operation != kMerge && *operation != kAccelerate &&
-      *operation != kFastAccelerate && *operation != kPreemptiveExpand) {
-    *operation = kNormal;
-    return 0;
-  }
+//  if (samples_left >= rtc::dchecked_cast<int>(output_size_samples_) &&
+//      *operation != kMerge && *operation != kAccelerate &&
+//      *operation != kFastAccelerate && *operation != kPreemptiveExpand) {
+//    *operation = kNormal;
+//    return 0;
+//  }
 
-  decision_logic_->ExpandDecision(*operation);
+//  decision_logic_->ExpandDecision(*operation);
 
   // Check conditions for reset.
   if (new_codec_ || *operation == kUndefined) {
@@ -1116,7 +1095,7 @@ int NetEqImpl::GetDecision(Operations* operation,
     sync_buffer_->IncreaseEndTimestamp(timestamp_ - end_timestamp);
     end_timestamp = timestamp_;
     new_codec_ = false;
-    decision_logic_->SoftReset();
+   // decision_logic_->SoftReset();
     buffer_level_filter_->Reset();
     delay_manager_->Reset();
     stats_->ResetMcu();
@@ -1157,25 +1136,25 @@ int NetEqImpl::GetDecision(Operations* operation,
     }
     case kAccelerate:
     case kFastAccelerate: {
-      // In order to do an accelerate we need at least 30 ms of audio data.
-      if (samples_left >= static_cast<int>(samples_30_ms)) {
-        // Already have enough data, so we do not need to extract any more.
-        decision_logic_->set_sample_memory(samples_left);
-        decision_logic_->set_prev_time_scale(true);
-        return 0;
-      } else if (samples_left >= static_cast<int>(samples_10_ms) &&
-                 decoder_frame_length_ >= samples_30_ms) {
-        // Avoid decoding more data as it might overflow the playout buffer.
-        *operation = kNormal;
-        return 0;
-      } else if (samples_left < static_cast<int>(samples_20_ms) &&
-                 decoder_frame_length_ < samples_30_ms) {
-        // Build up decoded data by decoding at least 20 ms of audio data. Do
-        // not perform accelerate yet, but wait until we only need to do one
-        // decoding.
-        required_samples = 2 * output_size_samples_;
-        *operation = kNormal;
-      }
+//      // In order to do an accelerate we need at least 30 ms of audio data.
+//      if (samples_left >= static_cast<int>(samples_30_ms)) {
+//        // Already have enough data, so we do not need to extract any more.
+//        decision_logic_->set_sample_memory(samples_left);
+//        decision_logic_->set_prev_time_scale(true);
+//        return 0;
+//      } else if (samples_left >= static_cast<int>(samples_10_ms) &&
+//                 decoder_frame_length_ >= samples_30_ms) {
+//        // Avoid decoding more data as it might overflow the playout buffer.
+//        *operation = kNormal;
+//        return 0;
+//      } else if (samples_left < static_cast<int>(samples_20_ms) &&
+//                 decoder_frame_length_ < samples_30_ms) {
+//        // Build up decoded data by decoding at least 20 ms of audio data. Do
+//        // not perform accelerate yet, but wait until we only need to do one
+//        // decoding.
+//        required_samples = 2 * output_size_samples_;
+//        *operation = kNormal;
+//      }
       // If none of the above is true, we have one of two possible situations:
       // (1) 20 ms <= samples_left < 30 ms and decoder_frame_length_ < 30 ms; or
       // (2) samples_left < 10 ms and decoder_frame_length_ >= 30 ms.
@@ -1186,22 +1165,22 @@ int NetEqImpl::GetDecision(Operations* operation,
     case kPreemptiveExpand: {
       // In order to do a preemptive expand we need at least 30 ms of decoded
       // audio data.
-      if ((samples_left >= static_cast<int>(samples_30_ms)) ||
-          (samples_left >= static_cast<int>(samples_10_ms) &&
-           decoder_frame_length_ >= samples_30_ms)) {
-        // Already have enough data, so we do not need to extract any more.
-        // Or, avoid decoding more data as it might overflow the playout buffer.
-        // Still try preemptive expand, though.
-        decision_logic_->set_sample_memory(samples_left);
-        decision_logic_->set_prev_time_scale(true);
-        return 0;
-      }
-      if (samples_left < static_cast<int>(samples_20_ms) &&
-          decoder_frame_length_ < samples_30_ms) {
-        // Build up decoded data by decoding at least 20 ms of audio data.
-        // Still try to perform preemptive expand.
-        required_samples = 2 * output_size_samples_;
-      }
+//      if ((samples_left >= static_cast<int>(samples_30_ms)) ||
+//          (samples_left >= static_cast<int>(samples_10_ms) &&
+//           decoder_frame_length_ >= samples_30_ms)) {
+//        // Already have enough data, so we do not need to extract any more.
+//        // Or, avoid decoding more data as it might overflow the playout buffer.
+//        // Still try preemptive expand, though.
+//        decision_logic_->set_sample_memory(samples_left);
+//        decision_logic_->set_prev_time_scale(true);
+//        return 0;
+//      }
+//      if (samples_left < static_cast<int>(samples_20_ms) &&
+//          decoder_frame_length_ < samples_30_ms) {
+//        // Build up decoded data by decoding at least 20 ms of audio data.
+//        // Still try to perform preemptive expand.
+//        required_samples = 2 * output_size_samples_;
+//      }
       // Move on with the preemptive expand decision.
       break;
     }
@@ -1238,20 +1217,20 @@ int NetEqImpl::GetDecision(Operations* operation,
     }
   }
 
-  if (*operation == kAccelerate || *operation == kFastAccelerate ||
-      *operation == kPreemptiveExpand) {
-    decision_logic_->set_sample_memory(samples_left + extracted_samples);
-    decision_logic_->set_prev_time_scale(true);
-  }
+//  if (*operation == kAccelerate || *operation == kFastAccelerate ||
+//      *operation == kPreemptiveExpand) {
+//    decision_logic_->set_sample_memory(samples_left + extracted_samples);
+//    decision_logic_->set_prev_time_scale(true);
+//  }
 
-  if (*operation == kAccelerate || *operation == kFastAccelerate) {
-    // Check that we have enough data (30ms) to do accelerate.
-    if (extracted_samples + samples_left < static_cast<int>(samples_30_ms)) {
-      // TODO(hlundin): Write test for this.
-      // Not enough, do normal operation instead.
-      *operation = kNormal;
-    }
-  }
+//  if (*operation == kAccelerate || *operation == kFastAccelerate) {
+//    // Check that we have enough data (30ms) to do accelerate.
+//    if (extracted_samples + samples_left < static_cast<int>(samples_30_ms)) {
+//      // TODO(hlundin): Write test for this.
+//      // Not enough, do normal operation instead.
+//      *operation = kNormal;
+//    }
+//  }
 
   timestamp_ = end_timestamp;
   return 0;
@@ -1492,20 +1471,20 @@ void NetEqImpl::DoMerge(int16_t* decoded_buffer,
       rtc::dchecked_cast<int>(decoded_length / algorithm_buffer_->Channels());
 
   // Update in-call and post-call statistics.
-  if (expand_->MuteFactor(0) == 0) {
-    // Expand generates only noise.
-    stats_->ExpandedNoiseSamplesCorrection(expand_length_correction);
-  } else {
-    // Expansion generates more than only noise.
-    stats_->ExpandedVoiceSamplesCorrection(expand_length_correction);
-  }
+//  if (expand_->MuteFactor(0) == 0) {
+//    // Expand generates only noise.
+//    stats_->ExpandedNoiseSamplesCorrection(expand_length_correction);
+//  } else {
+//    // Expansion generates more than only noise.
+//    stats_->ExpandedVoiceSamplesCorrection(expand_length_correction);
+//  }
 
   last_mode_ = kModeMerge;
   // If last packet was decoded as an inband CNG, set mode to CNG instead.
   if (speech_type == AudioDecoder::kComfortNoise) {
     last_mode_ = kModeCodecInternalCng;
   }
-  expand_->Reset();
+//  expand_->Reset();
   if (!play_dtmf) {
     dtmf_tone_generator_->Reset();
   }
@@ -1516,77 +1495,77 @@ bool NetEqImpl::DoCodecPlc() {
   if (!decoder) {
     return false;
   }
-  const size_t channels = algorithm_buffer_->Channels();
-  const size_t requested_samples_per_channel =
-      output_size_samples_ -
-      (sync_buffer_->FutureLength() - expand_->overlap_length());
-  concealment_audio_.Clear();
-  decoder->GeneratePlc(requested_samples_per_channel, &concealment_audio_);
-  if (concealment_audio_.empty()) {
-    // Nothing produced. Resort to regular expand.
-    return false;
-  }
-  RTC_CHECK_GE(concealment_audio_.size(),
-               requested_samples_per_channel * channels);
-  sync_buffer_->PushBackInterleaved(concealment_audio_);
-  RTC_DCHECK_NE(algorithm_buffer_->Channels(), 0);
-  const size_t concealed_samples_per_channel =
-      concealment_audio_.size() / channels;
-
-  // Update in-call and post-call statistics.
-  const bool is_new_concealment_event = (last_mode_ != kModeCodecPlc);
-  if (std::all_of(concealment_audio_.cbegin(), concealment_audio_.cend(),
-                  [](int16_t i) { return i == 0; })) {
-    // Expand operation generates only noise.
-    stats_->ExpandedNoiseSamples(concealed_samples_per_channel,
-                                 is_new_concealment_event);
-  } else {
-    // Expand operation generates more than only noise.
-    stats_->ExpandedVoiceSamples(concealed_samples_per_channel,
-                                 is_new_concealment_event);
-  }
-  last_mode_ = kModeCodecPlc;
-  if (!generated_noise_stopwatch_) {
-    // Start a new stopwatch since we may be covering for a lost CNG packet.
-    generated_noise_stopwatch_ = tick_timer_->GetNewStopwatch();
-  }
+//  const size_t channels = algorithm_buffer_->Channels();
+//  const size_t requested_samples_per_channel =
+//      output_size_samples_ -
+//      (sync_buffer_->FutureLength() - expand_->overlap_length());
+//  concealment_audio_.Clear();
+//  decoder->GeneratePlc(requested_samples_per_channel, &concealment_audio_);
+//  if (concealment_audio_.empty()) {
+//    // Nothing produced. Resort to regular expand.
+//    return false;
+//  }
+//  RTC_CHECK_GE(concealment_audio_.size(),
+//               requested_samples_per_channel * channels);
+//  sync_buffer_->PushBackInterleaved(concealment_audio_);
+//  RTC_DCHECK_NE(algorithm_buffer_->Channels(), 0);
+//  const size_t concealed_samples_per_channel =
+//      concealment_audio_.size() / channels;
+//
+//  // Update in-call and post-call statistics.
+//  const bool is_new_concealment_event = (last_mode_ != kModeCodecPlc);
+//  if (std::all_of(concealment_audio_.cbegin(), concealment_audio_.cend(),
+//                  [](int16_t i) { return i == 0; })) {
+//    // Expand operation generates only noise.
+//    stats_->ExpandedNoiseSamples(concealed_samples_per_channel,
+//                                 is_new_concealment_event);
+//  } else {
+//    // Expand operation generates more than only noise.
+//    stats_->ExpandedVoiceSamples(concealed_samples_per_channel,
+//                                 is_new_concealment_event);
+//  }
+//  last_mode_ = kModeCodecPlc;
+//  if (!generated_noise_stopwatch_) {
+//    // Start a new stopwatch since we may be covering for a lost CNG packet.
+//    generated_noise_stopwatch_ = tick_timer_->GetNewStopwatch();
+//  }
   return true;
 }
 
 int NetEqImpl::DoExpand(bool play_dtmf) {
-  while ((sync_buffer_->FutureLength() - expand_->overlap_length()) <
-         output_size_samples_) {
-    algorithm_buffer_->Clear();
-    int return_value = expand_->Process(algorithm_buffer_.get());
-    size_t length = algorithm_buffer_->Size();
-    bool is_new_concealment_event = (last_mode_ != kModeExpand);
-
-    // Update in-call and post-call statistics.
-    if (expand_->MuteFactor(0) == 0) {
-      // Expand operation generates only noise.
-      stats_->ExpandedNoiseSamples(length, is_new_concealment_event);
-    } else {
-      // Expand operation generates more than only noise.
-      stats_->ExpandedVoiceSamples(length, is_new_concealment_event);
-    }
-
-    last_mode_ = kModeExpand;
-
-    if (return_value < 0) {
-      return return_value;
-    }
-
-    sync_buffer_->PushBack(*algorithm_buffer_);
-    algorithm_buffer_->Clear();
-  }
-  if (!play_dtmf) {
-    dtmf_tone_generator_->Reset();
-  }
-
-  if (!generated_noise_stopwatch_) {
-    // Start a new stopwatch since we may be covering for a lost CNG packet.
-    generated_noise_stopwatch_ = tick_timer_->GetNewStopwatch();
-  }
+//  while ((sync_buffer_->FutureLength() - expand_->overlap_length()) <
+//         output_size_samples_) {
+//    algorithm_buffer_->Clear();
+//    int return_value = expand_->Process(algorithm_buffer_.get());
+//    size_t length = algorithm_buffer_->Size();
+//    bool is_new_concealment_event = (last_mode_ != kModeExpand);
+//
+//    // Update in-call and post-call statistics.
+//    if (expand_->MuteFactor(0) == 0) {
+//      // Expand operation generates only noise.
+//      stats_->ExpandedNoiseSamples(length, is_new_concealment_event);
+//    } else {
+//      // Expand operation generates more than only noise.
+//      stats_->ExpandedVoiceSamples(length, is_new_concealment_event);
+//    }
+//
+//    last_mode_ = kModeExpand;
+//
+//    if (return_value < 0) {
+//      return return_value;
+//    }
+//
+//    sync_buffer_->PushBack(*algorithm_buffer_);
+//    algorithm_buffer_->Clear();
+//  }
+//  if (!play_dtmf) {
+//    dtmf_tone_generator_->Reset();
+//  }
+//
+//  if (!generated_noise_stopwatch_) {
+//    // Start a new stopwatch since we may be covering for a lost CNG packet.
+//    generated_noise_stopwatch_ = tick_timer_->GetNewStopwatch();
+//  }
 
   return 0;
 }
@@ -1660,7 +1639,7 @@ int NetEqImpl::DoAccelerate(int16_t* decoded_buffer,
   if (!play_dtmf) {
     dtmf_tone_generator_->Reset();
   }
-  expand_->Reset();
+//  expand_->Reset();
   return 0;
 }
 
@@ -1691,25 +1670,26 @@ int NetEqImpl::DoPreemptiveExpand(int16_t* decoded_buffer,
   }
 
   size_t samples_added;
-  PreemptiveExpand::ReturnCodes return_code = preemptive_expand_->Process(
-      decoded_buffer, decoded_length, old_borrowed_samples_per_channel,
-      algorithm_buffer_.get(), &samples_added);
-  stats_->PreemptiveExpandedSamples(samples_added);
-  switch (return_code) {
-    case PreemptiveExpand::kSuccess:
-      last_mode_ = kModePreemptiveExpandSuccess;
-      break;
-    case PreemptiveExpand::kSuccessLowEnergy:
-      last_mode_ = kModePreemptiveExpandLowEnergy;
-      break;
-    case PreemptiveExpand::kNoStretch:
-      last_mode_ = kModePreemptiveExpandFail;
-      break;
-    case PreemptiveExpand::kError:
-      // TODO(hlundin): Map to kModeError instead?
-      last_mode_ = kModePreemptiveExpandFail;
-      return kPreemptiveExpandError;
-  }
+//  PreemptiveExpand::ReturnCodes return_code = preemptive_expand_->Process(
+//      decoded_buffer, decoded_length, old_borrowed_samples_per_channel,
+//      algorithm_buffer_.get(), &samples_added);
+//  
+//  stats_->PreemptiveExpandedSamples(samples_added);
+//  switch (return_code) {
+//    case PreemptiveExpand::kSuccess:
+//      last_mode_ = kModePreemptiveExpandSuccess;
+//      break;
+//    case PreemptiveExpand::kSuccessLowEnergy:
+//      last_mode_ = kModePreemptiveExpandLowEnergy;
+//      break;
+//    case PreemptiveExpand::kNoStretch:
+//      last_mode_ = kModePreemptiveExpandFail;
+//      break;
+//    case PreemptiveExpand::kError:
+//      // TODO(hlundin): Map to kModeError instead?
+//      last_mode_ = kModePreemptiveExpandFail;
+//      return kPreemptiveExpandError;
+//  }
 
   if (borrowed_samples_per_channel > 0) {
     // Copy borrowed samples back to the |sync_buffer_|.
@@ -1726,7 +1706,7 @@ int NetEqImpl::DoPreemptiveExpand(int16_t* decoded_buffer,
   if (!play_dtmf) {
     dtmf_tone_generator_->Reset();
   }
-  expand_->Reset();
+//  expand_->Reset();
   return 0;
 }
 
@@ -1789,23 +1769,23 @@ int NetEqImpl::DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf) {
   //    dtmf_switch = true;
   //  }
 
-  int dtmf_return_value = 0;
-  if (!dtmf_tone_generator_->initialized()) {
-    // Initialize if not already done.
-    dtmf_return_value = dtmf_tone_generator_->Init(fs_hz_, dtmf_event.event_no,
-                                                   dtmf_event.volume);
-  }
-
-  if (dtmf_return_value == 0) {
-    // Generate DTMF signal.
-    dtmf_return_value = dtmf_tone_generator_->Generate(output_size_samples_,
-                                                       algorithm_buffer_.get());
-  }
-
-  if (dtmf_return_value < 0) {
-    algorithm_buffer_->Zeros(output_size_samples_);
-    return dtmf_return_value;
-  }
+//  int dtmf_return_value = 0;
+//  if (!dtmf_tone_generator_->initialized()) {
+//    // Initialize if not already done.
+//    dtmf_return_value = dtmf_tone_generator_->Init(fs_hz_, dtmf_event.event_no,
+//                                                   dtmf_event.volume);
+//  }
+//
+//  if (dtmf_return_value == 0) {
+//    // Generate DTMF signal.
+//    dtmf_return_value = dtmf_tone_generator_->Generate(output_size_samples_,
+//                                                       algorithm_buffer_.get());
+//  }
+//
+//  if (dtmf_return_value < 0) {
+//    algorithm_buffer_->Zeros(output_size_samples_);
+//    return dtmf_return_value;
+//  }
 
   //  if (dtmf_switch) {
   //    // This is the special case where the previous operation was DTMF
@@ -1841,13 +1821,13 @@ int NetEqImpl::DoDtmf(const DtmfEvent& dtmf_event, bool* play_dtmf) {
   //    algorithm_buffer_->PopFront(sync_buffer_->FutureLength());
   //  }
 
-  sync_buffer_->IncreaseEndTimestamp(
-      static_cast<uint32_t>(output_size_samples_));
-  expand_->Reset();
-  last_mode_ = kModeDtmf;
+//  sync_buffer_->IncreaseEndTimestamp(
+//      static_cast<uint32_t>(output_size_samples_));
+////  expand_->Reset();
+//  last_mode_ = kModeDtmf;
 
   // Set to false because the DTMF is already in the algorithm buffer.
-  *play_dtmf = false;
+  //*play_dtmf = false;
   return 0;
 }
 
@@ -1988,7 +1968,7 @@ void NetEqImpl::UpdatePlcComponents(int fs_hz, size_t channels) {
 //  expand_.reset(expand_factory_->Create(background_noise_.get(),
 //                                        sync_buffer_.get(), &random_vector_,
 //                                        stats_.get(), fs_hz, channels));
-  merge_.reset(new Merge(fs_hz, channels, expand_.get(), sync_buffer_.get()));
+//  merge_.reset(new Merge(fs_hz, channels, expand_.get(), sync_buffer_.get()));
 }
 
 void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
@@ -2056,31 +2036,33 @@ void NetEqImpl::SetSampleRateAndChannels(int fs_hz, size_t channels) {
   if (!decision_logic_.get()) {
     CreateDecisionLogic();
   }
-  decision_logic_->SetSampleRate(fs_hz_, output_size_samples_);
+//  decision_logic_->SetSampleRate(fs_hz_, output_size_samples_);
 }
 
 NetEqImpl::OutputType NetEqImpl::LastOutputType() {
-  assert(vad_.get());
-  assert(expand_.get());
-  if (last_mode_ == kModeCodecInternalCng || last_mode_ == kModeRfc3389Cng) {
-    return OutputType::kCNG;
-  } else if (last_mode_ == kModeExpand && expand_->MuteFactor(0) == 0) {
-    // Expand mode has faded down to background noise only (very long expand).
-    return OutputType::kPLCCNG;
-  } else if (last_mode_ == kModeExpand) {
-    return OutputType::kPLC;
-  //}
-//  else if (vad_->running() && !vad_->active_speech()) {
-//    return OutputType::kVadPassive;
-  } else {
-    return OutputType::kNormalSpeech;
-  }
+//  assert(vad_.get());
+//  assert(expand_.get());
+//  if (last_mode_ == kModeCodecInternalCng || last_mode_ == kModeRfc3389Cng) {
+//    return OutputType::kCNG;
+//  } else if (last_mode_ == kModeExpand && expand_->MuteFactor(0) == 0) {
+//    // Expand mode has faded down to background noise only (very long expand).
+//    return OutputType::kPLCCNG;
+//  } else if (last_mode_ == kModeExpand) {
+//    return OutputType::kPLC;
+//  //}
+////  else if (vad_->running() && !vad_->active_speech()) {
+////    return OutputType::kVadPassive;
+//  } else {
+//    return OutputType::kNormalSpeech;
+//  }
+    
+     return OutputType::kNormalSpeech;
 }
 
 void NetEqImpl::CreateDecisionLogic() {
-  decision_logic_.reset(DecisionLogic::Create(
-      fs_hz_, output_size_samples_, no_time_stretching_,
-      decoder_database_.get(), *packet_buffer_.get(), delay_manager_.get(),
-      buffer_level_filter_.get(), tick_timer_.get()));
+//  decision_logic_.reset(DecisionLogic::Create(
+//      fs_hz_, output_size_samples_, no_time_stretching_,
+//      decoder_database_.get(), *packet_buffer_.get(), delay_manager_.get(),
+//      buffer_level_filter_.get(), tick_timer_.get()));
 }
 }  // namespace webrtc

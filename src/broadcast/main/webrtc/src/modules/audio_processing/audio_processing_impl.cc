@@ -40,7 +40,7 @@
 #include "modules/audio_processing/noise_suppression_proxy.h"
 #include "modules/audio_processing/residual_echo_detector.h"
 #include "modules/audio_processing/transient/transient_suppressor.h"
-#include "modules/audio_processing/voice_detection_impl.h"
+//#include "modules/audio_processing/voice_detection_impl.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
@@ -302,7 +302,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   std::unique_ptr<GainApplier> pre_amplifier;
   std::unique_ptr<CustomAudioAnalyzer> capture_analyzer;
   std::unique_ptr<LevelEstimatorImpl> output_level_estimator;
-  std::unique_ptr<VoiceDetectionImpl> voice_detector;
+  //std::unique_ptr<VoiceDetectionImpl> voice_detector;
 };
 
 AudioProcessingBuilder::AudioProcessingBuilder() = default;

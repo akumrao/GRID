@@ -113,11 +113,11 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
     cng_state_ = kCngInternalOn;
   }
 
-  const size_t samples_left =
-      sync_buffer.FutureLength() - expand.overlap_length();
+//  const size_t samples_left =
+//      sync_buffer.FutureLength() - expand.overlap_length();
   // TODO(jakobi): Use buffer span instead of num samples.
-  const size_t cur_size_samples =
-      samples_left + packet_buffer_.NumSamplesInBuffer(decoder_frame_length);
+//  const size_t cur_size_samples =
+//      samples_left + packet_buffer_.NumSamplesInBuffer(decoder_frame_length);
 
   prev_time_scale_ =
       prev_time_scale_ && (prev_mode == kModeAccelerateSuccess ||
@@ -127,11 +127,11 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
 
   // Do not update buffer history if currently playing CNG since it will bias
   // the filtered buffer level.
-  if ((prev_mode != kModeRfc3389Cng) && (prev_mode != kModeCodecInternalCng) &&
-      !(next_packet && next_packet->frame &&
-        next_packet->frame->IsDtxPacket())) {
-    FilterBufferLevel(cur_size_samples);
-  }
+//  if ((prev_mode != kModeRfc3389Cng) && (prev_mode != kModeCodecInternalCng) &&
+//      !(next_packet && next_packet->frame &&
+//        next_packet->frame->IsDtxPacket())) {
+//    FilterBufferLevel(cur_size_samples);
+//  }
 
   // Guard for errors, to avoid getting stuck in error mode.
   if (prev_mode == kModeError) {
@@ -175,16 +175,16 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
   // if the mute factor is low enough (otherwise the expansion was short enough
   // to not be noticable).
   // Note that the MuteFactor is in Q14, so a value of 16384 corresponds to 1.
-  size_t current_span =
-      samples_left + packet_buffer_.GetSpanSamples(decoder_frame_length);
-  if ((prev_mode == kModeExpand || prev_mode == kModeCodecPlc) &&
-      expand.MuteFactor(0) < 16384 / 2 &&
-      current_span < static_cast<size_t>(delay_manager_->TargetLevel() *
-                                         packet_length_samples_ *
-                                         kPostponeDecodingLevel / 100)>> 8 &&
-      !packet_buffer_.ContainsDtxOrCngPacket(decoder_database_)) {
-    return kExpand;
-  }
+//  size_t current_span =
+//      samples_left + packet_buffer_.GetSpanSamples(decoder_frame_length);
+//  if ((prev_mode == kModeExpand || prev_mode == kModeCodecPlc) &&
+//      expand.MuteFactor(0) < 16384 / 2 &&
+//      current_span < static_cast<size_t>(delay_manager_->TargetLevel() *
+//                                         packet_length_samples_ *
+//                                         kPostponeDecodingLevel / 100)>> 8 &&
+//      !packet_buffer_.ContainsDtxOrCngPacket(decoder_database_)) {
+//    return kExpand;
+//  }
 
   const uint32_t five_seconds_samples =
       static_cast<uint32_t>(5 * 8000 * fs_mult_);
@@ -327,32 +327,12 @@ Operations DecisionLogic::FuturePacketAvailable(
     return kNormal;
   }
 
-  const size_t samples_left =
-      sync_buffer.FutureLength() - expand.overlap_length();
-  const size_t cur_size_samples =
-      samples_left + packet_buffer_.NumPacketsInBuffer() * decoder_frame_length;
+//  const size_t samples_left =
+//      sync_buffer.FutureLength() - expand.overlap_length();
+//  const size_t cur_size_samples =
+//      samples_left + packet_buffer_.NumPacketsInBuffer() * decoder_frame_length;
 
-  // If previous was comfort noise, then no merge is needed.
-  if (prev_mode == kModeRfc3389Cng || prev_mode == kModeCodecInternalCng) {
-    // Keep the same delay as before the CNG, but make sure that the number of
-    // samples in buffer is no higher than 4 times the optimal level. (Note that
-    // TargetLevel() is in Q8.)
-    if (static_cast<uint32_t>(generated_noise_samples + target_timestamp) >=
-            available_timestamp ||
-        cur_size_samples >
-            ((delay_manager_->TargetLevel() * packet_length_samples_) >> 8) *
-                4) {
-      // Time to play this new packet.
-      return kNormal;
-    } else {
-      // Too early to play this new packet; keep on playing comfort noise.
-      if (prev_mode == kModeRfc3389Cng) {
-        return kRfc3389CngNoPacket;
-      } else {  // prevPlayMode == kModeCodecInternalCng.
-        return kCodecInternalCng;
-      }
-    }
-  }
+
   // Do not merge unless we have done an expand before.
   if (prev_mode == kModeExpand) {
     return kMerge;

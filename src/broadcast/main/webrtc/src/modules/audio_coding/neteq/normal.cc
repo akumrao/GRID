@@ -17,7 +17,7 @@
 #include "api/audio_codecs/audio_decoder.h"
 #include "common_audio/signal_processing/include/signal_processing_library.h"
 #include "modules/audio_coding/neteq/audio_multi_vector.h"
-#include "modules/audio_coding/neteq/background_noise.h"
+//#include "modules/audio_coding/neteq/background_noise.h"
 #include "modules/audio_coding/neteq/decoder_database.h"
 #include "modules/audio_coding/neteq/expand.h"
 #include "rtc_base/checks.h"
@@ -55,18 +55,18 @@ int Normal::Process(const int16_t* input,
   if (last_mode == kModeExpand) {
     // Generate interpolation data using Expand.
     // First, set Expand parameters to appropriate values.
-    expand_->SetParametersForNormalAfterExpand();
-
-    // Call Expand.
-    AudioMultiVector expanded(output->Channels());
-    expand_->Process(&expanded);
-    expand_->Reset();
+//    expand_->SetParametersForNormalAfterExpand();
+//
+//    // Call Expand.
+//    AudioMultiVector expanded(output->Channels());
+//    expand_->Process(&expanded);
+//    expand_->Reset();
 
     size_t length_per_channel = length / output->Channels();
     std::unique_ptr<int16_t[]> signal(new int16_t[length_per_channel]);
     for (size_t channel_ix = 0; channel_ix < output->Channels(); ++channel_ix) {
       // Set muting factor to the same as expand muting factor.
-      int16_t mute_factor = expand_->MuteFactor(channel_ix);
+     // int16_t mute_factor = expand_->MuteFactor(channel_ix);
 
       (*output)[channel_ix].CopyTo(length_per_channel, 0, signal.get());
 
@@ -101,28 +101,28 @@ int Normal::Process(const int16_t* input,
 //        local_mute_factor =
 //            std::min(local_mute_factor, WebRtcSpl_SqrtFloor(ratio << 14));
 //      }
-      mute_factor = std::max<int16_t>(mute_factor, local_mute_factor);
-      RTC_DCHECK_LE(mute_factor, 16384);
-      RTC_DCHECK_GE(mute_factor, 0);
+//      mute_factor = std::max<int16_t>(mute_factor, local_mute_factor);
+//      RTC_DCHECK_LE(mute_factor, 16384);
+//      RTC_DCHECK_GE(mute_factor, 0);
 
       // If muted increase by 0.64 for every 20 ms (NB/WB 0.0040/0.0020 in Q14),
       // or as fast as it takes to come back to full gain within the frame
       // length.
-      const int back_to_fullscale_inc =
-          static_cast<int>((16384 - mute_factor) / length_per_channel);
-      const int increment = std::max(64 / fs_mult, back_to_fullscale_inc);
-      for (size_t i = 0; i < length_per_channel; i++) {
-        // Scale with mute factor.
-        RTC_DCHECK_LT(channel_ix, output->Channels());
-        RTC_DCHECK_LT(i, output->Size());
-        int32_t scaled_signal = (*output)[channel_ix][i] * mute_factor;
-        // Shift 14 with proper rounding.
-        (*output)[channel_ix][i] =
-            static_cast<int16_t>((scaled_signal + 8192) >> 14);
-        // Increase mute_factor towards 16384.
-        mute_factor =
-            static_cast<int16_t>(std::min(mute_factor + increment, 16384));
-      }
+//      const int back_to_fullscale_inc =
+//          static_cast<int>((16384 - mute_factor) / length_per_channel);
+//      const int increment = std::max(64 / fs_mult, back_to_fullscale_inc);
+//      for (size_t i = 0; i < length_per_channel; i++) {
+//        // Scale with mute factor.
+//        RTC_DCHECK_LT(channel_ix, output->Channels());
+//        RTC_DCHECK_LT(i, output->Size());
+//        int32_t scaled_signal = (*output)[channel_ix][i] * mute_factor;
+//        // Shift 14 with proper rounding.
+//        (*output)[channel_ix][i] =
+//            static_cast<int16_t>((scaled_signal + 8192) >> 14);
+//        // Increase mute_factor towards 16384.
+//        mute_factor =
+//            static_cast<int16_t>(std::min(mute_factor + increment, 16384));
+//      }
 
       // Interpolate the expanded data into the new vector.
       // (NB/WB/SWB32/SWB48 8/16/32/48 samples.)
@@ -134,13 +134,13 @@ int Normal::Process(const int16_t* input,
         win_slope_Q14 = (1 << 14) / static_cast<int16_t>(win_length);
       }
       int16_t win_up_Q14 = 0;
-      for (size_t i = 0; i < win_length; i++) {
-        win_up_Q14 += win_slope_Q14;
-        (*output)[channel_ix][i] =
-            (win_up_Q14 * (*output)[channel_ix][i] +
-             ((1 << 14) - win_up_Q14) * expanded[channel_ix][i] + (1 << 13)) >>
-            14;
-      }
+//      for (size_t i = 0; i < win_length; i++) {
+//        win_up_Q14 += win_slope_Q14;
+//        (*output)[channel_ix][i] =
+//            (win_up_Q14 * (*output)[channel_ix][i] +
+//             ((1 << 14) - win_up_Q14) * expanded[channel_ix][i] + (1 << 13)) >>
+//            14;
+//      }
       RTC_DCHECK_GT(win_up_Q14,
                     (1 << 14) - 32);  // Worst case rouding is a length of 34
     }

@@ -54,7 +54,7 @@ class SyncBuffer;
 class TimestampScaler;
 struct AccelerateFactory;
 struct DtmfEvent;
-struct ExpandFactory;
+//struct ExpandFactory;
 struct PreemptiveExpandFactory;
 
 class NetEqImpl : public webrtc::NetEq {
@@ -110,8 +110,8 @@ class NetEqImpl : public webrtc::NetEq {
     std::unique_ptr<RedPayloadSplitter> red_payload_splitter;
     std::unique_ptr<TimestampScaler> timestamp_scaler;
     std::unique_ptr<AccelerateFactory> accelerate_factory;
-    std::unique_ptr<ExpandFactory> expand_factory;
-    std::unique_ptr<PreemptiveExpandFactory> preemptive_expand_factory;
+   // std::unique_ptr<ExpandFactory> expand_factory;
+    //std::unique_ptr<PreemptiveExpandFactory> preemptive_expand_factory;
   };
 
   // Creates a new NetEqImpl object.
@@ -356,12 +356,12 @@ class NetEqImpl : public webrtc::NetEq {
   const std::unique_ptr<TimestampScaler> timestamp_scaler_
       RTC_GUARDED_BY(crit_sect_);
   //const std::unique_ptr<PostDecodeVad> vad_ RTC_GUARDED_BY(crit_sect_);
-  const std::unique_ptr<ExpandFactory> expand_factory_
+  //const std::unique_ptr<ExpandFactory> expand_factory_
       RTC_GUARDED_BY(crit_sect_);
   const std::unique_ptr<AccelerateFactory> accelerate_factory_
       RTC_GUARDED_BY(crit_sect_);
-  const std::unique_ptr<PreemptiveExpandFactory> preemptive_expand_factory_
-      RTC_GUARDED_BY(crit_sect_);
+  //const std::unique_ptr<PreemptiveExpandFactory> preemptive_expand_factory_
+   //   RTC_GUARDED_BY(crit_sect_);
   const std::unique_ptr<StatisticsCalculator> stats_ RTC_GUARDED_BY(crit_sect_);
 
   //std::unique_ptr<BackgroundNoise> background_noise_ RTC_GUARDED_BY(crit_sect_);
@@ -369,12 +369,12 @@ class NetEqImpl : public webrtc::NetEq {
   std::unique_ptr<AudioMultiVector> algorithm_buffer_
       RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<SyncBuffer> sync_buffer_ RTC_GUARDED_BY(crit_sect_);
-  std::unique_ptr<Expand> expand_ RTC_GUARDED_BY(crit_sect_);
+  //std::unique_ptr<Expand> expand_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<Normal> normal_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<Merge> merge_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<Accelerate> accelerate_ RTC_GUARDED_BY(crit_sect_);
-  std::unique_ptr<PreemptiveExpand> preemptive_expand_
-      RTC_GUARDED_BY(crit_sect_);
+  //std::unique_ptr<PreemptiveExpand> preemptive_expand_
+   //   RTC_GUARDED_BY(crit_sect_);
   RandomVector random_vector_ RTC_GUARDED_BY(crit_sect_);
   //std::unique_ptr<ComfortNoise> comfort_noise_ RTC_GUARDED_BY(crit_sect_);
   int fs_hz_ RTC_GUARDED_BY(crit_sect_);
@@ -403,8 +403,8 @@ class NetEqImpl : public webrtc::NetEq {
   std::unique_ptr<TickTimer::Stopwatch> generated_noise_stopwatch_
       RTC_GUARDED_BY(crit_sect_);
   std::vector<uint32_t> last_decoded_timestamps_ RTC_GUARDED_BY(crit_sect_);
-  ExpandUmaLogger expand_uma_logger_ RTC_GUARDED_BY(crit_sect_);
-  ExpandUmaLogger speech_expand_uma_logger_ RTC_GUARDED_BY(crit_sect_);
+  //ExpandUmaLogger expand_uma_logger_ RTC_GUARDED_BY(crit_sect_);
+  //ExpandUmaLogger speech_expand_uma_logger_ RTC_GUARDED_BY(crit_sect_);
   bool no_time_stretching_ RTC_GUARDED_BY(crit_sect_);  // Only used for test.
   rtc::BufferT<int16_t> concealment_audio_ RTC_GUARDED_BY(crit_sect_);
   const bool enable_rtx_handling_ RTC_GUARDED_BY(crit_sect_);
