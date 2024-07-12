@@ -17,7 +17,7 @@
 #include "modules/audio_coding/neteq/buffer_level_filter.h"
 #include "modules/audio_coding/neteq/decoder_database.h"
 #include "modules/audio_coding/neteq/delay_manager.h"
-#include "modules/audio_coding/neteq/expand.h"
+//#include "modules/audio_coding/neteq/expand.h"
 #include "modules/audio_coding/neteq/packet_buffer.h"
 #include "modules/audio_coding/neteq/sync_buffer.h"
 #include "rtc_base/checks.h"
