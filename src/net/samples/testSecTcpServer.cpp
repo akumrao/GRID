@@ -12,9 +12,9 @@
 #include "base/logger.h"
 #include "base/application.h"
 #include "net/TcpServer.h"
-#include "base/test.h"
+// #include "base/test.h"
 #include "base/time.h"
-
+#include "net/SslConnection.h"
 
 ///ssl
 //#include "net/sslmanager.h"
@@ -22,44 +22,88 @@
 using std::endl;
 using namespace base;
 using namespace net;
-using namespace base::test;
+// using namespace base::test;
 
 
-
-class tesTcpServer : public Listener {
+class testSslCon :  public SslConnection{
 public:
 
-    tesTcpServer() {
+    testSslCon(bool server): SslConnection(true )
+    {
     }
 
-    void start() {
-        // socket.send("Arvind", "127.0.0.1", 7331);
-        tcpServer = new TcpServer(this, "0.0.0.0", 5001, true);
 
-    }
-
-    void shutdown() {
-        // socket.send("Arvind", "127.0.0.1", 7331);
-        delete tcpServer;
-        tcpServer = nullptr;
-
-    }
-
-    void on_close( Listener* connection) {
+    void on_close( ) {
 
         std::cout << "TCP server closing, LocalIP" << connection->GetLocalIp() << " PeerIP" << connection->GetPeerIp() << std::endl << std::flush;
 
     }
 
-    void on_read(Listener* connection, const char* data, size_t len) {
+    
+    void on_read(const char* data, size_t len) {
         std::cout << "TCP server send data: " << data << "len: " << len << std::endl << std::flush;
         std::string send = "12345";
-        connection->send((const char*) send.c_str(), 5);
+        SslConnection::send((const char*) send.c_str(), 5);
 
     }
-    TcpServer *tcpServer;
 
 };
+
+
+static constexpr size_t MaxTcpConnectionsPerServer{ 4000};
+  
+class SecTcpServer : public TcpServerBase
+{
+public:
+
+
+public:
+    SecTcpServer(Listener* listener, std::string ip, int port, bool multiThreaded=false, bool ssl=false ): TcpServerBase(BindTcp(ip, port), 256, multiThreaded), listener(listener),ssl(ssl){
+
+        }
+    ~SecTcpServer() {
+
+            if (uvHandle)
+                delete uvHandle;
+            //UnbindTcp(this->localIp, this->localPort); // please do not do it here . Drive your own class from TServerBase.
+        }
+    /* Pure virtual methods inherited from ::TcpServer. */
+public:
+    void UserOnTcpConnectionAlloc(TcpConnectionBase** connection) {
+
+
+             *connection = new testSslCon( true);
+         
+        }
+    
+    bool UserOnNewTcpConnection(TcpConnectionBase* connection) 
+    {
+    
+            if (GetNumConnections() >= MaxTcpConnectionsPerServer)
+            {
+                LError("cannot handle more than %zu connections", MaxTcpConnectionsPerServer);
+
+                return false;
+            }
+
+            return true;
+    }
+    
+    void UserOnTcpConnectionClosed(TcpConnectionBase* connection)
+    {
+        
+    }
+
+private:
+    // Passed by argument.
+    Listener* listener{ nullptr};
+    uv_tcp_t* uvHandle{ nullptr};
+    bool ssl;
+};
+
+
+
+
 
 
 int main(int argc, char** argv) {
@@ -69,13 +113,12 @@ int main(int argc, char** argv) {
      //  net::SSLManager::initNoVerifyServer();
 
         Application app;
-
-        tesTcpServer socket;
-        socket.start();
+        SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true);
+   
 
         app.waitForShutdown([&](void*) {
 
-            socket.shutdown();
+           // socket.shutdown();
 
         });
 

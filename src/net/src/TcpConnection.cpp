@@ -593,12 +593,15 @@ namespace base {
 
                 // Notify the subclass.
                 if (tls)
+                {
                     on_tls_read((const char*) buf->base, nread);
+                }
                 else
-                    on_read((const char*) buf->base, nread);
+                {    on_read((const char*) buf->base, nread);
                 
-                if(listener)
-                listener->on_read(this, (const char*) buf->base, nread); //arvind
+                    if(listener)
+                    listener->on_read(this, (const char*) buf->base, nread); //arvind
+                }
 
             }// Client disconneted.
             else if (nread == UV_EOF || nread == UV_ECONNRESET) {
