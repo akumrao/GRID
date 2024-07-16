@@ -100,17 +100,16 @@ public:
     void initServer();
 
     /// Returns true when SSL context has been initialized.
-    bool initialized() const;
+   // bool initialized() const;
 
     /// Returns true when the handshake is complete.
-    bool ready() const;
 
     /// Start/continue the SSL handshake process.
     void handshake();
 
     /// Returns the number of bytes available in
     /// the SSL buffer for immediate reading.
-    int available() const;
+
 
     /// Issues an orderly SSL shutdown.
     void shutdown();
@@ -118,7 +117,7 @@ public:
     
     bool isConnected() const ;
 
-    int getTLSError(char *buf, size_t len) const ;
+    std::string getTLSError(int )  ;
 
     
     static void my_debug(void *ctx, int level, const char *file, int line,   const char *str);
@@ -136,35 +135,12 @@ public:
 protected:
     
     
-void addIncomingData(const char *data, size_t len)
-{
-    
-}
-
-void addOutgoingData(const std::string &s)
-{
-}
-
-void addOutgoingData(const char *data, size_t len)
-{
-}
-
-
-void flushReadBIO()
-{
-   
-}
 
 
 
-void flushWriteBIO()
-{
-  
-}
 
-void handleError(int rc)
-{
-}
+
+
 
     
 protected:

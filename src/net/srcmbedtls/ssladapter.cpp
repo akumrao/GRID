@@ -146,7 +146,18 @@ void SSLAdapter::initClient()
     mbedtls_x509_crt_init(&_cacert);
     mbedtls_ssl_config_init(&_ssl_conf);
         
+    const char *DRBG_PERS = "mbed TLS helloword client";
     
+    
+  
+    if (mbedtls_ctr_drbg_seed(&_ctr_drbg, mbedtls_entropy_func, &_entropy,
+                       (const unsigned char *) DRBG_PERS,
+                       sizeof (DRBG_PERS)) != 0)
+
+    {
+
+        SError << " Failed mbedtls_ctr_drbg_seed ";
+    }
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if FROMFILE
 
@@ -192,10 +203,7 @@ void SSLAdapter::initClient()
     
 #else
 
- if (mbedtls_ctr_drbg_seed(&_ctr_drbg, mbedtls_entropy_func, &_entropy,
-                    (const unsigned char *) DRBG_PERS,
-                    sizeof (DRBG_PERS)) != 0 ||
-                mbedtls_x509_crt_parse(&_cacert, (const unsigned char *) SSL_CA_PEM,
+ if (           mbedtls_x509_crt_parse(&_cacert, (const unsigned char *) SSL_CA_PEM,
                     sizeof (SSL_CA_PEM)) != 0 ||
                 mbedtls_ssl_config_defaults(&_ssl_conf,
                     MBEDTLS_SSL_IS_CLIENT,
@@ -225,6 +233,8 @@ void SSLAdapter::initClient()
         mbedtls_debug_set_threshold(DEBUG_LEVEL);
  #endif     
 
+        
+        
 
     setup(&_ssl_conf, nullptr);
         
@@ -244,20 +254,22 @@ void SSLAdapter::initClient()
 int SSLAdapter::ssl_recv(void *ctx, unsigned char *buf, size_t len) {
    
     SSLAdapter *stream = static_cast<SSLAdapter *>(ctx);
+    stream->_socket->on_read((const char*) buf, len);
     
-    int ret = stream->_socket->Write((const char*)buf, len, stream->cb);
-    stream->cb = nullptr;
+    stream->_socket->on_read((const char*) buf, len);
     
-    return ret;
+    return len;
+   
 }
 
 int SSLAdapter::ssl_send(void *ctx, const unsigned char *buf, size_t len) {
     
     SSLAdapter *stream = static_cast<SSLAdapter *>(ctx);
     
-    stream->_socket->on_read((const char*) buf, len);
+     int ret = stream->_socket->Write((const char*)buf, len, stream->cb);
+    stream->cb = nullptr;
     
-    return len;
+    return ret;
 }
 
 
@@ -315,25 +327,25 @@ void SSLAdapter::shutdown()
     
 }
 
-bool SSLAdapter::initialized() const
-{
-    //return !!_ssl;
-    
-    return true;
-}
+//bool SSLAdapter::initialized() const
+//{
+//    //return !!_ssl;
+//    
+//    return true;
+//}
 
-bool SSLAdapter::ready() const
-{
-    // return _ssl && SSL_is_init_finished(_ssl);
-    return true;
-}
-
-int SSLAdapter::available() const
-{
-    //assert(_ssl);
-    //return SSL_pending(_ssl);
-    return 1;
-}
+//bool SSLAdapter::ready() const
+//{
+//    // return _ssl && SSL_is_init_finished(_ssl);
+//    return true;
+//}
+//
+//int SSLAdapter::available() const
+//{
+//    //assert(_ssl);
+//    //return SSL_pending(_ssl);
+//    return 1;
+//}
 
 
 void SSLAdapter::handshake()
@@ -344,8 +356,8 @@ void SSLAdapter::handshake()
     {
         if( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE )
         {
-            _ssl_error =  ret;
-            SError << " failed\n  ! mbedtls_ssl_handshake returned "  ;
+
+            SError << " failed\n  ! mbedtls_ssl_handshake returned "  << getTLSError(ret);
             return;
         }
     }
@@ -380,13 +392,14 @@ bool SSLAdapter::isConnected() const {
    _ssl.state == MBEDTLS_SSL_HANDSHAKE_OVER;
 }
 
-int SSLAdapter::getTLSError(char *buf, size_t len) const {
+std::string SSLAdapter::getTLSError(int err)  {
     
-    if (buf != NULL && len != 0) {
-        mbedtls_strerror(_ssl_error, buf, len);
-    }
+    char buf[128];
+    
+    mbedtls_strerror(err, buf, sizeof buf);
+  
 
-    return _ssl_error;
+    return buf;
 }
 
 
