@@ -29,7 +29,7 @@ public:
 
     tesTcpClient(): SslConnection(false)
     {
-        Connect("192.168.0.19", 5001);
+        Connect("127.0.0.1", 5001);
     }
 
 

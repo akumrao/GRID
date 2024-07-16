@@ -85,16 +85,6 @@ public:
     /// If no connection is established, returns nullptr.
 //    SSLSession::Ptr currentSession();
 
-    /// Returns true if a reused session was negotiated during
-    /// the handshake.
-    bool sessionWasReused();
-
-    /// Returns the number of bytes available from the
-    /// SSL buffer for immediate reading.
-    int available() const;
-
-    /// Returns the peer's certificate.
-    X509* peerCertificate() const;
 
 //    net::TransportType transport() const override;
 

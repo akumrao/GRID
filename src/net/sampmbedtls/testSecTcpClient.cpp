@@ -27,9 +27,9 @@ using namespace net;
 class tesTcpClient : public SslConnection {
 public:
 
-    tesTcpClient(): SslConnection(false)
+    tesTcpClient(): SslConnection()
     {
-        Connect("192.168.0.19", 5001);
+        Connect("127.0.0.1", 5001);
     }
 
 

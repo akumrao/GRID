@@ -35,7 +35,7 @@ public:
 
     void on_close( ) {
 
-        std::cout << "TCP server closing, LocalIP" << connection->GetLocalIp() << " PeerIP" << connection->GetPeerIp() << std::endl << std::flush;
+        std::cout << "TCP server closing, LocalIP" << this->GetLocalIp() << " PeerIP" << this->GetPeerIp() << std::endl << std::flush;
 
     }
 

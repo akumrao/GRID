@@ -9,7 +9,7 @@ SOURCES=$(wildcard testSecTcpServer.cpp ../srcmbedtls/*.cpp ../../libuv/src/*.cp
 CXXFLAGS   := -g -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL
 
 
-CPPFLAGS   := -I../../json/include/  -I../../base/include/ -I../../net/incmbedtls/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
+CPPFLAGS   := -I../../json/include/ -I../../src/mbedtls/include/ -I../../base/include/ -I../../net/incmbedtls/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
 
               
 LDFLAGS   := -L/data/sound/lib -L/usr/lib/x86_64-linux-gnu
