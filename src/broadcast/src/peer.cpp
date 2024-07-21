@@ -10,6 +10,8 @@
 #include "Settings.h"
 #include <sys/reboot.h>
 
+#include "base/datetime.h"
+
 #if defined(__x86_64__)
 #else
 #include "sample-common.h"
@@ -23,28 +25,6 @@ namespace base
 {
 namespace web_rtc
 {
-
-
-// cricket::Candidate CreateLocalUdpCandidate(const rtc::SocketAddress &address)
-// {
-//     cricket::Candidate candidate;
-//     candidate.set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
-//     candidate.set_protocol(cricket::UDP_PROTOCOL_NAME);
-//     candidate.set_address(address);
-//     candidate.set_type(cricket::LOCAL_PORT_TYPE);
-//     return candidate;
-// }
-
-// cricket::Candidate CreateLocalTcpCandidate(const rtc::SocketAddress &address)
-// {
-//     cricket::Candidate candidate;
-//     candidate.set_component(cricket::ICE_CANDIDATE_COMPONENT_DEFAULT);
-//     candidate.set_protocol(cricket::TCP_PROTOCOL_NAME);
-//     candidate.set_address(address);
-//     candidate.set_type(cricket::LOCAL_PORT_TYPE);
-//     candidate.set_tcptype(cricket::TCPTYPE_PASSIVE_STR);
-//     return candidate;
-// }
 
 
 bool AddCandidateToFirstTransport(cricket::Candidate *candidate, webrtc::SessionDescriptionInterface *sdesc)
@@ -434,17 +414,17 @@ void Peer::OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> channe
     if (state == webrtc::DataChannelInterface::kOpen) {
       //if (OnLocalDataChannelReady)
       //  OnLocalDataChannelReady();
-         cnfg::Configuration identity;
-        identity.load(Settings::configuration.storage + "manifest.js");
-
-        if(identity.loaded())
-        {
-            json m;
-            m["messageType"] = "RECORDING";
-            m["messagePayload"] =  identity.root;
-            DataChannelSend(m.dump());
-
-        }
+//         cnfg::Configuration identity;
+//        identity.load(Settings::configuration.storage + "manifest.js");
+//
+//        if(identity.loaded())
+//        {
+//            json m;
+//            m["messageType"] = "RECORDING";
+//            m["messagePayload"] =  identity.root;
+//            DataChannelSend(m.dump());
+//
+//        }
       RTC_LOG(LS_INFO) << "Data channel is open";
     }
   }
@@ -461,12 +441,20 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
   memcpy(msg, buffer.data.data(), size);
   msg[size] = 0;
 
-  if(  size < 11 )
+  if(  size < 21 )
   {
         if(!strncmp(msg, "startrec",   8 )  )
         {
+
+            Timestamp ts;
+         //  Timestamp::TimeVal time = ts.epochMicroseconds();
+           ///int milli = int(time % 1000000) / 1000;
+
+            std::time_t time1 = ts.epochTime();
+                     _manager->ctx->liveThread->t31rgba->m_date = time1;
+
             
-           ((LiveThread*)_manager->ctx->liveThread)->t31rgba->record = true;
+            ((LiveThread*)_manager->ctx->liveThread)->t31rgba->record = true;
                      
             //ATOMIC_STORE_BOOL(&gSampleConfiguration->startrec, TRUE); 
 
@@ -474,29 +462,25 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
         {
            // ATOMIC_STORE_BOOL(&gSampleConfiguration->startrec, FALSE); 
 
-        }else if(!strncmp(msg, "recDates",   8 )  )
-        {
-           char json[256]={'\0'};
-
-//           MUTEX_LOCK(gSampleConfiguration->recordReadLock);
-//           getJson(json);
-//           MUTEX_UNLOCK(gSampleConfiguration->recordReadLock);
-//
-//           printf("final %s\n", json); 
-//
-//          STATUS retStatus = STATUS_SUCCESS;
-//          retStatus = dataChannelSend(pDataChannel, FALSE, (PBYTE) json, STRLEN(json));
-//          if (retStatus != STATUS_SUCCESS) {
-//            DLOGI("[KVS Master] dataChannelSend(): operation returned status code: 0x%08x \n", retStatus);
-//          }
-
-
         }
         else if(!strncmp(msg, "starttime:",   10 )  )
         {
-            //strcpy( gSampleConfiguration->timeStamp, &pMessage[10]);
+            char timeStamp[11]= {'\0'};
+            strncpy( timeStamp, &msg[10], 10);
 
-            //ATOMIC_STORE_BOOL(&gSampleConfiguration->newRecording, TRUE);
+
+            
+            cnfg::Configuration identity;
+            identity.load(Settings::configuration.storage + "manifest.js");
+
+            if(identity.loaded() &&  identity.root.find(timeStamp) != identity.root.end() )
+            {
+                json m;
+                m["messageType"] = "RECORDING";
+                m["messagePayload"] =  identity.root[timeStamp];
+                DataChannelSend(m.dump());
+
+           }
         }
     }
    else
@@ -557,7 +541,7 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
         {
 
             std::string name = jsonMsg["name"].get<std::string>();  
-            name = "/mnt/OTA/" + name;
+            name = Settings::configuration.OTA  + name;
             int size  = jsonMsg["size"].get<int>();  
             if(size)
             {
@@ -591,7 +575,7 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
         }
         else if(type == "RESET")
         {
-          std::remove("/mnt/config.js");
+          std::remove("./config.js");
         }
         else if(type == "DEBUG")
         {

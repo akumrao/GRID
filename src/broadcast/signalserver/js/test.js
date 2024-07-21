@@ -748,11 +748,6 @@ const statusMessage = document.querySelector('span#status');
 const sendFileButton = document.querySelector('button#sendFile');
 
 
-let bytesPrev = 0;
-let timestampPrev = 0;
-let timestampStart;
-let statsInterval = null;
-let bitrateMax = 0;
 
 let fileReader;
 
@@ -768,6 +763,7 @@ abortButton.addEventListener('click', () => {
 });
 
 async function handleFileInputChange() {
+  sendProgress.value =0;
   const file = fileInput.files[0];
   if (!file) {
     console.log('No file chosen');
@@ -922,4 +918,23 @@ function setSD() {
   channelSnd.send(JSON.stringify(data));
 
 }
+
+
+
+function showRecording() {
+
+  var startime = "starttime:" + document.getElementById("txtshowRec").value;
+  channelSnd.send(startime);
+
+}
+
+
+const date = new Date;
+
+const year = date.getFullYear();
+const month = String(date.getMonth() + 1).padStart(2, '0');
+const day = String(date.getDate()).padStart(2, '0');
+const formattedDate = `${year}-${month}-${day}`;
+
+document.getElementById("txtshowRec").value = formattedDate;
 

@@ -31,7 +31,7 @@ public:
     
    
      
-    void runNULLEnc(unsigned char *buffer, int size,  int & recording, LiveConnectionContext  *ctx, std::string &date); 
+    void runNULLEnc(unsigned char *buffer, int size,  int & recording, LiveConnectionContext  *ctx, std::time_t &date); 
     
     void resetTimer();
     
@@ -49,7 +49,7 @@ public:
     int height{0};
     int fps;
     
-    void recordingTime(LiveConnectionContext  *ctx);
+    //void recordingTime(LiveConnectionContext  *ctx);
     
 private:
     std::vector< uint8_t> m_sps;
@@ -60,8 +60,10 @@ private:
     //std::string  &cam;
     //BasicFrame basicframe;
     
-    std::string dayDate;
-    std::string pathDate;
+    std::string m_dateTime;
+    std::string m_pathDate;
+    std::string m_date;
+
     FILE *in_file{nullptr};
     base::cnfg::Configuration mf;
     

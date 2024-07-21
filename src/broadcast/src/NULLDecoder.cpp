@@ -30,6 +30,50 @@
 namespace base {
     namespace web_rtc {
 
+        
+  int remove_directory(const char *path) {
+   DIR *d = opendir(path);
+   size_t path_len = strlen(path);
+   int r = -1;
+
+   if (d) {
+      struct dirent *p;
+
+      r = 0;
+      while (!r && (p=readdir(d))) {
+          int r2 = -1;
+          char *buf;
+          size_t len;
+
+          /* Skip the names "." and ".." as we don't want to recurse on them. */
+          if (!strcmp(p->d_name, ".") || !strcmp(p->d_name, ".."))
+             continue;
+
+          len = path_len + strlen(p->d_name) + 2; 
+          buf = malloc(len);
+
+          if (buf) {
+             struct stat statbuf;
+
+             snprintf(buf, len, "%s/%s", path, p->d_name);
+             if (!stat(buf, &statbuf)) {
+                if (S_ISDIR(statbuf.st_mode))
+                   r2 = remove_directory(buf);
+                else
+                   r2 = unlink(buf);
+             }
+             free(buf);
+          }
+          r = r2;
+      }
+      closedir(d);
+   }
+
+   if (!r)
+      r = rmdir(path);
+
+   return r;
+}
  /*
 static  unsigned char *find_start_code( unsigned char *h264_data, int h264_data_bytes, int *zcount)
 {
@@ -190,7 +234,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
 
             if( mf.root.is_null() )
             {
-               mf.root = json::array();
+               mf.root = json::object();
             }
                     
      
@@ -211,7 +255,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
           
             char filePath[128];
              
-            sprintf(filePath, "%s/frame-%.3d.h264", pathDate.c_str() , ++recframeCount);
+            sprintf(filePath, "%s/frame-%.3d.h264", m_pathDate.c_str() , ++recframeCount);
 
                             
             in_file = fopen(filePath,"wb");
@@ -226,7 +270,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
         }
  
 
-        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size,  int & recframeCount , LiveConnectionContext  *ctx , std::string &date) 
+        void NULLDecoder::runNULLEnc(unsigned char *buffer, int size,  int & recframeCount , LiveConnectionContext  *ctx , std::time_t &datetm) 
         {
 
             int cfg{0}; 
@@ -371,13 +415,13 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
                      recframeCount = -1;  
                     
                 }
-                else if( recframeCount >= 250)
+                else if( recframeCount >=  Settings::configuration.recordsize)
                 {
                     
-                   if(recframeCount++ == 250)
+                   if(recframeCount++ ==  Settings::configuration.recordsize)
                    {
                         mf.save();
-                        recordingTime(ctx);
+                       // recordingTime(ctx);
                    }
                 }
                 else if(idr )
@@ -391,16 +435,72 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
             }
             else if( Settings::configuration.recording && !recframeCount )
             {
-              
-                if( dayDate != date)
-                {   dayDate = date;
-                    pathDate = Settings::configuration.storage +  "/" + dayDate  ;
-                    if (!base::fs::exists(pathDate ))
+                
+                struct std::tm* tms = std::localtime(&datetm);
+
+                char datetime[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
+                int len = std::strftime(datetime, sizeof (datetime), "%Y-%m-%d-%H-%M-%S", tms);
+                
+                char dates[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
+                len = std::strftime(dates, sizeof (dates), "%Y-%m-%d", tms);
+                
+                
+                if( m_date != dates) // do cleaning
+                {
+                    m_date = dates;
+    
+                  //  std::time_t lastweek =  datetm - 604800;  // ;// 7*24*60*60;
+                   // struct std::tm* tms = std::localtime(&lastweek);
+
+                    //char lwdates[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
+                    //len = std::strftime(lwdates, sizeof (lwdates), "%Y-%m-%d", tms);
+           
+                    for (json::iterator itDate = mf.root.begin(); itDate != mf.root.end(); ++itDate) 
                     {
-                       mkdir(pathDate.c_str(),0777);
+                        struct tm timeinfo= {};
+                        std::string lwdates = itDate.key() ;
+                        strptime(lwdates.c_str(), "%Y-%m-%d", &timeinfo);
+                        time_t lastweek = mktime(&timeinfo);
+
+                        double diff = difftime(datetm,  lastweek  );
+
+                        //std::cout << "lwdates: " << lwdates << std::endl;
+                        // 
+                        //std::cout << "Year: " << 1900 + timeinfo.tm_year << std::endl;
+                        //std::cout << "Month: " << 1 + timeinfo.tm_mon << std::endl;
+                        //std::cout << "day: " << timeinfo.tm_mday << std::endl;
+                         
+                       //std::cout << "diff " << diff/(24*60*60) <<  " lastweek " << lastweek  <<  std::endl;
+
+                         
+                        if( diff > double(604800) )
+                        {
+                            for (json::iterator itDT =  itDate.value().begin(); itDT != itDate.value().end(); ++itDT) 
+                            {
+                                std::cout << *itDT << '\n';
+                                std::string tmp = Settings::configuration.storage +  itDT->get<std::string>() ;
+                                remove_directory(tmp.c_str());
+                            }
+
+                            mf.root.erase(lwdates);
+                        }
                     }
                     
-                    mf.root.push_back(dayDate);
+                }
+                
+                if( m_dateTime != datetime)
+                {   m_dateTime = datetime;
+                    m_pathDate = Settings::configuration.storage + m_dateTime  ;
+                    if (!base::fs::exists(m_pathDate ))
+                    {
+                       mkdir(m_pathDate.c_str(),0777);
+                    }
+                    
+                    if( mf.root.find(dates) ==   mf.root.end())
+                    {
+                        mf.root[dates] = json::array();
+                    }
+                    mf.root[dates].push_back(m_dateTime);
                  
                     WriteTofile(&m_sps[0], m_sps.size(), recframeCount);
                     WriteTofile(&m_pps[0], m_pps.size(), recframeCount);
@@ -413,9 +513,9 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
             }
             
             
-             delayFrame();
+            delayFrame();
              
-             break;
+            break;
              
             
             }// end for
@@ -477,7 +577,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
            vframecount =0;
         }
         
-        
+        /*
         void NULLDecoder::recordingTime(LiveConnectionContext  *ctx )
         {
             cnfg::Configuration identity;
@@ -492,7 +592,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
 
             }
         }
-             
+        */    
 
 
     }// ns web_rtc

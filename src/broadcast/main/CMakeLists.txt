@@ -414,9 +414,9 @@ target_include_directories(runWebrtc PRIVATE
 
 
 
-#set(CMAKE_BUILD_TYPE MinSizeRel)
-set(CMAKE_BUILD_TYPE Debug)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+set(CMAKE_BUILD_TYPE MinSizeRel)
+#set(CMAKE_BUILD_TYPE Debug)
+#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
 #set(CMAKE_C_COMPILER "gcc")
 #set(CMAKE_CXX_COMPILER "g++")
 

@@ -138,7 +138,7 @@ class T31RGBA:public base::Thread
 
     bool QRCode{false};
     
-    std::string m_date;
+    std::time_t m_date;
     
     private: // internal
      

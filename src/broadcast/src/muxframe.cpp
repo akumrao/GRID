@@ -28,43 +28,43 @@ Frame::~Frame() {
 void Frame::print(std::ostream &os) const {
   os << "<Frame: timestamp="<<mstimestamp<<" stream_index="<<stream_index<<" slot="<<n_slot<<">";
 }
- 
-
-void Frame::copyMetaFrom(Frame *f) {
-  this->n_slot          =f->n_slot;
-  this->stream_index=f->stream_index;
-  this->mstimestamp     =f->mstimestamp;
-}
-
-
-std::string Frame::dumpPayload() {
-  return std::string("");
-}
-
-
-void Frame::dumpPayloadToFile(std::ofstream& fout) {
-}
-
-
+// 
+//
+//void Frame::copyMetaFrom(Frame *f) {
+//  this->n_slot          =f->n_slot;
+//  this->stream_index=f->stream_index;
+//  this->mstimestamp     =f->mstimestamp;
+//}
+//
+//
+//std::string Frame::dumpPayload() {
+//  return std::string("");
+//}
+//
+//
+//void Frame::dumpPayloadToFile(std::ofstream& fout) {
+//}
+//
+//
 void Frame::reset() {
     this->n_slot          =0;
     this->stream_index=-1;
     this->mstimestamp     =0;
 }
-
-bool Frame::isSeekable() {
-    return true;
-}
-
-
-
-void Frame::updateAux() {
-}
-
-
-
-void Frame::update() {
-}
+//
+//bool Frame::isSeekable() {
+//    return true;
+//}
+//
+//
+//
+//void Frame::updateAux() {
+//}
+//
+//
+//
+//void Frame::update() {
+//}
 
 
   
@@ -169,9 +169,9 @@ void BasicFrame::copyBuf( uint8_t* buf , unsigned size )
 
 
 
-#define dump_bytes(var) raw_writer.dump( (const char*)&var, sizeof(var));
-#define read_bytes(var) raw_reader.get((char*)&var, sizeof(var));
-
+//#define dump_bytes(var) raw_writer.dump( (const char*)&var, sizeof(var));
+//#define read_bytes(var) raw_reader.get((char*)&var, sizeof(var));
+//
 
 //// bool BasicFrame::dump(IdNumber device_id, std::fstream &os) {
 //bool BasicFrame::dump(IdNumber device_id, RaWriter& raw_writer) {
@@ -239,140 +239,140 @@ void BasicFrame::copyBuf( uint8_t* buf , unsigned size )
 
 
 
-MuxFrame::MuxFrame() : Frame(), 
-
-    meta_type(MuxMetaType::none)
-    {}
-
-
-MuxFrame::~MuxFrame() {
-}
-
-
-void MuxFrame::print(std::ostream &os) const {
-    os << "<MuxFrame: timestamp="<<mstimestamp<<" stream_index="<<stream_index<<" slot="<<n_slot<<" / ";
-    os << "fragment size="<<payload.size();
-    os << ">";
-}
-
-
-std::string MuxFrame::dumpPayload() {
-    std::stringstream tmp;
-    for(std::vector<uint8_t>::iterator it=payload.begin(); it<min(payload.end(),payload.begin()+20); ++it) {
-        tmp << int(*(it)) <<" ";
-    }
-    return tmp.str();
-}
-
-
-void MuxFrame::dumpPayloadToFile(std::ofstream& fout) {
-//    std::copy(payload.begin(), payload.end(), std::ostreambuf_iterator<char>(fout));
-}
-
-
-void MuxFrame::reset() {
-    Frame::reset();
-  //  codec_id   =AV_CODEC_ID_NONE;
-//    media_type =AVMEDIA_TYPE_UNKNOWN;
-    meta_type  =MuxMetaType::none;
-}
-
-
-void MuxFrame::reserve(std::size_t n_bytes) {
-    this->payload.reserve(n_bytes);
-    this->meta_blob.reserve(METADATA_MAX_SIZE);
-}
-
-
-void MuxFrame::resize(std::size_t n_bytes) {
-    this->payload.resize(n_bytes, 0);
-}
-
-
-
-
-
-
-
-
-/*
-AVAudioFrame::AVAudioFrame() : AVMediaFrame(), av_sample_fmt(AV_SAMPLE_FMT_NONE) {
-  mediatype=MediaType::audio;
-}
-
-
-AVAudioFrame::~AVAudioFrame() {
-}
-
-
-//frame_essentials(FrameClass::avaudio, AVAudioFrame);
-
-
-std::string AVAudioFrame::dumpPayload() {
-  return std::string("");
-}
-
-
-void AVAudioFrame::print(std::ostream& os) const {
-  os << "<AVAudioFrame: timestamp="<<mstimestamp<<" stream_index="<<stream_index<<" slot="<<n_slot<<" / ";
-  os << ">";
-}
-
-
-bool AVAudioFrame::isOK() {
-  return true;
-}
-
-
-void AVAudioFrame::getParametersDecoder(const AVCodecContext *ctx) {
-  av_media_type   = ctx->codec_type;
-  av_sample_fmt   = ctx->sample_fmt;
-  // TODO: from FFMpeg codecs to valkka codecs
-  updateParameters();
-}
-*/
-
-
-
-
-
-MarkerFrame::MarkerFrame() : Frame(), fs_start(false), fs_end(false), tm_start(false), tm_end(false) {
-}
-
-MarkerFrame::~MarkerFrame() {
-}
-
-
-void MarkerFrame::print(std::ostream& os) const {
-  os << "<MarkerFrame: timestamp="<<mstimestamp<<" stream_index="<<stream_index<<" slot="<<n_slot<<" / ";
-  if (fs_start) {
-    os << "FS_START ";
-  }
-  if (fs_end) {
-      os << "FS_END ";
-  }
-  if (tm_start) {
-      os << "TM_START ";
-  }
-  if (tm_end) {
-      os << "TM_END ";
-  }
-  os << ">";
-}
-
-
-void MarkerFrame::reset() {
-    fs_start=false;
-    fs_end=false;
-    tm_start=false;
-    tm_end=false;
-}
-    
-
-
-TextFrame::TextFrame() : Frame() {
-    
-}
+//MuxFrame::MuxFrame() : Frame(), 
+//
+//    meta_type(MuxMetaType::none)
+//    {}
+//
+//
+//MuxFrame::~MuxFrame() {
+//}
+//
+//
+//void MuxFrame::print(std::ostream &os) const {
+//    os << "<MuxFrame: timestamp="<<mstimestamp<<" stream_index="<<stream_index<<" slot="<<n_slot<<" / ";
+//    os << "fragment size="<<payload.size();
+//    os << ">";
+//}
+//
+//
+//std::string MuxFrame::dumpPayload() {
+//    std::stringstream tmp;
+//    for(std::vector<uint8_t>::iterator it=payload.begin(); it<min(payload.end(),payload.begin()+20); ++it) {
+//        tmp << int(*(it)) <<" ";
+//    }
+//    return tmp.str();
+//}
+//
+//
+//void MuxFrame::dumpPayloadToFile(std::ofstream& fout) {
+////    std::copy(payload.begin(), payload.end(), std::ostreambuf_iterator<char>(fout));
+//}
+//
+//
+//void MuxFrame::reset() {
+//    Frame::reset();
+//  //  codec_id   =AV_CODEC_ID_NONE;
+////    media_type =AVMEDIA_TYPE_UNKNOWN;
+//    meta_type  =MuxMetaType::none;
+//}
+//
+//
+//void MuxFrame::reserve(std::size_t n_bytes) {
+//    this->payload.reserve(n_bytes);
+//    this->meta_blob.reserve(METADATA_MAX_SIZE);
+//}
+//
+//
+//void MuxFrame::resize(std::size_t n_bytes) {
+//    this->payload.resize(n_bytes, 0);
+//}
+//
+//
+//
+//
+//
+//
+//
+//
+///*
+//AVAudioFrame::AVAudioFrame() : AVMediaFrame(), av_sample_fmt(AV_SAMPLE_FMT_NONE) {
+//  mediatype=MediaType::audio;
+//}
+//
+//
+//AVAudioFrame::~AVAudioFrame() {
+//}
+//
+//
+////frame_essentials(FrameClass::avaudio, AVAudioFrame);
+//
+//
+//std::string AVAudioFrame::dumpPayload() {
+//  return std::string("");
+//}
+//
+//
+//void AVAudioFrame::print(std::ostream& os) const {
+//  os << "<AVAudioFrame: timestamp="<<mstimestamp<<" stream_index="<<stream_index<<" slot="<<n_slot<<" / ";
+//  os << ">";
+//}
+//
+//
+//bool AVAudioFrame::isOK() {
+//  return true;
+//}
+//
+//
+//void AVAudioFrame::getParametersDecoder(const AVCodecContext *ctx) {
+//  av_media_type   = ctx->codec_type;
+//  av_sample_fmt   = ctx->sample_fmt;
+//  // TODO: from FFMpeg codecs to valkka codecs
+//  updateParameters();
+//}
+//*/
+//
+//
+//
+//
+//
+//MarkerFrame::MarkerFrame() : Frame(), fs_start(false), fs_end(false), tm_start(false), tm_end(false) {
+//}
+//
+//MarkerFrame::~MarkerFrame() {
+//}
+//
+//
+//void MarkerFrame::print(std::ostream& os) const {
+//  os << "<MarkerFrame: timestamp="<<mstimestamp<<" stream_index="<<stream_index<<" slot="<<n_slot<<" / ";
+//  if (fs_start) {
+//    os << "FS_START ";
+//  }
+//  if (fs_end) {
+//      os << "FS_END ";
+//  }
+//  if (tm_start) {
+//      os << "TM_START ";
+//  }
+//  if (tm_end) {
+//      os << "TM_END ";
+//  }
+//  os << ">";
+//}
+//
+//
+//void MarkerFrame::reset() {
+//    fs_start=false;
+//    fs_end=false;
+//    tm_start=false;
+//    tm_end=false;
+//}
+//    
+//
+//
+//TextFrame::TextFrame() : Frame() {
+//    
+//}
     
 }
 }

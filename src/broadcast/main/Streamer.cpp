@@ -141,15 +141,7 @@ int main(int argc, char** argv) {
     //Logger::instance().add(new FileChannel("mediaserver","/var/log/mediaserver", Level::Info));
    // Logger::instance().setWriter(new AsyncLogWriter);
 
-    if (!base::fs::exists("/mnt/OTA"))
-    {
-        base::fs::mkdir("/mnt/OTA");
-    }
-    
-    if (!base::fs::exists("/mnt/log"))
-    {
-        base::fs::mkdir("/mnt/log");
-    }
+
 
 
     
@@ -187,19 +179,29 @@ int main(int argc, char** argv) {
 //        std::cout << "Could not parse config file";
 //    }
             
-    Settings::init();
+//    Settings::init();
     
     try {
         Settings::SetConfiguration(config.root);
     } catch (const std::exception& error) {
 
-       Settings::exit();
+     //  Settings::exit();
         std::_Exit(-1);
     } 
     
     if (!base::fs::exists(Settings::configuration.storage))
     {
         base::fs::mkdir(Settings::configuration.storage);
+    }
+    
+    if (!base::fs::exists(Settings::configuration.OTA))
+    {
+        base::fs::mkdir(Settings::configuration.OTA);
+    }
+    
+    if (!base::fs::exists(Settings::configuration.log))
+    {
+        base::fs::mkdir(Settings::configuration.log);
     }
 
     
@@ -283,7 +285,7 @@ int main(int argc, char** argv) {
    {
 
     LTrace("app.run() is over")
-    Settings::exit();         
+//    Settings::exit();         
     rtc::CleanupSSL();
     Logger::destroy();
     

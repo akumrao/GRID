@@ -81,33 +81,33 @@ enum class TimeCorrectionType
  * @ingroup frames_tag
  */
 
-static const int METADATA_MAX_SIZE = 10*1024; // 10 kB
+//static const int METADATA_MAX_SIZE = 10*1024; // 10 kB
+//
+//enum class MuxMetaType
+//{
+//    none, ///< unknown
+//    fragmp4
+//};
 
-enum class MuxMetaType
-{
-    none, ///< unknown
-    fragmp4
-};
+//struct FragMP4Meta {                                  
+//    FragMP4Meta() : is_first(false),                   
+//    size(0), slot(0), mstimestamp(0) {}               
+//    char name[4];                                     
+//    bool is_first;                                    
+//    std::size_t size; ///< Actual size copied         
+//    SlotNumber slot;                                  
+//    long int mstimestamp;
+//};    
 
-struct FragMP4Meta {                                  
-    FragMP4Meta() : is_first(false),                   
-    size(0), slot(0), mstimestamp(0) {}               
-    char name[4];                                     
-    bool is_first;                                    
-    std::size_t size; ///< Actual size copied         
-    SlotNumber slot;                                  
-    long int mstimestamp;
-};    
-
-enum class AbstractFileState
-{
-    none,
-    error,
-    seek, // seek start
-    stop, // stream stopped
-    play  // stream is playing
-};
-
+//enum class AbstractFileState
+//{
+//    none,
+//    error,
+//    seek, // seek start
+//    stop, // stream stopped
+//    play  // stream is playing
+//};
+//
 class Frame
 {
 
@@ -121,15 +121,15 @@ public:
 
 public:                                                  // redefined virtual
     virtual void print(std::ostream &os) const;          ///< Produces frame output
-    virtual std::string dumpPayload();                   ///< Dumps internal payload data
-    virtual void dumpPayloadToFile(std::ofstream &fout); ///< Dumps internal payload data into a file
-    virtual void updateAux();                        ///< Update internal auxiliary state variables
-    virtual void update();                           ///< Update helper points (call always)
+    //virtual std::string dumpPayload();                   ///< Dumps internal payload data
+   // virtual void dumpPayloadToFile(std::ofstream &fout); ///< Dumps internal payload data into a file
+    //virtual void updateAux();                        ///< Update internal auxiliary state variables
+    //virtual void update();                           ///< Update helper points (call always)
     virtual void reset();                                ///< Reset the internal data
-    virtual bool isSeekable();                           ///< Can we seek to this frame? (e.g. is it a key-frame .. for H264 sps packets are used as seek markers)
+  //  virtual bool isSeekable();                           ///< Can we seek to this frame? (e.g. is it a key-frame .. for H264 sps packets are used as seek markers)
 
 public:
-    void copyMetaFrom(Frame *f); ///< Copy metadata (slot, subsession index, timestamp) to this frame
+  //  void copyMetaFrom(Frame *f); ///< Copy metadata (slot, subsession index, timestamp) to this frame
 
 protected:
     FrameClass frameclass; ///< Declares frametype for correct typecast.  Used by Frame::getFrameClass()
@@ -238,53 +238,53 @@ public:                                                  // frame serialization
  * peek into payload ..
  * .. or these are set at the ctor? (discovered by the ffmpex muxer demangling)
  */
-class MuxFrame : public Frame {
-
-public:
-    MuxFrame(); ///< Default ctor
-    virtual ~MuxFrame(); ///< Default virtual dtor
-    //frame_essentials(FrameClass::mux, MuxFrame);
-    //frame_essentials(FrameClass::mux, MuxFrame);
-        
-public: // redefined virtual
-    virtual void print(std::ostream& os) const;             ///< Produces frame output
-    virtual std::string dumpPayload();                      ///< Dumps internal payload data
-    virtual void dumpPayloadToFile(std::ofstream& fout);    ///< Dumps internal payload data into a file
-    virtual void reset();                                   ///< Reset the internal data
-    //virtual bool isSeekable();                              ///< Can we seek to this frame? 
-    virtual std::string type(){return "MuxFrame";}
-/*
-public:
-    virtual bool isInit();  ///< for frag-MP4: ftyp, moov
-    virtual bool isMeta();  ///< for frag-MP4: moof
-    ///< otherwise its payload
-*/
-
-public:                                // payload handling
-    void reserve(std::size_t n_bytes); ///< Reserve space for internal payload
-    void resize(std::size_t n_bytes);  ///< Init space for internal payload
-
-public:
-    std::vector<uint8_t> payload; ///< Raw payload data (use .data() to get the pointer from std::vector)
- //   AVMediaType media_type;       ///< Type of the media (video/audio) of the underlying elementary stream
-//    AVCodecID codec_id;           ///< AVCodeCID of the underlying elementary stream
-
-public:
-    std::vector<uint8_t> meta_blob; ///< Byte blob that is casted to correct metadata struct
-    MuxMetaType          meta_type; ///< Mux type that mandates how meta_blob is casted
-    int frametype;   // 1 ftype, 2 moov , 3 first moof & mdat ( for idr frame), 4  moof & mdat ( for P or B frames) cane be dropped 
-    int fps{0};
-    
-};
-
-
-enum class SetupFrameType
-{
-    none,
-    stream_init,
-    stream_state
-};
-
+//class MuxFrame : public Frame {
+//
+//public:
+//    MuxFrame(); ///< Default ctor
+//    virtual ~MuxFrame(); ///< Default virtual dtor
+//    //frame_essentials(FrameClass::mux, MuxFrame);
+//    //frame_essentials(FrameClass::mux, MuxFrame);
+//        
+//public: // redefined virtual
+//    virtual void print(std::ostream& os) const;             ///< Produces frame output
+//    virtual std::string dumpPayload();                      ///< Dumps internal payload data
+//    virtual void dumpPayloadToFile(std::ofstream& fout);    ///< Dumps internal payload data into a file
+//    virtual void reset();                                   ///< Reset the internal data
+//    //virtual bool isSeekable();                              ///< Can we seek to this frame? 
+//    virtual std::string type(){return "MuxFrame";}
+///*
+//public:
+//    virtual bool isInit();  ///< for frag-MP4: ftyp, moov
+//    virtual bool isMeta();  ///< for frag-MP4: moof
+//    ///< otherwise its payload
+//*/
+//
+//public:                                // payload handling
+//    void reserve(std::size_t n_bytes); ///< Reserve space for internal payload
+//    void resize(std::size_t n_bytes);  ///< Init space for internal payload
+//
+//public:
+//    std::vector<uint8_t> payload; ///< Raw payload data (use .data() to get the pointer from std::vector)
+// //   AVMediaType media_type;       ///< Type of the media (video/audio) of the underlying elementary stream
+////    AVCodecID codec_id;           ///< AVCodeCID of the underlying elementary stream
+//
+//public:
+//    std::vector<uint8_t> meta_blob; ///< Byte blob that is casted to correct metadata struct
+//    MuxMetaType          meta_type; ///< Mux type that mandates how meta_blob is casted
+//    int frametype;   // 1 ftype, 2 moov , 3 first moof & mdat ( for idr frame), 4  moof & mdat ( for P or B frames) cane be dropped 
+//    int fps{0};
+//    
+//};
+//
+//
+//enum class SetupFrameType
+//{
+//    none,
+//    stream_init,
+//    stream_state
+//};
+//
 
 
 
@@ -332,34 +332,34 @@ public: // helper objects
 };
 */
 
-class MarkerFrame : public Frame
-{
-
-public:
-    MarkerFrame();          ///< Default ctor
-    virtual ~MarkerFrame(); ///< Default virtual dtor
-    //frame_essentials(FrameClass::marker, MarkerFrame);
-    ////frame_essentials(FrameClass::marker, MarkerFrame);
-    
-    virtual std::string type(){return "MarkerFrame";}
-
-public: // redefined virtual
-    // virtual std::string dumpPayload();
-    virtual void print(std::ostream &os) const; ///< How to print this frame to output stream
-    virtual void reset();
-
-public:
-    bool fs_start, fs_end; ///< Filesystem start / end  // this controlled better at the python level
-    bool tm_start, tm_end; ///< Transmission start / end
-};
-
-
-enum FRAMETYPE{
-    
-    BINARY =1,
-    TEXT=0,
-    TEXTDEL=2 // 
-};
+//class MarkerFrame : public Frame
+//{
+//
+//public:
+//    MarkerFrame();          ///< Default ctor
+//    virtual ~MarkerFrame(); ///< Default virtual dtor
+//    //frame_essentials(FrameClass::marker, MarkerFrame);
+//    ////frame_essentials(FrameClass::marker, MarkerFrame);
+//    
+//    virtual std::string type(){return "MarkerFrame";}
+//
+//public: // redefined virtual
+//    // virtual std::string dumpPayload();
+//    virtual void print(std::ostream &os) const; ///< How to print this frame to output stream
+//    virtual void reset();
+//
+//public:
+//    bool fs_start, fs_end; ///< Filesystem start / end  // this controlled better at the python level
+//    bool tm_start, tm_end; ///< Transmission start / end
+//};
+//
+//
+//enum FRAMETYPE{
+//    
+//    BINARY =1,
+//    TEXT=0,
+//    TEXTDEL=2 // 
+//};
 
 
 
@@ -369,19 +369,19 @@ enum FRAMETYPE{
  * 
  * @ingroup frames_tag
  */
-class TextFrame : public Frame
-{
-
-public:
-    TextFrame();          ///< Default ctor
-    virtual ~TextFrame(){}; ///< Default virtual dtor
-    
-public:                                                
-    std::string txt;
-    
-    FRAMETYPE frameType{FRAMETYPE::TEXT};
-    
-};
+//class TextFrame : public Frame
+//{
+//
+//public:
+//    TextFrame();          ///< Default ctor
+//    virtual ~TextFrame(){}; ///< Default virtual dtor
+//    
+//public:                                                
+//    std::string txt;
+//    
+//    FRAMETYPE frameType{FRAMETYPE::TEXT};
+//    
+//};
 
 }}
 #endif

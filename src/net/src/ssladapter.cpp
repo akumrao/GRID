@@ -21,7 +21,7 @@
 #include <vector>
 //#include "Settings.h" // not possible, always you have to have to hardcode the path
 
-#define FROMFILE 1
+//#define FROMFILE 1
 
 using namespace std;
 

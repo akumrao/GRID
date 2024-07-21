@@ -495,8 +495,8 @@ void T31RGBA::run() {
     
     
       Timestamp ts;
-      Timestamp::TimeVal time = ts.epochMicroseconds();
-      int milli = int(time % 1000000) / 1000;
+      //Timestamp::TimeVal time = ts.epochMicroseconds();
+    //  int milli = int(time % 1000000) / 1000;
 
       std::time_t time1 = ts.epochTime();
       struct std::tm* tms = std::localtime(&time1);
@@ -966,8 +966,8 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
                                   std::string str = event["registrationImage"].get<std::string>();
 
                                   Timestamp ts;
-                                  Timestamp::TimeVal time = ts.epochMicroseconds();
-                                  int milli = int(time % 1000000) / 1000;
+                                 // Timestamp::TimeVal time = ts.epochMicroseconds();
+                                  //int milli = int(time % 1000000) / 1000;
 
                                   std::time_t time1 = ts.epochTime();
                                   struct std::tm* tms = std::localtime(&time1);
@@ -975,13 +975,13 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
                                   char date[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
                                   int len = std::strftime(date, sizeof (date), "%Y-%m-%d-%H-%M-%S", tms);
                                  
-                                  m_date = date;
+                                  m_date = time1;
 
                                   json m;
                                   
                                   m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
                                   m["messagePayload"] =  event;
-                                  m["ts"] =  m_date;
+                                  m["ts"] =  date;
                                   m["camid"] = ctx->cam;
                                   ctx->signaler->postAppMessage( m);
                                   RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
@@ -998,8 +998,8 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
                                   #else  
 
                                   Timestamp ts;
-                                  Timestamp::TimeVal time = ts.epochMicroseconds();
-                                  int milli = int(time % 1000000) / 1000;
+                                  //Timestamp::TimeVal time = ts.epochMicroseconds();
+                                  //int milli = int(time % 1000000) / 1000;
 
                                   std::time_t time1 = ts.epochTime();
                                   struct std::tm* tms = std::localtime(&time1);
@@ -1007,14 +1007,14 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
                                   char date[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
                                   int len = std::strftime(date, sizeof (date), "%Y-%m-%d-%H-%M-%S", tms);
                                  
-                                  m_date = date;
+                                  m_date = time1;
 
                                   json m;
                                  
                                   m["messageType"] = "IDENTITY_RECOGNIZED";
                                   m["messagePayload"] =  event;
                                   m["camid"] = ctx->cam;
-                                  m["ts"] =  m_date;
+                                  m["ts"] =  date;
                                   ctx->signaler->postAppMessage( m);
 
                                   RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
