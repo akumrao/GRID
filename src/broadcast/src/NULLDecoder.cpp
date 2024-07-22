@@ -455,7 +455,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
                     //char lwdates[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
                     //len = std::strftime(lwdates, sizeof (lwdates), "%Y-%m-%d", tms);
            
-                    for (json::iterator itDate = mf.root.begin(); itDate != mf.root.end(); ++itDate) 
+                    for (json::iterator itDate = mf.root.begin(); itDate != mf.root.end(); ) 
                     {
                         struct tm timeinfo= {};
                         std::string lwdates = itDate.key() ;
@@ -485,8 +485,11 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
                                 //remove_directory(tmp.c_str());
                             }
 
-                            mf.root.erase(lwdates);
+                           
+                            itDate = mf.root.erase(itDate);
                         }
+                        else
+                          ++itDate  ;
                     }
                     
                 }

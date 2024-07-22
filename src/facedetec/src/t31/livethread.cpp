@@ -293,8 +293,6 @@ static int scan_image(unsigned char *blob, int width, int height)
         {     
             json m;
 
-            m["dtlsCertificateFile"] = "/mnt/key/certificate.crt";
-            m["dtlsPrivateKeyFile"] =  "/mnt/key/private_key.pem";
             m["storage"]= "/mnt/pvi-storage/";
             m["qrcode"] = root["i"].get<std::string>();
             m["server"] =  "ipcamera.adapptonline.com";
@@ -303,13 +301,13 @@ static int scan_image(unsigned char *blob, int width, int height)
             m["cloud"] =  false;
             m["facedetect"]  =  true;
             m["motionevent"] =  true;
-            m["cam_reconnect"] =  0;
-            m["authtimeout"] =  3600;
-            m["Mp4Size_Key"] =  40;
-            m["SegSize_key"] =  5;
+            m["OTA"] = "/mnt/OTA/";
+            m["log"] = "/var/log/";
+            m["recordsize"] =  250;
             m["logLevel"] = "info";
 
-            base::cnfg::saveFile("/mnt/config.js", m );
+
+            base::cnfg::saveFile("./config.js", m );
         
             blueLed();
 
