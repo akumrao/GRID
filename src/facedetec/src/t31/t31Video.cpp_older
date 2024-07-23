@@ -690,7 +690,7 @@ int T31Video::XAInit()
     xa_fi_error_t returnValue;
 
     const char* path_to_vision_cell =
-        "/mnt/libxailient-fi-vcell.so";                    // For shared lib
+        "./libxailient-fi-vcell.so";                    // For shared lib
     returnValue = xa_sdk_initialize(path_to_vision_cell);  // For shared lib
 
     // returnValue = xa_sdk_initialize(); // For static lib
