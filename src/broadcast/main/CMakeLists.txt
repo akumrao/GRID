@@ -414,9 +414,19 @@ target_include_directories(runWebrtc PRIVATE
 
 
 
+if (${ANDROID_ABI} STREQUAL "x86_64")
+
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+
+else(${ANDROID_ABI} STREQUAL "mipsel")
+ 
 set(CMAKE_BUILD_TYPE MinSizeRel)
-#set(CMAKE_BUILD_TYPE Debug)
-#set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+
+endif()
+
+
+
 #set(CMAKE_C_COMPILER "gcc")
 #set(CMAKE_CXX_COMPILER "g++")
 

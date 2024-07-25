@@ -669,14 +669,6 @@ function recordlist(data)
 {
 
 
-   console.log('first: %o', data);
-
-   var list = document.getElementById('myUL');
-
-   while (list.firstChild) {
-    list.removeChild(list.firstChild);
-   }
-
 
    for( var i=0; i < data.length ; ++ i )
    {
@@ -922,6 +914,17 @@ function setSD() {
 
 
 function showRecording() {
+
+
+
+  //console.log('first: %o', data);
+
+  var list = document.getElementById('myUL');
+
+  while (list.firstChild) {
+    list.removeChild(list.firstChild);
+   }
+
 
   var startime = "starttime:" + document.getElementById("txtshowRec").value;
   channelSnd.send(startime);
