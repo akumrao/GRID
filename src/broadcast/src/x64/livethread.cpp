@@ -45,7 +45,7 @@ void RestAPI(std::string method, std::string ip, std::string uri,json &m)
 
     conn->fnConnect = [&, sendMe](HttpBase * con) {
         
-        SInfo << sendMe.length();
+       // SInfo << sendMe.length();
         
         con->send( sendMe.c_str(), sendMe.length(), false);
         

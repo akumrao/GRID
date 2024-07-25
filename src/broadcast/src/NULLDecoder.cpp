@@ -410,9 +410,10 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
             
             if(  recframeCount > 1  )
             {
-                if( recframeCount > 2500)
+                if( recframeCount > Settings::configuration.recordsize + 500)
                 {
                      recframeCount = -1;  
+                     // SInfo << " recframeCount " << recframeCount;
                     
                 }
                 else if( recframeCount >=  Settings::configuration.recordsize)
@@ -420,6 +421,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
                     
                    if(recframeCount++ ==  Settings::configuration.recordsize)
                    {
+                        //  SInfo << " Saved " << recframeCount;
                         mf.save();
                        // recordingTime(ctx);
                    }
@@ -499,6 +501,7 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
                     m_pathDate = Settings::configuration.storage + m_dateTime  ;
                     if (!base::fs::exists(m_pathDate ))
                     {
+                       SInfo <<  m_pathDate;
                        mkdir(m_pathDate.c_str(),0777);
                     }
                     
