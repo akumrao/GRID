@@ -398,10 +398,6 @@ int parse_nal(  unsigned char **nal, int &length , int & payload_type, int &size
             {
                // SInfo << " index.start_offset " << index.start_offset  << " size " << index.payload_size + index.payload_start_offset - index.start_offset;
                 
-                if(recording)
-                {
-                    int x = 0;
-                }
                 
                 Store *store = new Store(buffer, size, width, height, vframecount, idr);
                 qframe->push(store);
