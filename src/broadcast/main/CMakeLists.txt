@@ -31,8 +31,8 @@ set(arm_PLATFORM_CC_FILTER ".*fir_filter_neon.cc|.*sinc_resampler_neon.cc|.*cros
 
 
 
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -g")
-set(CMAKE_CXX_STANDARD 11)
+#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -g")
+set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 #set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -77,53 +77,35 @@ target_include_directories(runWebrtc PRIVATE   ${INC} ../../signal/include ../..
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
  
-target_include_directories(runWebrtc PRIVATE  ${INC} ../../signal/include ../../facedetec/include/ ../../facedetec/include/t31/  ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include   ../include/x64    ../include/t31 ../../facedetec/xailient-sdk/include/ ${T31SDK}/include ${T31SDK}/samples/libimp-sample/)
+target_include_directories(runWebrtc PRIVATE  ${INC} ../../signal/include ../../facedetec/include/ ../../facedetec/include/t31/  ${SSL_ROOT}/include  ../include  ../../http/include/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../webrtc/include   ../include/x64    ../include/t31 ../../facedetec/xailient-sdk-HD/xailient-sdk-2.1.0.2024/include/ ${T31SDK}/include ${T31SDK}/samples/libimp-sample/ ${JZDL_SDK_FOLDER_INC})
 
 endif()
 
 
 
 
-
 #target_compile_options(runWebrtc PRIVATE -Wno-return-type -Wno-format-overflow -Wno-format -Wno-unused-but-set-variable -Wno-write-strings -no-pie)
-target_compile_features(runWebrtc PRIVATE cxx_std_11)
+target_compile_features(runWebrtc PRIVATE cxx_std_14)
 
-target_link_directories(runWebrtc PRIVATE  ../../facedetec/xailient-sdk/lib  ${T31SDK}/lib ${INSTALLPATH}/mips-linux-gnu/lib)
+target_link_directories(runWebrtc PRIVATE  ../../facedetec/xailient-sdk-HD/xailient-sdk-2.1.0.2024/lib  ${T31SDK}/lib ${INSTALLPATH}/mips-linux-gnu/lib  /workspace/magik-toolkit/InferenceKit/jzdl/5.4.0/lib/uclibc ${JZDL_SDK_FOLDER_LIB})
 
 
 add_subdirectory( webrtc/third_party)
-
 
 
 if (${ANDROID_ABI} STREQUAL "x86_64")
 
 target_link_libraries(runWebrtc PRIVATE  rnnoise
     srtp   usrsctp  event    absl::optional    absl::variant    absl::strings
-    pffft pthread m dl z  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  )
+    pffft pthread m dl z  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a xailientsdk xailientsdkutils  )
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
  
 target_link_libraries(runWebrtc PRIVATE  rnnoise
     srtp   usrsctp  event  absl::optional  absl::variant   absl::strings 
-    pffft xailient-fi  rt m dl -pthread atomic  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a  /workspace/MagicAI/src/qrcode/rgbQr/zbar.a)
+    pffft  rt m dl -pthread atomic  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a  /workspace/MagicAI/src/qrcode/rgbQr/zbar.a xailientsdk xailientsdkutils jzdl.m )
 
 endif()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -137,7 +119,6 @@ set(CMAKE_CXX_COMPILER_WORKS 1)
 #SET(ANDROID_ABI "mipsel")
 
 # Use C++11
-set(CMAKE_CXX_STANDARD 11)
 # Require (at least) it
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Don't use e.g. GNU extension (like -std=gnu++11) for portability
@@ -426,22 +407,9 @@ set(CMAKE_BUILD_TYPE MinSizeRel)
 endif()
 
 
-
-#set(CMAKE_C_COMPILER "gcc")
-#set(CMAKE_CXX_COMPILER "g++")
-
-
 if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
     target_compile_options(runWebrtc PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections -fpermissive -DNDEBUG)
 else()
 target_compile_options(runWebrtc PRIVATE -fpermissive -DNDEBUG)
 endif()
-
-
-
-
-
-
-
-
 

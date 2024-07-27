@@ -35,7 +35,8 @@ struct Settings::Configuration Settings::configuration;
 #include "Settings.h"
 #endif
 
-#include <xailient-fi/sdk_json_interface.h>
+#include <xa-sdk/xa_object_detection_sdk.hpp>
+#include <xa-sdk/xa_image_file_reader.hpp>
 
 
 #include "base/logger.h"
@@ -437,7 +438,7 @@ void RestAPI(std::string method, std::string ip, std::string uri,json &m)
 
     conn->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
 
-        std::cout << "client->fnPayload " << data << std::endl << std::flush;
+       // std::cout << "client->fnPayload " << data << std::endl << std::flush;
     };
 
     conn->fnUpdateProgess = [&](const std::string str) {
@@ -473,10 +474,6 @@ void T31RGBA::run() {
     if(!QRCode)
     {
 
-      
-      XA_addGallery();
-    
-    
 
      #if(DUMPFILE)
 
@@ -559,61 +556,6 @@ void T31RGBA::run() {
              }
 
              
-
-            // fwrite((void *)frame->virAddr, frame->size, 1, fp);
-            // fclose(fp);
-
-            
-            // unsigned char *  bgrBuf = rgba_to_rgb_brg( (const unsigned char*) frame->virAddr , frame->size, bitmap_buffer_format_BGR , 0, frame->width , frame->height , &p_output_size1 );
-            // write_bmp(bgrBuf, frame->width , frame->height, "/tmp/snap.bmp"  );
-            // free(bgrBuf) ;
-
-
-             // STrace << " new  try end";
-        
-
-             //            //  #if(DUMPFILE)
-
-             //  std::ifstream f("./arvind.rgba"); //taking file as inputstream
-             //  std::string str;
-             //  if(f) {
-             //     std::stringstream ss;
-             //     ss << f.rdbuf(); // reading data
-             //     str = ss.str();
-             //  }
-             //  else
-             //  {
-             //      SError << " rgba file does not exist ";
-             //      return -1;
-             //  }
-
-                
-                      
-            //   unsigned long  width = 640;
-            //   unsigned long  height = 360;
-            //   size_t  p_output_size = 0;
-              
-                
-            //   //unsigned char *  bgrBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_BGR , 0, width , height , &p_output_size );
-            //   //write_bmp(bgrBuf, width, height, "arvind.bmp"  );
-            //   //free(bgrBuf) ;
-              
-            //   unsigned char *  rgbBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0, width , height , &p_output_size );
-
-  
-            //  for( int x = 0; x < 100; ++x)
-            //  {
-            //      XAProcess( rgbBuf , width, height );
-
-            //      base::sleep(100);
-
-            //      STrace << " new  try " << x ; 
-            //  }
-              
-
-            
-            // free(rgbBuf) ;
-          
             
         }
 
@@ -663,390 +605,86 @@ void T31RGBA::onMessage(json &jsonMsg )
  
    SInfo << " onMessage "  << rjson.dump();
 
-   std::string  jpegBuffBase64= jsonMsg["registrationImage"].get<std::string>();
+   //std::string  jpegBuffBase64= jsonMsg["registrationImage"].get<std::string>();
 
-   XA_addGallery(jpegBuffBase64, rjson);
+   //XA_addGallery(jpegBuffBase64, rjson);
 
 }
          
 
 
-int T31RGBA::XA_addGallery()
-{
-    const char * galleryIdentityManifest;
-    const xa_sdk_identity_images_t * remaining_identity_image_pairs;
-    const char * updated_json_identities;
-    xa_fi_error_t returnValue;
-
-
-    cnfg::Configuration identity;
-
-    identity.load("./updated_json_identities.json");
-
-
-    //if (< a new gallery manifest exists >) 
-    if (identity.loaded()) 
-    {
-          std::string xaidentity = identity.root.dump();
-
-          galleryIdentityManifest = xaidentity.c_str();
-
-          // Step 1
-          returnValue = xa_sdk_update_identities(galleryIdentityManifest,
-          &remaining_identity_image_pairs,
-          &updated_json_identities);
-          if (returnValue == XA_ERR_NONE) {
-              //< persist updated_json_identities >
-              SInfo << "xa_sdk_update_identities passed";      
-           }
-           else {
-              SError << "xa_sdk_update_identities fails";
-
-              return -1;
-         }
-    
-
-     int totalIdentity = remaining_identity_image_pairs->number_of_remaining_images;
-    // Step 2 / Step 4
-      if ((returnValue == XA_ERR_NONE) && (remaining_identity_image_pairs->number_of_remaining_images > 0)) 
-      {
-         SError << "xa_sdk_update_identities fails";
-      }
-
-    }
-
-}
-    
-
-int T31RGBA::XA_addGallery(std::string jpegBuffBase64 , json & newidentity)
-{
-
-    ready_flag = 0;
-
-    
-    cnfg::Configuration identity;
-
-    identity.load("./updated_json_identities.json");
-
-    std::string sGal;
-
-    if (identity.loaded()) 
-    {
-        //std::string xaidentity = identity.root.dump();
-      
-        if( identity.root.find("configuredGalleryIdentities") != identity.root.end())
-        {
-        
-            if( newidentity.find("configuredGalleryIdentities") != newidentity.end())
-            {
-
-
-                for (json::iterator it = newidentity["configuredGalleryIdentities"].begin(); it != newidentity["configuredGalleryIdentities"] .end(); ++it) {
-
-
-                    std::cout << it.key() << " : " << it.value() << "\n";
-
-                    if(  (identity.root.find("sequenceNum") != identity.root.end()) && ( identity.root["configuredGalleryIdentities"].find(it.key()) ==  identity.root["configuredGalleryIdentities"].end()       ))
-                    {
-                        identity.root["sequenceNum"] = identity.root["sequenceNum"].get<int>() + 1;
-                    }    
-
-                    identity.root["configuredGalleryIdentities"][it.key()] = it.value();
-
-                }
-
-            }
-                
-        }
-        
-          sGal=  identity.root.dump();
-    }
-    else
-    {
-         sGal=  newidentity.dump();
-    }
-    
-    
-    const char * galleryIdentityManifest = sGal.c_str();
-    const xa_sdk_identity_images_t * remaining_identity_image_pairs;
-    const char * updated_json_identities;
-    xa_fi_error_t returnValue;
-    
-    SInfo << "jpegBuffBase64 " << jpegBuffBase64.size() << " identity " <<  sGal ;
-    
-    std::string out;
-    //  base64::Decoder dec;
-    //  dec.decode(jpegBuffBase64, out);
-
-    out = base64_decode(jpegBuffBase64);
-
-    SInfo << "base64 decoded " << out.size() ;
-
-    int width, height , channels;
-
-    //  if(!stbi_info_from_memory(out, jpegBuffBase64.size(), &width, &height, &channels)) return -1;
-    //
-
-    //  /* exit if the image is larger than ~80MB */
-    //  if(width && height > (80000000 / 4) / height) return -1;
-
-    unsigned char *img = stbi_load_from_memory(out.c_str(), out.size(), &width, &height, &channels, 3);
-
-    SInfo << "wx: " << width  << " he: " << height <<  " ch: " << channels;
-
-
-
-
-    //if (< a new gallery manifest exists >) 
-    {    
-   
-        // Step 1
-        returnValue = xa_sdk_update_identities(galleryIdentityManifest,
-        &remaining_identity_image_pairs,
-        &updated_json_identities);
-        if (returnValue == XA_ERR_NONE) {
-            //< persist updated_json_identities >
-            SInfo << "xa_sdk_update_identities passed";      
-
-         }
-         else {
-            SError << "xa_sdk_update_identities fails";
-            free(img);
-            return -1;
-       }
-    }
-
-    int totalIdentity = remaining_identity_image_pairs->number_of_remaining_images;
-    // Step 2 / Step 4
-    while ((returnValue == XA_ERR_NONE) && (remaining_identity_image_pairs->number_of_remaining_images > 0)) 
-    {
-
-        int index = totalIdentity - remaining_identity_image_pairs->number_of_remaining_images;
-
-        SInfo << "IdentityIndex:" << index  << " totalIndenty:" << totalIdentity;
-
-        xa_fi_image_t image;
-        image.width = width;
-        image.height = height;
-        image.pixel_format =  XA_FI_COLOR_RGB888;  // signifies the buffer data format
-        image.buff = img;
-
-
-        //< acquire the image for remaining_identity_image_pairs->identity_images[0] >
-       // xa_fi_image_t image = < convert the acquired image to xa_fi_image_t - see fi_image.h >
-
-        // Step 3
-        returnValue = xa_sdk_add_identity_image(remaining_identity_image_pairs->identity_images[index].identity_id,
-        remaining_identity_image_pairs->identity_images[index].image_id,
-        &image,
-        &remaining_identity_image_pairs,
-        &updated_json_identities);
-
-        // Step 5 - persist after each image to avoid needing to download them again
-         // this step could also be placed after the while loop
-         if (returnValue == XA_ERR_NONE) {
-          //< persist updated_json_identities >
-
-            json up_json_identities = json::parse(updated_json_identities); 
-
-            base::cnfg::saveFile("./updated_json_identities.json", up_json_identities );
-
-            SInfo << "remaining_identity_image_pairs passed: " << remaining_identity_image_pairs->identity_images[0].identity_id;
-        }
-        else 
-        {
-            SError << "remaining_identity_image_pairs fails " << remaining_identity_image_pairs->identity_images[0].identity_id;
-
-            free(img);
-            return -1;
-
-        }
-    }
-
-    const char * deviceCheckinJson = xa_sdk_get_device_checkin_json();
-
-    SInfo << "deviceCheckinJson:" << deviceCheckinJson;
-
-    SInfo << "sleep for 10 secs ";
-
-    base::sleep(10000);
-    free(img);
-
-
-
-      //XA_addGallery(event["registrationImage"].get<std::string>()) ;
-    uint8_t* tmpBuf = new uint8_t [width*3*height];
-    memset(tmpBuf, 0, width*3*height);
-    XAProcess( tmpBuf , width, height );
-    delete [] tmpBuf;
-
-     ready_flag = 1;
-
-    //< perform a deviceCheckin with the deviceCheckinJson >
-
-}
 
 int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  )
 {
-    
-    xa_fi_image_t image;
-    image.width = w;
-    image.height = h;
-
-    image.pixel_format =   XA_FI_COLOR_RGB888;  // signifies the buffer data format
 
 
-    image.buff =  buffer_containing_raw_rgb_data;  // note this is in RGB order, otherwise
-                                         // colors will be swapped
-
-    xa_fi_error_t returnValue;
-
-    xa_sdk_process_image_outputs* process_image_outputs;
-
-    if (1) {
-        returnValue = xa_sdk_process_image(&image, &process_image_outputs);
-
-        if (returnValue == XA_ERR_NONE) {
-            for (int index = 0;
-                 index < process_image_outputs->number_of_json_blobs; ++index) {
-                xa_sdk_json_blob_t blob = process_image_outputs->blobs[index];
-
-                if (blob.blob_descriptor == XA_FACE_TRACK_EVENT) {
-                    //<
-                    // send blob -> json to Face Track Event endpoint >
-
-                    json event = json::parse(blob.json); 
-
-                    SInfo << "json to Face Track Event endpoint";
-
-                    //std::string path = "./event.json";
-                    //base::cnfg::saveFile(path, event );
-
-                    if(  (event.find("eventType") != event.end()) )
-                    {
-
-                        if(  event.find("registrationImage") != event.end()) 
-                        {
-
-                            if(event["eventType"].get<std::string>() ==  "IDENTITY_NOT_IN_GALLERY")
-                            {
-
-                              SInfo << "IDENTITY_NOT_IN_GALLERY";
-
-                          
-                              #if DUMPFILE
-
-                                cnfg::Configuration identity;
-
-                                identity.load("./identity.json");
-                                std::string xaidentity = identity.root.dump();
-
-                                 if (identity.loaded()) 
-                                 {
-                                  
-                                   //XA_addGallery(event["registrationImage"].get<std::string>() ,xaidentity ) ;
-                                   // uint8_t* tmpBuf = new uint8_t [image.width*3*image.height];
-                                   // memset(tmpBuf, 0, image.width*3*image.height);
-                                   // XAProcess( tmpBuf , image.width, image.height );
-                                   // delete [] tmpBuf;
-                                   
-                                 }
-                                 else
-                                  SError << "./identity.json missing";
-
-                               #else
-                              //cnfg::Configuration identity;
-
-                              //identity.load("./event.json");
-                              // std::string xaidentity = identity.root.dump();
-                                  record = true;
-                              
-                                  std::string str = event["registrationImage"].get<std::string>();
-
-                                  Timestamp ts;
-                                 // Timestamp::TimeVal time = ts.epochMicroseconds();
-                                  //int milli = int(time % 1000000) / 1000;
-
-                                  std::time_t time1 = ts.epochTime();
-                                  struct std::tm* tms = std::localtime(&time1);
-
-                                  char date[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
-                                  int len = std::strftime(date, sizeof (date), "%Y-%m-%d-%H-%M-%S", tms);
-                                 
-                                  m_date = time1;
-
-                                  json m;
-                                  
-                                  m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
-                                  m["messagePayload"] =  event;
-                                  m["ts"] =  date;
-                                  m["camid"] = ctx->cam;
-                                  ctx->signaler->postAppMessage( m);
-                                  RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
-                              #endif
-                            }
-                            else if(event["eventType"].get<std::string>() ==  "IDENTITY_RECOGNIZED")
-                            {
-                                 SInfo << "IDENTITY_RECOGNIZED";
-
-                                 record = true;
-
-                                  #if DUMPFILE
-
-                                  #else  
-
-                                  Timestamp ts;
-                                  //Timestamp::TimeVal time = ts.epochMicroseconds();
-                                  //int milli = int(time % 1000000) / 1000;
-
-                                  std::time_t time1 = ts.epochTime();
-                                  struct std::tm* tms = std::localtime(&time1);
-
-                                  char date[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
-                                  int len = std::strftime(date, sizeof (date), "%Y-%m-%d-%H-%M-%S", tms);
-                                 
-                                  m_date = time1;
-
-                                  json m;
-                                 
-                                  m["messageType"] = "IDENTITY_RECOGNIZED";
-                                  m["messagePayload"] =  event;
-                                  m["camid"] = ctx->cam;
-                                  m["ts"] =  date;
-                                  ctx->signaler->postAppMessage( m);
-
-                                  RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
-
-                                  #endif  
-                            }
-
-
-                        }
-                        else
-                         SError << "no registrationImage " <<  event.dump(4);  
-
-                     }
-                     else
-                     {
-                       SError << "no eventType " << event.dump(4);
-                     }
+     xailient::sdk::Image inputImage{
+        .buff = buffer_containing_raw_rgb_data,
+        .width = w,
+        .height =h
+    };
 
 
 
-                } else if (blob.blob_descriptor == XA_ACCURACY_MONITOR) {
-                    //<
-                    // send blob -> json to Accuracy Monitor endpoint >
-                    STrace << "send blob -> json to Accuracy Monitor endpoint: " <<  blob.json;
-                } else {
-                    SError << "Not a possible state";
-                }
-            }
-        } else {
-            SError << "Error at process_image_outputs";
-        }
-
-        //std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    xailient::sdk::BizcontrollerOutput inferenceOutput;
+    if (xailient::sdk::xa_sdk_process_image(inputImage, inferenceOutput) != xailient::sdk::ErrorCode::XA_ERR_NONE) {
+        SError <<  "Error processing the image" ;
+        return -3;
     }
+
+    json arr =  json::array();
+
+    unsigned int idSUM = 0; 
+ 
+    for (const auto& obj : inferenceOutput.detectedObjects) {
+        std::cout << "Detected Object ID: " << obj.id << std::endl;
+        std::cout << "Label: " << xailient::sdk::toString(obj.label) << std::endl;
+        std::cout << "Confidence: " << obj.confidence << std::endl;
+        std::cout << "BoundingBox: (" << obj.bbox.xmin << ", " << obj.bbox.ymin << ", "
+                  << obj.bbox.xmax << ", " << obj.bbox.ymax << ")" << std::endl;
+        std::cout << "-----------------------------------" << std::endl;
+
+        if(xailient::sdk::toString(obj.label) == std::string("PERSON") )
+        idSUM = idSUM + obj.id + 1 ;
+
+        json p;
+
+        p["ID"] = obj.id;
+        p["Label"] =  xailient::sdk::toString(obj.label);
+        p["Confidence"] = obj.confidence;
+        p["BoundingBox"] =  std::to_string(obj.bbox.xmin) + "_" + std::to_string(obj.bbox.ymin) + "_"  + std::to_string(obj.bbox.xmax) + "_" + std::to_string(obj.bbox.ymax);
+
+        arr.push_back(p);
+    }
+  
+
+    if(idSUM && idSUM != m_idSUM)
+    {
+      
+      m_idSUM = idSUM;
+
+
+      Timestamp ts;
+
+      std::time_t time1 = ts.epochTime();
+      struct std::tm* tms = std::localtime(&time1);
+
+      char date[100] = {'\0'}; //"%Y-%m-%d-%H-%M-%S"
+      int len = std::strftime(date, sizeof (date), "%Y-%m-%d-%H-%M-%S", tms);
+     
+      m_date = time1;
+
+      json m;
+      
+      m["messageType"] = "PERSON";
+      m["messagePayload"] =  arr;
+      m["ts"] =  date;
+      m["camid"] = ctx->cam;
+      ctx->signaler->postAppMessage( m);
+      RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
+
+    }
+   
 
 }
 
@@ -1435,26 +1073,12 @@ int LiveThread::T31Exit()
 
 
 
-
-typedef void (*xa_sdk_log_callback_function_t)(xa_fi_log_type_t log_level, const char * log_string);
-
-
-typedef void(*xa_fi_log_cb_t)(xa_fi_log_type_t, const char*);
-
-void logXaFi(xa_fi_log_type_t, const char*)
+static void
+logCallbackFunction(xailient::sdk::LogType logType, const char* msg)
 {
-
-  //printf("never gets called \n");
-
+    //std::cout << "[" << xailient::sdk::toString(logType) << "]: " << msg << "\n";
 }
 
-
-void logXa(xa_fi_log_type_t log_level, const char * log_string)
-{
-
-   //printf("arvind log testing  \n");
-
-}
 
 
 
@@ -1462,140 +1086,20 @@ void logXa(xa_fi_log_type_t log_level, const char * log_string)
 int LiveThread::XAInit()
 {
 
+  // initialize the SDK
+  xailient::sdk::SdkInitData sdkInitData{
+      .logFunction = logCallbackFunction
+  };
+  if (xailient::sdk::xa_sdk_initialize(sdkInitData) != xailient::sdk::ErrorCode::XA_ERR_NONE) {
+      std::cerr << "Error initializing the object detection sdk" << std::endl;
+      return -1;
+  }
 
-  //  #if(DUMPFILE)
-
-  //   std::ifstream f("./arvind.rgba"); //taking file as inputstream
-  //   std::string str;
-  //   if(f) {
-  //      std::stringstream ss;
-  //      ss << f.rdbuf(); // reading data
-  //      str = ss.str();
-  //   }
-  //   else
-  //   {
-  //       SError << " rgba file does not exist ";
-  //       return -1;
-  //   }
-
-    
-    
-  //  //unsigned long  p_width = 0;
-  //  //unsigned long  p_height = 0;
-  //  //size_t  p_output_size = 0;
-  //  //unsigned char *  tmp = rgbaMagic_decode( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0,  &p_width , &p_height , &p_output_size );
-   
-  //  //w=640 h=360
-           
-           
-  // unsigned long  width = 640;
-  // unsigned long  height = 360;
-  // size_t  p_output_size = 0;
-  
-    
-  // //unsigned char *  bgrBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_BGR , 0, width , height , &p_output_size );
-  // //write_bmp(bgrBuf, width, height, "arvind.bmp"  );
-  // //free(bgrBuf) ;
-  
-  // unsigned char *  rgbBuf = rgba_to_rgb_brg( (const unsigned char*) str.c_str() , str.length(), bitmap_buffer_format_RGB , 0, width , height , &p_output_size );
+  // configure the sdk, update as needed
+  auto config = xailient::sdk::xa_sdk_get_config();
+  xailient::sdk::xa_sdk_configure(config);
 
   
-  // #endif
-  
-
-    xa_sdk_log_callback_function_t log_function = &logXa;
-
-    //xa_fi_log_cb_t cb = &logXaFi;
-
-    xa_sdk_register_log_callback(log_function);
-
-   // xa_fi_set_log_callback(cb);
-
-
-
-    cnfg::Configuration config;
-
-    config.load("./configXA.json");
-
-   
-    
-    if (!config.loaded()) 
-    {
-        SError << "Could not load config";
-
-        return -1;
-    }
-     std::string xaconfig = config.root.dump();
-     
-    
-    xa_fi_error_t returnValue;
-
-    const char* path_to_vision_cell =
-        "./libxailient-fi-vcell.so";                    // For shared lib
-    returnValue = xa_sdk_initialize(path_to_vision_cell);  // For shared lib
-
-    // returnValue = xa_sdk_initialize(); // For static lib
-
-    if (returnValue != XA_ERR_NONE) {
-        SError << "Error at xa_sdk_initialize";
-
-        return -1;
-    }
-
-    const char* configuration = xaconfig.c_str();
-
-    STrace << "config json: " << configuration;
-
-    //xa_fi_set_log_callback(cb);
-   // xa_sdk_register_log_callback(log_function);
-    
-
-    // xa_sdk_update_identities
-    // xa_sdk_update_identity_image
-    returnValue = xa_sdk_configure(configuration);
-    if (returnValue != XA_ERR_NONE) {
-        SError << "Error at xa_sdk_configure";
-
-        return -1;
-    }
-
-    returnValue = xa_sdk_is_face_recognition_enabled();
-    if (returnValue != XA_ERR_NONE) {
-        SError << "Error at xa_sdk_configure";
-
-        return -1;
-    }
-
-
-    
-    
-            
-    /*
-    cnfg::Configuration event;
-    event.load("./event.json");
-
-    if( event.root.find("registrationImage") == event.root.end()) 
-    {
-       SError  << " no registrationImage found in event" ;
-
-       return -1;
-    }
-
-    XA_addGallery(event.root["registrationImage"].get<std::string>()) ;
-    */
-
-//    for( int x = 0; x < 100; ++x)
-//    {
-//        XAProcess( rgbBuf , width, height );
-//
-//        base::sleep(700);
-//    }
-    
-  // #if(DUMPFILE)
-  
-  // free(rgbBuf) ;
-  
-  // #endif
 
 
 }
@@ -1604,8 +1108,7 @@ int LiveThread::XAInit()
 int LiveThread::XAExit()
 {
 
-  xa_sdk_uninitialize();
-
+  xailient::sdk::xa_sdk_uninitialize();
 }
 
 

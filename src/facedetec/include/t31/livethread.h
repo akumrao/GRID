@@ -143,11 +143,6 @@ class T31RGBA:public base::Thread
 
     int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  );
     
-    int XA_addGallery(std::string jpegBuffBase64, json & registrationImage);
-
-
-    int XA_addGallery();
-
     void onMessage(json &msg );
 
     std::atomic<int> ready_flag {1};
@@ -157,6 +152,8 @@ class T31RGBA:public base::Thread
     bool QRCode;
 
     std::time_t m_date;
+
+    unsigned int m_idSUM{0};
 
     ~T31RGBA();
 };

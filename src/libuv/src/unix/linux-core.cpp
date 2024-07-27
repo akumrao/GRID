@@ -173,7 +173,7 @@ void uv__platform_invalidate_fd(uv_loop_t* loop, int fd) {
      */
     memset(&dummy, 0, sizeof(dummy));
     epoll_ctl(loop->backend_fd, EPOLL_CTL_DEL, fd, &dummy);
-    printf("EPOLL_CTL_DEL %d \n", fd );
+//    printf("EPOLL_CTL_DEL %d \n", fd );
   }
 }
 
@@ -194,7 +194,7 @@ int uv__io_check_fd(uv_loop_t* loop, int fd) {
 
   if (rc == 0)
   {
-      printf("EPOLL_CTL_DEL %d \n", fd );
+//      printf("EPOLL_CTL_DEL %d \n", fd );
     if (epoll_ctl(loop->backend_fd, EPOLL_CTL_DEL, fd, &e))
       abort();
   }
@@ -394,7 +394,7 @@ void uv__io_poll(uv_loop_t* loop, int timeout) {
          * Ignore all errors because we may be racing with another thread
          * when the file descriptor is closed.
          */
-        printf("EPOLL_CTL_DEL %d\n", fd );
+//        printf("EPOLL_CTL_DEL %d\n", fd );
         epoll_ctl(loop->backend_fd, EPOLL_CTL_DEL, fd, pe);
         continue;
       }

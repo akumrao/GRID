@@ -65,15 +65,22 @@ main(void)
         .height = rgbImage.height
     };
 
-    // run inference
-    xailient::sdk::BizcontrollerOutput inferenceOutput;
-    if (xailient::sdk::xa_sdk_process_image(inputImage, inferenceOutput) != xailient::sdk::ErrorCode::XA_ERR_NONE) {
-        std::cerr << "Error processing the image" << std::endl;
-        return -3;
+    for (int x = 0; x < 10; ++x) {
+        // run inference
+        xailient::sdk::BizcontrollerOutput inferenceOutput;
+        if (xailient::sdk::xa_sdk_process_image(inputImage, inferenceOutput) != xailient::sdk::ErrorCode::XA_ERR_NONE) {
+            std::cerr << "Error processing the image" << std::endl;
+            return -3;
+        }
+ 
+       // process the output
+       processOutput(inferenceOutput);
     }
 
-    // process the output
-    processOutput(inferenceOutput);
+
+
+
+
 
     xailient::sdk::xa_sdk_uninitialize();
     return 0;

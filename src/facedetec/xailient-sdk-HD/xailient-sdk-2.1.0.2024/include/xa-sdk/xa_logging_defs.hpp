@@ -39,7 +39,7 @@ typedef void(*LogCallbackType)(LogType, const char*);
  * @param logType
  * @return constexpr const char*
  */
-static  const char*
+static constexpr const char*
 toString(LogType logType)
 {
     switch(logType) {

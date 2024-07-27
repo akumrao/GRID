@@ -55,7 +55,7 @@ enum class DetectedObjectClass {
  * @param objClass
  * @return constexpr const char*
  */
-static  const char* toString(DetectedObjectClass objClass)
+static constexpr const char* toString(DetectedObjectClass objClass)
 {
     switch (objClass) {
         case DetectedObjectClass::DLI_FACE: return "FACE";

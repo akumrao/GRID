@@ -339,10 +339,18 @@ function createPeerConnection() {
           case "RECORDING":
           {
 
-             recordlist(msg.messagePayload);
+            recordlist(msg.messagePayload);
 
             break;
           }
+          case "PERSON":
+          {
+
+             document.getElementById('w3review').value =  JSON.stringify(msg.messagePayload);
+             break;
+
+          }
+
 
         }
     }
