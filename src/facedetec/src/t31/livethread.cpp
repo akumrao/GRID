@@ -1061,8 +1061,6 @@ int T31RGBA::T31RGBAInit()
     if(ctx )
     {
         blueLed();
-    
-       
     }
     else
     qrcode_init();
@@ -1726,19 +1724,28 @@ void Recording::run()
 
     int ncount = 0;
     
-    std::string date = Settings::configuration.storage + trackInfo->start; 
-             
+    std::string date = trackInfo->start; 
+    recDate = date;          
     while(!stopped() )
     {
+        if( date != recDate )
+        {
+            SDebug << " Recordign change  recDate";
+            ncount =0;
+            date = recDate;
+        }
+         
+        ncount = ncount% Settings::configuration.recordsize;
 
-        ncount = ncount%250;
-
-        sprintf(outPutNameBuffer, "%s/frame-%.3d.h264",date.c_str(), ++ncount);
+        sprintf(outPutNameBuffer, "%s%s/frame-%.3d.h264", Settings::configuration.storage.c_str(),  date.c_str(), ++ncount);
 
         FILE *fp = fopen(outPutNameBuffer, "rb");
         if(!fp) {
              SError << "Error: cannot open: " <<  outPutNameBuffer;
-             return ;
+            ncount =0;
+            base::sleep(20);   
+            continue;
+             
         }
 
 

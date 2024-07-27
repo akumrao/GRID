@@ -45,13 +45,6 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
 
     //ctx = new web_rtc::LiveConnectionContext(LiveConnectionType::rtsp, "address", 1, cam, cam, Settings::configuration.tcpRtsp, this ) ; // Request livethread to write into filter info
     
-    if(Settings::configuration.cloud)
-    {
-    
-
-    }
-   
-
    
     liveThread = new LiveThread("live", ctx,  trackInfo, recording, false);
     if(recording)

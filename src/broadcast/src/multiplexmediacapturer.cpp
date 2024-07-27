@@ -137,6 +137,11 @@ void MultiplexMediaCapturer::addMediaTracks(
       mapVideoSource[cam]->start();
       #endif
     }
+    else if( peer->trackInfo.recording )
+    {
+        mapVideoSource[cam]->liveThread->recording->recDate  = peer->trackInfo.start;
+    }
+    
     mutexCap.unlock();
 
 

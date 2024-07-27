@@ -164,10 +164,8 @@ class Recording:public base::Thread
     
     #define H264_INBUF_SIZE 30000  
     uint8_t inbuf[H264_INBUF_SIZE];
-
-
+    std::string recDate;
     void run();
-
 
     ~Recording()
     {
