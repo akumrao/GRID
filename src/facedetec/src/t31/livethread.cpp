@@ -661,6 +661,8 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
     if(idSUM && idSUM != m_idSUM)
     {
       
+      record = true;
+      
       m_idSUM = idSUM;
 
 
