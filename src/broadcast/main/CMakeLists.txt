@@ -103,7 +103,7 @@ else(${ANDROID_ABI} STREQUAL "mipsel")
  
 target_link_libraries(runWebrtc PRIVATE  rnnoise
     srtp   usrsctp  event  absl::optional  absl::variant   absl::strings 
-    pffft  rt m dl -pthread atomic  ${SSL_LIB}/libssl.so ${SSL_LIB}/libcrypto.so  ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a  /workspace/MagicAI/src/qrcode/rgbQr/zbar.a xailientsdk xailientsdkutils jzdl.m )
+    pffft  rt m dl -pthread   ${SSL_LIB}/libssl.so ${SSL_LIB}/libcrypto.so  ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a  /workspace/MagicAI/src/qrcode/rgbQr/zbar.a xailientsdk xailientsdkutils jzdl.m )
 
 endif()
 
@@ -346,7 +346,7 @@ endif()
 if (${ANDROID_ABI} STREQUAL "arm64-v8a")
     target_compile_definitions(runWebrtc PRIVATE -DWEBRTC_ARCH_ARM64 -DWEBRTC_HAS_NEON)
 elseif (${ANDROID_ABI} STREQUAL "armeabi-v7a")
-    target_compile_definitions(runWebrtc PRIVATE -DWEBRTC_ARCH_ARM -DWEBRTC_ARCH_ARM_V7 -DWEBRTC_HAS_NEON -DARVIND)
+    target_compile_definitions(runWebrtc PRIVATE -DWEBRTC_ARCH_ARM -DWEBRTC_ARCH_ARM_V7 -DWEBRTC_HAS_NEON )
 endif()
 
 
@@ -408,7 +408,7 @@ endif()
 
 
 if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-    target_compile_options(runWebrtc PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections -fpermissive -DNDEBUG)
+    target_compile_options(runWebrtc PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections -fpermissive -DNDEBUG -DMIPS32=1)
 else()
 target_compile_options(runWebrtc PRIVATE -fpermissive -DNDEBUG)
 endif()

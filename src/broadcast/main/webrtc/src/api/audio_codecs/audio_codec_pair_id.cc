@@ -23,7 +23,24 @@ namespace {
 // most 2^63 times in the lifetime of the program. Note: The returned values
 // may be easily predictable.
 uint64_t GetNextId() {
-  static std::atomic<uint64_t> next_id(0);
+
+#if MIPS32
+  static std::atomic<uint32_t> next_id(0);
+
+  // Atomically increment `next_id`, and return the previous value. Relaxed
+  // memory order is sufficient, since all we care about is that different
+  // callers return different values.
+  const uint32_t new_id = next_id.fetch_add(1, std::memory_order_relaxed);
+
+  // This check isn't atomic with the increment, so if we start 2^63 + 1
+  // invocations of GetNextId() in parallel, the last one to do the atomic
+  // increment could return the ID 0 before any of the others had time to
+  // trigger this DCHECK. We blithely assume that this won't happen.
+  RTC_DCHECK_LT(new_id, uint32_t{1} << 31) << "Used up all ID values";
+#else
+
+
+static std::atomic<uint64_t> next_id(0);
 
   // Atomically increment `next_id`, and return the previous value. Relaxed
   // memory order is sufficient, since all we care about is that different
@@ -35,6 +52,8 @@ uint64_t GetNextId() {
   // increment could return the ID 0 before any of the others had time to
   // trigger this DCHECK. We blithely assume that this won't happen.
   RTC_DCHECK_LT(new_id, uint64_t{1} << 63) << "Used up all ID values";
+
+#endif
 
   return new_id;
 }
