@@ -103,7 +103,7 @@ else(${ANDROID_ABI} STREQUAL "mipsel")
  
 target_link_libraries(runWebrtc PRIVATE  rnnoise
     srtp   usrsctp  event  absl::optional  absl::variant   absl::strings 
-    pffft  rt m dl -pthread atomic  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a  /workspace/MagicAI/src/qrcode/rgbQr/zbar.a xailientsdk xailientsdkutils jzdl.m )
+    pffft  rt m dl -pthread atomic  ${SSL_LIB}/libssl.so ${SSL_LIB}/libcrypto.so  ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a  /workspace/MagicAI/src/qrcode/rgbQr/zbar.a xailientsdk xailientsdkutils jzdl.m )
 
 endif()
 

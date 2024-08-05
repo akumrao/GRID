@@ -28,10 +28,6 @@ namespace base
 namespace web_rtc
 {
 
-template<typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... args) {
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
     
 
 PeerFactoryContext::PeerFactoryContext(webrtc::AudioDeviceModule *default_adm)
@@ -76,9 +72,9 @@ PeerFactoryContext::PeerFactoryContext(webrtc::AudioDeviceModule *default_adm)
 
 #if !BYPASSGAME
 
-    VideoEncoderFactoryStrong = make_unique<EncoderFactory>();
+    VideoEncoderFactoryStrong = std::make_unique<EncoderFactory>();
     
-    VideoDecoderFactoryStrong = make_unique<FVideoDecoderFactory>();
+    VideoDecoderFactoryStrong = std::make_unique<FVideoDecoderFactory>();
 #endif
 
     factory = webrtc::CreatePeerConnectionFactory(

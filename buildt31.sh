@@ -10,7 +10,7 @@ echo "TOP = $TOP"
 #!/usr/bin/env bash
 
 #export INSTALLPATH="/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/resource/toolchain/gcc_472/mips-gcc472-glibc216-64bit"
-export INSTALLPATH="/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/resource/toolchain/gcc_540/mips-gcc540-glibc222-64bit-r3.3.0"
+export INSTALLPATH="/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/resource/toolchain/gcc_540/mips-gcc540-glibc222-32bit-r3.3.0"
 #export SDKPATH="/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/sdk/4.7.2"
 export SDKPATH="/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/sdk/5.4.0"
 TOOLCHAIN=$INSTALLPATH/bin
@@ -40,19 +40,19 @@ cd src/openssl
 
 rm -rf openssl/buildt31
 rm -rf openssl/openssl
-rm -rf openssl/openssl-1.1.1t
+rm -rf openssl/openssl-1.1.1f
 
-if [[ ! -f openssl-1.1.1t.tar.gz ]]; then
-    wget 'https://www.openssl.org/source/openssl-1.1.1t.tar.gz'
+if [[ ! -f openssl-1.1.1f.tar.gz ]]; then
+    wget 'https://www.openssl.org/source/openssl-1.1.1f.tar.gz'
 fi
-tar xvf openssl-1.1.1t.tar.gz
-mv openssl-1.1.1t openssl
+tar xvf openssl-1.1.1f.tar.gz
+mv openssl-1.1.1f openssl
 cd openssl
 
 #./Configure linux-mips32 no-async  no-shared no-dso --prefix="$TOP/src/openssl/buildt31"
 
 
-./Configure linux-mips32 no-shared no-shared no-asan no-async no-buildtest-c++ no-crypto-mdebug no-crypto-mdebug-backtrace no-devcryptoeng no-dso no-dynamic-engine no-ec_nistp_64_gcc_128 no-egd no-external-tests no-fuzz-afl no-fuzz-libfuzzer no-heartbeats no-md2 no-msan no-rc5 no-sctp no-shared no-ssl-trace no-ssl3 no-ssl3-method no-ubsan no-unit-test no-weak-ssl-ciphers no-zlib no-zlib-dynamic \
+./Configure linux-mips32 shared  no-asan no-async no-buildtest-c++ no-crypto-mdebug no-crypto-mdebug-backtrace no-devcryptoeng no-dso no-dynamic-engine no-ec_nistp_64_gcc_128 no-egd no-external-tests no-fuzz-afl no-fuzz-libfuzzer no-heartbeats no-md2 no-msan no-rc5 no-sctp no-ssl-trace no-ssl3 no-ssl3-method no-ubsan no-unit-test no-weak-ssl-ciphers no-zlib no-zlib-dynamic \
 no-afalgeng no-async no-capieng  no-cms no-comp no-ct \
 no-ui-console \
 no-bf no-blake2 no-scrypt \

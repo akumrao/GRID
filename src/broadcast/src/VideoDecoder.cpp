@@ -171,10 +171,6 @@ namespace base {
             
 }
 
-  template<typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... args) {
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
 
  std::unique_ptr<webrtc::VideoDecoder> FVideoDecoderFactory::CreateVideoDecoder(const webrtc::SdpVideoFormat& format) {
             //FPlayerSession* Session;
@@ -183,7 +179,7 @@ std::unique_ptr<T> make_unique(Args&&... args) {
 
             
      
-           auto VideoEncoder = make_unique<FVideoDecoder>();  // for cam encoders
+           auto VideoEncoder = std::make_unique<FVideoDecoder>();  // for cam encoders
             return VideoEncoder;
 //            
 //            

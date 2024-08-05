@@ -62,12 +62,6 @@ namespace base
 namespace web_rtc
 {
 
-    template<typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... args) {
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
-    
-
 EncoderFactory::EncoderFactory() : supported_codecs(webrtc::SupportedH264Codecs()) {}
 
 
@@ -201,13 +195,13 @@ std::unique_ptr<webrtc::VideoEncoder> EncoderFactory::CreateVideoEncoder(const w
         if (  parameters.find("Enc") !=  parameters.end()  &&    parameters["Enc"].size() )
         { 
             std::string tmp  =  parameters["Enc"];
-            auto VideoEncoder = make_unique<NULLEncoder>(true);  // for cam encoders
+            auto VideoEncoder = std::make_unique<NULLEncoder>(true);  // for cam encoders
             return VideoEncoder;
             
         }
         else
         {
-            auto VideoEncoder = make_unique<NULLEncoder>(false);  // for cam encoders
+            auto VideoEncoder = std::make_unique<NULLEncoder>(false);  // for cam encoders
             return VideoEncoder;
         }
   

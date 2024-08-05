@@ -83,7 +83,7 @@ std::unique_ptr<webrtc::AudioEncoder> AudioEncoderG711_Cam::MakeAudioEncoder(
         impl_config.num_channels = config.num_channels;
         impl_config.frame_size_ms = config.frame_size_ms;
         impl_config.payload_type = payload_type;
-        return absl::make_unique<AudioEncoderPcmACAM>(impl_config);
+        return std::make_unique<AudioEncoderPcmACAM>(impl_config);
     }
     default:
     {
@@ -124,10 +124,9 @@ std::unique_ptr<webrtc::AudioDecoder> AudioDecoderG711_Cam::MakeAudioDecoder(
   RTC_DCHECK(config.IsOk());
   switch (config.type) {
     case Config::Type::kPcmU:
-     // return absl::make_unique<AudioDecoderPcmU>(config.num_channels);
        exit(0); //std::cout << "kPcmU no supported ";
     case Config::Type::kPcmA:
-      return absl::make_unique<AudioDecoderPcmACAM>(config.num_channels);
+      return std::make_unique<AudioDecoderPcmACAM>(config.num_channels);
     default:
       return nullptr;
   }

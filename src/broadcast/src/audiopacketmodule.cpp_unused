@@ -893,10 +893,6 @@ int32_t AudioPacketModule::RegisterAudioCallback(webrtc::AudioTransport *audio_c
 }
 
 
-template<typename T, typename... Args>
-std::unique_ptr<T> make_unique(Args&&... args) {
-    return std::unique_ptr<T>(new T(std::forward<Args>(args)...));
-}
     
 
 
@@ -905,7 +901,7 @@ int32_t AudioPacketModule::Init()
     // Initialize is called by the factory method.
     // Safe to ignore this Init call.
     auto task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
-    DeviceVoipBuffer = make_unique<webrtc::AudioDeviceBuffer>(task_queue_factory.get());
+    DeviceVoipBuffer = std::make_unique<webrtc::AudioDeviceBuffer>(task_queue_factory.get());
     
     return 0;
 }
