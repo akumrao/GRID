@@ -185,7 +185,7 @@ void Settings::SetConfiguration(json &cnfg)
     
     if (cnfg.find("recording") != cnfg.end()) { Settings::configuration.recording = cnfg["recording"].get<bool>(); }
     if (cnfg.find("cloud") != cnfg.end()) { Settings::configuration.cloud = cnfg["cloud"].get<bool>(); }
-    if (cnfg.find("ai") != cnfg.end()) { Settings::configuration.ai = cnfg["ai"].get<bool>(); }
+    //if (cnfg.find("ai") != cnfg.end()) { Settings::configuration.ai = cnfg["ai"].get<bool>(); }
     if (cnfg.find("facedetect") != cnfg.end()) { Settings::configuration.facedetect = cnfg["facedetect"].get<bool>(); }
     if (cnfg.find("motionevent") != cnfg.end()) { Settings::configuration.motionevent = cnfg["motionevent"].get<bool>(); }
     if (cnfg.find("port") != cnfg.end()) { Settings::configuration.port = cnfg["port"].get<int>(); }

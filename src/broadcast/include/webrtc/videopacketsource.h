@@ -54,9 +54,6 @@ protected:
     }
 
 public:
-  
-    
-    void saveFrame(unsigned char * src , int size);
   //  void run();
     void run(web_rtc::Frame  *frame);
     
@@ -88,8 +85,6 @@ public:
     
     
     void oncommand( std::string & cmd, int arg1,  int arg2);
-    
-    void onAnswer();
     
     
     NULLDecoder *nullDecoder{nullptr};

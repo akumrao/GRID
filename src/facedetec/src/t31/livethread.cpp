@@ -3,7 +3,7 @@
 // #include "base/base64.hpp"
 
 #include "base/logger.h"
-#include <sys/reboot.h>
+//#include <sys/reboot.h>
 
         
 #include "net/netInterface.h"        
@@ -204,7 +204,7 @@ int readFile(const char* filename,  char *buf, int len)
 }
 
 
-static int scan_image(unsigned char *blob, int width, int height)
+int T31RGBA::scan_image(unsigned char *blob, int width, int height)
 {
 
     int found        = 0;
@@ -312,7 +312,10 @@ static int scan_image(unsigned char *blob, int width, int height)
         
             blueLed();
 
-            reboot(RB_AUTOBOOT);
+ 
+            //reboot(RB_AUTOBOOT &);  
+
+            Settings::configuration.cam = root["i"].get<std::string>();
         }
         
       }
@@ -323,11 +326,11 @@ static int scan_image(unsigned char *blob, int width, int height)
 
 
 
-    found++;
+      found++;
      // num_symbols++;
 
      
-      printf("\n");
+     // printf("\n");
      
   }
 
@@ -343,8 +346,8 @@ static int scan_image(unsigned char *blob, int width, int height)
 //  }
 
     if (xmllvl > 1) {
-  xmllvl--;
-  printf("</source>\n");
+      xmllvl--;
+      printf("</source>\n");
     }
 
 
@@ -428,7 +431,7 @@ void RestAPI(std::string method, std::string ip, std::string uri,json &m)
 
     conn->fnConnect = [&, sendMe](HttpBase * con) {
         
-        SInfo << sendMe.length();
+       // SInfo << sendMe.length();
         
         //SDebug << " db envent "  <<  sendMe;
 
@@ -510,7 +513,7 @@ void T31RGBA::run() {
 
 
    
-
+    int QRFound = 0;
 
     while (!stopped()) {
         /* Snap RGBA */
@@ -528,11 +531,11 @@ void T31RGBA::run() {
 
 
 
-        STrace << "Frame size "  <<  frame->size << " width"  << frame->width << " height "  <<   frame->height <<  " format "  << frame->pixfmt;
+       // STrace << "Frame size "  <<  frame->size << " width"  << frame->width << " height "  <<   frame->height <<  " format "  << frame->pixfmt;
         
        
-        if ( ready_flag ) 
-        {
+       // if ( ready_flag ) 
+        //{
             size_t  p_output_size1 = 0;
 
             unsigned char *  rgbBuf = rgba_to_rgb_brg( (const unsigned char*)frame->virAddr , frame->size,  bitmap_buffer_format_RGB , 0, frame->width , frame->height , &p_output_size1 );
@@ -547,17 +550,14 @@ void T31RGBA::run() {
                 free(rgbBuf) ;
                }
               else
-               scan_image( rgbBuf, frame->width , frame->height);
+                QRFound = scan_image( rgbBuf, frame->width , frame->height);
 
 
-
-
-               // base::sleep(100);
              }
 
              
             
-        }
+        //}
 
       //  ++i;
 
@@ -579,8 +579,15 @@ void T31RGBA::run() {
             return ;
         }
 
-         if(!QRCode)
-         base::sleep(700);
+        if(!QRCode)
+        base::sleep(700);
+        else if(QRFound)
+        {
+
+          ctx->cam = Settings::configuration.cam;
+
+          break;
+        }
     }
 
     #if(DUMPFILE)
@@ -637,12 +644,12 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
     unsigned int idSUM = 0; 
  
     for (const auto& obj : inferenceOutput.detectedObjects) {
-        std::cout << "Detected Object ID: " << obj.id << std::endl;
-        std::cout << "Label: " << xailient::sdk::toString(obj.label) << std::endl;
-        std::cout << "Confidence: " << obj.confidence << std::endl;
-        std::cout << "BoundingBox: (" << obj.bbox.xmin << ", " << obj.bbox.ymin << ", "
-                  << obj.bbox.xmax << ", " << obj.bbox.ymax << ")" << std::endl;
-        std::cout << "-----------------------------------" << std::endl;
+       // std::cout << "Detected Object ID: " << obj.id << std::endl;
+        //std::cout << "Label: " << xailient::sdk::toString(obj.label) << std::endl;
+       // std::cout << "Confidence: " << obj.confidence << std::endl;
+       // std::cout << "BoundingBox: (" << obj.bbox.xmin << ", " << obj.bbox.ymin << ", "
+        // << obj.bbox.xmax << ", " << obj.bbox.ymax << ")" << std::endl;
+        //std::cout << "-----------------------------------" << std::endl;
 
         if(xailient::sdk::toString(obj.label) == std::string("PERSON") )
         idSUM = idSUM + obj.id + 1 ;
@@ -698,7 +705,7 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
 int T31RGBA::T31RGBAInit()
 {
     
-    if(ctx )
+    if(!QRCode)
     {
         blueLed();
     }
@@ -708,7 +715,7 @@ int T31RGBA::T31RGBAInit()
 }
 int T31RGBA::T31RGBAExit()
 {
-    if(!ctx )
+    if(QRCode)
     {
       qrcode_exit();
     }
@@ -1143,23 +1150,25 @@ void LiveThread::stop()
         recording->join();
         delete recording ;
         recording = nullptr;
-        SInfo << "recording:: over";
+        
     }
     else
     {
         SInfo << "t31rgba-:: stop";
 
         t31rgba->stop();
-
+        if(t31h264)
         t31h264->stop();
 
         t31rgba->join();
+        
+        if(t31h264)
+        {
+           t31h264->join();
+           delete t31h264 ;
+           t31h264 = nullptr;
+        }
 
-        t31h264->join();
-
-
-        delete t31h264 ;
-        t31h264 = nullptr;
         delete t31rgba ;
         t31rgba = nullptr;
 
@@ -1176,17 +1185,14 @@ void LiveThread::stop()
 
     if(!record)
     {
+        if(!QRCode)
         t31h264 =  new  T31H264(ctx, trackInfo);
-        
-        if( Settings::configuration.ai)
         t31rgba =  new  T31RGBA(ctx, trackInfo, QRCode);
-        
     }
     else
     {
        recording =  new  Recording(ctx, trackInfo); 
     }
-        
     
 }
 
@@ -1207,6 +1213,7 @@ void LiveThread::start()
 
        t31rgba->T31RGBAInit();
         if(!QRCode)
+       if(t31h264)
        t31h264->start();
        t31rgba->start();
     }

@@ -97,7 +97,7 @@ if (${ANDROID_ABI} STREQUAL "x86_64")
 
 target_link_libraries(runWebrtc PRIVATE  rnnoise
     srtp   usrsctp  event    absl::optional    absl::variant    absl::strings
-    pffft pthread m dl z  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a xailientsdk xailientsdkutils  )
+    pffft pthread m dl z  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  )
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
  

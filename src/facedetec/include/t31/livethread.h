@@ -142,10 +142,10 @@ class T31RGBA:public base::Thread
     int T31RGBAExit();
 
     int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  );
-    
+    int scan_image(unsigned char *blob, int width, int height);
     void onMessage(json &msg );
 
-    std::atomic<int> ready_flag {1};
+//    std::atomic<int> ready_flag {1};
 
     std::atomic<bool> record{false};
 

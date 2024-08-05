@@ -35,16 +35,16 @@ public:
 
         //std::string dtlsCertificateFile;
        // std::string dtlsPrivateKeyFile;
-        std::string storage;
-        std::string OTA{"/mnt/OTA"};
-        std::string log{"/mnt/log"};
+        std::string storage{"/mnt/pvi-storage/"};
+        std::string OTA{"/mnt/OTA/"};
+        std::string log{"/tmp/log/"};
         
-        std::string cam;
-        std::string server;
+        std::string cam{"1224"};
+        std::string server{"ipcamera.adapptonline.com"};
         int port{443};
         bool recording{false};
         bool cloud{false};
-        bool ai{true};
+       // bool ai{true};
         bool facedetect;
         bool motionevent;
         //json rtsp;

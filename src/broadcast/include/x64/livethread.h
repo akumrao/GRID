@@ -140,11 +140,13 @@ class T31RGBA:public base::Thread
     
     std::time_t m_date;
     
+    ~T31RGBA();
+    
     private: // internal
      
     BasicFrame basicframe;
 
-    ~T31RGBA();
+   
 };
 
 

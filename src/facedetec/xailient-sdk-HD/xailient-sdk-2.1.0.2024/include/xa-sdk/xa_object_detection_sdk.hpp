@@ -10,7 +10,7 @@
 #ifndef XAILIENT_OBJECT_DETECTION_SDK_HPP_
 #define XAILIENT_OBJECT_DETECTION_SDK_HPP_
 
-#include <xa-sdk/xa_version_compatibility.hpp>
+//#include <xa-sdk/xa_version_compatibility.hpp>
 #include <xa-sdk/xa_error_defs.hpp>
 #include <xa-sdk/xa_logging_defs.hpp>
 #include <xa-sdk/xa_pipeline.hpp>

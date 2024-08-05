@@ -53,7 +53,7 @@ void RestAPI(std::string method, std::string ip, std::string uri,json &m)
 
     conn->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
 
-        std::cout << "client->fnPayload " << data << std::endl << std::flush;
+       // std::cout << "client->fnPayload " << data << std::endl << std::flush;
     };
 
     conn->fnUpdateProgess = [&](const std::string str) {
@@ -80,8 +80,13 @@ void T31RGBA::run() {
     
 
   
-
-    SInfo << "31RGBA::run()" ;
+    if(QRCode)
+    {     
+        for( int x = 0 ; x < 50 ; ++x )
+        SInfo << "31RGBA::run()" ;
+        ctx->cam = "65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0";
+        Settings::configuration.cam =  ctx->cam; 
+    }
 
     /* end */
     return ;
@@ -396,8 +401,10 @@ int LiveThread::XAExit()
  LiveThread::~LiveThread() {
 
 
-  T31Exit();
-  XAExit();
+    T31Exit();
+
+    if(!QRCode)
+    XAExit();
 
   SInfo << "~LiveThread";
 
@@ -406,16 +413,15 @@ int LiveThread::XAExit()
 
 void LiveThread::stop()
 {
-    SInfo << "LiveThread:: stop";
+    SInfo << "LiveThread:: stop" << recording  << " recording " << recording;
 
-     if(recording)
+    
+      
+    if( recording)
     {
+         SInfo << "recording:: stop";
         recording->stop();
-        
-        
         recording->join();
-
-
         delete recording ;
         recording = nullptr;
         
@@ -423,19 +429,20 @@ void LiveThread::stop()
     else
     {
         t31rgba->stop();
-
+        if(t31h264)
         t31h264->stop();
 
         t31rgba->join();
+        
+        if(t31h264)
+        {
+           t31h264->join();
+           delete t31h264 ;
+           t31h264 = nullptr;
+        }
 
-        t31h264->join();
-
-
-        delete t31h264 ;
-        t31h264 = nullptr;
-
-       // delete t31rgba ;
-       // t31rgba = nullptr;
+        delete t31rgba ;
+        t31rgba = nullptr;
 
         SInfo << "LiveThread:: stop over";
     }
@@ -449,6 +456,7 @@ void LiveThread::stop()
 
     if(!record)
     {
+        if(!QRCode)
         t31h264 =  new  T31H264(ctx, trackInfo);
         t31rgba =  new  T31RGBA(ctx, trackInfo, QRCode);
     }
@@ -472,6 +480,7 @@ void LiveThread::start()
         XAInit();
         T31Init();
         t31rgba->T31RGBAInit();
+        if(t31h264)
         t31h264->start();
         t31rgba->start();
     }

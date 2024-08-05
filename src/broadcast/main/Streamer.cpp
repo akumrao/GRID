@@ -20,6 +20,7 @@
 #include "json/configuration.h"
 #include "rtc_base/ssl_adapter.h"
 #include "webrtc/signaler.h"
+#include <sys/wait.h>
 
 
 using namespace std;
@@ -149,29 +150,7 @@ int main(int argc, char** argv) {
 
     config.load("./config.js");
     
-    if(!config.loaded())
-    {
-        Logger::instance().add(new ConsoleChannel("debug", Level::Info));
 
-        Application app;
-          
-        SInfo << " No config file present";
-        
-        bool recording = false;
-        
-        base::web_rtc::LiveThread livethread("live", nullptr,nullptr, recording, true );
-        livethread.start();
-        
-        app.waitForShutdown([&](void*)
-        {
-            
-            livethread.stop();
-
-        });
-     
-        return 0;
-    }
-  
    // json cnfg;
    
 //    if( !config.getRaw("webrtc", cnfg))
@@ -247,6 +226,26 @@ int main(int argc, char** argv) {
 
     web_rtc::LiveConnectionContext  *ctx = new web_rtc::LiveConnectionContext( Settings::configuration.cam,  nullptr ) ; // Request livethread to write into filter info
 
+    if(!config.loaded())
+    {
+        Logger::instance().add(new ConsoleChannel("debug", Level::Info));
+
+        bool recording = false;
+        
+        base::web_rtc::LiveThread livethread("live", ctx,nullptr, recording, true );
+        livethread.start();
+        
+        while(ctx->cam == "1224")
+        {
+            base::sleep(20);   
+        }
+        
+        livethread.stop();
+
+       
+   }
+  
+    
     base::web_rtc::Signaler sig(ctx);
 
 //    sig.startStreaming("/var/tmp/songs", "", "ul",  false);
@@ -280,6 +279,21 @@ int main(int argc, char** argv) {
 
    // Ignore some signals.
     IgnoreSignals();
+
+
+    if(!config.loaded())
+    {
+        SInfo << "start wifi.sh";
+
+        pid_t child = fork();
+        if (child == -1) // fork failed
+            std::perror("fork");
+        else if (child == 0) // child
+             execl("/bin/sh", "sh", "./wifi.sh", (char *) NULL);
+        else // parent
+            wait(NULL);
+    }
+
         
    app.waitForShutdown([&](void*)
    {

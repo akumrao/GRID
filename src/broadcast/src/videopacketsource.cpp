@@ -27,11 +27,7 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
 
 //    , _source(nullptr)
 {
-    // Default supported formats. Use SetSupportedFormats to over write.
-    //std::vector<cricket::VideoFormat> formats;
-   // formats.push_back(_captureFormat);
-   // SetSupportedFormats(formats);
-    
+   
     SInfo << " VideoPacketSource " << this;
     
     #if BYPASSGAME
@@ -60,10 +56,7 @@ VideoPacketSource::VideoPacketSource( const char *name, LiveConnectionContext  *
    
     liveThread->start();
    
-    //ctx->txt = new web_rtc::TextFrameFilter("txt", cam, self);
-   // info = new web_rtc::InfoFrameFilter("info", nullptr);
-
- 
+  
 }
 
 
@@ -139,20 +132,6 @@ void VideoPacketSource::oncommand( std::string & cmd , int first,  int second)
     
 }
 
-void VideoPacketSource::onAnswer()
-{
-  //  this->trackInfo.encType = encType;
-        
-    //ffparser->registerStream(ctx);  // arvind
-    //ffparser->playStream(ctx);  
-}
-
-
-void VideoPacketSource::saveFrame(unsigned char * src , int size)
-{
-
-
-}
 
 
 void VideoPacketSource::run(web_rtc::Frame *frame)
@@ -376,155 +355,6 @@ absl::optional<bool> VideoPacketSource::needs_denoising() const {
 
 
 
-#if BYPASSGAME
-void VideoPacketSource::run()
-{
-    
-    load( "/var/tmp/test.264", 30.0f);
-        
-   
-    while(!this->stopped())
-        
-    {
-#if(0)
-      int64_t TimestampUs = rtc::TimeMicros();
-      
-      rtc::scoped_refptr<webrtc::I420Buffer> Buffer =
-	webrtc::I420Buffer::Create(720,576);
-        
-         webrtc::VideoFrame Frame = webrtc::VideoFrame::Builder().
-                       set_video_frame_buffer(Buffer).
-                       set_rotation(webrtc::kVideoRotation_0).
-                       set_timestamp_us(TimestampUs).
-                       build(); 
-
-                      // SDebug << "ideoPacketSource::OnFrame";
-
-                       OnFrame(Frame);  //arvind
-      base::sleep(40); 
-#else
-      readFrame();
-       base::sleep(40); 
-#endif
-    }
-    
-      SInfo << "run end";
-}
-
-bool VideoPacketSource::load(std::string filepath, float fps) {
-    
-        
-  
-
-  fp = fopen(filepath.c_str(), "rb");
-
-  if(!fp) {
-    printf("Error: cannot open: %s\n", filepath.c_str());
-    return false;
-  }
-
-
-  if(fps > 0.0001f) {
-    frame_delay = (1.0f/fps) * 1000ull * 1000ull * 1000ull;
-    //frame_timeout = rx_hrtime() + frame_delay;
-  }
-
-  // kickoff reading...
-  readBuffer();
-
-  return true;
-}
-
-bool VideoPacketSource::readFrame() {
-
-  // uint64_t now = rx_hrtime();
-  // if(now < frame_timeout) {
-  //   return false;
-  // }
-
-  bool needs_more = false;
-
-  while(!update(needs_more)) { 
-    if(needs_more) {
-      readBuffer();
-    }
-  }
-
-  // it may take some 'reads' before we can set the fps
-  if(frame_timeout == 0 && frame_delay == 0) {
-    double fps = av_q2d(cdc_ctx->time_base);
-    if(fps > 0.0) {
-      frame_delay = fps * 1000ull * 1000ull * 1000ull;
-    }
-  }
-
-  // if(frame_delay > 0) {
-  //   frame_timeout = rx_hrtime() + frame_delay;
-  // }
-
-  return true;
-}
-
-int VideoPacketSource::readBuffer() {
-
-  int bytes_read = (int)fread(inbuf, 1, H264_INBUF_SIZE, fp);
-
-  if(bytes_read) {
-    std::copy(inbuf, inbuf + bytes_read, std::back_inserter(buffer));
-  }
-  else
-  {
-      
- 
-        if(feof(fp))
-        {
-
-             if (fseek(fp, 0, SEEK_SET))
-            return 0;
-            return readBuffer() ;
-
-        }
-      
-  }
-
-  return bytes_read;
-}
-
-
-bool VideoPacketSource::update(bool& needsMoreBytes) {
-
-  needsMoreBytes = false;
-
-  if(!fp) {
-    printf("Cannot update .. file not opened...\n");
-    return false;
-  }
-
-  if(buffer.size() == 0) {
-    needsMoreBytes = true;
-    return false;
-  }
-
-  uint8_t* data = NULL;
-  int size = 0;
-  int len = av_parser_parse2(parser, cdc_ctx, &data, &size, 
-                             &buffer[0], buffer.size(), 0, 0, AV_NOPTS_VALUE);
-
-  if(size == 0 && len >= 0) {
-    needsMoreBytes = true;
-    return false;
-  }
-
-  if(len) {
-    decodeFrame(&buffer[0], size);
-    buffer.erase(buffer.begin(), buffer.begin() + len);
-    return true;
-  }
-
-  return false;
-}
-
-#endif
 
 
 /*
