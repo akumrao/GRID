@@ -153,7 +153,9 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
   if ((tlsOpts & PacketSocketFactory::OPT_TLS) ||
       (tlsOpts & PacketSocketFactory::OPT_TLS_INSECURE)) {
     // Using TLS, wrap the socket in an SSL adapter.
-    SSLAdapter* ssl_adapter = SSLAdapter::Create(socket);
+    exit(0);
+      
+    SSLAdapter* ssl_adapter = nullptr;// SSLAdapter::Create(socket); // arvind
     if (!ssl_adapter) {
       return NULL;
     }

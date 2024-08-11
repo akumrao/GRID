@@ -115,9 +115,9 @@ std::unique_ptr<SSLCertificateStats> SSLCertChain::GetStats() const {
 }
 
 // static
-std::unique_ptr<SSLCertificate> SSLCertificate::FromPEMString(
-    const std::string& pem_string) {
-  return OpenSSLCertificate::FromPEMString(pem_string);
-}
+//std::unique_ptr<SSLCertificate> SSLCertificate::FromPEMString(
+//    const std::string& pem_string) {
+//  return OpenSSLCertificate::FromPEMString(pem_string);
+//}
 
 }  // namespace rtc

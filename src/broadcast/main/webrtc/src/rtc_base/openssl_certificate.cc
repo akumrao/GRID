@@ -132,7 +132,7 @@ std::unique_ptr<OpenSSLCertificate> OpenSSLCertificate::Generate(
   }
   X509* x509 = MakeCertificate(key_pair->pkey(), actual_params);
   if (!x509) {
-    openssl::LogSSLErrors("Generating certificate");
+//    openssl::LogSSLErrors("Generating certificate");
     return nullptr;
   }
 #if !defined(NDEBUG)
@@ -143,25 +143,25 @@ std::unique_ptr<OpenSSLCertificate> OpenSSLCertificate::Generate(
   return ret;
 }
 
-std::unique_ptr<OpenSSLCertificate> OpenSSLCertificate::FromPEMString(
-    const std::string& pem_string) {
-  BIO* bio = BIO_new_mem_buf(const_cast<char*>(pem_string.c_str()), -1);
-  if (!bio) {
-    return nullptr;
-  }
-
-  BIO_set_mem_eof_return(bio, 0);
-  X509* x509 =
-      PEM_read_bio_X509(bio, nullptr, nullptr, const_cast<char*>("\0"));
-  BIO_free(bio);  // Frees the BIO, but not the pointed-to string.
-
-  if (!x509) {
-    return nullptr;
-  }
-  auto ret = absl::make_unique<OpenSSLCertificate>(x509);
-  X509_free(x509);
-  return ret;
-}
+//std::unique_ptr<OpenSSLCertificate> OpenSSLCertificate::FromPEMString(
+//    const std::string& pem_string) {
+//  BIO* bio = BIO_new_mem_buf(const_cast<char*>(pem_string.c_str()), -1);
+//  if (!bio) {
+//    return nullptr;
+//  }
+//
+//  BIO_set_mem_eof_return(bio, 0);
+//  X509* x509 =
+//      PEM_read_bio_X509(bio, nullptr, nullptr, const_cast<char*>("\0"));
+//  BIO_free(bio);  // Frees the BIO, but not the pointed-to string.
+//
+//  if (!x509) {
+//    return nullptr;
+//  }
+//  auto ret = absl::make_unique<OpenSSLCertificate>(x509);
+//  X509_free(x509);
+//  return ret;
+//}
 
 // NOTE: This implementation only functions correctly after InitializeSSL
 // and before CleanupSSL.
@@ -276,14 +276,14 @@ void OpenSSLCertificate::ToDER(Buffer* der_buffer) const {
   BIO_free(bio);
 }
 
-bool OpenSSLCertificate::operator==(const OpenSSLCertificate& other) const {
-  return X509_cmp(x509_, other.x509_) == 0;
-}
-
-bool OpenSSLCertificate::operator!=(const OpenSSLCertificate& other) const {
-  return !(*this == other);
-}
-
+//bool OpenSSLCertificate::operator==(const OpenSSLCertificate& other) const {
+//  return X509_cmp(x509_, other.x509_) == 0;
+//}
+//
+//bool OpenSSLCertificate::operator!=(const OpenSSLCertificate& other) const {
+//  return !(*this == other);
+//}
+//
 int64_t OpenSSLCertificate::CertificateExpirationTime() const {
   ASN1_TIME* expire_time = X509_get_notAfter(x509_);
   bool long_format;
