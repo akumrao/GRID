@@ -135,12 +135,12 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
   // if we're using this feature or not.
   // TODO(solenberg): GetConfig() takes a lock. Work around that.
   bool typing_detected = false;
-  if (audio_processing_->GetConfig().voice_detection.enabled) {
-    if (audio_frame->vad_activity_ != AudioFrame::kVadUnknown) {
-      bool vad_active = audio_frame->vad_activity_ == AudioFrame::kVadActive;
-      typing_detected = typing_detection_.Process(key_pressed, vad_active);
-    }
-  }
+//  if (audio_processing_->GetConfig().voice_detection.enabled) {
+//    if (audio_frame->vad_activity_ != AudioFrame::kVadUnknown) {
+//      bool vad_active = audio_frame->vad_activity_ == AudioFrame::kVadActive;
+//      typing_detected = typing_detection_.Process(key_pressed, vad_active);
+//    }
+//  }
 
   // Measure audio level of speech after all processing.
   double sample_duration = static_cast<double>(number_of_frames) / sample_rate;

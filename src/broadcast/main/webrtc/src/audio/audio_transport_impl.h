@@ -19,7 +19,7 @@
 #include "common_audio/resampler/include/push_resampler.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
-#include "modules/audio_processing/typing_detection.h"
+//#include "modules/audio_processing/typing_detection.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/thread_annotations.h"
@@ -81,7 +81,7 @@ class AudioTransportImpl : public AudioTransport {
   bool swap_stereo_channels_ RTC_GUARDED_BY(capture_lock_) = false;
   PushResampler<int16_t> capture_resampler_;
   voe::AudioLevel audio_level_;
-  TypingDetection typing_detection_;
+//  TypingDetection typing_detection_;
 
   // Render side.
   rtc::scoped_refptr<AudioMixer> mixer_;

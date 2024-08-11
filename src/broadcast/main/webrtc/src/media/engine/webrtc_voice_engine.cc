@@ -473,35 +473,35 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
         *options.audio_jitter_buffer_enable_rtx_handling;
   }
 
-  webrtc::Config config;
-
-  if (options.delay_agnostic_aec)
-    delay_agnostic_aec_ = options.delay_agnostic_aec;
-  if (delay_agnostic_aec_) {
-    RTC_LOG(LS_INFO) << "Delay agnostic aec is enabled? "
-                     << *delay_agnostic_aec_;
-    config.Set<webrtc::DelayAgnostic>(
-        new webrtc::DelayAgnostic(*delay_agnostic_aec_));
-  }
-
-  if (options.extended_filter_aec) {
-    extended_filter_aec_ = options.extended_filter_aec;
-  }
-  if (extended_filter_aec_) {
-    RTC_LOG(LS_INFO) << "Extended filter aec is enabled? "
-                     << *extended_filter_aec_;
-    config.Set<webrtc::ExtendedFilter>(
-        new webrtc::ExtendedFilter(*extended_filter_aec_));
-  }
-
-  if (options.experimental_ns) {
-    experimental_ns_ = options.experimental_ns;
-  }
-  if (experimental_ns_) {
-    RTC_LOG(LS_INFO) << "Experimental ns is enabled? " << *experimental_ns_;
-    config.Set<webrtc::ExperimentalNs>(
-        new webrtc::ExperimentalNs(*experimental_ns_));
-  }
+//  webrtc::Config config;
+//
+//  if (options.delay_agnostic_aec)
+//    delay_agnostic_aec_ = options.delay_agnostic_aec;
+//  if (delay_agnostic_aec_) {
+//    RTC_LOG(LS_INFO) << "Delay agnostic aec is enabled? "
+//                     << *delay_agnostic_aec_;
+//    config.Set<webrtc::DelayAgnostic>(
+//        new webrtc::DelayAgnostic(*delay_agnostic_aec_));
+//  }
+//
+//  if (options.extended_filter_aec) {
+//    extended_filter_aec_ = options.extended_filter_aec;
+//  }
+//  if (extended_filter_aec_) {
+//    RTC_LOG(LS_INFO) << "Extended filter aec is enabled? "
+//                     << *extended_filter_aec_;
+//    config.Set<webrtc::ExtendedFilter>(
+//        new webrtc::ExtendedFilter(*extended_filter_aec_));
+//  }
+//
+//  if (options.experimental_ns) {
+//    experimental_ns_ = options.experimental_ns;
+//  }
+//  if (experimental_ns_) {
+//    RTC_LOG(LS_INFO) << "Experimental ns is enabled? " << *experimental_ns_;
+//    config.Set<webrtc::ExperimentalNs>(
+//        new webrtc::ExperimentalNs(*experimental_ns_));
+//  }
 
 //  webrtc::AudioProcessing::Config apm_config = apm()->GetConfig();
 //
