@@ -13,7 +13,7 @@
 #include <iterator>  // std::ostream_iterator
 #include <sstream>  // std::ostringstream
 
-#define LOGGING_LOG_TO_FILE 1
+//#define LOGGING_LOG_TO_FILE 1
 /* Class variables. */
 
 struct Settings::Configuration Settings::configuration;

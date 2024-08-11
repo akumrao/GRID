@@ -6,7 +6,7 @@ if (${ANDROID_ABI} STREQUAL "x86_64")
 SET(SSL_ROOT "/workspace/MagicAI/src/openssl/buildx64")
 SET(SSL_LIB "/workspace/MagicAI/src/openssl/buildx64/lib")
 
-SET(WEBRTC_REPO "/workspace/MagicAI/src/broadcast/main/webrtc/src")
+SET(WEBRTC_REPO "${CMAKE_SOURCE_DIR}/webrtc/src")
 
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
@@ -15,7 +15,7 @@ SET(SSL_ROOT "/workspace/MagicAI/src/openssl/buildt31")
 SET(SSL_LIB "/workspace/MagicAI/src/openssl/buildt31/lib")
 SET(T31SDK "/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/sdk/5.4.0")
 
-SET(WEBRTC_REPO "/workspace/MagicAI/src/broadcast/main/webrtc/src")
+SET(WEBRTC_REPO "${CMAKE_SOURCE_DIR}/webrtc/src")
 
 
 endif()

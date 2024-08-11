@@ -65,7 +65,7 @@ AudioDeviceBuffer::AudioDeviceBuffer(TaskQueueFactory* task_queue_factory)
   phase_ = 0.0;
   RTC_LOG(WARNING) << "AUDIO_DEVICE_PLAYS_SINUS_TONE is defined!";
 #endif
-  WebRtcSpl_Init();
+  //WebRtcSpl_Init();
 }
 
 AudioDeviceBuffer::~AudioDeviceBuffer() {
@@ -242,8 +242,9 @@ int32_t AudioDeviceBuffer::SetRecordedBuffer(const void* audio_buffer,
   int16_t max_abs = 0;
   RTC_DCHECK_LT(rec_stat_count_, 50);
   if (++rec_stat_count_ >= 50) {
+      exit(0);
     // Returns the largest absolute value in a signed 16-bit vector.
-    max_abs = WebRtcSpl_MaxAbsValueW16(rec_buffer_.data(), rec_buffer_.size());
+  //  max_abs = WebRtcSpl_MaxAbsValueW16(rec_buffer_.data(), rec_buffer_.size());  // arvind
     rec_stat_count_ = 0;
     // Set |only_silence_recorded_| to false as soon as at least one detection
     // of a non-zero audio packet is found. It can only be restored to true
@@ -309,12 +310,16 @@ int32_t AudioDeviceBuffer::RequestPlayoutData(size_t samples_per_channel) {
   // Derive a new level value twice per second.
   int16_t max_abs = 0;
   RTC_DCHECK_LT(play_stat_count_, 50);
-  if (++play_stat_count_ >= 50) {
-    // Returns the largest absolute value in a signed 16-bit vector.
-    max_abs =
-        WebRtcSpl_MaxAbsValueW16(play_buffer_.data(), play_buffer_.size());
-    play_stat_count_ = 0;
-  }
+//  if (++play_stat_count_ >= 50) {
+//    // Returns the largest absolute value in a signed 16-bit vector.
+//    max_abs =
+//        WebRtcSpl_MaxAbsValueW16(play_buffer_.data(), play_buffer_.size());
+//    play_stat_count_ = 0;
+//  }
+  
+  exit(0);
+  
+  
   // Update playout stats which is used as base for periodic logging of the
   // audio output state.
   UpdatePlayStats(max_abs, num_samples_out / play_channels_);

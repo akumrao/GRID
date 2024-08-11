@@ -31,8 +31,8 @@ void SetMediaEngineDefaults(cricket::MediaEngineDependencies* deps) {
 //    deps->audio_encoder_factory = CreateBuiltinAudioEncoderFactory();   // arvind
 //  if (deps->audio_decoder_factory == nullptr)
 //    deps->audio_decoder_factory = CreateBuiltinAudioDecoderFactory();
-  if (deps->audio_processing == nullptr)
-    deps->audio_processing = AudioProcessingBuilder().Create();
+  //if (deps->audio_processing == nullptr)
+   // deps->audio_processing = AudioProcessingBuilder().Create();
 
  #if defined(ENABLE_ANDROID)
   if (deps->video_encoder_factory == nullptr)

@@ -503,40 +503,40 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
         new webrtc::ExperimentalNs(*experimental_ns_));
   }
 
-  webrtc::AudioProcessing::Config apm_config = apm()->GetConfig();
-
-  if (options.auto_gain_control) {
-    const bool enabled = *options.auto_gain_control;
-    apm_config.gain_controller1.enabled = enabled;
-    RTC_LOG(LS_INFO) << "Setting AGC to " << enabled;
-  }
-  if (options.tx_agc_target_dbov) {
-    apm_config.gain_controller1.target_level_dbfs = *options.tx_agc_target_dbov;
-  }
-  if (options.tx_agc_digital_compression_gain) {
-    apm_config.gain_controller1.compression_gain_db =
-        *options.tx_agc_digital_compression_gain;
-  }
-  if (options.tx_agc_limiter) {
-    apm_config.gain_controller1.enable_limiter = *options.tx_agc_limiter;
-  }
-
-  if (options.highpass_filter) {
-    apm_config.high_pass_filter.enabled = *options.highpass_filter;
-  }
-
-  if (options.residual_echo_detector) {
-    apm_config.residual_echo_detector.enabled = *options.residual_echo_detector;
-  }
-
-  if (options.typing_detection) {
-    RTC_LOG(LS_INFO) << "Typing detection is enabled? "
-                     << *options.typing_detection;
-    apm_config.voice_detection.enabled = *options.typing_detection;
-  }
-
-  apm()->SetExtraOptions(config);
-  apm()->ApplyConfig(apm_config);
+//  webrtc::AudioProcessing::Config apm_config = apm()->GetConfig();
+//
+//  if (options.auto_gain_control) {
+//    const bool enabled = *options.auto_gain_control;
+//    apm_config.gain_controller1.enabled = enabled;
+//    RTC_LOG(LS_INFO) << "Setting AGC to " << enabled;
+//  }
+//  if (options.tx_agc_target_dbov) {
+//    apm_config.gain_controller1.target_level_dbfs = *options.tx_agc_target_dbov;
+//  }
+//  if (options.tx_agc_digital_compression_gain) {
+//    apm_config.gain_controller1.compression_gain_db =
+//        *options.tx_agc_digital_compression_gain;
+//  }
+//  if (options.tx_agc_limiter) {
+//    apm_config.gain_controller1.enable_limiter = *options.tx_agc_limiter;
+//  }
+//
+//  if (options.highpass_filter) {
+//    apm_config.high_pass_filter.enabled = *options.highpass_filter;
+//  }
+//
+//  if (options.residual_echo_detector) {
+//    apm_config.residual_echo_detector.enabled = *options.residual_echo_detector;
+//  }
+//
+//  if (options.typing_detection) {
+//    RTC_LOG(LS_INFO) << "Typing detection is enabled? "
+//                     << *options.typing_detection;
+//    apm_config.voice_detection.enabled = *options.typing_detection;
+//  }
+//
+//  apm()->SetExtraOptions(config);
+//  apm()->ApplyConfig(apm_config);
   return true;
 }
 
@@ -2165,7 +2165,7 @@ bool WebRtcVoiceMediaChannel::MuteStream(uint32_t ssrc, bool muted) {
   for (const auto& kv : send_streams_) {
     all_muted = all_muted && kv.second->muted();
   }
-  engine()->apm()->set_output_will_be_muted(all_muted);
+  //engine()->apm()->set_output_will_be_muted(all_muted);
 
   return true;
 }

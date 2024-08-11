@@ -18,7 +18,10 @@ namespace voe {
 
 AudioLevel::AudioLevel()
     : abs_max_(0), count_(0), current_level_full_range_(0) {
-  WebRtcSpl_Init();
+    
+    
+   // exit(0);
+//  WebRtcSpl_Init();
 }
 
 AudioLevel::~AudioLevel() {}
@@ -47,12 +50,15 @@ double AudioLevel::TotalDuration() const {
 
 void AudioLevel::ComputeLevel(const AudioFrame& audioFrame, double duration) {
   // Check speech level (works for 2 channels as well)
+    
+    exit(0);
+    
   int16_t abs_value =
       audioFrame.muted()
-          ? 0
-          : WebRtcSpl_MaxAbsValueW16(
-                audioFrame.data(),
-                audioFrame.samples_per_channel_ * audioFrame.num_channels_);
+          ? 0 : 50;
+//          : WebRtcSpl_MaxAbsValueW16(
+//                audioFrame.data(),
+//                audioFrame.samples_per_channel_ * audioFrame.num_channels_);
 
   // Protect member access using a lock since this method is called on a
   // dedicated audio thread in the RecordedDataIsAvailable() callback.

@@ -34,12 +34,12 @@ void InitializeCaptureFrame(int input_sample_rate,
                             AudioFrame* audio_frame) {
   RTC_DCHECK(audio_frame);
   int min_processing_rate_hz = std::min(input_sample_rate, send_sample_rate_hz);
-  for (int native_rate_hz : AudioProcessing::kNativeSampleRatesHz) {
-    audio_frame->sample_rate_hz_ = native_rate_hz;
-    if (audio_frame->sample_rate_hz_ >= min_processing_rate_hz) {
-      break;
-    }
-  }
+//  for (int native_rate_hz : AudioProcessing::kNativeSampleRatesHz) {
+//    audio_frame->sample_rate_hz_ = native_rate_hz;
+//    if (audio_frame->sample_rate_hz_ >= min_processing_rate_hz) {
+//      break;
+//    }
+//  }
   audio_frame->num_channels_ = std::min(input_num_channels, send_num_channels);
 }
 

@@ -353,23 +353,25 @@ void TransientSuppressor::HardRestoration(float* spectral_mean) {
   const float detector_result =
       1.f -
       std::pow(1.f - detector_smoothed_, using_reference_ ? 200.f : 50.f);
+  
+  exit(0);
   // To restore, we get the peaks in the spectrum. If higher than the previous
   // spectral mean we adjust them.
-  for (size_t i = 0; i < complex_analysis_length_; ++i) {
-    if (magnitudes_[i] > spectral_mean[i] && magnitudes_[i] > 0) {
-      // RandU() generates values on [0, int16::max()]
-      const float phase = 2 * ts::kPi * WebRtcSpl_RandU(&seed_) /
-                          std::numeric_limits<int16_t>::max();
-      const float scaled_mean = detector_result * spectral_mean[i];
-
-      fft_buffer_[i * 2] = (1 - detector_result) * fft_buffer_[i * 2] +
-                           scaled_mean * cosf(phase);
-      fft_buffer_[i * 2 + 1] = (1 - detector_result) * fft_buffer_[i * 2 + 1] +
-                               scaled_mean * sinf(phase);
-      magnitudes_[i] = magnitudes_[i] -
-                       detector_result * (magnitudes_[i] - spectral_mean[i]);
-    }
-  }
+//  for (size_t i = 0; i < complex_analysis_length_; ++i) {
+//    if (magnitudes_[i] > spectral_mean[i] && magnitudes_[i] > 0) {
+//      // RandU() generates values on [0, int16::max()]
+//      const float phase = 2 * ts::kPi * WebRtcSpl_RandU(&seed_) /
+//                          std::numeric_limits<int16_t>::max();
+//      const float scaled_mean = detector_result * spectral_mean[i];
+//
+//      fft_buffer_[i * 2] = (1 - detector_result) * fft_buffer_[i * 2] +
+//                           scaled_mean * cosf(phase);
+//      fft_buffer_[i * 2 + 1] = (1 - detector_result) * fft_buffer_[i * 2 + 1] +
+//                               scaled_mean * sinf(phase);
+//      magnitudes_[i] = magnitudes_[i] -
+//                       detector_result * (magnitudes_[i] - spectral_mean[i]);
+//    }
+//  }
 }
 
 // Restores the voiced signal if a click is present.

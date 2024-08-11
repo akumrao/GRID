@@ -17,24 +17,24 @@
 
 namespace webrtc {
 
-Accelerate::ReturnCodes Accelerate::Process(const int16_t* input,
-                                            size_t input_length,
-                                            bool fast_accelerate,
-                                            AudioMultiVector* output,
-                                            size_t* length_change_samples) {
-  // Input length must be (almost) 30 ms.
-  static const size_t k15ms = 120;  // 15 ms = 120 samples at 8 kHz sample rate.
-  if (num_channels_ == 0 ||
-      input_length / num_channels_ < (2 * k15ms - 1) * fs_mult_) {
-    // Length of input data too short to do accelerate. Simply move all data
-    // from input to output.
-    output->PushBackInterleaved(
-        rtc::ArrayView<const int16_t>(input, input_length));
-    return kError;
-  }
-  return TimeStretch::Process(input, input_length, fast_accelerate, output,
-                              length_change_samples);
-}
+//Accelerate::ReturnCodes Accelerate::Process(const int16_t* input,
+//                                            size_t input_length,
+//                                            bool fast_accelerate,
+//                                            AudioMultiVector* output,
+//                                            size_t* length_change_samples) {
+//  // Input length must be (almost) 30 ms.
+//  static const size_t k15ms = 120;  // 15 ms = 120 samples at 8 kHz sample rate.
+//  if (num_channels_ == 0 ||
+//      input_length / num_channels_ < (2 * k15ms - 1) * fs_mult_) {
+//    // Length of input data too short to do accelerate. Simply move all data
+//    // from input to output.
+//    output->PushBackInterleaved(
+//        rtc::ArrayView<const int16_t>(input, input_length));
+//    return kError;
+//  }
+//  return TimeStretch::Process(input, input_length, fast_accelerate, output,
+//                              length_change_samples);
+//}
 
 void Accelerate::SetParametersForPassiveSpeech(size_t /*len*/,
                                                int16_t* best_correlation,

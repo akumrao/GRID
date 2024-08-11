@@ -196,7 +196,7 @@ std::vector<webrtc::AudioDecoder::ParseResult> AudioDecoderPcmACAM::ParsePayload
 		//stream.write(reinterpret_cast<const char*>(rec_buffer_), number_of_bytes); // for mono audio
      stream.flush();
      
-     //printf("audio size  %d", payload.size());
+     printf("audio size  %d", payload.size());
 
     #else 
      

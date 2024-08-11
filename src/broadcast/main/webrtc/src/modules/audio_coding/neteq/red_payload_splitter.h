@@ -33,13 +33,13 @@ class RedPayloadSplitter {
   // Note that all packets in |packet_list| must be RED payloads, i.e., have
   // RED headers according to RFC 2198 at the very beginning of the payload.
   // Returns kOK or an error.
-  virtual bool SplitRed(PacketList* packet_list);
+  virtual bool SplitRed(PacketList* packet_list){ return 0; };
 
   // Checks all packets in |packet_list|. Packets that are DTMF events or
   // comfort noise payloads are kept. Except that, only one single payload type
   // is accepted. Any packet with another payload type is discarded.
   virtual void CheckRedPayloads(PacketList* packet_list,
-                                const DecoderDatabase& decoder_database);
+                                const DecoderDatabase& decoder_database){};
 
  private:
   RTC_DISALLOW_COPY_AND_ASSIGN(RedPayloadSplitter);
