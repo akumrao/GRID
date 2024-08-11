@@ -642,6 +642,7 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
     json arr =  json::array();
 
     unsigned int idSUM = 0; 
+    unsigned int personSUM = 0; 
  
     for (const auto& obj : inferenceOutput.detectedObjects) {
        // std::cout << "Detected Object ID: " << obj.id << std::endl;
@@ -652,7 +653,10 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
         //std::cout << "-----------------------------------" << std::endl;
 
         if(xailient::sdk::toString(obj.label) == std::string("PERSON") )
-        idSUM = idSUM + obj.id + 1 ;
+        {
+          idSUM = idSUM + obj.id + 1 ;
+          ++personSUM;
+        }
 
         json p;
 
@@ -688,6 +692,7 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
       m["messageType"] = "PERSON";
       m["messagePayload"] =  arr;
       m["ts"] =  date;
+      m["count"] =  personSUM;
       m["camid"] = ctx->cam;
       ctx->signaler->postAppMessage( m);
       RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
