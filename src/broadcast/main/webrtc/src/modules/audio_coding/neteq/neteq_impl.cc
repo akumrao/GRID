@@ -566,26 +566,26 @@ int NetEqImpl::InsertPacketInternal(const RTPHeader& rtp_header,
 
   // Process DTMF payloads. Cycle through the list of packets, and pick out any
   // DTMF payloads found.
-  PacketList::iterator it = packet_list.begin();
-  while (it != packet_list.end()) {
-    const Packet& current_packet = (*it);
-    RTC_DCHECK(!current_packet.payload.empty());
-    if (decoder_database_->IsDtmf(current_packet.payload_type)) {
-//      DtmfEvent event;
-//      int ret = DtmfBuffer::ParseEvent(current_packet.timestamp,
-//                                       current_packet.payload.data(),
-//                                       current_packet.payload.size(), &event);
-//      if (ret != DtmfBuffer::kOK) {
-//        return kDtmfParsingError;
-//      }
-//      if (dtmf_buffer_->InsertEvent(event) != DtmfBuffer::kOK) {
-//        return kDtmfInsertError;
-//      }
-      it = packet_list.erase(it);
-    } else {
-      ++it;
-    }
-  }
+//  PacketList::iterator it = packet_list.begin();
+//  while (it != packet_list.end()) {
+//    const Packet& current_packet = (*it);
+//    RTC_DCHECK(!current_packet.payload.empty());
+//    if (decoder_database_->IsDtmf(current_packet.payload_type)) {
+////      DtmfEvent event;
+////      int ret = DtmfBuffer::ParseEvent(current_packet.timestamp,
+////                                       current_packet.payload.data(),
+////                                       current_packet.payload.size(), &event);
+////      if (ret != DtmfBuffer::kOK) {
+////        return kDtmfParsingError;
+////      }
+////      if (dtmf_buffer_->InsertEvent(event) != DtmfBuffer::kOK) {
+////        return kDtmfInsertError;
+////      }
+//      it = packet_list.erase(it);
+//    } else {
+//      ++it;
+//    }
+//  }
 
   // Update bandwidth estimate, if the packet is not comfort noise.
   if (!packet_list.empty() &&
