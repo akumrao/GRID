@@ -79,15 +79,15 @@ class AudioTransportImpl : public AudioTransport {
   size_t send_num_channels_ RTC_GUARDED_BY(capture_lock_) = 1;
   bool typing_noise_detected_ RTC_GUARDED_BY(capture_lock_) = false;
   bool swap_stereo_channels_ RTC_GUARDED_BY(capture_lock_) = false;
-  PushResampler<int16_t> capture_resampler_;
+  //PushResampler<int16_t> capture_resampler_;
   voe::AudioLevel audio_level_;
 //  TypingDetection typing_detection_;
 
   // Render side.
-  rtc::scoped_refptr<AudioMixer> mixer_;
+  //rtc::scoped_refptr<AudioMixer> mixer_;
   AudioFrame mixed_frame_;
   // Converts mixed audio to the audio device output rate.
-  PushResampler<int16_t> render_resampler_;
+ // PushResampler<int16_t> render_resampler_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioTransportImpl);
 };

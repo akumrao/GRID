@@ -200,7 +200,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   rtc::Buffer encode_buffer_ RTC_GUARDED_BY(acm_crit_sect_);
   uint32_t expected_codec_ts_ RTC_GUARDED_BY(acm_crit_sect_);
   uint32_t expected_in_ts_ RTC_GUARDED_BY(acm_crit_sect_);
-  acm2::ACMResampler resampler_ RTC_GUARDED_BY(acm_crit_sect_);
+ // acm2::ACMResampler resampler_ RTC_GUARDED_BY(acm_crit_sect_);
   acm2::AcmReceiver receiver_;  // AcmReceiver has it's own internal lock.
   ChangeLogger bitrate_logger_ RTC_GUARDED_BY(acm_crit_sect_);
 
@@ -576,23 +576,23 @@ int AudioCodingModuleImpl::PreprocessToAddData(const AudioFrame& in_frame,
   preprocess_frame_.samples_per_channel_ = in_frame.samples_per_channel_;
   preprocess_frame_.sample_rate_hz_ = in_frame.sample_rate_hz_;
   // If it is required, we have to do a resampling.
-  if (resample) {
-    // The result of the resampler is written to output frame.
-    int16_t* dest_ptr_audio = preprocess_frame_.mutable_data();
-
-    int samples_per_channel = resampler_.Resample10Msec(
-        src_ptr_audio, in_frame.sample_rate_hz_, encoder_stack_->SampleRateHz(),
-        preprocess_frame_.num_channels_, AudioFrame::kMaxDataSizeSamples,
-        dest_ptr_audio);
-
-    if (samples_per_channel < 0) {
-      RTC_LOG(LS_ERROR) << "Cannot add 10 ms audio, resampling failed";
-      return -1;
-    }
-    preprocess_frame_.samples_per_channel_ =
-        static_cast<size_t>(samples_per_channel);
-    preprocess_frame_.sample_rate_hz_ = encoder_stack_->SampleRateHz();
-  }
+//  if (resample) {
+//    // The result of the resampler is written to output frame.
+//    int16_t* dest_ptr_audio = preprocess_frame_.mutable_data();
+//
+//    int samples_per_channel = resampler_.Resample10Msec(
+//        src_ptr_audio, in_frame.sample_rate_hz_, encoder_stack_->SampleRateHz(),
+//        preprocess_frame_.num_channels_, AudioFrame::kMaxDataSizeSamples,
+//        dest_ptr_audio);
+//
+//    if (samples_per_channel < 0) {
+//      RTC_LOG(LS_ERROR) << "Cannot add 10 ms audio, resampling failed";
+//      return -1;
+//    }
+//    preprocess_frame_.samples_per_channel_ =
+//        static_cast<size_t>(samples_per_channel);
+//    preprocess_frame_.sample_rate_hz_ = encoder_stack_->SampleRateHz();
+//  }
 
   expected_codec_ts_ +=
       static_cast<uint32_t>(preprocess_frame_.samples_per_channel_);

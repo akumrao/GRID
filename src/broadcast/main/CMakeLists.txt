@@ -95,15 +95,15 @@ add_subdirectory( webrtc/third_party)
 
 if (${ANDROID_ABI} STREQUAL "x86_64")
 
-target_link_libraries(runWebrtc PRIVATE  rnnoise
+target_link_libraries(runWebrtc PRIVATE  
     srtp   usrsctp  event    absl::optional    absl::variant    absl::strings
-    pffft pthread m dl z  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  )
+     pthread m dl z  ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  )
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
  
-target_link_libraries(runWebrtc PRIVATE  rnnoise
+target_link_libraries(runWebrtc PRIVATE  
     srtp   usrsctp  event  absl::optional  absl::variant   absl::strings 
-    pffft  rt m dl -pthread   ${SSL_LIB}/libssl.so ${SSL_LIB}/libcrypto.so  ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a  /workspace/MagicAI/src/qrcode/rgbQr/zbar.a xailientsdk xailientsdkutils jzdl.m )
+      rt m dl -pthread   ${SSL_LIB}/libssl.so ${SSL_LIB}/libcrypto.so  ${T31SDK}/lib/uclibc/libalog.a ${T31SDK}/lib/uclibc/libimp.a  /workspace/MagicAI/src/qrcode/rgbQr/zbar.a xailientsdk xailientsdkutils jzdl.m )
 
 endif()
 

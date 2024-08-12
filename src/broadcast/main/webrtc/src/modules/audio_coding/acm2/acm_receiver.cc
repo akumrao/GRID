@@ -36,7 +36,8 @@ AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
     : last_audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
       neteq_(NetEq::Create(config.neteq_config, config.decoder_factory)),
       clock_(config.clock),
-      resampled_last_output_frame_(true) {
+      resampled_last_output_frame_(true) 
+{
   RTC_DCHECK(clock_);
   memset(last_audio_buffer_.get(), 0,
          sizeof(int16_t) * AudioFrame::kMaxDataSizeSamples);
@@ -145,38 +146,40 @@ int AcmReceiver::GetAudio(int desired_freq_hz,
   if (need_resampling && !resampled_last_output_frame_) {
     // Prime the resampler with the last frame.
     int16_t temp_output[AudioFrame::kMaxDataSizeSamples];
-    int samples_per_channel_int = resampler_.Resample10Msec(
-        last_audio_buffer_.get(), current_sample_rate_hz, desired_freq_hz,
-        audio_frame->num_channels_, AudioFrame::kMaxDataSizeSamples,
-        temp_output);
-    if (samples_per_channel_int < 0) {
-      RTC_LOG(LERROR) << "AcmReceiver::GetAudio - "
-                         "Resampling last_audio_buffer_ failed.";
-      return -1;
-    }
+//    int samples_per_channel_int = resampler_.Resample10Msec(
+//        last_audio_buffer_.get(), current_sample_rate_hz, desired_freq_hz,
+//        audio_frame->num_channels_, AudioFrame::kMaxDataSizeSamples,
+//        temp_output);
+//    if (samples_per_channel_int < 0) {
+//      RTC_LOG(LERROR) << "AcmReceiver::GetAudio - "
+//                         "Resampling last_audio_buffer_ failed.";
+//      return -1;
+//    }
   }
 
   // TODO(henrik.lundin) Glitches in the output may appear if the output rate
-  // from NetEq changes. See WebRTC issue 3923.
-  if (need_resampling) {
-    // TODO(yujo): handle this more efficiently for muted frames.
-    int samples_per_channel_int = resampler_.Resample10Msec(
-        audio_frame->data(), current_sample_rate_hz, desired_freq_hz,
-        audio_frame->num_channels_, AudioFrame::kMaxDataSizeSamples,
-        audio_frame->mutable_data());
-    if (samples_per_channel_int < 0) {
-      RTC_LOG(LERROR)
-          << "AcmReceiver::GetAudio - Resampling audio_buffer_ failed.";
-      return -1;
-    }
-    audio_frame->samples_per_channel_ =
-        static_cast<size_t>(samples_per_channel_int);
-    audio_frame->sample_rate_hz_ = desired_freq_hz;
-    RTC_DCHECK_EQ(
-        audio_frame->sample_rate_hz_,
-        rtc::dchecked_cast<int>(audio_frame->samples_per_channel_ * 100));
-    resampled_last_output_frame_ = true;
-  } else {
+//  // from NetEq changes. See WebRTC issue 3923.
+//  if (need_resampling) {
+//    // TODO(yujo): handle this more efficiently for muted frames.
+//    int samples_per_channel_int = resampler_.Resample10Msec(
+//        audio_frame->data(), current_sample_rate_hz, desired_freq_hz,
+//        audio_frame->num_channels_, AudioFrame::kMaxDataSizeSamples,
+//        audio_frame->mutable_data());
+//    if (samples_per_channel_int < 0) {
+//      RTC_LOG(LERROR)
+//          << "AcmReceiver::GetAudio - Resampling audio_buffer_ failed.";
+//      return -1;
+//    }
+//    audio_frame->samples_per_channel_ =
+//        static_cast<size_t>(samples_per_channel_int);
+//    audio_frame->sample_rate_hz_ = desired_freq_hz;
+//    RTC_DCHECK_EQ(
+//        audio_frame->sample_rate_hz_,
+//        rtc::dchecked_cast<int>(audio_frame->samples_per_channel_ * 100));
+//    resampled_last_output_frame_ = true;
+//  } else 
+  
+  {
     resampled_last_output_frame_ = false;
     // We might end up here ONLY if codec is changed.
   }

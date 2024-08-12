@@ -206,7 +206,7 @@ class AcmReceiver {
   rtc::CriticalSection crit_sect_;
   absl::optional<std::pair<int, SdpAudioFormat>> last_decoder_
       RTC_GUARDED_BY(crit_sect_);
-  ACMResampler resampler_ RTC_GUARDED_BY(crit_sect_);
+  //ACMResampler resampler_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<int16_t[]> last_audio_buffer_ RTC_GUARDED_BY(crit_sect_);
   CallStatistics call_stats_ RTC_GUARDED_BY(crit_sect_);
   const std::unique_ptr<NetEq> neteq_;  // NetEq is thread-safe; no lock needed.

@@ -60,28 +60,28 @@ void ProcessCaptureFrame(uint32_t delay_ms,
 }
 
 // Resample audio in |frame| to given sample rate preserving the
-// channel count and place the result in |destination|.
-int Resample(const AudioFrame& frame,
-             const int destination_sample_rate,
-             PushResampler<int16_t>* resampler,
-             int16_t* destination) {
-  const int number_of_channels = static_cast<int>(frame.num_channels_);
-  const int target_number_of_samples_per_channel =
-      destination_sample_rate / 100;
-  resampler->InitializeIfNeeded(frame.sample_rate_hz_, destination_sample_rate,
-                                number_of_channels);
-
-  // TODO(yujo): make resampler take an AudioFrame, and add special case
-  // handling of muted frames.
-  return resampler->Resample(
-      frame.data(), frame.samples_per_channel_ * number_of_channels,
-      destination, number_of_channels * target_number_of_samples_per_channel);
-}
+//// channel count and place the result in |destination|.
+//int Resample(const AudioFrame& frame,
+//             const int destination_sample_rate,
+//             PushResampler<int16_t>* resampler,
+//             int16_t* destination) {
+//  const int number_of_channels = static_cast<int>(frame.num_channels_);
+//  const int target_number_of_samples_per_channel =
+//      destination_sample_rate / 100;
+//  resampler->InitializeIfNeeded(frame.sample_rate_hz_, destination_sample_rate,
+//                                number_of_channels);
+//
+//  // TODO(yujo): make resampler take an AudioFrame, and add special case
+//  // handling of muted frames.
+//  return resampler->Resample(
+//      frame.data(), frame.samples_per_channel_ * number_of_channels,
+//      destination, number_of_channels * target_number_of_samples_per_channel);
+//}
 }  // namespace
 
 AudioTransportImpl::AudioTransportImpl(AudioMixer* mixer,
                                        AudioProcessing* audio_processing)
-    : audio_processing_(audio_processing), mixer_(mixer) {
+    : audio_processing_(audio_processing) {
   RTC_DCHECK(mixer);
   RTC_DCHECK(audio_processing);
 }
@@ -124,9 +124,9 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
   std::unique_ptr<AudioFrame> audio_frame(new AudioFrame());
   InitializeCaptureFrame(sample_rate, send_sample_rate_hz, number_of_channels,
                          send_num_channels, audio_frame.get());
-  voe::RemixAndResample(static_cast<const int16_t*>(audio_data),
-                        number_of_frames, number_of_channels, sample_rate,
-                        &capture_resampler_, audio_frame.get());
+//  voe::RemixAndResample(static_cast<const int16_t*>(audio_data),
+//                        number_of_frames, number_of_channels, sample_rate,
+//                        &capture_resampler_, audio_frame.get());
   ProcessCaptureFrame(audio_delay_milliseconds, key_pressed,
                       swap_stereo_channels, audio_processing_,
                       audio_frame.get());
@@ -178,28 +178,30 @@ int32_t AudioTransportImpl::NeedMorePlayData(const size_t nSamples,
                                              size_t& nSamplesOut,
                                              int64_t* elapsed_time_ms,
                                              int64_t* ntp_time_ms) {
-  RTC_DCHECK_EQ(sizeof(int16_t) * nChannels, nBytesPerSample);
-  RTC_DCHECK_GE(nChannels, 1);
-  RTC_DCHECK_LE(nChannels, 2);
-  RTC_DCHECK_GE(
-      samplesPerSec,
-      static_cast<uint32_t>(AudioProcessing::NativeRate::kSampleRate8kHz));
-
-  // 100 = 1 second / data duration (10 ms).
-  RTC_DCHECK_EQ(nSamples * 100, samplesPerSec);
-  RTC_DCHECK_LE(nBytesPerSample * nSamples * nChannels,
-                AudioFrame::kMaxDataSizeBytes);
-
-  mixer_->Mix(nChannels, &mixed_frame_);
-  *elapsed_time_ms = mixed_frame_.elapsed_time_ms_;
-  *ntp_time_ms = mixed_frame_.ntp_time_ms_;
-
-  const auto error = audio_processing_->ProcessReverseStream(&mixed_frame_);
-  RTC_DCHECK_EQ(error, AudioProcessing::kNoError);
-
-  nSamplesOut = Resample(mixed_frame_, samplesPerSec, &render_resampler_,
-                         static_cast<int16_t*>(audioSamples));
-  RTC_DCHECK_EQ(nSamplesOut, nChannels * nSamples);
+    
+    exit(0);
+//  RTC_DCHECK_EQ(sizeof(int16_t) * nChannels, nBytesPerSample);
+//  RTC_DCHECK_GE(nChannels, 1);
+//  RTC_DCHECK_LE(nChannels, 2);
+//  RTC_DCHECK_GE(
+//      samplesPerSec,
+//      static_cast<uint32_t>(AudioProcessing::NativeRate::kSampleRate8kHz));
+//
+//  // 100 = 1 second / data duration (10 ms).
+//  RTC_DCHECK_EQ(nSamples * 100, samplesPerSec);
+//  RTC_DCHECK_LE(nBytesPerSample * nSamples * nChannels,
+//                AudioFrame::kMaxDataSizeBytes);
+//
+//  mixer_->Mix(nChannels, &mixed_frame_);
+//  *elapsed_time_ms = mixed_frame_.elapsed_time_ms_;
+//  *ntp_time_ms = mixed_frame_.ntp_time_ms_;
+//
+//  const auto error = audio_processing_->ProcessReverseStream(&mixed_frame_);
+//  RTC_DCHECK_EQ(error, AudioProcessing::kNoError);
+//
+//  nSamplesOut = Resample(mixed_frame_, samplesPerSec, &render_resampler_,
+//                         static_cast<int16_t*>(audioSamples));
+//  RTC_DCHECK_EQ(nSamplesOut, nChannels * nSamples);
   return 0;
 }
 
@@ -212,23 +214,25 @@ void AudioTransportImpl::PullRenderData(int bits_per_sample,
                                         void* audio_data,
                                         int64_t* elapsed_time_ms,
                                         int64_t* ntp_time_ms) {
-  RTC_DCHECK_EQ(bits_per_sample, 16);
-  RTC_DCHECK_GE(number_of_channels, 1);
-  RTC_DCHECK_GE(sample_rate, AudioProcessing::NativeRate::kSampleRate8kHz);
-
-  // 100 = 1 second / data duration (10 ms).
-  RTC_DCHECK_EQ(number_of_frames * 100, sample_rate);
-
-  // 8 = bits per byte.
-  RTC_DCHECK_LE(bits_per_sample / 8 * number_of_frames * number_of_channels,
-                AudioFrame::kMaxDataSizeBytes);
-  mixer_->Mix(number_of_channels, &mixed_frame_);
-  *elapsed_time_ms = mixed_frame_.elapsed_time_ms_;
-  *ntp_time_ms = mixed_frame_.ntp_time_ms_;
-
-  auto output_samples = Resample(mixed_frame_, sample_rate, &render_resampler_,
-                                 static_cast<int16_t*>(audio_data));
-  RTC_DCHECK_EQ(output_samples, number_of_channels * number_of_frames);
+    
+    exit(0);
+//  RTC_DCHECK_EQ(bits_per_sample, 16);
+//  RTC_DCHECK_GE(number_of_channels, 1);
+//  RTC_DCHECK_GE(sample_rate, AudioProcessing::NativeRate::kSampleRate8kHz);
+//
+//  // 100 = 1 second / data duration (10 ms).
+//  RTC_DCHECK_EQ(number_of_frames * 100, sample_rate);
+//
+//  // 8 = bits per byte.
+//  RTC_DCHECK_LE(bits_per_sample / 8 * number_of_frames * number_of_channels,
+//                AudioFrame::kMaxDataSizeBytes);
+//  //mixer_->Mix(number_of_channels, &mixed_frame_);
+//  *elapsed_time_ms = mixed_frame_.elapsed_time_ms_;
+//  *ntp_time_ms = mixed_frame_.ntp_time_ms_;
+//
+//  auto output_samples = Resample(mixed_frame_, sample_rate, &render_resampler_,
+//                                 static_cast<int16_t*>(audio_data));
+//  RTC_DCHECK_EQ(output_samples, number_of_channels * number_of_frames);
 }
 
 void AudioTransportImpl::UpdateSendingStreams(
