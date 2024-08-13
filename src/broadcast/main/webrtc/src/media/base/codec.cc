@@ -282,8 +282,8 @@ bool VideoCodec::Matches(const VideoCodec& other) const {
   if (absl::EqualsIgnoreCase(name, kH264CodecName))
     return webrtc::H264::IsSameH264Profile(params, other.params) &&
            IsSameH264PacketizationMode(params, other.params);
-  if (absl::EqualsIgnoreCase(name, kVp9CodecName))
-    return webrtc::IsSameVP9Profile(params, other.params);
+  //if (absl::EqualsIgnoreCase(name, kVp9CodecName))
+   // return webrtc::IsSameVP9Profile(params, other.params);
   return true;
 }
 
@@ -400,8 +400,8 @@ bool IsSameCodec(const std::string& name1,
   // For every format besides H264 and VP9, comparing names is enough.
   if (absl::EqualsIgnoreCase(name1, kH264CodecName))
     return webrtc::H264::IsSameH264Profile(params1, params2);
-  if (absl::EqualsIgnoreCase(name1, kVp9CodecName))
-    return webrtc::IsSameVP9Profile(params1, params2);
+ // if (absl::EqualsIgnoreCase(name1, kVp9CodecName))
+   // return webrtc::IsSameVP9Profile(params1, params2);
   return true;
 }
 

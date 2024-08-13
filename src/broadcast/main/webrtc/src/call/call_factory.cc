@@ -76,9 +76,11 @@ Call* CallFactory::CreateCall(const Call::Config& config) {
       receive_degradation_config = ParseDegradationConfig(false);
 
   if (send_degradation_config || receive_degradation_config) {
-    return new DegradedCall(std::unique_ptr<Call>(Call::Create(config)),
-                            send_degradation_config,
-                            receive_degradation_config);
+//    return new DegradedCall(std::unique_ptr<Call>(Call::Create(config)),
+//                            send_degradation_config,
+//                            receive_degradation_config);
+      
+      exit(0);
   }
 
   return Call::Create(config);
