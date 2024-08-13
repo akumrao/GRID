@@ -52,7 +52,7 @@
 #include "modules/audio_device/dummy/file_audio_device.h"
 #include "modules/audio_device/dummy/file_audio_device_factory.h"
 #endif
-#include "modules/audio_device/dummy/audio_device_dummy.h"
+//#include "modules/audio_device/dummy/audio_device_dummy.h"
 
 #define CHECKinitialized_() \
   {                         \

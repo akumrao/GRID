@@ -32,24 +32,24 @@ absl_cc_library(
     "substitute.h"
   SRCS
     "ascii.cc"
-    "charconv.cc"
-    "escaping.cc"
-    "internal/charconv_bigint.cc"
-    "internal/charconv_bigint.h"
-    "internal/charconv_parse.cc"
-    "internal/charconv_parse.h"
-    "internal/memutil.cc"
-    "internal/memutil.h"
-    "internal/stl_type_traits.h"
-    "internal/str_join_internal.h"
-    "internal/str_split_internal.h"
+#   "charconv.cc"
+#   "escaping.cc"
+#   "internal/charconv_bigint.cc"
+#   "internal/charconv_bigint.h"
+#   "internal/charconv_parse.cc"
+#   "internal/charconv_parse.h"
+   "internal/memutil.cc"
+   "internal/memutil.h"
+#   "internal/stl_type_traits.h"
+#   "internal/str_join_internal.h"
+#   "internal/str_split_internal.h"
     "match.cc"
-    "numbers.cc"
+#   "numbers.cc"
     "str_cat.cc"
-    "str_replace.cc"
-    "str_split.cc"
+#   "str_replace.cc"
+#   "str_split.cc"
     "string_view.cc"
-    "substitute.cc"
+#   "substitute.cc"
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
@@ -74,8 +74,8 @@ absl_cc_library(
     "internal/resize_uninitialized.h"
     "internal/utf8.h"
   SRCS
-    "internal/ostringstream.cc"
-    "internal/utf8.cc"
+#    "internal/ostringstream.cc"
+#    "internal/utf8.cc"
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
@@ -374,12 +374,12 @@ absl_cc_library(
     "internal/str_format/output.h"
     "internal/str_format/parser.h"
   SRCS
-    "internal/str_format/arg.cc"
-    "internal/str_format/bind.cc"
-    "internal/str_format/extension.cc"
-    "internal/str_format/float_conversion.cc"
-    "internal/str_format/output.cc"
-    "internal/str_format/parser.cc"
+#    "internal/str_format/arg.cc"
+#    "internal/str_format/bind.cc"
+#    "internal/str_format/extension.cc"
+#    "internal/str_format/float_conversion.cc"
+#    "internal/str_format/output.cc"
+#    "internal/str_format/parser.cc"
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS

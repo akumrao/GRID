@@ -32,7 +32,7 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::algorithm
+  #  absl::algorithm
     gmock_main
 )
 
