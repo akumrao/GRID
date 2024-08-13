@@ -357,13 +357,14 @@ void VideoReceiveStream::Start() {
     // dumped video, since it's developers-only feature for debugging.
     absl::c_replace(decoded_output_file, ';', '/');
     if (!decoded_output_file.empty()) {
-      char filename_buffer[256];
-      rtc::SimpleStringBuilder ssb(filename_buffer);
-      ssb << decoded_output_file << "/webrtc_receive_stream_"
-          << this->config_.rtp.remote_ssrc << "-" << rtc::TimeMicros()
-          << ".ivf";
-      video_decoder = absl::make_unique<FrameDumpingDecoder>(
-          std::move(video_decoder), FileWrapper::OpenWriteOnly(ssb.str()));
+        exit(0);
+//      char filename_buffer[256];
+//      rtc::SimpleStringBuilder ssb(filename_buffer);
+//      ssb << decoded_output_file << "/webrtc_receive_stream_"
+//          << this->config_.rtp.remote_ssrc << "-" << rtc::TimeMicros()
+//          << ".ivf";
+//      video_decoder = absl::make_unique<FrameDumpingDecoder>(
+//          std::move(video_decoder), FileWrapper::OpenWriteOnly(ssb.str()));
     }
 
     video_decoders_.push_back(std::move(video_decoder));
