@@ -101,7 +101,7 @@ absl::memory
 absl::meta
 absl::numeric
 absl::strings
-absl::synchronization
+#absl::synchronization
 absl::time
 absl::utility
 ```

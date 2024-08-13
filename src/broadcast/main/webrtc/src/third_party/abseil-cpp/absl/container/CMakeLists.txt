@@ -59,9 +59,9 @@ absl_cc_library(
   DEPS
     absl::compressed_tuple
     absl::algorithm
-    absl::core_headers
+#    #absl::core_headers
     absl::dynamic_annotations
-    absl::throw_delegate
+#    absl::throw_delegate
     absl::memory
   PUBLIC
 )
@@ -137,7 +137,7 @@ absl_cc_library(
     ${ABSL_DEFAULT_COPTS}
   DEPS
     absl::algorithm
-    absl::core_headers
+    #absl::core_headers
     absl::inlined_vector_internal
     absl::throw_delegate
     absl::memory
@@ -167,8 +167,8 @@ absl_cc_test(
     absl::counting_allocator
     absl::inlined_vector
     absl::test_instance_tracker
-    absl::base
-    absl::core_headers
+    ##absl::base
+#    #absl::core_headers
     absl::exception_testing
     absl::hash_testing
     absl::memory
@@ -186,8 +186,8 @@ absl_cc_test(
   DEPS
     absl::inlined_vector
     absl::test_instance_tracker
-    absl::base
-    absl::core_headers
+    ##absl::base
+#    #absl::core_headers
     absl::exception_testing
     absl::hash_testing
     absl::memory
@@ -283,7 +283,7 @@ absl_cc_library(
     absl::hash_function_defaults
     absl::raw_hash_set
     absl::algorithm_container
-    absl::core_headers
+#    #absl::core_headers
     absl::memory
   PUBLIC
 )
@@ -411,7 +411,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::config
+    #absl::config
     absl::hash
     absl::strings
   PUBLIC
@@ -507,9 +507,9 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::base
+    ##absl::base
     absl::have_sse
-    absl::synchronization
+#    absl::synchronization
 )
 
 absl_cc_test(
@@ -614,11 +614,11 @@ absl_cc_library(
   DEPS
     absl::bits
     absl::compressed_tuple
-    absl::config
+    #absl::config
     absl::container_common
     absl::container_memory
-    absl::core_headers
-    absl::endian
+    #absl::core_headers
+#    absl::endian
     absl::hash_policy_traits
     absl::hashtable_debug_hooks
     absl::have_sse
@@ -644,8 +644,8 @@ absl_cc_test(
     absl::hash_policy_testing
     absl::hashtable_debug
     absl::raw_hash_set
-    absl::base
-    absl::core_headers
+    ##absl::base
+    #absl::core_headers
     absl::strings
     gmock_main
 )
@@ -660,7 +660,7 @@ absl_cc_test(
   DEPS
     absl::raw_hash_set
     absl::tracked
-    absl::core_headers
+    #absl::core_headers
     gmock_main
 )
 
@@ -672,7 +672,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::core_headers
+#    #absl::core_headers
     absl::meta
     absl::strings
     absl::span
@@ -689,8 +689,8 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::layout
-    absl::base
-    absl::core_headers
+    ##absl::base
+#    #absl::core_headers
     absl::span
     gmock_main
 )

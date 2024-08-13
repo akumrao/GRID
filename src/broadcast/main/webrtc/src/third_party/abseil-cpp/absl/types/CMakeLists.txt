@@ -22,8 +22,8 @@ absl_cc_library(
     ${ABSL_DEFAULT_COPTS}
   DEPS
     absl::bad_any_cast
-    absl::config
-    absl::core_headers
+    #absl::config
+    #absl::core_headers
     absl::type_traits
     absl::utility
   PUBLIC
@@ -38,7 +38,7 @@ absl_cc_library(
     ${ABSL_DEFAULT_COPTS}
   DEPS
     absl::bad_any_cast_impl
-    absl::config
+    #absl::config
   PUBLIC
 )
 
@@ -54,8 +54,8 @@ absl_cc_library(
   LINKOPTS
     ${ABSL_EXCEPTIONS_FLAG_LINKOPTS}
   DEPS
-    absl::base
-    absl::config
+    ##absl::base
+    #absl::config
 )
 
 absl_cc_test(
@@ -70,8 +70,8 @@ absl_cc_test(
     ${ABSL_EXCEPTIONS_FLAG_LINKOPTS}
   DEPS
     absl::any
-    absl::base
-    absl::config
+    ##absl::base
+    #absl::config
     absl::exception_testing
     absl::test_instance_tracker
     gmock_main
@@ -86,8 +86,8 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::any
-    absl::base
-    absl::config
+    ##absl::base
+    #absl::config
     absl::exception_testing
     absl::test_instance_tracker
     gmock_main
@@ -120,7 +120,7 @@ absl_cc_library(
     ${ABSL_DEFAULT_COPTS}
   DEPS
     absl::algorithm
-    absl::core_headers
+    #absl::core_headers
     absl::throw_delegate
     absl::type_traits
   PUBLIC
@@ -138,9 +138,9 @@ absl_cc_test(
     ${ABSL_EXCEPTIONS_FLAG_LINKOPTS}
   DEPS
     absl::span
-    absl::base
-    absl::config
-    absl::core_headers
+    ##absl::base
+    #absl::config
+    #absl::core_headers
     absl::exception_testing
     absl::fixed_array
     absl::inlined_vector
@@ -158,9 +158,9 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::span
-    absl::base
-    absl::config
-    absl::core_headers
+    ##absl::base
+    #absl::config
+    #absl::core_headers
     absl::exception_testing
     absl::fixed_array
     absl::inlined_vector
@@ -180,12 +180,12 @@ absl_cc_library(
     ${ABSL_DEFAULT_COPTS}
   DEPS
     absl::bad_optional_access
-    absl::base_internal
-    absl::config
-    absl::core_headers
+#    absl::base_internal
+#   #absl::config
+#    #absl::core_headers
     absl::memory
     absl::type_traits
-    absl::utility
+#    absl::utility
   PUBLIC
 )
 
@@ -202,8 +202,8 @@ absl_cc_library(
   LINKOPTS
     ${ABSL_EXCEPTIONS_FLAG_LINKOPTS}
   DEPS
-    absl::base
-    absl::config
+    ##absl::base
+    #absl::config
   PUBLIC
 )
 
@@ -220,8 +220,8 @@ absl_cc_library(
   LINKOPTS
     ${ABSL_EXCEPTIONS_FLAG_LINKOPTS}
   DEPS
-    absl::base
-    absl::config
+    ##absl::base
+    #absl::config
   PUBLIC
 )
 
@@ -237,8 +237,8 @@ absl_cc_test(
     ${ABSL_EXCEPTIONS_FLAG_LINKOPTS}
   DEPS
     absl::optional
-    absl::base
-    absl::config
+    ##absl::base
+    #absl::config
     absl::type_traits
     absl::strings
     gmock_main
@@ -271,11 +271,11 @@ absl_cc_library(
     ${ABSL_DEFAULT_COPTS}
   DEPS
     absl::bad_variant_access
-    absl::base_internal
-    absl::config
-    absl::core_headers
+    #absl::base_internal
+    #absl::config
+    #absl::core_headers
     absl::type_traits
-    absl::utility
+    #absl::utility
   PUBLIC
 )
 
@@ -291,8 +291,8 @@ absl_cc_test(
     ${ABSL_EXCEPTIONS_FLAG_LINKOPTS}
   DEPS
     absl::variant
-    absl::config
-    absl::core_headers
+    #absl::config
+    #absl::core_headers
     absl::memory
     absl::type_traits
     absl::strings
@@ -307,7 +307,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::core_headers
+    #absl::core_headers
     absl::type_traits
   PUBLIC
 )
@@ -320,7 +320,7 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::base
+    ##absl::base
     absl::compare
     gmock_main
 )
@@ -340,7 +340,7 @@ absl_cc_test(
     ${ABSL_EXCEPTIONS_FLAG_LINKOPTS}
   DEPS
     absl::variant
-    absl::config
+    #absl::config
     absl::exception_safety_testing
     absl::memory
     gmock_main

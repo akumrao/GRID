@@ -22,7 +22,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::core_headers
+    #absl::core_headers
     absl::meta
   PUBLIC
 )
@@ -36,8 +36,8 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::memory
-    absl::base
-    absl::core_headers
+    ##absl::base
+    #absl::core_headers
     gmock_main
 )
 

@@ -29,7 +29,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::core_headers
+#    #absl::core_headers
 )
 
 absl_cc_library(
@@ -70,7 +70,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::config
+    #absl::config
   PUBLIC
 )
 
@@ -85,9 +85,9 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::base
-    absl::config
-    absl::core_headers
+    ##absl::base
+    #absl::config
+#    #absl::core_headers
     absl::dynamic_annotations
     absl::spinlock_wait
     Threads::Threads
@@ -134,8 +134,8 @@ absl_cc_library(
     ${ABSL_DEFAULT_COPTS}
   DEPS
     absl::base_internal
-    absl::config
-    absl::core_headers
+    #absl::config
+#    #absl::core_headers
     absl::dynamic_annotations
     absl::spinlock_wait
     absl::type_traits
@@ -154,7 +154,7 @@ absl_cc_library(
     ${ABSL_DEFAULT_COPTS}
     ${ABSL_EXCEPTIONS_FLAG}
   DEPS
-    absl::base
+    ##absl::base
 )
 
 absl_cc_library(
@@ -165,7 +165,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::config
+    #absl::config
     gtest
   TESTONLY
 )
@@ -192,7 +192,7 @@ absl_cc_library(
   LINKOPTS
     ${ABSL_EXCEPTIONS_FLAG_LINKOPTS}
   DEPS
-    absl::config
+    #absl::config
     absl::pretty_function
     absl::memory
     absl::meta
@@ -226,8 +226,8 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::base
-    absl::core_headers
+    ##absl::base
+#    #absl::core_headers
     gtest_main
 )
 
@@ -239,8 +239,8 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::base
-    absl::core_headers
+    ##absl::base
+    #absl::core_headers
     gtest_main
 )
 
@@ -252,7 +252,7 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::base
+    ##absl::base
     absl::throw_delegate
     gtest_main
 )
@@ -295,10 +295,10 @@ absl_cc_library(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::base
-    absl::core_headers
+    ##absl::base
+#    #absl::core_headers
     absl::spinlock_wait
-    absl::synchronization
+#    absl::synchronization
     gtest
   TESTONLY
 )
@@ -312,8 +312,8 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::base
-    absl::core_headers
+    ##absl::base
+    #absl::core_headers
     absl::spinlock_wait
     absl::synchronization
     gtest_main
@@ -328,8 +328,8 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::config
-    absl::core_headers
+    #absl::config
+    #absl::core_headers
   PUBLIC
 )
 
@@ -341,9 +341,9 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::base
-    absl::config
-    absl::endian
+    ##absl::base
+    #absl::config
+#    absl::endian
     gtest_main
 )
 
@@ -355,8 +355,8 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::config
-    absl::synchronization
+    #absl::config
+#    absl::synchronization
     gtest_main
 )
 
@@ -368,9 +368,9 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::base
-    absl::core_headers
-    absl::synchronization
+    ##absl::base
+#    #absl::core_headers
+#    absl::synchronization
     gtest_main
 )
 
@@ -382,7 +382,7 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::base
+    ##absl::base
     absl::strings
     gtest_main
 )
@@ -395,7 +395,7 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::base
+    ##absl::base
     absl::synchronization
     gtest_main
 )
@@ -420,8 +420,8 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::base
-    absl::core_headers
+    ##absl::base
+    #absl::core_headers
     absl::synchronization
     Threads::Threads
     gtest_main
@@ -435,7 +435,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::core_headers
+    #absl::core_headers
 )
 
 absl_cc_test(
@@ -460,7 +460,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
-    absl::base
+    ##absl::base
 )
 
 absl_cc_test(
@@ -483,7 +483,7 @@ absl_cc_test(
   COPTS
     ${ABSL_TEST_COPTS}
   DEPS
-    absl::base
+    ##absl::base
 )
 
 absl_cc_test(
@@ -492,7 +492,7 @@ absl_cc_test(
   SRCS
     "log_severity_test.cc"
   DEPS
-    absl::base
+    ##absl::base
     gmock
     gtest_main
 )

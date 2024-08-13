@@ -56,7 +56,7 @@ include(AbseilHelpers)
 ## all public absl targets are
 ## exported with the absl:: prefix
 ##
-## e.g absl::base absl::synchronization absl::strings ....
+## e.g ##absl::base absl::synchronization absl::strings ....
 ##
 ## DO NOT rely on the internal targets outside of the prefix
 
