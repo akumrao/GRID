@@ -18,7 +18,7 @@ set(src_event
     ${WEBRTC_REPO}/base/third_party/libevent/event_tagging.c
     ${WEBRTC_REPO}/base/third_party/libevent/evrpc.c
     ${WEBRTC_REPO}/base/third_party/libevent/evutil.c
-    ${WEBRTC_REPO}/base/third_party/libevent/http.c
+    #${WEBRTC_REPO}/base/third_party/libevent/http.c
     ${WEBRTC_REPO}/base/third_party/libevent/log.c
     ${WEBRTC_REPO}/base/third_party/libevent/poll.c
     ${WEBRTC_REPO}/base/third_party/libevent/select.c
