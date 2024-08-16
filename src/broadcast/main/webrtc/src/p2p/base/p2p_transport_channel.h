@@ -30,8 +30,8 @@
 #include "api/async_resolver_factory.h"
 #include "api/candidate.h"
 #include "api/rtc_error.h"
-#include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
-#include "logging/rtc_event_log/ice_logger.h"
+//#include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
+//#include "logging/rtc_event_log/ice_logger.h"
 #include "p2p/base/candidate_pair_interface.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
@@ -339,8 +339,8 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
 
   void CheckAndPing();
 
-  void LogCandidatePairConfig(Connection* conn,
-                              webrtc::IceCandidatePairConfigType type);
+ // void LogCandidatePairConfig(Connection* conn,
+    //                          webrtc::IceCandidatePairConfigType type);
 
   uint32_t GetNominationAttr(Connection* conn) const;
   bool GetUseCandidateAttr(Connection* conn, NominationMode mode) const;
@@ -472,7 +472,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   rtc::AsyncInvoker invoker_ RTC_GUARDED_BY(network_thread_);
   absl::optional<rtc::NetworkRoute> network_route_
       RTC_GUARDED_BY(network_thread_);
-  webrtc::IceEventLog ice_event_log_ RTC_GUARDED_BY(network_thread_);
+//  webrtc::IceEventLog ice_event_log_ RTC_GUARDED_BY(network_thread_);
 
   struct CandidateAndResolver final {
     CandidateAndResolver(const Candidate& candidate,

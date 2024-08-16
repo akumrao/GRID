@@ -722,9 +722,9 @@ void Port::SendBindingResponse(StunMessage* request,
                    << ", id=" << rtc::hex_encode(response.transaction_id());
 
     conn->stats_.sent_ping_responses++;
-    conn->LogCandidatePairEvent(
-        webrtc::IceCandidatePairEventType::kCheckResponseSent,
-        request->reduced_transaction_id());
+//    conn->LogCandidatePairEvent(
+    //    webrtc::IceCandidatePairEventType::kCheckResponseSent,
+      //  request->reduced_transaction_id());
   }
 }
 

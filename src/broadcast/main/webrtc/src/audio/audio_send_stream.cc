@@ -28,9 +28,9 @@
 #include "call/rtp_config.h"
 #include "call/rtp_transport_controller_send_interface.h"
 //#include "common_audio/vad/include/vad.h"
-#include "logging/rtc_event_log/events/rtc_event_audio_send_stream_config.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
-#include "logging/rtc_event_log/rtc_stream_config.h"
+//#include "logging/rtc_event_log/events/rtc_event_audio_send_stream_config.h"
+//#include "logging/rtc_event_log/rtc_event_log.h"
+//#include "logging/rtc_event_log/rtc_stream_config.h"
 //#include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/checks.h"
@@ -69,15 +69,15 @@ void UpdateEventLogStreamConfig(RtcEventLog* event_log,
     return;
   }
 
-  auto rtclog_config = absl::make_unique<rtclog::StreamConfig>();
-  rtclog_config->local_ssrc = config.rtp.ssrc;
-  rtclog_config->rtp_extensions = config.rtp.extensions;
+//  auto rtclog_config = absl::make_unique<rtclog::StreamConfig>();
+ // rtclog_config->local_ssrc = config.rtp.ssrc;
+ // rtclog_config->rtp_extensions = config.rtp.extensions;
   if (config.send_codec_spec) {
-    rtclog_config->codecs.emplace_back(config.send_codec_spec->format.name,
-                                       config.send_codec_spec->payload_type, 0);
+  //  rtclog_config->codecs.emplace_back(config.send_codec_spec->format.name,
+    //                                   config.send_codec_spec->payload_type, 0);
   }
-  event_log->Log(absl::make_unique<RtcEventAudioSendStreamConfig>(
-      std::move(rtclog_config)));
+//  event_log->Log(absl::make_unique<RtcEventAudioSendStreamConfig>(
+//      std::move(rtclog_config)));
 }
 
 }  // namespace

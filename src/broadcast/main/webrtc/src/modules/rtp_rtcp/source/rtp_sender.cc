@@ -18,8 +18,8 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/array_view.h"
-#include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
+//#include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
+//#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
@@ -513,8 +513,8 @@ bool RTPSender::SendPacketToNetwork(const RtpPacketToSend& packet,
                      ? static_cast<int>(packet.size())
                      : -1;
     if (event_log_ && bytes_sent > 0) {
-      event_log_->Log(absl::make_unique<RtcEventRtpPacketOutgoing>(
-          packet, pacing_info.probe_cluster_id));
+//      event_log_->Log(absl::make_unique<RtcEventRtpPacketOutgoing>(
+ //         packet, pacing_info.probe_cluster_id));
     }
   }
   // TODO(pwestin): Add a separate bitrate for sent bitrate after pacer.

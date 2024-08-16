@@ -16,8 +16,8 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "logging/rtc_event_log/events/rtc_event_rtcp_packet_outgoing.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
+//#include "logging/rtc_event_log/events/rtc_event_rtcp_packet_outgoing.h"
+//#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/app.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/compound_packet.h"
@@ -80,8 +80,8 @@ class PacketContainer : public rtcp::CompoundPacket {
       if (transport_->SendRtcp(packet.data(), packet.size())) {
         bytes_sent += packet.size();
         if (event_log_) {
-          event_log_->Log(
-              absl::make_unique<RtcEventRtcpPacketOutgoing>(packet));
+        //  event_log_->Log(
+           //   absl::make_unique<RtcEventRtcpPacketOutgoing>(packet));
         }
       }
     });
@@ -985,8 +985,8 @@ bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
   bool send_failure = false;
   auto callback = [&](rtc::ArrayView<const uint8_t> packet) {
     if (transport_->SendRtcp(packet.data(), packet.size())) {
-      if (event_log_)
-        event_log_->Log(absl::make_unique<RtcEventRtcpPacketOutgoing>(packet));
+     // if (event_log_)
+       // event_log_->Log(absl::make_unique<RtcEventRtcpPacketOutgoing>(packet));
     } else {
       send_failure = true;
     }

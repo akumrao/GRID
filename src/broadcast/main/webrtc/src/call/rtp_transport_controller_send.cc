@@ -19,7 +19,7 @@
 #include "api/units/timestamp.h"
 #include "call/rtp_transport_controller_send.h"
 #include "call/rtp_video_sender.h"
-#include "logging/rtc_event_log/events/rtc_event_route_change.h"
+//#include "logging/rtc_event_log/events/rtc_event_route_change.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
@@ -246,10 +246,10 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
           network_route.local_network_id, network_route.remote_network_id);
     transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
 
-    if (event_log_) {
-      event_log_->Log(absl::make_unique<RtcEventRouteChange>(
-          network_route.connected, network_route.packet_overhead));
-    }
+//    if (event_log_) {
+//      event_log_->Log(absl::make_unique<RtcEventRouteChange>(
+ //         network_route.connected, network_route.packet_overhead));
+  //  }
     NetworkRouteChange msg;
     msg.at_time = Timestamp::ms(clock_->TimeInMilliseconds());
     msg.constraints = ConvertConstraints(bitrate_config, clock_);

@@ -21,8 +21,8 @@
 #include "audio/audio_level.h"
 #include "audio/channel_send.h"
 //#include "audio/utility/audio_frame_operations.h"
-#include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
+//#include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
+//#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_device/include/audio_device.h"
@@ -325,7 +325,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
   RTC_DCHECK_RUNS_SERIALIZED(&audio_thread_race_checker_);
   audio_frame->sample_rate_hz_ = sample_rate_hz;
 
-  event_log_->Log(absl::make_unique<RtcEventAudioPlayout>(remote_ssrc_));
+//  event_log_->Log(absl::make_unique<RtcEventAudioPlayout>(remote_ssrc_));
 
   // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
   bool muted;

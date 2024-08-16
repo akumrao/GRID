@@ -29,13 +29,13 @@
 #include "call/receive_time_calculator.h"
 #include "call/rtp_stream_receiver_controller.h"
 #include "call/rtp_transport_controller_send.h"
-#include "logging/rtc_event_log/events/rtc_event_audio_receive_stream_config.h"
-#include "logging/rtc_event_log/events/rtc_event_rtcp_packet_incoming.h"
-#include "logging/rtc_event_log/events/rtc_event_rtp_packet_incoming.h"
-#include "logging/rtc_event_log/events/rtc_event_video_receive_stream_config.h"
-#include "logging/rtc_event_log/events/rtc_event_video_send_stream_config.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
-#include "logging/rtc_event_log/rtc_stream_config.h"
+//#include "logging/rtc_event_log/events/rtc_event_audio_receive_stream_config.h"
+//#include "logging/rtc_event_log/events/rtc_event_rtcp_packet_incoming.h"
+//#include "logging/rtc_event_log/events/rtc_event_rtp_packet_incoming.h"
+//#include "logging/rtc_event_log/events/rtc_event_video_receive_stream_config.h"
+//#include "logging/rtc_event_log/events/rtc_event_video_send_stream_config.h"
+//#include "logging/rtc_event_log/rtc_event_log.h"
+//#include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "modules/congestion_controller/include/receive_side_congestion_controller.h"
 #include "modules/rtp_rtcp/include/flexfec_receiver.h"
@@ -110,50 +110,50 @@ const int* FindKeyByValue(const std::map<int, int>& m, int v) {
   return nullptr;
 }
 
-std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
-    const VideoReceiveStream::Config& config) {
-  auto rtclog_config = absl::make_unique<rtclog::StreamConfig>();
-  rtclog_config->remote_ssrc = config.rtp.remote_ssrc;
-  rtclog_config->local_ssrc = config.rtp.local_ssrc;
-  rtclog_config->rtx_ssrc = config.rtp.rtx_ssrc;
-  rtclog_config->rtcp_mode = config.rtp.rtcp_mode;
-  rtclog_config->remb = config.rtp.remb;
-  rtclog_config->rtp_extensions = config.rtp.extensions;
+//std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
+//    const VideoReceiveStream::Config& config) {
+//  auto rtclog_config = absl::make_unique<rtclog::StreamConfig>();
+//  rtclog_config->remote_ssrc = config.rtp.remote_ssrc;
+//  rtclog_config->local_ssrc = config.rtp.local_ssrc;
+//  rtclog_config->rtx_ssrc = config.rtp.rtx_ssrc;
+//  rtclog_config->rtcp_mode = config.rtp.rtcp_mode;
+//  rtclog_config->remb = config.rtp.remb;
+//  rtclog_config->rtp_extensions = config.rtp.extensions;
+//
+//  for (const auto& d : config.decoders) {
+//    const int* search =
+//        FindKeyByValue(config.rtp.rtx_associated_payload_types, d.payload_type);
+//    rtclog_config->codecs.emplace_back(d.video_format.name, d.payload_type,
+//                                       search ? *search : 0);
+//  }
+//  return rtclog_config;
+//}
+//
+//std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
+//    const VideoSendStream::Config& config,
+//    size_t ssrc_index) {
+//  auto rtclog_config = absl::make_unique<rtclog::StreamConfig>();
+//  rtclog_config->local_ssrc = config.rtp.ssrcs[ssrc_index];
+//  if (ssrc_index < config.rtp.rtx.ssrcs.size()) {
+//    rtclog_config->rtx_ssrc = config.rtp.rtx.ssrcs[ssrc_index];
+//  }
+//  rtclog_config->rtcp_mode = config.rtp.rtcp_mode;
+//  rtclog_config->rtp_extensions = config.rtp.extensions;
+//
+//  rtclog_config->codecs.emplace_back(config.rtp.payload_name,
+//                                     config.rtp.payload_type,
+//                                     config.rtp.rtx.payload_type);
+//  return rtclog_config;
+//}
 
-  for (const auto& d : config.decoders) {
-    const int* search =
-        FindKeyByValue(config.rtp.rtx_associated_payload_types, d.payload_type);
-    rtclog_config->codecs.emplace_back(d.video_format.name, d.payload_type,
-                                       search ? *search : 0);
-  }
-  return rtclog_config;
-}
-
-std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
-    const VideoSendStream::Config& config,
-    size_t ssrc_index) {
-  auto rtclog_config = absl::make_unique<rtclog::StreamConfig>();
-  rtclog_config->local_ssrc = config.rtp.ssrcs[ssrc_index];
-  if (ssrc_index < config.rtp.rtx.ssrcs.size()) {
-    rtclog_config->rtx_ssrc = config.rtp.rtx.ssrcs[ssrc_index];
-  }
-  rtclog_config->rtcp_mode = config.rtp.rtcp_mode;
-  rtclog_config->rtp_extensions = config.rtp.extensions;
-
-  rtclog_config->codecs.emplace_back(config.rtp.payload_name,
-                                     config.rtp.payload_type,
-                                     config.rtp.rtx.payload_type);
-  return rtclog_config;
-}
-
-std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
-    const AudioReceiveStream::Config& config) {
-  auto rtclog_config = absl::make_unique<rtclog::StreamConfig>();
-  rtclog_config->remote_ssrc = config.rtp.remote_ssrc;
-  rtclog_config->local_ssrc = config.rtp.local_ssrc;
-  rtclog_config->rtp_extensions = config.rtp.extensions;
-  return rtclog_config;
-}
+//std::unique_ptr<rtclog::StreamConfig> CreateRtcLogStreamConfig(
+//    const AudioReceiveStream::Config& config) {
+//  auto rtclog_config = absl::make_unique<rtclog::StreamConfig>();
+//  rtclog_config->remote_ssrc = config.rtp.remote_ssrc;
+//  rtclog_config->local_ssrc = config.rtp.local_ssrc;
+//  rtclog_config->rtp_extensions = config.rtp.extensions;
+//  return rtclog_config;
+//}
 
 }  // namespace
 
@@ -780,8 +780,8 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
   TRACE_EVENT0("webrtc", "Call::CreateAudioReceiveStream");
   RTC_DCHECK_RUN_ON(&configuration_sequence_checker_);
   RegisterRateObserver();
-  event_log_->Log(absl::make_unique<RtcEventAudioReceiveStreamConfig>(
-      CreateRtcLogStreamConfig(config)));
+//  event_log_->Log(absl::make_unique<RtcEventAudioReceiveStreamConfig>(
+  //    CreateRtcLogStreamConfig(config)));
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
       clock_, &audio_receiver_controller_, transport_send_ptr_->packet_router(),
       module_process_thread_.get(), config, config_.audio_state, event_log_);
@@ -847,8 +847,8 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   video_send_delay_stats_->AddSsrcs(config);
   for (size_t ssrc_index = 0; ssrc_index < config.rtp.ssrcs.size();
        ++ssrc_index) {
-    event_log_->Log(absl::make_unique<RtcEventVideoSendStreamConfig>(
-        CreateRtcLogStreamConfig(config, ssrc_index)));
+//    event_log_->Log(absl::make_unique<RtcEventVideoSendStreamConfig>(
+    //    CreateRtcLogStreamConfig(config, ssrc_index)));
   }
 
   // TODO(mflodman): Base the start bitrate on a current bandwidth estimate, if
@@ -961,8 +961,8 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   }
   receive_stream->SignalNetworkState(video_network_state_);
   UpdateAggregateNetworkState();
-  event_log_->Log(absl::make_unique<RtcEventVideoReceiveStreamConfig>(
-      CreateRtcLogStreamConfig(config)));
+//  event_log_->Log(absl::make_unique<RtcEventVideoReceiveStreamConfig>(
+  //    CreateRtcLogStreamConfig(config)));
   return receive_stream;
 }
 
@@ -1363,8 +1363,8 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
   }
 
   if (rtcp_delivered) {
-    event_log_->Log(absl::make_unique<RtcEventRtcpPacketIncoming>(
-        rtc::MakeArrayView(packet, length)));
+//    event_log_->Log(absl::make_unique<RtcEventRtcpPacketIncoming>(
+ //       rtc::MakeArrayView(packet, length)));
   }
 
   return rtcp_delivered ? DELIVERY_OK : DELIVERY_PACKET_ERROR;
@@ -1424,8 +1424,8 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
     if (audio_receiver_controller_.OnRtpPacket(parsed_packet)) {
       received_bytes_per_second_counter_.Add(length);
       received_audio_bytes_per_second_counter_.Add(length);
-      event_log_->Log(
-          absl::make_unique<RtcEventRtpPacketIncoming>(parsed_packet));
+    //  event_log_->Log(
+//          absl::make_unique<RtcEventRtpPacketIncoming>(parsed_packet));
       const int64_t arrival_time_ms = parsed_packet.arrival_time_ms();
       if (!first_received_rtp_audio_ms_) {
         first_received_rtp_audio_ms_.emplace(arrival_time_ms);
@@ -1438,8 +1438,8 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
     if (video_receiver_controller_.OnRtpPacket(parsed_packet)) {
       received_bytes_per_second_counter_.Add(length);
       received_video_bytes_per_second_counter_.Add(length);
-      event_log_->Log(
-          absl::make_unique<RtcEventRtpPacketIncoming>(parsed_packet));
+ //     event_log_->Log(
+//          absl::make_unique<RtcEventRtpPacketIncoming>(parsed_packet));
       const int64_t arrival_time_ms = parsed_packet.arrival_time_ms();
       if (!first_received_rtp_video_ms_) {
         first_received_rtp_video_ms_.emplace(arrival_time_ms);

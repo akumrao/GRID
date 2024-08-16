@@ -13,9 +13,9 @@
 #include <algorithm>
 
 #include "absl/memory/memory.h"
-#include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
-#include "logging/rtc_event_log/events/rtc_event_probe_result_success.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
+//#include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
+//#include "logging/rtc_event_log/events/rtc_event_probe_result_success.h"
+//#include "logging/rtc_event_log/rtc_event_log.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -108,8 +108,8 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
                      << "] [send interval: " << send_interval_ms << " ms]"
                      << " [receive interval: " << receive_interval_ms << " ms]";
     if (event_log_) {
-      event_log_->Log(absl::make_unique<RtcEventProbeResultFailure>(
-          cluster_id, ProbeFailureReason::kInvalidSendReceiveInterval));
+//      event_log_->Log(absl::make_unique<RtcEventProbeResultFailure>(
+      //    cluster_id, ProbeFailureReason::kInvalidSendReceiveInterval));
     }
     return -1;
   }
@@ -141,8 +141,8 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
                      << send_bps / 1000 << " = " << ratio
                      << " > kMaxValidRatio (" << kMaxValidRatio << ")]";
     if (event_log_) {
-      event_log_->Log(absl::make_unique<RtcEventProbeResultFailure>(
-          cluster_id, ProbeFailureReason::kInvalidSendReceiveRatio));
+//      event_log_->Log(absl::make_unique<RtcEventProbeResultFailure>(
+   //       cluster_id, ProbeFailureReason::kInvalidSendReceiveRatio));
     }
     return -1;
   }
@@ -163,8 +163,8 @@ int ProbeBitrateEstimator::HandleProbeAndEstimateBitrate(
     res = kTargetUtilizationFraction * receive_bps;
   }
   if (event_log_) {
-    event_log_->Log(
-        absl::make_unique<RtcEventProbeResultSuccess>(cluster_id, res));
+    //event_log_->Log(
+//        absl::make_unique<RtcEventProbeResultSuccess>(cluster_id, res));
   }
   last_estimate_ = DataRate::bps(res);
   estimated_bitrate_bps_ = res;

@@ -18,7 +18,7 @@
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
+//#include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -84,11 +84,11 @@ void MaybeLogProbeClusterCreated(RtcEventLog* event_log,
     return;
   }
 
-  size_t min_bytes = static_cast<int32_t>(probe.target_data_rate.bps() *
-                                          probe.target_duration.ms() / 8000);
-  event_log->Log(absl::make_unique<RtcEventProbeClusterCreated>(
-      probe.id, probe.target_data_rate.bps(), probe.target_probe_count,
-      min_bytes));
+  //size_t min_bytes = static_cast<int32_t>(probe.target_data_rate.bps() *
+     //                                     probe.target_duration.ms() / 8000);
+//  event_log->Log(absl::make_unique<RtcEventProbeClusterCreated>(
+   //   probe.id, probe.target_data_rate.bps(), probe.target_probe_count,
+    //  min_bytes));
 }
 
 }  // namespace

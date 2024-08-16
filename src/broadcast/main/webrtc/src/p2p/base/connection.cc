@@ -65,7 +65,7 @@ inline bool TooLongWithoutResponse(
   auto first = pings_since_last_response[0];
   return now > (first.sent_time + maximum_time);
 }
-
+/*
 // Helper methods for converting string values of log description fields to
 // enum.
 webrtc::IceCandidateType GetCandidateTypeByString(const std::string& type) {
@@ -119,6 +119,8 @@ webrtc::IceCandidateNetworkType ConvertNetworkType(rtc::AdapterType type) {
   }
   return webrtc::IceCandidateNetworkType::kUnknown;
 }
+
+*/
 
 // When we don't have any RTT data, we have to pick something reasonable.  We
 // use a large value just in case the connection is really slow.
@@ -502,8 +504,8 @@ void Connection::HandleBindingRequest(IceMessage* msg) {
   }
 
   stats_.recv_ping_requests++;
-  LogCandidatePairEvent(webrtc::IceCandidatePairEventType::kCheckReceived,
-                        msg->reduced_transaction_id());
+//  LogCandidatePairEvent(webrtc::IceCandidatePairEventType::kCheckReceived,
+ //                       msg->reduced_transaction_id());
 
   // This is a validated stun request from remote peer.
   port_->SendBindingResponse(msg, remote_addr);
@@ -573,7 +575,7 @@ void Connection::Destroy() {
   // AutoSocketServerThread::~AutoSocketServerThread.
   RTC_LOG(LS_VERBOSE) << ToString() << ": Connection destroyed";
   port_->thread()->Post(RTC_FROM_HERE, this, MSG_DELETE);
-  LogCandidatePairConfig(webrtc::IceCandidatePairConfigType::kDestroyed);
+//  LogCandidatePairConfig(webrtc::IceCandidatePairConfigType::kDestroyed);
 }
 
 void Connection::FailAndDestroy() {
@@ -806,46 +808,46 @@ std::string Connection::ToString() const {
 std::string Connection::ToSensitiveString() const {
   return ToString();
 }
+//
+//const webrtc::IceCandidatePairDescription& Connection::ToLogDescription() {
+//  if (log_description_.has_value()) {
+//    return log_description_.value();
+//  }
+//  const Candidate& local = local_candidate();
+//  const Candidate& remote = remote_candidate();
+//  const rtc::Network* network = port()->Network();
+//  log_description_ = webrtc::IceCandidatePairDescription();
+//  log_description_->local_candidate_type =
+//      GetCandidateTypeByString(local.type());
+//  log_description_->local_relay_protocol =
+//      GetProtocolByString(local.relay_protocol());
+//  log_description_->local_network_type = ConvertNetworkType(network->type());
+//  log_description_->local_address_family =
+//      GetAddressFamilyByInt(local.address().family());
+//  log_description_->remote_candidate_type =
+//      GetCandidateTypeByString(remote.type());
+//  log_description_->remote_address_family =
+//      GetAddressFamilyByInt(remote.address().family());
+//  log_description_->candidate_pair_protocol =
+//      GetProtocolByString(local.protocol());
+//  return log_description_.value();
+//}
 
-const webrtc::IceCandidatePairDescription& Connection::ToLogDescription() {
-  if (log_description_.has_value()) {
-    return log_description_.value();
-  }
-  const Candidate& local = local_candidate();
-  const Candidate& remote = remote_candidate();
-  const rtc::Network* network = port()->Network();
-  log_description_ = webrtc::IceCandidatePairDescription();
-  log_description_->local_candidate_type =
-      GetCandidateTypeByString(local.type());
-  log_description_->local_relay_protocol =
-      GetProtocolByString(local.relay_protocol());
-  log_description_->local_network_type = ConvertNetworkType(network->type());
-  log_description_->local_address_family =
-      GetAddressFamilyByInt(local.address().family());
-  log_description_->remote_candidate_type =
-      GetCandidateTypeByString(remote.type());
-  log_description_->remote_address_family =
-      GetAddressFamilyByInt(remote.address().family());
-  log_description_->candidate_pair_protocol =
-      GetProtocolByString(local.protocol());
-  return log_description_.value();
-}
+//void Connection::LogCandidatePairConfig(
+//    webrtc::IceCandidatePairConfigType type) {
+//  if (ice_event_log_ == nullptr) {
+//    return;
+//  }
+//  ice_event_log_->LogCandidatePairConfig(type, id(), ToLogDescription());
+//}
 
-void Connection::LogCandidatePairConfig(
-    webrtc::IceCandidatePairConfigType type) {
-  if (ice_event_log_ == nullptr) {
-    return;
-  }
-  ice_event_log_->LogCandidatePairConfig(type, id(), ToLogDescription());
-}
-
-void Connection::LogCandidatePairEvent(webrtc::IceCandidatePairEventType type,
-                                       uint32_t transaction_id) {
-  if (ice_event_log_ == nullptr) {
-    return;
-  }
-  ice_event_log_->LogCandidatePairEvent(type, id(), transaction_id);
-}
+//void Connection::LogCandidatePairEvent(webrtc::IceCandidatePairEventType type,
+//                                       uint32_t transaction_id) {
+//  if (ice_event_log_ == nullptr) {
+//    return;
+//  }
+//  ice_event_log_->LogCandidatePairEvent(type, id(), transaction_id);
+//}
 
 void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
                                              StunMessage* response) {
@@ -867,9 +869,9 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
   ReceivedPingResponse(rtt, request->id());
 
   stats_.recv_ping_responses++;
-  LogCandidatePairEvent(
-      webrtc::IceCandidatePairEventType::kCheckResponseReceived,
-      response->reduced_transaction_id());
+//  LogCandidatePairEvent(
+//      webrtc::IceCandidatePairEventType::kCheckResponseReceived,
+//      response->reduced_transaction_id());
 
   MaybeUpdateLocalCandidate(request, response);
 }
@@ -915,8 +917,8 @@ void Connection::OnConnectionRequestSent(ConnectionRequest* request) {
                  << ", use_candidate=" << use_candidate_attr()
                  << ", nomination=" << nomination();
   stats_.sent_ping_requests_total++;
-  LogCandidatePairEvent(webrtc::IceCandidatePairEventType::kCheckSent,
-                        request->reduced_transaction_id());
+//  LogCandidatePairEvent(webrtc::IceCandidatePairEventType::kCheckSent,
+ //                       request->reduced_transaction_id());
   if (stats_.recv_ping_responses == 0) {
     stats_.sent_ping_requests_before_first_response++;
   }

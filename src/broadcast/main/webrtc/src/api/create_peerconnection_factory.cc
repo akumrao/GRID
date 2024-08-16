@@ -23,8 +23,8 @@
 #include "api/transport/network_control.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "logging/rtc_event_log/rtc_event_log_factory.h"
-#include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
+//#include "logging/rtc_event_log/rtc_event_log_factory.h"
+//#include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "media/base/media_engine.h"
 #include "media/engine/webrtc_media_engine.h"
 #include "modules/audio_device/include/audio_device.h"
@@ -55,15 +55,15 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
 
   std::unique_ptr<CallFactoryInterface> call_factory = CreateCallFactory();
 
-  std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory =
-      CreateRtcEventLogFactory();
+  //std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory =
+//      CreateRtcEventLogFactory();
   PeerConnectionFactoryDependencies dependencies;
   dependencies.network_thread = network_thread;
   dependencies.worker_thread = worker_thread;
   dependencies.signaling_thread = signaling_thread;
   dependencies.media_engine = std::move(media_engine);
   dependencies.call_factory = std::move(call_factory);
-  dependencies.event_log_factory = std::move(event_log_factory);
+//  dependencies.event_log_factory = std::move(event_log_factory);
   return CreateModularPeerConnectionFactory(std::move(dependencies));
 }
 

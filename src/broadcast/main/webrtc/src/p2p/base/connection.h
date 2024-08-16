@@ -16,7 +16,7 @@
 
 #include "absl/types/optional.h"
 #include "api/candidate.h"
-#include "logging/rtc_event_log/ice_logger.h"
+//#include "logging/rtc_event_log/ice_logger.h"
 #include "p2p/base/candidate_pair_interface.h"
 #include "p2p/base/connection_info.h"
 #include "p2p/base/stun.h"
@@ -223,10 +223,10 @@ class Connection : public CandidatePairInterface,
   std::string ToString() const;
   std::string ToSensitiveString() const;
   // Structured description of this candidate pair.
-  const webrtc::IceCandidatePairDescription& ToLogDescription();
-  void set_ice_event_log(webrtc::IceEventLog* ice_event_log) {
-    ice_event_log_ = ice_event_log;
-  }
+//  const webrtc::IceCandidatePairDescription& ToLogDescription();
+//  void set_ice_event_log(webrtc::IceEventLog* ice_event_log) {
+//    ice_event_log_ = ice_event_log;
+  //}
   // Prints pings_since_last_response_ into a string.
   void PrintPingsSinceLastResponse(std::string* pings, size_t max);
 
@@ -324,9 +324,9 @@ class Connection : public CandidatePairInterface,
 
   void CopyCandidatesToStatsAndSanitizeIfNecessary();
 
-  void LogCandidatePairConfig(webrtc::IceCandidatePairConfigType type);
-  void LogCandidatePairEvent(webrtc::IceCandidatePairEventType type,
-                             uint32_t transaction_id);
+//  void LogCandidatePairConfig(webrtc::IceCandidatePairConfigType type);
+//  void LogCandidatePairEvent(webrtc::IceCandidatePairEventType type,
+  //                           uint32_t transaction_id);
 
   WriteState write_state_;
   bool receiving_;
@@ -378,8 +378,8 @@ class Connection : public CandidatePairInterface,
   int64_t time_created_ms_;
   int num_pings_sent_ = 0;
 
-  absl::optional<webrtc::IceCandidatePairDescription> log_description_;
-  webrtc::IceEventLog* ice_event_log_ = nullptr;
+//  absl::optional<webrtc::IceCandidatePairDescription> log_description_;
+//  webrtc::IceEventLog* ice_event_log_ = nullptr;
 
   friend class Port;
   friend class ConnectionRequest;

@@ -15,9 +15,9 @@
 #include "p2p/base/dtls_transport.h"
 
 #include "absl/memory/memory.h"
-#include "logging/rtc_event_log/events/rtc_event_dtls_transport_state.h"
-#include "logging/rtc_event_log/events/rtc_event_dtls_writable_state.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
+//#include "logging/rtc_event_log/events/rtc_event_dtls_transport_state.h"
+//#include "logging/rtc_event_log/events/rtc_event_dtls_writable_state.h"
+//#include "logging/rtc_event_log/rtc_event_log.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
@@ -751,8 +751,8 @@ void DtlsTransport::set_writable(bool writable) {
     return;
   }
   if (event_log_) {
-    event_log_->Log(
-        absl::make_unique<webrtc::RtcEventDtlsWritableState>(writable));
+//    event_log_->Log(
+     //   absl::make_unique<webrtc::RtcEventDtlsWritableState>(writable));
   }
   RTC_LOG(LS_VERBOSE) << ToString() << ": set_writable to: " << writable;
   writable_ = writable;
@@ -767,8 +767,8 @@ void DtlsTransport::set_dtls_state(DtlsTransportState state) {
     return;
   }
   if (event_log_) {
-    event_log_->Log(absl::make_unique<webrtc::RtcEventDtlsTransportState>(
-        ConvertDtlsTransportState(state)));
+//    event_log_->Log(absl::make_unique<webrtc::RtcEventDtlsTransportState>(
+  //      ConvertDtlsTransportState(state)));
   }
   RTC_LOG(LS_VERBOSE) << ToString() << ": set_dtls_state from:" << dtls_state_
                       << " to " << state;

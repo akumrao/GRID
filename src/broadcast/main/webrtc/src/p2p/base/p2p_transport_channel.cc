@@ -17,7 +17,7 @@
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/candidate.h"
-#include "logging/rtc_event_log/ice_logger.h"
+//#include "logging/rtc_event_log/ice_logger.h"
 #include "p2p/base/candidate_pair_interface.h"
 #include "p2p/base/connection.h"
 #include "p2p/base/port.h"
@@ -158,7 +158,7 @@ P2PTransportChannel::P2PTransportChannel(
   // the transport.
   allocator_->SignalCandidateFilterChanged.connect(
       this, &P2PTransportChannel::OnCandidateFilterChanged);
-  ice_event_log_.set_event_log(event_log);
+//  ice_event_log_.set_event_log(event_log);
 }
 
 P2PTransportChannel::~P2PTransportChannel() {
@@ -217,9 +217,9 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
 
   had_connection_ = true;
 
-  connection->set_ice_event_log(&ice_event_log_);
-  LogCandidatePairConfig(connection,
-                         webrtc::IceCandidatePairConfigType::kAdded);
+//  connection->set_ice_event_log(&ice_event_log_);
+ // LogCandidatePairConfig(connection,
+  //                       webrtc::IceCandidatePairConfigType::kAdded);
 }
 
 // Determines whether we should switch the selected connection to
@@ -409,7 +409,7 @@ IceTransportState P2PTransportChannel::ComputeState() const {
     }
   }
 
-  ice_event_log_.DumpCandidatePairDescriptionToMemoryAsConfigEvents();
+//  ice_event_log_.DumpCandidatePairDescriptionToMemoryAsConfigEvents();
   return IceTransportState::STATE_COMPLETED;
 }
 
@@ -1903,7 +1903,7 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
   // destroyed, so don't use it.
   Connection* old_selected_connection = selected_connection_;
   selected_connection_ = conn;
-  LogCandidatePairConfig(conn, webrtc::IceCandidatePairConfigType::kSelected);
+//  LogCandidatePairConfig(conn, webrtc::IceCandidatePairConfigType::kSelected);
   network_route_.reset();
   if (old_selected_connection) {
     old_selected_connection->set_selected(false);
@@ -2609,15 +2609,15 @@ void P2PTransportChannel::SetReceiving(bool receiving) {
   SignalReceivingState(this);
 }
 
-void P2PTransportChannel::LogCandidatePairConfig(
-    Connection* conn,
-    webrtc::IceCandidatePairConfigType type) {
-  RTC_DCHECK_RUN_ON(network_thread_);
-  if (conn == nullptr) {
-    return;
-  }
-  ice_event_log_.LogCandidatePairConfig(type, conn->id(),
-                                        conn->ToLogDescription());
-}
+//void P2PTransportChannel::LogCandidatePairConfig(
+//    Connection* conn,
+//    webrtc::IceCandidatePairConfigType type) {
+//  RTC_DCHECK_RUN_ON(network_thread_);
+//  if (conn == nullptr) {
+//    return;
+//  }
+//  ice_event_log_.LogCandidatePairConfig(type, conn->id(),
+//                                        conn->ToLogDescription());
+//}
 
 }  // namespace cricket

@@ -24,7 +24,7 @@
 #include "api/peer_connection_proxy.h"
 #include "api/turn_customizer.h"
 #include "api/video_track_source_proxy.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
+//#include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/rtp_data_engine.h"
 #include "media/sctp/sctp_transport.h"
 #include "p2p/base/basic_packet_socket_factory.h"
