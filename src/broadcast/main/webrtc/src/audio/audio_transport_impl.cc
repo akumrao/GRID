@@ -15,7 +15,7 @@
 #include <utility>
 
 //#include "audio/remix_resample.h"
-#include "audio/utility/audio_frame_operations.h"
+//#include "audio/utility/audio_frame_operations.h"
 #include "call/audio_send_stream.h"
 #include "rtc_base/checks.h"
 
@@ -54,9 +54,9 @@ void ProcessCaptureFrame(uint32_t delay_ms,
   audio_processing->set_stream_key_pressed(key_pressed);
   int error = audio_processing->ProcessStream(audio_frame);
   RTC_DCHECK_EQ(0, error) << "ProcessStream() error: " << error;
-  if (swap_stereo_channels) {
-    AudioFrameOperations::SwapStereoChannels(audio_frame);
-  }
+ // if (swap_stereo_channels) {
+  //  AudioFrameOperations::SwapStereoChannels(audio_frame);
+ // }
 }
 
 // Resample audio in |frame| to given sample rate preserving the

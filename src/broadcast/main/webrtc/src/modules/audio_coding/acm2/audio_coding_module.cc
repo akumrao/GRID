@@ -17,7 +17,7 @@
 #include "absl/strings/match.h"
 #include "api/array_view.h"
 #include "modules/audio_coding/acm2/acm_receiver.h"
-#include "modules/audio_coding/acm2/acm_resampler.h"
+//#include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/include/module_common_types.h"
 #include "modules/include/module_common_types_public.h"
 #include "rtc_base/buffer.h"

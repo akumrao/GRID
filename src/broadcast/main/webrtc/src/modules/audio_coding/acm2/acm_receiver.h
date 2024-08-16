@@ -22,7 +22,7 @@
 #include "api/array_view.h"
 #include "api/audio_codecs/audio_decoder.h"
 #include "api/audio_codecs/audio_format.h"
-#include "modules/audio_coding/acm2/acm_resampler.h"
+//#include "modules/audio_coding/acm2/acm_resampler.h"
 #include "modules/audio_coding/acm2/call_statistics.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "rtc_base/critical_section.h"

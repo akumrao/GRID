@@ -23,8 +23,8 @@
 #include "base/platform.h"
 #include "base/rgba_bitmap.h"
 #include "base/base64.hpp"
-#define STB_IMAGE_IMPLEMENTATION
-#include "base/stb_image.h"
+//#define STB_IMAGE_IMPLEMENTATION
+//#include "base/stb_image.h"
 
 #if(DUMPFILE)
 #include "Settings.h"

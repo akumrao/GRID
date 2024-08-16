@@ -20,7 +20,7 @@
 #include "absl/memory/memory.h"
 #include "audio/audio_level.h"
 #include "audio/channel_send.h"
-#include "audio/utility/audio_frame_operations.h"
+//#include "audio/utility/audio_frame_operations.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
@@ -344,7 +344,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
     // TODO(henrik.lundin): We should be able to do better than this. But we
     // will have to go through all the cases below where the audio samples may
     // be used, and handle the muted case in some way.
-    AudioFrameOperations::Mute(audio_frame);
+   // AudioFrameOperations::Mute(audio_frame);
   }
 
   {
@@ -370,8 +370,9 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
 
   // Output volume scaling
   if (output_gain < 0.99f || output_gain > 1.01f) {
+      exit(0);
     // TODO(solenberg): Combine with mute state - this can cause clicks!
-    AudioFrameOperations::ScaleWithSat(output_gain, audio_frame);
+  //  AudioFrameOperations::ScaleWithSat(output_gain, audio_frame);
   }
 
   // Measure audio level (0-9)

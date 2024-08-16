@@ -21,7 +21,7 @@
 #include "api/array_view.h"
 #include "api/call/transport.h"
 #include "api/crypto/frame_encryptor_interface.h"
-#include "audio/utility/audio_frame_operations.h"
+//#include "audio/utility/audio_frame_operations.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
@@ -1119,7 +1119,7 @@ void ChannelSend::ProcessAndEncodeAudioOnTaskQueue(AudioFrame* audio_input) {
                              audio_input->ElapsedProfileTimeMs());
 
   bool is_muted = InputMute();
-  AudioFrameOperations::Mute(audio_input, previous_frame_muted_, is_muted);
+  //AudioFrameOperations::Mute(audio_input, previous_frame_muted_, is_muted);
 
   if (_includeAudioLevelIndication) {
     size_t length =
