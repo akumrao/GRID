@@ -17,7 +17,7 @@
 #include "absl/types/optional.h"
 #include "api/test/simulated_network.h"
 #include "call/call.h"
-#include "call/degraded_call.h"
+//#include "call/degraded_call.h"
 #include "rtc_base/checks.h"
 #include "system_wrappers/include/field_trial.h"
 

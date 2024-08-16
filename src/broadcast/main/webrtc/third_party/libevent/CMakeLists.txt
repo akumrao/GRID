@@ -23,7 +23,7 @@ set(src_event
     ${WEBRTC_REPO}/base/third_party/libevent/poll.c
     ${WEBRTC_REPO}/base/third_party/libevent/select.c
     ${WEBRTC_REPO}/base/third_party/libevent/signal.c
-    ${WEBRTC_REPO}/base/third_party/libevent/strlcpy.c
+    #${WEBRTC_REPO}/base/third_party/libevent/strlcpy.c
 
     ${WEBRTC_REPO}/base/third_party/libevent/epoll.c
 )

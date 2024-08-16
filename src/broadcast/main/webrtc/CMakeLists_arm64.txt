@@ -135,7 +135,7 @@ file(GLOB_RECURSE src_call
     ${WEBRTC_REPO}/call/*.cc
 )
 list(FILTER src_call EXCLUDE REGEX ${TEST_CC_FILTER})
-list(APPEND src_call ${WEBRTC_REPO}/call/fake_network_pipe.cc)
+#list(APPEND src_call ${WEBRTC_REPO}/call/fake_network_pipe.cc)
 
 file(GLOB_RECURSE src_common_audio
     ${WEBRTC_REPO}/common_audio/*.c

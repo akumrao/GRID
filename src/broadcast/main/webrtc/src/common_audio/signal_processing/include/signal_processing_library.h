@@ -18,7 +18,7 @@
 #define COMMON_AUDIO_SIGNAL_PROCESSING_INCLUDE_SIGNAL_PROCESSING_LIBRARY_H_
 
 #include <string.h>
-#include "common_audio/signal_processing/dot_product_with_scale.h"
+//#include "common_audio/signal_processing/dot_product_with_scale.h"
 
 // Macros specific for the fixed point implementation
 #define WEBRTC_SPL_WORD16_MAX 32767

@@ -45,7 +45,7 @@ absl_cc_library(
 #   "internal/str_split_internal.h"
     "match.cc"
 #   "numbers.cc"
-    "str_cat.cc"
+#    "str_cat.cc"
 #   "str_replace.cc"
 #   "str_split.cc"
     "string_view.cc"

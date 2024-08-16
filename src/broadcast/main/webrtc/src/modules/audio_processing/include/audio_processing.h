@@ -23,8 +23,8 @@
 #include <vector>
 
 #include "absl/types/optional.h"
-#include "api/audio/echo_canceller3_config.h"
-#include "api/audio/echo_control.h"
+//#include "api/audio/echo_canceller3_config.h"
+//#include "api/audio/echo_control.h"
 #include "api/scoped_refptr.h"
 #include "modules/audio_processing/include/audio_generator.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
@@ -721,8 +721,8 @@ class RTC_EXPORT AudioProcessingBuilder {
   AudioProcessingBuilder();
   ~AudioProcessingBuilder();
   // The AudioProcessingBuilder takes ownership of the echo_control_factory.
-  AudioProcessingBuilder& SetEchoControlFactory(
-      std::unique_ptr<EchoControlFactory> echo_control_factory);
+//  AudioProcessingBuilder& SetEchoControlFactory(
+//      std::unique_ptr<EchoControlFactory> echo_control_factory);
   // The AudioProcessingBuilder takes ownership of the capture_post_processing.
   AudioProcessingBuilder& SetCapturePostProcessing(
       std::unique_ptr<CustomProcessing> capture_post_processing);
@@ -741,7 +741,7 @@ class RTC_EXPORT AudioProcessingBuilder {
   AudioProcessing* Create(const webrtc::Config& config);
 
  private:
-  std::unique_ptr<EchoControlFactory> echo_control_factory_;
+//  std::unique_ptr<EchoControlFactory> echo_control_factory_;
   std::unique_ptr<CustomProcessing> capture_post_processing_;
   std::unique_ptr<CustomProcessing> render_pre_processing_;
   rtc::scoped_refptr<EchoDetector> echo_detector_;
