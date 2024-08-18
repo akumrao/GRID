@@ -133,7 +133,7 @@ file(GLOB_RECURSE src_call
     ${WEBRTC_REPO}/call/*.cc
 )
 list(FILTER src_call EXCLUDE REGEX ${TEST_CC_FILTER})
-list(APPEND src_call ${WEBRTC_REPO}/call/fake_network_pipe.cc)
+#list(APPEND src_call ${WEBRTC_REPO}/call/fake_network_pipe.cc)
 
 file(GLOB_RECURSE src_common_audio
     ${WEBRTC_REPO}/common_audio/*.c
@@ -264,7 +264,7 @@ list(FILTER src_video EXCLUDE REGEX
     ".*_loopback.cc|.*replay.cc|.*video_analyzer.cc|.*video_loopback_main.cc|.*video_stream_decoder_impl.cc"
 )
 
-add_library(jingle_peerconnection_so STATIC
+add_library(jingle_peerconnection_so SHARED
     ${src_api}
     ${src_audio}
     ${src_call}
@@ -291,15 +291,15 @@ target_link_libraries(jingle_peerconnection_so
     absl::strings
     #crypto
     event
-    pffft
-    rnnoise
+    #pffft
+    #rnnoise
     srtp
     usrsctp
     )
 
 
-#set(CMAKE_BUILD_TYPE MinSizeRel)
+set(CMAKE_BUILD_TYPE MinSizeRel)
 
 if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
-    target_compile_options(jingle_peerconnection_so PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections)
+    target_compile_options(jingle_peerconnection_so PRIVATE -Os -O3 -flto -s -Wl,--gc-sections)
 endif()
