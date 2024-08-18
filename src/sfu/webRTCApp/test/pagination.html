@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<!-- saved from url=(0045)http://fiddle.jshell.net/0nkx6oj7/show/light/ -->
+<html>
+
+
+<head>
+<style>
+  body {
+    font: .9rem arial, serif;
+  }
+  table {
+    max-width: 1200px;
+  }
+  table td {
+/*    width: 33.33%;*/
+    vertical-align: top;
+  }
+  fieldset {
+    min-height: 100%;
+    border: 1px solid silver;
+    padding: 10px;
+  }
+  button {
+    padding: 1px;
+    margin: 1px;
+  }
+  video {
+    width: 100%;
+  }
+  span {
+    font-family: monospace;
+  }
+
+.container {
+   /*height: 380px; MODIFY THIS*/
+  
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  align-content: flex-start;
+    
+}
+
+.box {
+  width: 250px;
+  height: 300px;
+  background-color: lightblue;
+  margin: 1px;
+  /*line-height: 300px;*/
+  text-align: left;
+  top: 0;s
+}
+
+
+/* DivTable.com */
+.divTable{
+  display: table;
+}
+.divTableRow {
+  display: table-row;
+}
+
+.divTableCell {
+  border: 1px solid #999999;
+  display: table-cell;
+}
+
+
+  .mystyle {
+  
+  border-left: 6px solid green;
+  height: 1px;
+  left: 50%;
+  margin-left: -3px;
+  top: 0;
+  
+
+
+</style>
+</head>
+<body>
+<div id="video1"></div>
+
+<!-- <video id="myVideo" controls>
+  <source src="http://tecfa.unige.ch/guides/html/html5-video/videos/state-of-wikipedia-480x272.mp4">
+
+</video> -->
+
+<img src="speaker1.png" id="myImg">
+ <button onclick="myImage()">Try it</button>
+
+<p>records per page</p>
+
+<input type="number" type="text" id="myInput"  value="2" onchange="myFunction()" min="1" max="5">
+
+<p id="demo"></p>
+
+<script>
+
+var videoPlayerElement = document.createElement('video');
+videoPlayerElement.src = 'http://tecfa.unige.ch/guides/html/html5-video/videos/state-of-wikipedia-480x272.mp4'
+videoPlayerElement.width = "320";
+videoPlayerElement.height = "240";
+videoPlayerElement.controls= true;
+ videoPlayerElement.autoplay = true;
+videoPlayerElement.load();
+
+
+
+//document.getElementById('video1').innerHTML = videoPlayerElement.outerHTML;
+
+
+function myImage() {
+  document.getElementById("myImg").src = "speaker.png";
+  //document.getElementById("myImg").src = "speaker1.png";
+}
+
+var records_per_page = 2;
+var current_page = 1;
+
+function myFunction() {
+  var x = document.getElementById("myInput").value;
+  document.getElementById("demo").innerHTML = "You wrote: " + x;
+  records_per_page =x;
+  changePage(current_page);
+}
+
+
+
+</script>
+
+ <div class="container" id="listingTable" >
+  </div>
+
+	<a href="javascript:prevPage()" id="btn_prev">Prev</a>&nbsp
+	<a href="javascript:nextPage()" id="btn_next"> Next</a>
+	page: <span id="page"></span>
+
+
+<script type="text/javascript">
+
+
+
+var objJson = [
+    { adName:  videoPlayerElement.outerHTML},
+    { adName:  videoPlayerElement.outerHTML},
+    { adName:  videoPlayerElement.outerHTML},
+    { adName:  videoPlayerElement.outerHTML},
+    { adName:  videoPlayerElement.outerHTML},
+
+]; // Can be obtained from another source, such as your objJson variable
+
+function prevPage()
+{
+    if (current_page > 1) {
+        current_page--;
+        changePage(current_page);
+    }
+}
+
+function nextPage()
+{
+    if (current_page < numPages()) {
+        current_page++;
+        changePage(current_page);
+    }
+}
+    
+function changePage(page)
+{
+    var btn_next = document.getElementById("btn_next");
+    var btn_prev = document.getElementById("btn_prev");
+    var listing_table = document.getElementById("listingTable");
+    var page_span = document.getElementById("page");
+ 
+    // Validate page
+    if (page < 1) page = 1;
+    if (page > numPages()) page = numPages();
+
+    listing_table.innerHTML = "";
+
+    for (var i = (page-1) * records_per_page; i < (page * records_per_page); i++) {
+        listing_table.innerHTML += "<div class=\"box\"> " + objJson[i].adName + "</div>";
+        //listing_table.innerHTML += "<td><div>" + objJson[i].adName + "</div></td>";
+        //listing_table.innerHTML += "<div class=\"box\"> <div>" + i + "</div></div>";
+    }
+    page_span.innerHTML = page;
+
+    if (page == 1) {
+        btn_prev.style.visibility = "hidden";
+    } else {
+        btn_prev.style.visibility = "visible";
+    }
+
+    if (page == numPages()) {
+        btn_next.style.visibility = "hidden";
+    } else {
+        btn_next.style.visibility = "visible";
+    }
+}
+
+function numPages()
+{
+    return Math.ceil(objJson.length / records_per_page);
+}
+
+window.onload = function() {
+    changePage(1);
+};
+
+
+</script>
+
+
+
+</body></html>

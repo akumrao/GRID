@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="mobile-web-app-capable" content="yes">
+  <link rel="icon" type="image/png" href="mediaserver.png" />
+  <title>SFUServer Sample App</title>
+</head>
+<style>
+  body {
+    font: .9rem arial, serif;
+  }
+  table {
+    max-width: 1200px;
+  }
+  table td {
+/*    width: 33.33%;*/
+    vertical-align: top;
+  }
+  fieldset {
+/*    min-height: 100%;*/
+    border: 1px solid silver;
+    padding: 2px;
+  }
+  button {
+    padding: 1px;
+    margin: 1px;
+  }
+  video {
+    width: 100%;
+  }
+  span {
+    font-family: monospace;
+  }
+
+.container {
+   /*height: 380px; MODIFY THIS*/
+  
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: row;
+  align-content: flex-start;
+ 	
+}
+
+.box {
+  /*width: 250px;
+  height: 350px;*/
+  background-color: lightblue;
+  margin: 1px;
+  /*line-height: 300px;*/
+  text-align: left;
+  top: 0;s
+}
+
+
+/* DivTable.com */
+.divTable{
+  display: table;
+}
+.divTableRow {
+  display: table-row;
+}
+
+.divTableCell {
+  border: 1px solid #999999;
+  display: table-cell;
+}
+
+
+/*  .mystyle {
+  
+  border-left: 6px solid green;
+  width: 1px;
+  left: 50%;
+  margin-left: -3px;
+  top: 0;
+  
+  }*/
+
+hr.new4 {
+  border: 1px solid red;
+  width: 1px;
+}
+    
+ 
+
+    .chatmessage {
+      display: inline;
+    }
+    #chatmessages {
+        list-style-type: none;
+    }
+    .me {
+      font-family: sans-serif, "Courier New", Courier, monospace;
+      text-align: right;
+    }
+    .you {
+      font-family: sans-serif, "Courier New", Courier, monospace;
+      text-align: left;
+     
+    }
+    .yourDiv {
+      position: relative;
+      right: 10;
+      width: 50%;
+      background-color: blue;
+      color: white;
+    }
+    .myDiv {
+      position: relative;
+      left: 40%;
+      width: 50%;
+      background-color: violet;
+    }
+
+
+
+
+
+</style>
+<body>
+
+<!-- DivTable.com -->
+<!-- https://divtable.com/generator/ -->
+<table border="0" cellpadding="0">
+<tbody>
+<tr style="background-color: #1ffff0;">
+<th style="text-align: center; vertical-align: middle;" colspan="3">&nbsp; &nbsp;SFU Router</th>
+</tr>
+<tr style="background-color: #f9ecf2;">
+<td colspan="3">
+  
+  <div class="block">
+
+        <input type="text" id="fname" name="fname" value="Your Name?" maxlength="16" size="16">
+        
+        &nbsp;
+
+        <label>select room:</label>
+    
+        <select id="roomCtrl" onchange="roomCtrlOnChange()">>
+        <option value="room">Sfu-Room</option>
+        <option>Teresa-Room</option>
+        <option>Foo-Hall</option>
+        <option>Lincoln-Hall</option>
+       </select>
+       &nbsp;
+       <label>Participants:</label>
+       <label id="divParticipants">0</label>
+       &nbsp;
+       <label>status:</label>
+       <label id="divStatus">Not Connected</label>
+
+  </div>
+</td>
+</tr>
+<tr style="background-color: #00ff00;">
+<td>
+        <legend>Connection</legend>
+        <fieldset id="fs_connection">
+          
+          <div><button id="btn_connect">Connect</button> </div>
+
+        </fieldset>
+
+</td>
+<td>  
+        <legend>Publishing</legend>
+        <fieldset id="fs_publish">
+         
+          <div><label><input type="checkbox" id="chk_simulcast" > Use Simulcast</label></div>
+          <div><label><input type="checkbox" id="chk_audio" checked> audio</label></div>
+          <div><label><input type="checkbox" id="chk_video" checked> video</label></div>
+          <div>
+            <button id="btn_webcam">Start Webcam</button>
+          </div>
+          <div>
+            <button id="btn_screen">Share Screen</button>
+          </div>
+           
+<!--            <div><button id="btn_subscribe_pause">Pause</button> <span id="sub_status"></span>-->
+<!--            <div><button id="btn_subscribe_resume">Resume</button> <span id="sub_status"></span>-->
+<!--            <div><button id="btn_subscribe_stats">stats</button> <span id="sub_status"></span>-->
+        </fieldset>
+
+          <div>Diagnostic Test<br>
+          <button id="btn_audio_level_start" disabled>Start Audio Level</button> 
+          <button id="btn_audio_level_stop" disabled>stop Audio Level</button> 
+          <button id="btn_producer_stats" disabled>Stats</button>
+          <button id="btn_subscribe">Subscribe</button> 
+          </div>
+</td>
+
+<td>
+        <legend>Chat</legend>
+
+          <input type="text" id="chatInput" maxlength="240" size="40" /> <br>
+          <input type="submit" id="btn_submitchat" value="submit" />
+
+        <div id="chatDiv" style="overflow-y: auto; height:130px; ">
+    
+          <ul id="chatmessages"></ul>
+        </div>
+
+        <div id="container">
+
+
+            <section>
+              <div >
+                <form id="fileInfo">
+                  <input type="file" id="fileInput" name="files"/>
+                </form>
+                <button disabled id="sendFile">Send</button>
+                <button disabled id="abortButton">Abort</button>
+              </div>
+
+              <div class="progress">
+                <div class="label">Send progress: </div>
+                <progress id="sendProgress" max="0" value="0"></progress>
+              </div>
+
+              <div class="progress">
+                <div class="label">Receive progress: </div>
+                <progress id="receiveProgress" max="0" value="0"></progress>
+              </div>
+
+              <div id="bitrate"></div>
+              <a id="download"></a>
+              <span id="status"></span>
+
+            </section>
+
+        </div>
+</td>
+</tr>
+<tr>
+<td style="width: 160px; background-color: #ffff00;">&nbsp;Audio</td>
+<td style="background-color: #b3d1ff;" colspan="2">
+
+ <div class="block">
+         <label>Video per page:</label>
+         <input type="number" type="text" id="myInput"  value="3" onchange="RecordPerPage()" min="2" max="8">
+ </div>
+
+</td>
+
+</tr>
+<tr>
+<td style="width: 160px; background-color: #ffff00;" >
+<table id="traddCtrl0" border="0" ></table>
+
+</td>
+<td style="background-color: #b3d1ff;" colspan="2">
+ 
+  <div class="container" id="traddCtrl1">
+  </div>
+
+  <div class="container" id="traddCtrl2" >
+  </div>
+
+  <a href="javascript:prevPage()" id="btn_prev">Prev</a>&nbsp
+  <a href="javascript:nextPage()" id="btn_next"> Next</a>
+  <!-- page: <span id="page"></span> -->
+
+</td>
+
+</tr>
+
+<tr>
+  <td style="background-color: #8fffff;" colspan="3" >
+  <table  border="0" >
+    
+    <tr id="listingStats">
+
+       <b> Statistics </b>
+       <br>  
+
+       <label>Prodcucer Score[0-10]:</label>
+
+       <label id="divProducerScore">-</label>
+       <br>
+
+
+       <label>Consumer Score[0-10]:</label>
+
+       <label id="divConsumerScore">-</label>
+ 
+       <br>
+        <div>Local Stats</div>
+        <p id="prod_stat"></p>
+
+        <div>Sound Level</div>
+        <p id="sound_level"></p>
+
+        <div>Remote Stats</div>
+        <p id="cons_stat"></p>
+
+
+    </tr>
+
+  </table
+</td>
+</tr>
+
+
+<tr style="background-color: #f9ecf2;">
+<td colspan="3"> SFU Router. Please contant Arvind Umrao<akumrao@yahoo.com> for more informaion <td>
+  
+
+</tr>  
+
+</tbody>
+</table>
+
+
+
+
+
+</body>
+<script>
+  // window.localStorage.setItem('debug', 'mediaserver-client:WARN* mediaserver-client:ERROR*');
+  window.localStorage.setItem('debug', 'mediaserver-client:*');
+</script>
+<!--   <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script> -->
+<!--   <script src="https://npmcdn.com/tether@1.2.4/dist/js/tether.min.js"></script> -->
+   <!--  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-alpha.6/js/bootstrap.min.js" integrity="sha384-vBWWzlZJ8ea9aCX4pEW3rVHjgjt7zpkNpZk+02D9phzyeVkE+jo0ieGizqPLForn" crossorigin="anonymous"></script> -->
+  <script src="/socket.io/socket.io.js"></script>
+<!--   <script src="https://webrtc.github.io/adapter/adapter-latest.js"></script> -->
+
+  <script src="js/main.js" async  ></script>
+  <script src="js/webrtc.js" async></script>
+
+
+</html>
