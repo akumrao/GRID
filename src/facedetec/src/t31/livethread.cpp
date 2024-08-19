@@ -308,7 +308,7 @@ int T31RGBA::scan_image(unsigned char *blob, int width, int height)
             m["logLevel"] = "info";
 
 
-            base::cnfg::saveFile("./config.js", m );
+            base::cnfg::saveFile("/configs/config.js", m );
         
             blueLed();
 
@@ -474,11 +474,8 @@ void T31RGBA::run() {
    
     IMPFrameInfo *frame;
 
-    if(!QRCode)
-    {
 
-
-     #if(DUMPFILE)
+    #if(DUMPFILE)
 
       FILE *fp;
 
@@ -488,9 +485,12 @@ void T31RGBA::run() {
           return ;
       }
 
-      #endif
+    #endif
 
-    
+
+    if(!QRCode)
+    {
+
     
       Timestamp ts;
       //Timestamp::TimeVal time = ts.epochMicroseconds();

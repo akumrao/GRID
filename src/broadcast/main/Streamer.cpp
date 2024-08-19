@@ -148,7 +148,7 @@ int main(int argc, char** argv) {
     
     base::cnfg::Configuration config;
 
-    config.load("./config.js");
+    config.load("/configs/config.js");
     
 
    // json cnfg;

@@ -1,6 +1,6 @@
 T31SDK =/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/sdk/5.4.0
 
-INSTALLPATH=/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/resource/toolchain/gcc_540/mips-gcc540-glibc222-64bit-r3.3.0
+INSTALLPATH=/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/resource/toolchain/gcc_540/mips-gcc540-glibc222-32bit-r3.3.0
 #export INSTALLPATH="/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/resource/toolchain/gcc_472/mips-gcc472-glibc216-64bit"
 TOOLCHAIN=${INSTALLPATH}/bin
 CROSS_COMPILE=${TOOLCHAIN}/mips-linux-gnu-
@@ -70,17 +70,17 @@ TARGET2=runAI # define the name of the executable ./../net/src/*.cpp ../../http/
 SOURCES=$(wildcard *.cpp ../src/*.cpp ../src/t31/*.cpp ../../base/src/*.cpp ../../base/token/*.cpp  ../../net/src/*.cpp ../../http/src/*.cpp ../../net/uv_multiplex/src/*.cpp ../../http_parser/*.cpp  )
 
 #../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp
-CXXFLAGS   +=  -O3 -std=c++11  -DNDEBUG -fpermissive -DDUMPFILE=1 -DZBAR_WIN=0
+CXXFLAGS   +=  -O3 -std=c++14  -DNDEBUG -fpermissive -DDUMPFILE=1 -DZBAR_WIN=0
 
-CPPFLAGS   +=  $(INC)  -I../include/ -I../include/t31/ -I../../broadcast/include -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../net/uv_multiplex/include/  -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser -I../xailient-sdk/include/ -I../../openssl/buildt31/include -I${T31SDK}/include -I${T31SDK}/samples/libimp-sample/ 
+CPPFLAGS   +=  $(INC)  -I../include/ -I../include/t31/ -I../../broadcast/include -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../net/uv_multiplex/include/  -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser -I../xailient-sdk-HD/xailient-sdk-2.1.0.2024/include/ -I../../openssl/buildt31/include -I${T31SDK}/include -I${T31SDK}/samples/libimp-sample/ 
 
-LDFLAGS +=  -L../xailient-sdk/lib -L${INSTALLPATH}/mips-linux-gnu/lib -muclibc
+LDFLAGS +=  -L../xailient-sdk-HD/lib -L${INSTALLPATH}/mips-linux-gnu/lib -muclibc
 
 #-L${T31SDK}/lib/uclibc -lalog -limp
 
-LDLIBS    += -lxailient-fi -lpthread -lrt -lm
+#LDLIBS    += -lxailient-fi -lpthread -lrt -lm
 
-SLIBS    +=  $(OUT_FILE_NAME) ../../libuv/build/libuv_a.a  ../../openssl/buildt31/lib/libssl.a  ../../openssl/buildt31/lib/libcrypto.a ${T31SDK}/lib/uclibc/libalog.a  ${T31SDK}/lib/uclibc/libimp.a
+SLIBS    +=  $(OUT_FILE_NAME) ../xailient-sdk-HD/xailient-sdk-2.1.0.2024/libxailientsdk.a  ../xailient-sdk-HD/xailient-sdk-2.1.0.2024/libxailientsdkutils.a ../../libuv/build/libuv_a.a  ../../openssl/buildt31/lib/libssl.a  ../../openssl/buildt31/lib/libcrypto.a ${T31SDK}/lib/uclibc/libalog.a  ${T31SDK}/lib/uclibc/libimp.a
 
 
 # /workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T31-1.1.6-20221229/resource/toolchain/gcc_540/mips-gcc540-glibc222-64bit-r3.3.0/mips-linux-gnu/libc/uclibc/usr/lib/libm.a 

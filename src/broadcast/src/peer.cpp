@@ -575,7 +575,7 @@ void Peer::OnMessage(const webrtc::DataBuffer& buffer) {
         }
         else if(type == "RESET")
         {
-          std::remove("./config.js");
+          std::remove("/configs/config.js");
         }
         else if(type == "DEBUG")
         {

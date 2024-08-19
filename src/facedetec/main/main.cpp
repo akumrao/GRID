@@ -30,7 +30,8 @@ int main(int argc, char** argv) {
 
     bool recording = false;
 
-     base::web_rtc::LiveThread livethread("live", nullptr,nullptr, recording );
+
+     base::web_rtc::LiveThread livethread("live", nullptr,nullptr, recording, false );
      livethread.start();
 
     
