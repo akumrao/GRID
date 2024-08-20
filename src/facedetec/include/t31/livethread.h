@@ -3,6 +3,7 @@
 
 
 #include "base/thread.h"
+#include "sample-common.h"
 #include  <string>
 
 #include <json/json.hpp>
@@ -144,6 +145,9 @@ class T31RGBA:public base::Thread
     int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  );
     int scan_image(unsigned char *blob, int width, int height);
     void onMessage(json &msg );
+
+    int sample_get_jpeg_snap();
+    int base64_jpeg( IMPEncoderStream *stream);
 
 //    std::atomic<int> ready_flag {1};
 

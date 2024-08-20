@@ -905,64 +905,7 @@ int sample_get_video_stream()
 }
 
 
-int sample_get_jpeg_snap()
-{
-	int i, ret;
-	char snap_path[64];
 
-	for (i = 0; i < FS_CHN_NUM; i++) {
-		if (chn[i].enable) {
-			ret = IMP_Encoder_StartRecvPic(4 + chn[i].index);
-			if (ret < 0) {
-				IMP_LOG_ERR(TAG, "IMP_Encoder_StartRecvPic(%d) failed\n", 3 + chn[i].index);
-				return -1;
-			}
-
-			sprintf(snap_path, "%s/snap-%d.jpg",
-					SNAP_FILE_PATH_PREFIX, chn[i].index);
-
-			IMP_LOG_ERR(TAG, "Open Snap file %s ", snap_path);
-			int snap_fd = open(snap_path, O_RDWR | O_CREAT | O_TRUNC, 0777);
-			if (snap_fd < 0) {
-				IMP_LOG_ERR(TAG, "failed: %s\n", strerror(errno));
-				return -1;
-			}
-			IMP_LOG_DBG(TAG, "OK\n");
-
-			/* Polling JPEG Snap, set timeout as 1000msec */
-			ret = IMP_Encoder_PollingStream(4 + chn[i].index, 10000);
-			if (ret < 0) {
-				IMP_LOG_ERR(TAG, "Polling stream timeout\n");
-				continue;
-			}
-
-			IMPEncoderStream stream;
-			/* Get JPEG Snap */
-			ret = IMP_Encoder_GetStream(chn[i].index + 4, &stream, 1);
-			if (ret < 0) {
-				IMP_LOG_ERR(TAG, "IMP_Encoder_GetStream() failed\n");
-				return -1;
-			}
-
-			ret = save_stream(snap_fd, &stream);
-			if (ret < 0) {
-				close(snap_fd);
-				return ret;
-			}
-
-			IMP_Encoder_ReleaseStream(4 + chn[i].index, &stream);
-
-			close(snap_fd);
-
-			ret = IMP_Encoder_StopRecvPic(4 + chn[i].index);
-			if (ret < 0) {
-				IMP_LOG_ERR(TAG, "IMP_Encoder_StopRecvPic() failed\n");
-				return -1;
-			}
-		}
-	}
-	return 0;
-}
 
 
 int sample_SetIRCUT(int enable)

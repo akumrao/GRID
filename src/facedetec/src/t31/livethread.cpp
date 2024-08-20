@@ -17,12 +17,14 @@
 #include <imp/imp_system.h>
 #include <imp/imp_framesource.h>
 #include <imp/imp_encoder.h>
-#include "sample-common.h"
+
 
 
 #include "base/platform.h"
 #include "base/rgba_bitmap.h"
-#include "base/base64.hpp"
+//#include "base/base64.hpp"
+#include "base/base64.h"
+
 //#define STB_IMAGE_IMPLEMENTATION
 //#include "base/stb_image.h"
 
@@ -203,6 +205,105 @@ int readFile(const char* filename,  char *buf, int len)
     
 }
 
+
+
+int T31RGBA::base64_jpeg( IMPEncoderStream *stream)
+{
+
+  std::string jpegBufBas64;
+
+  int ret, i, nr_pack = stream->packCount;
+
+  //IMP_LOG_DBG(TAG, "----------packCount=%d, stream->seq=%u start----------\n", stream->packCount, stream->seq);
+  for (i = 0; i < nr_pack; i++) 
+  {
+    //IMP_LOG_DBG(TAG, "[%d]:%10u,%10lld,%10u,%10u,%10u\n", i, stream->pack[i].length, stream->pack[i].timestamp, stream->pack[i].frameEnd, *((uint32_t *)(&stream->pack[i].nalType)), stream->pack[i].sliceType);
+    IMPEncoderPack *pack = &stream->pack[i];
+    if(pack->length)
+    {
+      uint32_t remSize = stream->streamSize - pack->offset;
+      if(remSize < pack->length)
+      {
+        //ret = write(fd, (void *)(stream->virAddr + pack->offset), remSize);
+        jpegBufBas64 = std::string( (char *)(stream->virAddr + pack->offset), remSize );
+        
+        jpegBufBas64 = jpegBufBas64 + std::string( (char *)stream->virAddr, pack->length - remSize );
+       
+      }
+      else 
+      {
+         jpegBufBas64 = std::string( (char *)(stream->virAddr + pack->offset), pack->length );
+  
+      }
+    }
+  }
+
+
+  jpegBufBas64= base64::encode(jpegBufBas64);
+
+  SInfo <<"jpegBufBas64: " << jpegBufBas64;
+
+  //IMP_LOG_DBG(TAG, "----------packCount=%d, stream->seq=%u end----------\n", stream->packCount, stream->seq);
+  return 0;
+}
+
+
+int T31RGBA::sample_get_jpeg_snap()
+{
+  int i=2, ret;
+  char snap_path[64];
+
+  //for (i = 0; i < FS_CHN_NUM; i++) {
+    if (chn[i].enable) {
+      ret = IMP_Encoder_StartRecvPic(4 + chn[i].index);
+      if (ret < 0) {
+         SError << "IMP_Encoder_StartRecvPic failed " << 3 + chn[i].index;
+        return -1;
+      }
+
+      sprintf(snap_path, "%s/snap-%d.jpg",
+          SNAP_FILE_PATH_PREFIX, chn[i].index);
+
+      //IMP_LOG_ERR(TAG, "Open Snap file %s ", snap_path);
+      int snap_fd = open(snap_path, O_RDWR | O_CREAT | O_TRUNC, 0777);
+      if (snap_fd < 0) {
+        SError << "failed "<<  strerror(errno);
+        return -1;
+      }
+     // IMP_LOG_DBG(TAG, "OK\n");
+
+      /* Polling JPEG Snap, set timeout as 1000msec */
+      ret = IMP_Encoder_PollingStream(4 + chn[i].index, 10000);
+      if (ret < 0) {
+        SError << "Polling stream timeout";
+        //continue;
+      }
+
+      IMPEncoderStream stream;
+      /* Get JPEG Snap */
+      ret = IMP_Encoder_GetStream(chn[i].index + 4, &stream, 1);
+      if (ret < 0) {
+         SError << "IMP_Encoder_GetStream() failed";
+        return -1;
+      }
+
+      
+      ret = base64_jpeg(&stream);
+      
+
+      IMP_Encoder_ReleaseStream(4 + chn[i].index, &stream);
+
+      close(snap_fd);
+
+      ret = IMP_Encoder_StopRecvPic(4 + chn[i].index);
+      if (ret < 0) {
+         SError << "IMP_Encoder_StopRecvPic() failed";
+        return -1;
+      }
+    }
+  //}
+  return 0;
+}
 
 int T31RGBA::scan_image(unsigned char *blob, int width, int height)
 {
@@ -550,7 +651,7 @@ void T31RGBA::run() {
 
               if(!QRCode)
               {
-                 XAProcess( rgbBuf, frame->width , frame->height) ;
+                XAProcess( rgbBuf, frame->width , frame->height) ;
                 free(rgbBuf) ;
                }
               else
@@ -584,7 +685,9 @@ void T31RGBA::run() {
         }
 
 
-        //sample_get_jpeg_snap();
+        sample_get_jpeg_snap();
+
+        
 
         #if(DUMPFILE)
         #else
@@ -996,6 +1099,14 @@ int LiveThread::T31Init()
         }
     }
 
+
+  ret = sample_jpeg_init();
+  if (ret < 0) {
+    SError<<"sample_jpeg_init";
+    return -1;
+  }
+
+
     /* Step.3 Encoder init */
     ret = sample_encoder_init();
     if (ret < 0) {
@@ -1069,6 +1180,12 @@ int LiveThread::T31Exit()
                 return -1;
             }
         }
+    }
+
+    ret = sample_jpeg_exit();
+    if (ret < 0) {
+         SError<<"sample_jpeg_exit()";
+    return -1;
     }
 
     /* Step.c Encoder exit */
