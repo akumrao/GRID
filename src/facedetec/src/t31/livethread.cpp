@@ -488,6 +488,10 @@ void T31RGBA::run() {
     #endif
 
 
+   #if(DUMPFILE)
+
+   #else
+       
     if(!QRCode)
     {
 
@@ -511,7 +515,7 @@ void T31RGBA::run() {
        RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
     }
 
-
+    #endif
    
     int QRFound = 0;
 
@@ -579,6 +583,11 @@ void T31RGBA::run() {
             return ;
         }
 
+
+        //sample_get_jpeg_snap();
+
+        #if(DUMPFILE)
+        #else
         if(!QRCode)
         base::sleep(700);
         else if(QRFound)
@@ -588,6 +597,7 @@ void T31RGBA::run() {
 
           break;
         }
+        #endif
     }
 
     #if(DUMPFILE)
@@ -669,6 +679,9 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
     }
   
 
+    #if(DUMPFILE)
+    #else
+
     if(idSUM && idSUM != m_idSUM)
     {
       
@@ -698,6 +711,7 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
       RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
 
     }
+    #endif
    
 
 }

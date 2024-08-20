@@ -253,7 +253,7 @@ else()
        src/unix/stream.cpp
        src/unix/tcp.cpp
        src/unix/thread.cpp
-       src/unix/tty.cpp
+#       src/unix/tty.cpp
        src/unix/udp.cpp)
   list(APPEND uv_test_sources test/runner-unix.cpp)
 endif()
