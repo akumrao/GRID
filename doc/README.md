@@ -1,4 +1,7 @@
 
+
+https://multicorewareinc.com/image-signal-processors-in-modern-sensor-engineering/
+
 The world of smart connected devices is dynamic and develops more sophisticated products to enhance our safety, convenience and entertainment. From surveillance to automotive safety systems and from mobile devices to autonomous drones, intelligent image processing and deep learning are fundamental challenges. New generation smart devices are enriched with AI, which is set to elevate embedded imaging solutions as they are essential to the success of many Internet of Things (IoT) applications.
 
 What is Image Quality?
