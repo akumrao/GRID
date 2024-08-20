@@ -523,6 +523,40 @@ int sample_framesource_ext_rgba_exit()
 	return 0;
 }
 
+int sample_jpeg_init()
+{
+	int i, ret;
+	IMPEncoderChnAttr channel_attr;
+	IMPFSChnAttr *imp_chn_attr_tmp;
+
+	for (i = 0; i <  FS_CHN_NUM; i++) {
+		if (chn[i].enable) {
+			imp_chn_attr_tmp = &chn[i].fs_chn_attr;
+			memset(&channel_attr, 0, sizeof(IMPEncoderChnAttr));
+			ret = IMP_Encoder_SetDefaultParam(&channel_attr, IMP_ENC_PROFILE_JPEG, IMP_ENC_RC_MODE_FIXQP,
+					imp_chn_attr_tmp->picWidth, imp_chn_attr_tmp->picHeight,
+					imp_chn_attr_tmp->outFrmRateNum, imp_chn_attr_tmp->outFrmRateDen, 0, 0, 25, 0);
+
+			/* Create Channel */
+			ret = IMP_Encoder_CreateChn(4 + chn[i].index, &channel_attr);
+			if (ret < 0) {
+				IMP_LOG_ERR(TAG, "IMP_Encoder_CreateChn(%d) error: %d\n",
+							chn[i].index, ret);
+				return -1;
+			}
+
+			/* Resigter Channel */
+			ret = IMP_Encoder_RegisterChn(i, 4 + chn[i].index);
+			if (ret < 0) {
+				IMP_LOG_ERR(TAG, "IMP_Encoder_RegisterChn(0, %d) error: %d\n",
+							chn[i].index, ret);
+				return -1;
+			}
+		}
+	}
+
+	return 0;
+}
 
 int sample_encoder_init()
 {
@@ -632,6 +666,39 @@ int sample_encoder_init()
 	return 0;
 }
 
+int sample_jpeg_exit(void)
+{
+	int ret = 0, i = 0, chnNum = 0;
+	IMPEncoderChnStat chn_stat;
+
+	for (i = 0; i <  FS_CHN_NUM; i++) {
+		if (chn[i].enable) {
+			chnNum = 4 + chn[i].index;
+			memset(&chn_stat, 0, sizeof(IMPEncoderChnStat));
+			ret = IMP_Encoder_Query(chnNum, &chn_stat);
+			if (ret < 0) {
+				IMP_LOG_ERR(TAG, "IMP_Encoder_Query(%d) error: %d\n", chnNum, ret);
+				return -1;
+			}
+
+			if (chn_stat.registered) {
+				ret = IMP_Encoder_UnRegisterChn(chnNum);
+				if (ret < 0) {
+					IMP_LOG_ERR(TAG, "IMP_Encoder_UnRegisterChn(%d) error: %d\n", chnNum, ret);
+					return -1;
+				}
+
+				ret = IMP_Encoder_DestroyChn(chnNum);
+				if (ret < 0) {
+					IMP_LOG_ERR(TAG, "IMP_Encoder_DestroyChn(%d) error: %d\n", chnNum, ret);
+					return -1;
+				}
+			}
+		}
+	}
+
+	return 0;
+}
 
 
 int sample_encoder_exit(void)
@@ -838,6 +905,65 @@ int sample_get_video_stream()
 }
 
 
+int sample_get_jpeg_snap()
+{
+	int i, ret;
+	char snap_path[64];
+
+	for (i = 0; i < FS_CHN_NUM; i++) {
+		if (chn[i].enable) {
+			ret = IMP_Encoder_StartRecvPic(4 + chn[i].index);
+			if (ret < 0) {
+				IMP_LOG_ERR(TAG, "IMP_Encoder_StartRecvPic(%d) failed\n", 3 + chn[i].index);
+				return -1;
+			}
+
+			sprintf(snap_path, "%s/snap-%d.jpg",
+					SNAP_FILE_PATH_PREFIX, chn[i].index);
+
+			IMP_LOG_ERR(TAG, "Open Snap file %s ", snap_path);
+			int snap_fd = open(snap_path, O_RDWR | O_CREAT | O_TRUNC, 0777);
+			if (snap_fd < 0) {
+				IMP_LOG_ERR(TAG, "failed: %s\n", strerror(errno));
+				return -1;
+			}
+			IMP_LOG_DBG(TAG, "OK\n");
+
+			/* Polling JPEG Snap, set timeout as 1000msec */
+			ret = IMP_Encoder_PollingStream(4 + chn[i].index, 10000);
+			if (ret < 0) {
+				IMP_LOG_ERR(TAG, "Polling stream timeout\n");
+				continue;
+			}
+
+			IMPEncoderStream stream;
+			/* Get JPEG Snap */
+			ret = IMP_Encoder_GetStream(chn[i].index + 4, &stream, 1);
+			if (ret < 0) {
+				IMP_LOG_ERR(TAG, "IMP_Encoder_GetStream() failed\n");
+				return -1;
+			}
+
+			ret = save_stream(snap_fd, &stream);
+			if (ret < 0) {
+				close(snap_fd);
+				return ret;
+			}
+
+			IMP_Encoder_ReleaseStream(4 + chn[i].index, &stream);
+
+			close(snap_fd);
+
+			ret = IMP_Encoder_StopRecvPic(4 + chn[i].index);
+			if (ret < 0) {
+				IMP_LOG_ERR(TAG, "IMP_Encoder_StopRecvPic() failed\n");
+				return -1;
+			}
+		}
+	}
+	return 0;
+}
+
 
 int sample_SetIRCUT(int enable)
 {
@@ -931,3 +1057,107 @@ int sample_SetIRCUT(int enable)
 
 	return 0;
 }
+
+static int  g_soft_ps_running = 1;
+void *sample_soft_photosensitive_ctrl(void *p)
+{
+	int i = 0;
+	float gb_gain,gr_gain;
+	float iso_buf;
+	bool ircut_status = true;
+	g_soft_ps_running = 1;
+	int night_count = 0;
+	int day_count = 0;
+	//int day_oth_count = 0;
+	//(g/b) statistic in bayer region
+	float gb_gain_record = 200;
+	float gr_gain_record = 200;
+	float gb_gain_buf = 200, gr_gain_buf = 200;
+	IMPISPRunningMode pmode;
+	IMPISPEVAttr ExpAttr;
+	IMPISPWB wb;
+	IMP_ISP_Tuning_SetISPRunningMode(IMPISP_RUNNING_MODE_DAY);
+	sample_SetIRCUT(1);
+
+	while (g_soft_ps_running) {
+		//obtain exposure AE information
+		int ret = IMP_ISP_Tuning_GetEVAttr(&ExpAttr);
+		if (ret ==0) {
+			printf("u32ExposureTime: %d\n", ExpAttr.ev);
+			printf("u32AnalogGain: %d\n", ExpAttr.again);
+			printf("u32DGain: %d\n", ExpAttr.dgain);
+		} else {
+			return NULL;
+        }
+		iso_buf = ExpAttr.ev;
+		printf(" iso buf ==%f\n",iso_buf);
+		ret = IMP_ISP_Tuning_GetWB_Statis(&wb);
+		if (ret == 0) {
+			gr_gain =wb.rgain;
+			gb_gain =wb.bgain;
+			// printf("gb_gain: %f\n", gb_gain);
+			// printf("gr_gain: %f\n", gr_gain);
+			// printf("gr_gain_record: %f\n", gr_gain_record);
+		} else {
+			return NULL;
+        }
+
+		//If the average brightness is less than 20, switches to night vision mode
+		if (iso_buf >1900000) {
+			night_count++;
+			printf("night_count==%d\n",night_count);
+			if (night_count>5) {
+				IMP_ISP_Tuning_GetISPRunningMode(&pmode);
+				if (pmode!=IMPISP_RUNNING_MODE_NIGHT) {
+					printf("### entry night mode ###\n");
+					IMP_ISP_Tuning_SetISPRunningMode(IMPISP_RUNNING_MODE_NIGHT);
+					sample_SetIRCUT(0);
+					ircut_status = true;
+				}
+				//After switching to night vision, take the minimum value of 20 gb_gain as the reference value for switching to day gb_gain_record，the gb_gain is bayer's G/B
+				for (i=0; i<20; i++) {
+					IMP_ISP_Tuning_GetWB_GOL_Statis(&wb);
+					gr_gain =wb.rgain;
+					gb_gain =wb.bgain;
+					if (i==0) {
+						gb_gain_buf = gb_gain;
+						gr_gain_buf = gr_gain;
+					}
+					gb_gain_buf = ((gb_gain_buf>gb_gain)?gb_gain:gb_gain_buf);
+					gr_gain_buf = ((gr_gain_buf>gr_gain)?gr_gain:gr_gain_buf);
+					usleep(300000);
+					gb_gain_record = gb_gain_buf;
+					gr_gain_record = gr_gain_buf;
+					// printf("gb_gain == %f,iso_buf=%f",gb_gain,iso_buf);
+					// printf("gr_gain_record == %f\n ",gr_gain_record);
+				}
+			}
+		} else {
+			night_count = 0;
+        }
+		//Meeting these three conditions, enter the daytime switching judgment condition
+		if (((int)iso_buf < 479832) &&(ircut_status == true) &&(gb_gain>gb_gain_record+15)) {
+			if ((iso_buf<361880)||(gb_gain >145)) {
+				day_count++;
+            } else {
+				day_count=0;
+            }
+			// printf("gr_gain_record == %f gr_gain =%f line=%d\n",gr_gain_record,gr_gain,__LINE__);
+			// printf("day_count == %d\n",day_count);
+			if (day_count>3) {
+				printf("### entry day mode ###\n");
+				IMP_ISP_Tuning_GetISPRunningMode(&pmode);
+				if (pmode!=IMPISP_RUNNING_MODE_DAY) {
+					IMP_ISP_Tuning_SetISPRunningMode(IMPISP_RUNNING_MODE_DAY);
+					sample_SetIRCUT(1);
+					ircut_status = false;
+				}
+			}
+		} else {
+            day_count = 0;
+        }
+		sleep(1);
+	}
+	return NULL;
+}
+
