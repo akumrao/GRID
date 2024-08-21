@@ -142,12 +142,12 @@ class T31RGBA:public base::Thread
     int T31RGBAInit();
     int T31RGBAExit();
 
-    int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  );
+    int XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h, json &m );
     int scan_image(unsigned char *blob, int width, int height);
     void onMessage(json &msg );
 
-    int sample_get_jpeg_snap();
-    int base64_jpeg( IMPEncoderStream *stream);
+    int get_jpeg_snap(json &m);
+    int base64_jpeg( IMPEncoderStream *stream, std::string &jpegBufBas64);
 
 //    std::atomic<int> ready_flag {1};
 

@@ -207,103 +207,6 @@ int readFile(const char* filename,  char *buf, int len)
 
 
 
-int T31RGBA::base64_jpeg( IMPEncoderStream *stream)
-{
-
-  std::string jpegBufBas64;
-
-  int ret, i, nr_pack = stream->packCount;
-
-  //IMP_LOG_DBG(TAG, "----------packCount=%d, stream->seq=%u start----------\n", stream->packCount, stream->seq);
-  for (i = 0; i < nr_pack; i++) 
-  {
-    //IMP_LOG_DBG(TAG, "[%d]:%10u,%10lld,%10u,%10u,%10u\n", i, stream->pack[i].length, stream->pack[i].timestamp, stream->pack[i].frameEnd, *((uint32_t *)(&stream->pack[i].nalType)), stream->pack[i].sliceType);
-    IMPEncoderPack *pack = &stream->pack[i];
-    if(pack->length)
-    {
-      uint32_t remSize = stream->streamSize - pack->offset;
-      if(remSize < pack->length)
-      {
-        //ret = write(fd, (void *)(stream->virAddr + pack->offset), remSize);
-        jpegBufBas64 = std::string( (char *)(stream->virAddr + pack->offset), remSize );
-        
-        jpegBufBas64 = jpegBufBas64 + std::string( (char *)stream->virAddr, pack->length - remSize );
-       
-      }
-      else 
-      {
-         jpegBufBas64 = std::string( (char *)(stream->virAddr + pack->offset), pack->length );
-  
-      }
-    }
-  }
-
-
-  jpegBufBas64= base64::encode(jpegBufBas64);
-
-  SInfo <<"jpegBufBas64: " << jpegBufBas64;
-
-  //IMP_LOG_DBG(TAG, "----------packCount=%d, stream->seq=%u end----------\n", stream->packCount, stream->seq);
-  return 0;
-}
-
-
-int T31RGBA::sample_get_jpeg_snap()
-{
-  int i=2, ret;
-  char snap_path[64];
-
-  //for (i = 0; i < FS_CHN_NUM; i++) {
-    if (chn[i].enable) {
-      ret = IMP_Encoder_StartRecvPic(4 + chn[i].index);
-      if (ret < 0) {
-         SError << "IMP_Encoder_StartRecvPic failed " << 3 + chn[i].index;
-        return -1;
-      }
-
-      sprintf(snap_path, "%s/snap-%d.jpg",
-          SNAP_FILE_PATH_PREFIX, chn[i].index);
-
-      //IMP_LOG_ERR(TAG, "Open Snap file %s ", snap_path);
-      int snap_fd = open(snap_path, O_RDWR | O_CREAT | O_TRUNC, 0777);
-      if (snap_fd < 0) {
-        SError << "failed "<<  strerror(errno);
-        return -1;
-      }
-     // IMP_LOG_DBG(TAG, "OK\n");
-
-      /* Polling JPEG Snap, set timeout as 1000msec */
-      ret = IMP_Encoder_PollingStream(4 + chn[i].index, 10000);
-      if (ret < 0) {
-        SError << "Polling stream timeout";
-        //continue;
-      }
-
-      IMPEncoderStream stream;
-      /* Get JPEG Snap */
-      ret = IMP_Encoder_GetStream(chn[i].index + 4, &stream, 1);
-      if (ret < 0) {
-         SError << "IMP_Encoder_GetStream() failed";
-        return -1;
-      }
-
-      
-      ret = base64_jpeg(&stream);
-      
-
-      IMP_Encoder_ReleaseStream(4 + chn[i].index, &stream);
-
-      close(snap_fd);
-
-      ret = IMP_Encoder_StopRecvPic(4 + chn[i].index);
-      if (ret < 0) {
-         SError << "IMP_Encoder_StopRecvPic() failed";
-        return -1;
-      }
-    }
-  //}
-  return 0;
-}
 
 int T31RGBA::scan_image(unsigned char *blob, int width, int height)
 {
@@ -565,6 +468,129 @@ void RestAPI(std::string method, std::string ip, std::string uri,json &m)
     
 }
 
+
+
+int T31RGBA::base64_jpeg( IMPEncoderStream *stream, std::string &jpegBufBas64)
+{
+
+  
+
+  int ret, i, nr_pack = stream->packCount;
+
+  //IMP_LOG_DBG(TAG, "----------packCount=%d, stream->seq=%u start----------\n", stream->packCount, stream->seq);
+  for (i = 0; i < nr_pack; i++) 
+  {
+    //IMP_LOG_DBG(TAG, "[%d]:%10u,%10lld,%10u,%10u,%10u\n", i, stream->pack[i].length, stream->pack[i].timestamp, stream->pack[i].frameEnd, *((uint32_t *)(&stream->pack[i].nalType)), stream->pack[i].sliceType);
+    IMPEncoderPack *pack = &stream->pack[i];
+    if(pack->length)
+    {
+      uint32_t remSize = stream->streamSize - pack->offset;
+      if(remSize < pack->length)
+      {
+        //ret = write(fd, (void *)(stream->virAddr + pack->offset), remSize);
+        jpegBufBas64 = std::string( (char *)(stream->virAddr + pack->offset), remSize );
+        
+        jpegBufBas64 = jpegBufBas64 + std::string( (char *)stream->virAddr, pack->length - remSize );
+       
+      }
+      else 
+      {
+         jpegBufBas64 = std::string( (char *)(stream->virAddr + pack->offset), pack->length );
+  
+      }
+    }
+  }
+
+
+  if(i)
+  jpegBufBas64= base64::encode(jpegBufBas64);
+
+
+
+  //IMP_LOG_DBG(TAG, "----------packCount=%d, stream->seq=%u end----------\n", stream->packCount, stream->seq);
+  return i;
+}
+
+
+int T31RGBA::get_jpeg_snap(json &m)
+{
+  int i=2, ret;
+  char snap_path[64];
+
+  //for (i = 0; i < FS_CHN_NUM; i++) {
+    if (chn[i].enable) {
+      ret = IMP_Encoder_StartRecvPic(4 + chn[i].index);
+      if (ret < 0) {
+         SError << "IMP_Encoder_StartRecvPic failed " << 3 + chn[i].index;
+        return -1;
+      }
+
+
+#if(DUMPFILE)
+      sprintf(snap_path, "%s/snap-%d.jpg",
+          SNAP_FILE_PATH_PREFIX, chn[i].index);
+
+
+      //IMP_LOG_ERR(TAG, "Open Snap file %s ", snap_path);
+      int snap_fd = open(snap_path, O_RDWR | O_CREAT | O_TRUNC, 0777);
+      if (snap_fd < 0) {
+        SError << "failed "<<  strerror(errno);
+        return -1;
+      }
+#endif      
+     // IMP_LOG_DBG(TAG, "OK\n");
+
+      /* Polling JPEG Snap, set timeout as 1000msec */
+      ret = IMP_Encoder_PollingStream(4 + chn[i].index, 10000);
+      if (ret < 0) {
+        SError << "Polling stream timeout";
+        //continue;
+      }
+
+      IMPEncoderStream stream;
+      /* Get JPEG Snap */
+      ret = IMP_Encoder_GetStream(chn[i].index + 4, &stream, 1);
+      if (ret < 0) {
+         SError << "IMP_Encoder_GetStream() failed";
+        return -1;
+      }
+
+      std::string jpegBufBas64;
+      ret = base64_jpeg(&stream, jpegBufBas64);
+      
+
+      IMP_Encoder_ReleaseStream(4 + chn[i].index, &stream);
+
+
+      ret = IMP_Encoder_StopRecvPic(4 + chn[i].index);
+      if (ret < 0) {
+         SError << "IMP_Encoder_StopRecvPic() failed";
+        return -1;
+      }
+
+      #if(DUMPFILE)
+      close(snap_fd);
+        SInfo <<"jpegBufBas64: " << jpegBufBas64;
+      #else
+      if(jpegBufBas64.size())
+      {
+        //SInfo <<"jpegBufBas64: " << jpegBufBas64;
+        m["looselyCroppedImage"] = jpegBufBas64;
+        ctx->signaler->postAppMessage( m);
+        RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
+
+      }
+
+      #endif
+
+
+  
+
+    }
+  //}
+  return 0;
+}
+
 void T31RGBA::run() {
     
 
@@ -619,6 +645,8 @@ void T31RGBA::run() {
     #endif
    
     int QRFound = 0;
+    int personFound=0;
+
 
     while (!stopped()) {
         /* Snap RGBA */
@@ -641,36 +669,22 @@ void T31RGBA::run() {
        
        // if ( ready_flag ) 
         //{
-            size_t  p_output_size1 = 0;
+        size_t  p_output_size1 = 0;
 
-            unsigned char *  rgbBuf = rgba_to_rgb_brg( (const unsigned char*)frame->virAddr , frame->size,  bitmap_buffer_format_RGB , 0, frame->width , frame->height , &p_output_size1 );
+        unsigned char *  rgbBuf = rgba_to_rgb_brg( (const unsigned char*)frame->virAddr , frame->size,  bitmap_buffer_format_RGB , 0, frame->width , frame->height , &p_output_size1 );
 
+        json m; 
+    
+        if(!QRCode)
+        {
+          personFound = XAProcess( rgbBuf, frame->width , frame->height, m) ;
+          free(rgbBuf) ;
+         }
+        else
+          QRFound = scan_image( rgbBuf, frame->width , frame->height);
 
-           // for( int x =0; x < 40 ; ++x)
-            {
-
-              if(!QRCode)
-              {
-                XAProcess( rgbBuf, frame->width , frame->height) ;
-                free(rgbBuf) ;
-               }
-              else
-                QRFound = scan_image( rgbBuf, frame->width , frame->height);
-
-
-             }
 
              
-            
-        //}
-
-      //  ++i;
-
-
-         //XAProcess( frame->virAddr, frame->width , frame->height) ;
-
-       //  base::sleep(700);
-
       
 
         IMP_FrameSource_ReleaseFrame(3, frame);
@@ -684,8 +698,8 @@ void T31RGBA::run() {
             return ;
         }
 
-
-        sample_get_jpeg_snap();
+        if(personFound > 0)
+        get_jpeg_snap(m);
 
         
 
@@ -734,7 +748,7 @@ void T31RGBA::onMessage(json &jsonMsg )
 
 
 
-int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  )
+int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h , json &m )
 {
 
 
@@ -803,20 +817,19 @@ int T31RGBA::XAProcess( uint8_t* buffer_containing_raw_rgb_data , int w, int h  
      
       m_date = time1;
 
-      json m;
+      
       
       m["messageType"] = "PERSON";
       m["messagePayload"] =  arr;
       m["ts"] =  date;
       m["count"] =  personSUM;
       m["camid"] = ctx->cam;
-      ctx->signaler->postAppMessage( m);
-      RestAPI("POST",  "backend.adapptonline.com", "/eventsToCloudX", m);  
 
+      return 1;
     }
     #endif
    
-
+   return 0;
 }
 
 
