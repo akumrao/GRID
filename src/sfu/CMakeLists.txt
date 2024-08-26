@@ -35,7 +35,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 if (${ANDROID_ABI} STREQUAL "x86_64")
 
-file(GLOB SOURCES "*.cpp" "../src/*.cpp" "../src/RTCP/*.cpp" "../src/Codecs/*.cpp" "../src/sdp/*.cpp" "../src/SctpDictionaries/*.cpp" "../src/Channel/*.cpp" "../src/Utils/*.cpp" "../src/RtpDictionaries/*.cpp" "../../libuv/src/*.cpp" "../../libuv/src/unix/*.cpp" "../../base/src/*.cpp" "../net/src/*.cpp"  "../http/src/*.cpp" "../../http_parser/*.cpp" "../../json/src/*.cpp" "../../signal/src/*.cpp" )
+file(GLOB SOURCES "sfuserver/*.cpp" "src/*.cpp" "src/RTCP/*.cpp" "src/Codecs/*.cpp" "src/sdp/*.cpp" "src/SctpDictionaries/*.cpp" "src/Channel/*.cpp" "src/Utils/*.cpp" "src/RtpDictionaries/*.cpp" "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../base/src/*.cpp" "net/src/*.cpp"  "http/src/*.cpp" "../http_parser/*.cpp" "../json/src/*.cpp" "../signal/src/*.cpp" )
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
  
@@ -67,7 +67,7 @@ set(INC "/workspace/MagicAI/src/qrcode/include")
 
 if (${ANDROID_ABI} STREQUAL "x86_64")
 
-target_include_directories(runWebrtc PRIVATE   ${INC} ../include/ ../../json/include/ ../../json/include/json ../../signal/include ../../crypto/include/ ../http/include/ ../../base/include/ ../net/include/ ../../libuv/include ../../libuv/src ../../../build/ ../../http_parser/ ../deps/openssl/openssl/include ../deps/usrsctp/usrsctp/usrsctplib ../deps/libsdptransform/include/ ../deps/libsrtp/srtp/include ../deps/libwebrtc/ ../deps/libwebrtc/libwebrtc ../deps/libwebrtc/deps/abseil-cpp/abseil-cpp   )
+target_include_directories(runWebrtc PRIVATE   ${INC} include/ ../json/include/ ../json/include/json ../signal/include  http/include/ ../base/include/ net/include/ ../libuv/include ../libuv/src  ../http_parser/ deps/openssl/openssl/include deps/usrsctp/usrsctp/usrsctplib deps/libsdptransform/include/ deps/libsrtp/srtp/include deps/libwebrtc/ deps/libwebrtc/libwebrtc deps/libwebrtc/deps/abseil-cpp/abseil-cpp   )
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
  
@@ -85,6 +85,8 @@ target_link_directories(runWebrtc PRIVATE  ../../facedetec/xailient-sdk-HD/xaili
 
 
 #add_subdirectory( webrtc/third_party)
+add_subdirectory(deps/libsdptransform)
+add_subdirectory(deps/usrsctp)
 
 
 SET(SAT_LIB "/workspace/MagicAI/src/sfu/out/Release")
@@ -92,7 +94,7 @@ SET(SAT_LIB "/workspace/MagicAI/src/sfu/out/Release")
 
 if (${ANDROID_ABI} STREQUAL "x86_64")
 
-target_link_libraries(runWebrtc PRIVATE  ${SAT_LIB}/libsrtp.a ${SAT_LIB}/libusrsctp.a ${SAT_LIB}/libsdptransform.a ${SAT_LIB}/libwebrtc.a ${SAT_LIB}/libabseil.a   pthread m dl   ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  )
+target_link_libraries(runWebrtc PRIVATE  sdptransform usrsctp ${SAT_LIB}/libsrtp.a ${SAT_LIB}/libwebrtc.a ${SAT_LIB}/libabseil.a   pthread m dl   ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  )
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
  
@@ -124,16 +126,9 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 
 
 # add at first, avoid header search path, definition chaos
-#add_subdirectory(third_party)
 
 
 
-
-if (${ANDROID_ABI} STREQUAL "armeabi-v7a")
-    target_compile_definitions(runWebrtc PRIVATE -DWEBRTC_USE_BUILTIN_ISAC_FIX=1 -DWEBRTC_USE_BUILTIN_ISAC_FLOAT=0)
-else()
-    target_compile_definitions(runWebrtc PRIVATE -DWEBRTC_USE_BUILTIN_ISAC_FIX=0 -DWEBRTC_USE_BUILTIN_ISAC_FLOAT=1)
-endif()
 
 
 

@@ -1,0 +1,42 @@
+cmake_minimum_required(VERSION 3.4.1)
+
+
+set(TEST_CC_FILTER ".*gunit.cc|.*/mock/.*|.*mock_.*|.*/mocks/.*|.*fake.*|.*/test/.*|.*/tests/.*|.*_test_.*|.*unittest.*|.*/end_to_end_tests/.*|.*_test.cc|.*_tests.cc|.*_integrationtest.cc|.*_perftest.cc|.*test_utils.cc|.*testutils.cc|.*testclient.cc|.*test.c")
+
+include_directories(
+    /workspace/MagicAI/src/openssl/buildt31/include/
+    config
+    srtp/crypto/include
+    srtp/include
+)
+
+add_definitions(
+    -DHAVE_CONFIG_H
+    -DOPENSSL
+    -DHAVE_STDLIB_H
+    -DHAVE_STRING_H
+    -DHAVE_STDINT_H
+    -DHAVE_INTTYPES_H
+    -DHAVE_INT16_T
+    -DHAVE_INT32_T
+    -DHAVE_INT8_T
+    -DHAVE_UINT16_T
+    -DHAVE_UINT32_T
+    -DHAVE_UINT64_T
+    -DHAVE_UINT8_T
+    -DHAVE_ARPA_INET_H
+    -DHAVE_NETINET_IN_H
+    -DHAVE_SYS_TYPES_H
+    -DHAVE_UNISTD_H
+#    -DPACKAGE_STRING="libsrtp2 2.1.0-pre"
+#    -DPACKAGE_VERSION="2.1.0-pre"
+)
+
+file(GLOB_RECURSE src_srtp
+    srtp/*.c
+)
+list(FILTER src_srtp EXCLUDE REGEX ${TEST_CC_FILTER})
+
+add_library(srtp STATIC
+    ${src_srtp}
+)

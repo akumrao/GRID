@@ -9,9 +9,9 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # For CMake < 3.1.
 add_compile_options(-std=c++11)
 
-subdirs(test readme-helper)
+#subdirs(test readme-helper)
 
-include_directories(${sdptransform_SOURCE_DIR}/include  /workspace/MagicAI/src/json/include/json/)
+#include_directories(./include  ../../../json/include/json/)
 
 set(
 	SOURCE_FILES
@@ -27,5 +27,8 @@ set(
 
 add_library(sdptransform STATIC ${SOURCE_FILES} ${HEADER_FILES})
 
-install(TARGETS sdptransform DESTINATION lib)
-install(FILES ${HEADER_FILES} DESTINATION include/sdptransform)
+target_include_directories(sdptransform PRIVATE ${sdptransform_SOURCE_DIR}/include  /workspace/MagicAI/src/json/include/json/)
+
+
+#install(TARGETS sdptransform DESTINATION lib)
+#install(FILES ${HEADER_FILES} DESTINATION include/sdptransform)
