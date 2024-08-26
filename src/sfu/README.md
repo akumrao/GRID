@@ -1,3 +1,8 @@
+To generate cmakelist.txt from gyp
+gyp -f cmake mygypfile.gyp
+
+
+
 ## Readme.md Editor
 https://pandao.github.io/editor.md/en.html
 git difftool --tool=meld

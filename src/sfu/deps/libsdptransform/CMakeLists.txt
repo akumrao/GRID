@@ -11,7 +11,7 @@ add_compile_options(-std=c++11)
 
 subdirs(test readme-helper)
 
-include_directories(${sdptransform_SOURCE_DIR}/include)
+include_directories(${sdptransform_SOURCE_DIR}/include  /workspace/MagicAI/src/json/include/json/)
 
 set(
 	SOURCE_FILES
@@ -23,7 +23,6 @@ set(
 set(
 	HEADER_FILES
 	include/sdptransform.hpp
-	include/json.hpp
 )
 
 add_library(sdptransform STATIC ${SOURCE_FILES} ${HEADER_FILES})
