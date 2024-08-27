@@ -40,3 +40,22 @@ list(FILTER src_srtp EXCLUDE REGEX ${TEST_CC_FILTER})
 add_library(srtp STATIC
     ${src_srtp}
 )
+
+
+if (${ANDROID_ABI} STREQUAL "x86_64")
+
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+
+else(${ANDROID_ABI} STREQUAL "mipsel")
+ 
+set(CMAKE_BUILD_TYPE MinSizeRel)
+
+endif()
+
+
+if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+    target_compile_options(srtp PRIVATE -Os  -s -Wl,-s -Wl,--gc-sections -fpermissive )
+else()
+#target_compile_options(srtp PRIVATE -fpermissive -DNDEBUG)
+endif()

@@ -128,6 +128,26 @@ add_subdirectory(abseil-cpp)
 
 add_library(webrtc STATIC ${SRCWEBRTC_FILES} ${HEDWEBRTC_FILES})
 
-target_include_directories(webrtc PRIVATE abseil-cpp libwebrtc  ../../include/ ../../../base/include   ../../../json/include/json )
-target_compile_options(webrtc PRIVATE  -DMS_LITTLE_ENDIAN)
+target_include_directories(webrtc PRIVATE abseil-cpp libwebrtc  
+../../include/ ../../../base/include ../../../json/include/json ../../../libuv/include ${SSL_ROOT}/include
 
+ )
+
+
+if (${ANDROID_ABI} STREQUAL "x86_64")
+
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+
+else(${ANDROID_ABI} STREQUAL "mipsel")
+ 
+set(CMAKE_BUILD_TYPE MinSizeRel)
+
+endif()
+
+
+if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
+    target_compile_options(webrtc PRIVATE -Os  -s -Wl,-s -Wl,--gc-sections -fpermissive -DNDEBUG -DMS_LITTLE_ENDIAN)
+else()
+#target_compile_options(webrtc PRIVATE -fpermissive -DNDEBUG)
+endif()
