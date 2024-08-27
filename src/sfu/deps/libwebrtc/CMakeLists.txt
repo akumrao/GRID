@@ -1,12 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(webrtc VERSION 1.2.7)
-
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-add_compile_options(-std=c++14)
-
 set(
 	SRCWEBRTC_FILES
 	 libwebrtc/system_wrappers/source/field_trial.cc
