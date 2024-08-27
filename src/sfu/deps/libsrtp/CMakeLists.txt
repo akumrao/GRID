@@ -6,8 +6,8 @@ set(TEST_CC_FILTER ".*gunit.cc|.*/mock/.*|.*mock_.*|.*/mocks/.*|.*fake.*|.*/test
 include_directories(
     /workspace/MagicAI/src/openssl/buildt31/include/
     config
-    srtp/crypto/include
-    srtp/include
+    libsrtp/crypto/include
+    libsrtp/include
 )
 
 add_definitions(
@@ -33,7 +33,7 @@ add_definitions(
 )
 
 file(GLOB_RECURSE src_srtp
-    srtp/*.c
+    libsrtp/*.c
 )
 list(FILTER src_srtp EXCLUDE REGEX ${TEST_CC_FILTER})
 

@@ -87,14 +87,15 @@ target_link_directories(runWebrtc PRIVATE  ../../facedetec/xailient-sdk-HD/xaili
 #add_subdirectory( webrtc/third_party)
 add_subdirectory(deps/libsdptransform)
 add_subdirectory(deps/usrsctp)
-
+add_subdirectory(deps/libsrtp)
+add_subdirectory(deps/libwebrtc)
 
 SET(SAT_LIB "/workspace/MagicAI/src/sfu/out/Release")
 
 
 if (${ANDROID_ABI} STREQUAL "x86_64")
 
-target_link_libraries(runWebrtc PRIVATE  sdptransform usrsctp ${SAT_LIB}/libsrtp.a ${SAT_LIB}/libwebrtc.a ${SAT_LIB}/libabseil.a   pthread m dl   ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  )
+target_link_libraries(runWebrtc PRIVATE  sdptransform usrsctp srtp webrtc  absl::optional    absl::variant    absl::strings pthread m dl   ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a  )
 
 else(${ANDROID_ABI} STREQUAL "mipsel")
  
@@ -167,3 +168,10 @@ else()
 target_compile_options(runWebrtc PRIVATE -fpermissive -DNDEBUG)
 endif()
 
+
+
+
+
+
+
+     
