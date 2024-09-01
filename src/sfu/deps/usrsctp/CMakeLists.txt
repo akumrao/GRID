@@ -5,10 +5,7 @@ set(TEST_CC_FILTER ".*gunit.cc|.*/mock/.*|.*mock_.*|.*/mocks/.*|.*fake.*|.*/test
 
 add_definitions(-DSCTP_PROCESS_LEVEL_LOCKS -DSCTP_SIMPLE_ALLOCATOR -DSCTP_USE_OPENSSL_SHA1 -D__Userspace__ -D__Userspace_os_Linux -D_GNU_SOURCE -DNON_WINDOWS_DEFINE)
 
-include_directories(
-    #${WEBRTC_REPO}/third_party/boringssl/src/include
-     usrsctp/usrsctplib
-)
+
 
 file(GLOB_RECURSE src_usrsctp
      usrsctp/usrsctplib/*.c
@@ -19,16 +16,23 @@ add_library(usrsctp STATIC
     ${src_usrsctp}
 )
 
-if (${ANDROID_ABI} STREQUAL "x86_64")
+
+if (${CROSS_PLATEFORM} STREQUAL "x86_64")
 
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
 
-else(${ANDROID_ABI} STREQUAL "mipsel")
- 
+elseif (${CROSS_PLATEFORM} STREQUAL "mipsel")
+
 set(CMAKE_BUILD_TYPE MinSizeRel)
 
+else(${CROSS_PLATEFORM} STREQUAL "android")
+
+set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
+
 endif()
+
 
 
 if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
@@ -36,3 +40,9 @@ if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
 else()
 #target_compile_options(usrsctp PRIVATE -fpermissive -DNDEBUG)
 endif()
+
+target_include_directories( usrsctp PRIVATE
+ ${SSL_ROOT}/include  
+ #/workspace/MagicAI/src/sfu/deps/openssl/build/openssl/arm64-v8a/include
+  usrsctp/usrsctplib
+)

@@ -31,7 +31,7 @@
 //#define _REMOTELOG
 #if defined(__ANDROID__)    
 #include <android/log.h>
-#include "net/UdpSocket.h"
+//#include "net/UdpSocket.h"
 #endif
 
 #if defined(_REMOTELOG) 
