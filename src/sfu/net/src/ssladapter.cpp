@@ -20,7 +20,7 @@
 #include <stdexcept>
 #include <vector>
 
-#define FROMFILE 1
+//#define FROMFILE 1
 
 using namespace std;
 
