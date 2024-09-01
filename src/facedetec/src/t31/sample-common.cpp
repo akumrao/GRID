@@ -266,7 +266,7 @@ int sample_system_init()
 {
 	int ret = 0;
 
-	IMP_OSD_SetPoolSize(512*1024);
+	//IMP_OSD_SetPoolSize(512*1024);
 
 /*
  *    IMP_System_MemPoolRequest(0, 12 * ( 1 << 20 ), "mempool0");
@@ -320,10 +320,24 @@ int sample_system_init()
 		IMP_LOG_ERR(TAG, "IMP_ISP_EnableTuning failed\n");
 		return -1;
 	}
+
+
+	//https://git.i386.io/wyze/prudynt/-/blob/6243827faf1a9955cfbd12e9e6196b2a3aac29f3/src/Encoder.cpp
+
     IMP_ISP_Tuning_SetContrast(128);
     IMP_ISP_Tuning_SetSharpness(128);
     IMP_ISP_Tuning_SetSaturation(128);
     IMP_ISP_Tuning_SetBrightness(128);
+
+    /*
+    IMP_ISP_Tuning_SetBrightness(130);
+    IMP_ISP_Tuning_SetMaxDgain(64);
+    IMP_ISP_Tuning_SetAeComp(10);
+    IMP_ISP_Tuning_SetHiLightDepress(10);
+    */    
+
+
+
 #if 1
     ret = IMP_ISP_Tuning_SetISPRunningMode(IMPISP_RUNNING_MODE_DAY);
     if (ret < 0){

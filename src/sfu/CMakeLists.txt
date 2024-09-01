@@ -1,4 +1,4 @@
-
+# ulimit -S -c unlimited
 cmake_minimum_required(VERSION 3.7)
 
 if (${ANDROID_ABI} STREQUAL "x86_64")
@@ -135,6 +135,7 @@ set(CMAKE_BUILD_TYPE MinSizeRel)
 
 endif()
 
+#-DMS_BIG_ENDIAN  -D_GNU_SOURCE -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -DDEBUG -DMS_LOG_TRACE -DMS_LOG_FILE_LINE)
 
 if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
     target_compile_options(runWebrtc PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections -fpermissive -DNDEBUG -DMIPS32=1)

@@ -28,7 +28,7 @@
 
 
 
-#define SERVER_HOST "localhost"
+#define SERVER_HOST "192.168.0.19"
 #define SERVER_PORT 9090 //443
 
 //#define JOIN_ROOM  "foo"  
