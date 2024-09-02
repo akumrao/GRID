@@ -720,7 +720,7 @@ using namespace base;
 
 #ifdef ANDROID
 
-SdpParse::Signaler sig;
+
 
 int testStart( )
 {
@@ -770,9 +770,8 @@ int testStart( )
 
     //try {
 
-
     base::Application app;
-
+    SdpParse::Signaler sig;
 
     // Initialize static stuff.
     DepOpenSSL::ClassInit();
@@ -796,15 +795,15 @@ int testStart( )
     sig.connect(SERVER_HOST1, SERVER_PORT1);
 
 
-//    app.waitForShutdown([&](void*) {
-//
-//        DepLibSRTP::ClassDestroy();
-//        Utils::Crypto::ClassDestroy();
-//        DepLibWebRTC::ClassDestroy();
-//        RTC::DtlsTransport::ClassDestroy();
-//        DepUsrSCTP::ClassDestroy();
-//
-//    });
+    app.waitForShutdown([&](void*) {
+
+        DepLibSRTP::ClassDestroy();
+        Utils::Crypto::ClassDestroy();
+        DepLibWebRTC::ClassDestroy();
+        RTC::DtlsTransport::ClassDestroy();
+        DepUsrSCTP::ClassDestroy();
+
+    });
 
 
 
