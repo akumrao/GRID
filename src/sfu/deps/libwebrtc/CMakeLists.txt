@@ -136,12 +136,12 @@ target_compile_options(webrtc PRIVATE  -DMS_LITTLE_ENDIAN)
 elseif (${CROSS_PLATEFORM} STREQUAL "mipsel")
 
 set(CMAKE_BUILD_TYPE MinSizeRel)
-target_compile_options(webrtc PRIVATE -Os  -s -Wl,-s -Wl,--gc-sections -fpermissive -DNDEBUG -DMS_LITTLE_ENDIAN)
+target_compile_options(webrtc PRIVATE -Os  -s -Wl,-s -Wl,--gc-sections -fpermissive -DNDEBUG -DMS_BIG_ENDIAN)
 else(${CROSS_PLATEFORM} STREQUAL "android")
 
 set(CMAKE_BUILD_TYPE Debug)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -g")
-target_compile_options(webrtc PRIVATE  -DMS_BIG_ENDIAN)
+target_compile_options(webrtc PRIVATE  -DMS_LITTLE_ENDIAN)
 endif()
 
 

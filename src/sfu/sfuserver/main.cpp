@@ -38,7 +38,7 @@ json jtest = R"(
   "webrtc": {
     "rtcMinPort": 11501,
     "rtcMaxPort": 12560,
-    "logLevel": "info",
+    "logLevel": "trace",
     "logTags": [
       "info",
       "ice",
@@ -384,7 +384,7 @@ json jtest = R"(
       "data": {
         "listenIps": [
           {
-            "ip": "127.0.0.1"
+            "ip": "100.94.120.72"
           }
         ],
         "enableUdp": true,
@@ -806,6 +806,9 @@ int testStart( )
     });
 
 
+    MS_DEBUG_TAG(info, "Exited Main");
+
+    exit(0);
 
 
 
