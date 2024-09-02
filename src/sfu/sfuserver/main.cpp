@@ -723,20 +723,7 @@ void IgnoreSignals();
 
 int main(int argc, char* argv[]) {
 
-    base::cnfg::Configuration config;
-
-    config.load("./config.js");
-  
-    json cnfg;
-   
-    if( !config.getRaw("webrtc", cnfg))
-    {
-        std::cout << "Could not parse config file";
-    }
-     
-    std::cout << jtest.dump() << std::endl;
-    
-     std::cout << cnfg.dump() << std::endl;
+ 
 
     try {
         Settings::SetConfiguration(jtest["webrtc"]);
