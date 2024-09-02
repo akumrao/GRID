@@ -77,8 +77,8 @@ namespace RTC
 
 	/* Class variables. */
 
-	//X509* DtlsTransport::certificate{ nullptr };
-	//EVP_PKEY* DtlsTransport::privateKey{ nullptr };
+	X509* DtlsTransport::certificate{ nullptr };
+	EVP_PKEY* DtlsTransport::privateKey{ nullptr };
 	SSL_CTX* DtlsTransport::sslCtx{ nullptr };
 	uint8_t DtlsTransport::sslReadBuffer[SslReadBufferSize];
 	
@@ -127,10 +127,10 @@ namespace RTC
 		  Settings::configuration.dtlsCertificateFile.empty() ||
 		  Settings::configuration.dtlsPrivateKeyFile.empty())
 		{
-			//GenerateCertificateAndPrivateKey();
+		    GenerateCertificateAndPrivateKey();
                     
-                    SError << "No certificate files.";
-                    base::uv::throwError("No certificate files");
+                   // SError << "No certificate files.";
+                   // base::uv::throwError("No certificate files");
                     //exit(0);
 		}
 //		else
@@ -149,174 +149,174 @@ namespace RTC
 	{
 		
 
-//		if (DtlsTransport::privateKey)
-//			EVP_PKEY_free(DtlsTransport::privateKey);
-//		if (DtlsTransport::certificate)
-//			X509_free(DtlsTransport::certificate);
+		if (DtlsTransport::privateKey)
+			EVP_PKEY_free(DtlsTransport::privateKey);
+		if (DtlsTransport::certificate)
+			X509_free(DtlsTransport::certificate);
 		if (DtlsTransport::sslCtx)
 			SSL_CTX_free(DtlsTransport::sslCtx);
 	}
 
-//	void DtlsTransport::GenerateCertificateAndPrivateKey()
-//	{
-//		
-//
-//		int ret{ 0 };
-//		BIGNUM* bne{ nullptr };
-//		RSA* rsaKey{ nullptr };
-//		int numBits{ 1024 };
-//		X509_NAME* certName{ nullptr };
-//		std::string subject =
-//		  std::string("sfuserver") + std::to_string(Utils::Crypto::GetRandomUInt(100000, 999999));
-//
-//		// Create a big number object.
-//		bne = BN_new();
-//
-//		if (!bne)
-//		{
-//			LOG_OPENSSL_ERROR("BN_new() failed");
-//
-//			goto error;
-//		}
-//
-//		ret = BN_set_word(bne, RSA_F4); // RSA_F4 == 65537.
-//
-//		if (ret == 0)
-//		{
-//			LOG_OPENSSL_ERROR("BN_set_word() failed");
-//
-//			goto error;
-//		}
-//
-//		// Generate a RSA key.
-//		rsaKey = RSA_new();
-//
-//		if (!rsaKey)
-//		{
-//			LOG_OPENSSL_ERROR("RSA_new() failed");
-//
-//			goto error;
-//		}
-//
-//		// This takes some time.
-//		ret = RSA_generate_key_ex(rsaKey, numBits, bne, nullptr);
-//
-//		if (ret == 0)
-//		{
-//			LOG_OPENSSL_ERROR("RSA_generate_key_ex() failed");
-//
-//			goto error;
-//		}
-//
-//		// Create a private key object (needed to hold the RSA key).
-//		DtlsTransport::privateKey = EVP_PKEY_new();
-//
-//		if (!DtlsTransport::privateKey)
-//		{
-//			LOG_OPENSSL_ERROR("EVP_PKEY_new() failed");
-//
-//			goto error;
-//		}
-//
-//		ret = EVP_PKEY_assign_RSA(DtlsTransport::privateKey, rsaKey); // NOLINT
-//
-//		if (ret == 0)
-//		{
-//			LOG_OPENSSL_ERROR("EVP_PKEY_assign_RSA() failed");
-//
-//			goto error;
-//		}
-//		// The RSA key now belongs to the private key, so don't clean it up separately.
-//		rsaKey = nullptr;
-//
-//		// Create the X509 certificate.
-//		DtlsTransport::certificate = X509_new();
-//
-//		if (!DtlsTransport::certificate)
-//		{
-//			LOG_OPENSSL_ERROR("X509_new() failed");
-//
-//			goto error;
-//		}
-//
-//		// Set version 3 (note that 0 means version 1).
-//		X509_set_version(DtlsTransport::certificate, 2);
-//
-//		// Set serial number (avoid default 0).
-//		ASN1_INTEGER_set(
-//		  X509_get_serialNumber(DtlsTransport::certificate),
-//		  static_cast<uint64_t>(Utils::Crypto::GetRandomUInt(1000000, 9999999)));
-//
-//		// Set valid period.
-//		X509_gmtime_adj(X509_get_notBefore(DtlsTransport::certificate), -315360000); // -10 years.
-//		X509_gmtime_adj(X509_get_notAfter(DtlsTransport::certificate), 315360000);   // 10 years.
-//
-//		// Set the public key for the certificate using the key.
-//		ret = X509_set_pubkey(DtlsTransport::certificate, DtlsTransport::privateKey);
-//
-//		if (ret == 0)
-//		{
-//			LOG_OPENSSL_ERROR("X509_set_pubkey() failed");
-//
-//			goto error;
-//		}
-//
-//		// Set certificate fields.
-//		certName = X509_get_subject_name(DtlsTransport::certificate);
-//
-//		if (!certName)
-//		{
-//			LOG_OPENSSL_ERROR("X509_get_subject_name() failed");
-//
-//			goto error;
-//		}
-//
-//		X509_NAME_add_entry_by_txt(
-//		  certName, "O", MBSTRING_ASC, reinterpret_cast<const uint8_t*>(subject.c_str()), -1, -1, 0);
-//		X509_NAME_add_entry_by_txt(
-//		  certName, "CN", MBSTRING_ASC, reinterpret_cast<const uint8_t*>(subject.c_str()), -1, -1, 0);
-//
-//		// It is self-signed so set the issuer name to be the same as the subject.
-//		ret = X509_set_issuer_name(DtlsTransport::certificate, certName);
-//
-//		if (ret == 0)
-//		{
-//			LOG_OPENSSL_ERROR("X509_set_issuer_name() failed");
-//
-//			goto error;
-//		}
-//
-//		// Sign the certificate with its own private key.
-//		ret = X509_sign(DtlsTransport::certificate, DtlsTransport::privateKey, EVP_sha1());
-//
-//		if (ret == 0)
-//		{
-//			LOG_OPENSSL_ERROR("X509_sign() failed");
-//
-//			goto error;
-//		}
-//
-//		// Free stuff and return.
-//		BN_free(bne);
-//
-//		return;
-//
-//	error:
-//
-//		if (bne)
-//			BN_free(bne);
-//
-//		if (rsaKey && !DtlsTransport::privateKey)
-//			RSA_free(rsaKey);
-//
-//		if (DtlsTransport::privateKey)
-//			EVP_PKEY_free(DtlsTransport::privateKey); // NOTE: This also frees the RSA key.
-//
-//		if (DtlsTransport::certificate)
-//			X509_free(DtlsTransport::certificate);
-//
-//		base::uv::throwError("DTLS certificate and private key generation failed");
-//	}
+	void DtlsTransport::GenerateCertificateAndPrivateKey()
+	{
+		
+
+		int ret{ 0 };
+		BIGNUM* bne{ nullptr };
+		RSA* rsaKey{ nullptr };
+		int numBits{ 1024 };
+		X509_NAME* certName{ nullptr };
+		std::string subject =
+		  std::string("sfuserver") + std::to_string(Utils::Crypto::GetRandomUInt(100000, 999999));
+
+		// Create a big number object.
+		bne = BN_new();
+
+		if (!bne)
+		{
+			LOG_OPENSSL_ERROR("BN_new() failed");
+
+			goto error;
+		}
+
+		ret = BN_set_word(bne, RSA_F4); // RSA_F4 == 65537.
+
+		if (ret == 0)
+		{
+			LOG_OPENSSL_ERROR("BN_set_word() failed");
+
+			goto error;
+		}
+
+		// Generate a RSA key.
+		rsaKey = RSA_new();
+
+		if (!rsaKey)
+		{
+			LOG_OPENSSL_ERROR("RSA_new() failed");
+
+			goto error;
+		}
+
+		// This takes some time.
+		ret = RSA_generate_key_ex(rsaKey, numBits, bne, nullptr);
+
+		if (ret == 0)
+		{
+			LOG_OPENSSL_ERROR("RSA_generate_key_ex() failed");
+
+			goto error;
+		}
+
+		// Create a private key object (needed to hold the RSA key).
+		DtlsTransport::privateKey = EVP_PKEY_new();
+
+		if (!DtlsTransport::privateKey)
+		{
+			LOG_OPENSSL_ERROR("EVP_PKEY_new() failed");
+
+			goto error;
+		}
+
+		ret = EVP_PKEY_assign_RSA(DtlsTransport::privateKey, rsaKey); // NOLINT
+
+		if (ret == 0)
+		{
+			LOG_OPENSSL_ERROR("EVP_PKEY_assign_RSA() failed");
+
+			goto error;
+		}
+		// The RSA key now belongs to the private key, so don't clean it up separately.
+		rsaKey = nullptr;
+
+		// Create the X509 certificate.
+		DtlsTransport::certificate = X509_new();
+
+		if (!DtlsTransport::certificate)
+		{
+			LOG_OPENSSL_ERROR("X509_new() failed");
+
+			goto error;
+		}
+
+		// Set version 3 (note that 0 means version 1).
+		X509_set_version(DtlsTransport::certificate, 2);
+
+		// Set serial number (avoid default 0).
+		ASN1_INTEGER_set(
+		  X509_get_serialNumber(DtlsTransport::certificate),
+		  static_cast<uint64_t>(Utils::Crypto::GetRandomUInt(1000000, 9999999)));
+
+		// Set valid period.
+		X509_gmtime_adj(X509_get_notBefore(DtlsTransport::certificate), -315360000); // -10 years.
+		X509_gmtime_adj(X509_get_notAfter(DtlsTransport::certificate), 315360000);   // 10 years.
+
+		// Set the public key for the certificate using the key.
+		ret = X509_set_pubkey(DtlsTransport::certificate, DtlsTransport::privateKey);
+
+		if (ret == 0)
+		{
+			LOG_OPENSSL_ERROR("X509_set_pubkey() failed");
+
+			goto error;
+		}
+
+		// Set certificate fields.
+		certName = X509_get_subject_name(DtlsTransport::certificate);
+
+		if (!certName)
+		{
+			LOG_OPENSSL_ERROR("X509_get_subject_name() failed");
+
+			goto error;
+		}
+
+		X509_NAME_add_entry_by_txt(
+		  certName, "O", MBSTRING_ASC, reinterpret_cast<const uint8_t*>(subject.c_str()), -1, -1, 0);
+		X509_NAME_add_entry_by_txt(
+		  certName, "CN", MBSTRING_ASC, reinterpret_cast<const uint8_t*>(subject.c_str()), -1, -1, 0);
+
+		// It is self-signed so set the issuer name to be the same as the subject.
+		ret = X509_set_issuer_name(DtlsTransport::certificate, certName);
+
+		if (ret == 0)
+		{
+			LOG_OPENSSL_ERROR("X509_set_issuer_name() failed");
+
+			goto error;
+		}
+
+		// Sign the certificate with its own private key.
+		ret = X509_sign(DtlsTransport::certificate, DtlsTransport::privateKey, EVP_sha1());
+
+		if (ret == 0)
+		{
+			LOG_OPENSSL_ERROR("X509_sign() failed");
+
+			goto error;
+		}
+
+		// Free stuff and return.
+		BN_free(bne);
+
+		return;
+
+	error:
+
+		if (bne)
+			BN_free(bne);
+
+		if (rsaKey && !DtlsTransport::privateKey)
+			RSA_free(rsaKey);
+
+		if (DtlsTransport::privateKey)
+			EVP_PKEY_free(DtlsTransport::privateKey); // NOTE: This also frees the RSA key.
+
+		if (DtlsTransport::certificate)
+			X509_free(DtlsTransport::certificate);
+
+		base::uv::throwError("DTLS certificate and private key generation failed");
+	}
 
 //	void DtlsTransport::ReadCertificateAndPrivateKeyFromFiles()
 //	{
@@ -390,42 +390,60 @@ namespace RTC
 #else
 #error "too old OpenSSL version"
 #endif
-
-		if (!DtlsTransport::sslCtx)
-		{
-			LOG_OPENSSL_ERROR("SSL_CTX_new() failed");
-
-			goto error;
-		}
-
-//		ret = SSL_CTX_use_certificate(DtlsTransport::sslCtx, DtlsTransport::certificate);
-//
-//		if (ret == 0)
-//		{
-//			LOG_OPENSSL_ERROR("SSL_CTX_use_certificate() failed");
-//
-//			goto error;
-//		}
-
-//		ret = SSL_CTX_use_PrivateKey(DtlsTransport::sslCtx, DtlsTransport::privateKey);
-//
-//		if (ret == 0)
-//		{
-//			LOG_OPENSSL_ERROR("SSL_CTX_use_PrivateKey() failed");
-//
-//			goto error;
-//		}
                 
-                if (SSL_CTX_load_verify_locations(DtlsTransport::sslCtx, Settings::configuration.dtlsCertificateFile.c_str(), nullptr) != 1)
-                        ERR_print_errors_fp(stderr);
+                if (!DtlsTransport::sslCtx)
+                {
+                        LOG_OPENSSL_ERROR("SSL_CTX_new() failed");
 
-                if (SSL_CTX_set_default_verify_paths(DtlsTransport::sslCtx) != 1)
+                        goto error;
+                }
+                
+
+                if (
+		  Settings::configuration.dtlsCertificateFile.empty() ||
+		  Settings::configuration.dtlsPrivateKeyFile.empty())
+		{
+
+                    ret = SSL_CTX_use_certificate(DtlsTransport::sslCtx, DtlsTransport::certificate);
+
+                    if (ret == 0)
+                    {
+                            LOG_OPENSSL_ERROR("SSL_CTX_use_certificate() failed");
+
+                            goto error;
+                    }
+
+                    ret = SSL_CTX_use_PrivateKey(DtlsTransport::sslCtx, DtlsTransport::privateKey);
+
+                    if (ret == 0)
+                    {
+                            LOG_OPENSSL_ERROR("SSL_CTX_use_PrivateKey() failed");
+
+                            goto error;
+                    }
+                }
+                else
+                {    
+                    if (SSL_CTX_load_verify_locations(DtlsTransport::sslCtx, Settings::configuration.dtlsCertificateFile.c_str(), nullptr) != 1)
+                            ERR_print_errors_fp(stderr);
+
+                    if (SSL_CTX_set_default_verify_paths(DtlsTransport::sslCtx) != 1)
+                            ERR_print_errors_fp(stderr);
+
+                            /* set the local certificate from CertFile */
+                    if (SSL_CTX_use_certificate_file(DtlsTransport::sslCtx, Settings::configuration.dtlsCertificateFile.c_str(), SSL_FILETYPE_PEM) <= 0) {
                         ERR_print_errors_fp(stderr);
+                        abort();
+                    }
                     
-                        /* set the local certificate from CertFile */
-                if (SSL_CTX_use_certificate_file(DtlsTransport::sslCtx, Settings::configuration.dtlsCertificateFile.c_str(), SSL_FILETYPE_PEM) <= 0) {
-                    ERR_print_errors_fp(stderr);
-                    abort();
+                    
+                    SSL_CTX_set_default_passwd_cb_userdata(DtlsTransport::sslCtx, (void *) "12345678");
+                    
+                    if (SSL_CTX_use_PrivateKey_file(DtlsTransport::sslCtx, Settings::configuration.dtlsPrivateKeyFile.c_str(), SSL_FILETYPE_PEM) <= 0) {
+                        ERR_print_errors_fp(stderr);
+                        abort();
+                    }
+                
                 }
                 
                 
@@ -435,13 +453,7 @@ namespace RTC
                     //New lines //for server side only 
 
                     
-                    SSL_CTX_set_default_passwd_cb_userdata(DtlsTransport::sslCtx, (void *) "12345678");
-                    
-                    if (SSL_CTX_use_PrivateKey_file(DtlsTransport::sslCtx, Settings::configuration.dtlsPrivateKeyFile.c_str(), SSL_FILETYPE_PEM) <= 0) {
-                        ERR_print_errors_fp(stderr);
-                        abort();
-                    }
-                
+
                     ret = SSL_CTX_check_private_key(DtlsTransport::sslCtx);
 
                     if (ret == 0)

@@ -28,7 +28,7 @@
 
 
 
-#define SERVER_HOST "192.168.0.19"
+#define SERVER_HOST "100.94.120.72"
 #define SERVER_PORT 9090 //443
 
 //#define JOIN_ROOM  "foo"  
@@ -36,11 +36,9 @@
 json jtest = R"(
   {
   "webrtc": {
-    "dtlsCertificateFile": "/var/tmp/key/certificate.crt",
-    "dtlsPrivateKeyFile": "/var/tmp/key/private_key.pem",
     "rtcMinPort": 11501,
     "rtcMaxPort": 12560,
-    "logLevel": "info",
+    "logLevel": "trace",
     "logTags": [
       "info",
       "ice",
@@ -58,7 +56,7 @@ json jtest = R"(
     "listenIps": [
       {
         "ip": "0.0.0.0",
-        "announcedIp": "127.0.0.1"
+        "announcedIp": "100.94.120.72"
       }
     ],
     "routerCapabilities": {
@@ -386,7 +384,7 @@ json jtest = R"(
       "data": {
         "listenIps": [
           {
-            "ip": "127.0.0.1"
+            "ip": "100.94.120.72"
           }
         ],
         "enableUdp": true,
@@ -719,6 +717,107 @@ json jtest = R"(
 
 using namespace base;
 
+
+#ifdef ANDROID
+
+
+
+int testStart( )
+{
+
+//    base::cnfg::Configuration config;
+//
+//    config.load("./config.js");
+//
+//    json cnfg;
+//
+//    if( !config.getRaw("webrtc", cnfg))
+//    {
+//        std::cout << "Could not parse config file";
+//    }
+
+    std::cout << jtest.dump() << std::endl;
+
+    //std::cout << cnfg.dump() << std::endl;
+
+    try {
+        Settings::SetConfiguration(jtest["webrtc"]);
+    } catch (const std::exception& error) {
+        MS_ERROR_STD("settings error: %s", error.what());
+
+        std::_Exit(-1);
+    }
+
+
+#if defined(MS_LITTLE_ENDIAN)
+    MS_DEBUG_TAG(info, "little-endian CPU detected");
+#elif defined(MS_BIG_ENDIAN)
+    MS_DEBUG_TAG(info, "big-endian CPU detected");
+#else
+    MS_WARN_TAG(info, "cannot determine whether little-endian or big-endian");
+#endif
+
+#if defined(INTPTR_MAX) && defined(INT32_MAX) && (INTPTR_MAX == INT32_MAX)
+    MS_DEBUG_TAG(info, "32 bits architecture detected");
+#elif defined(INTPTR_MAX) && defined(INT64_MAX) && (INTPTR_MAX == INT64_MAX)
+    MS_DEBUG_TAG(info, "64 bits architecture detected");
+#else
+    MS_WARN_TAG(info, "cannot determine 32 or 64 bits architecture");
+#endif
+
+
+    Settings::PrintConfiguration();
+
+    //try {
+
+    base::Application app;
+    SdpParse::Signaler sig;
+
+    // Initialize static stuff.
+    DepOpenSSL::ClassInit();
+    DepLibSRTP::ClassInit();
+    DepUsrSCTP::ClassInit();
+    DepLibWebRTC::ClassInit();
+    Utils::Crypto::ClassInit();
+    RTC::DtlsTransport::ClassInit();
+    RTC::SrtpSession::ClassInit();
+    Channel::Notifier::ClassInit(&sig);
+
+
+    #define SERVER_HOST1 "100.94.120.72"
+    #define SERVER_PORT1 9090 //443
+
+
+
+    //std::string sourceFile(sampleDataDir("test.mp4"));
+
+    //sig.startStreaming(sourceFile, true);
+    sig.connect(SERVER_HOST1, SERVER_PORT1);
+
+
+    app.waitForShutdown([&](void*) {
+
+        DepLibSRTP::ClassDestroy();
+        Utils::Crypto::ClassDestroy();
+        DepLibWebRTC::ClassDestroy();
+        RTC::DtlsTransport::ClassDestroy();
+        DepUsrSCTP::ClassDestroy();
+
+    });
+
+
+    MS_DEBUG_TAG(info, "Exited Main");
+
+    exit(0);
+
+
+
+
+    return 1;
+}
+
+#else
+
 void IgnoreSignals();
 
 int main(int argc, char* argv[]) {
@@ -842,3 +941,6 @@ void IgnoreSignals() {
     }
 #endif
 }
+
+
+#endif
