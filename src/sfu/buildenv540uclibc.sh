@@ -29,6 +29,6 @@ mkdir -p t31
 cd t31
 
 #cmake -DUSE_MUCLIBC=ON -DBUILD_TESTING=off -DANDROID_ABI=x86_64 ..
-cmake -DUSE_MUCLIBC=ON -DBUILD_TESTING=off -DANDROID_ABI=mipsel ..
+cmake -DUSE_MUCLIBC=ON -DBUILD_TESTING=off -DCROSS_PLATEFORM=mipsel ..
 
 make -j$(nproc)
