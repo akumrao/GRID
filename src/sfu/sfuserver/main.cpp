@@ -28,7 +28,7 @@
 
 
 
-#define SERVER_HOST "192.168.0.19"
+#define SERVER_HOST "100.94.120.72"
 #define SERVER_PORT 9090 //443
 
 //#define JOIN_ROOM  "foo"  
@@ -36,8 +36,6 @@
 json jtest = R"(
   {
   "webrtc": {
-    "dtlsCertificateFile": "/var/tmp/key/certificate.crt",
-    "dtlsPrivateKeyFile": "/var/tmp/key/private_key.pem",
     "rtcMinPort": 11501,
     "rtcMaxPort": 12560,
     "logLevel": "info",
@@ -58,7 +56,7 @@ json jtest = R"(
     "listenIps": [
       {
         "ip": "0.0.0.0",
-        "announcedIp": "127.0.0.1"
+        "announcedIp": "100.94.120.72"
       }
     ],
     "routerCapabilities": {
