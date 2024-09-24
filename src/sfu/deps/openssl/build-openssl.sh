@@ -36,7 +36,8 @@ mkdir -p ../build/openssl/$ANDROID_ARCH
 cp -R $PWD/build/$ANDROID_ARCH ../build/openssl/
 
 # arm
-export TARGET_HOST=arm-linux-androideabi
+#export TARGET_HOST=arm-linux-androideabi
+export TARGET_HOST=armv7a-linux-androideabi
 export ANDROID_ARCH=armeabi-v7a
 export AR=$TOOLCHAIN/bin/llvm-ar
 export CC=$TOOLCHAIN/bin/$TARGET_HOST$MIN_SDK_VERSION-clang
@@ -46,7 +47,7 @@ export LD=$TOOLCHAIN/bin/ld
 export RANLIB=$TOOLCHAIN/bin/llvm-ranlib
 export STRIP=$TOOLCHAIN/bin/llvm-strip
 
-./Configure android-arm no-shared \
+./Configure android-arm no-asm no-shared \
  -D__ANDROID_API__=$MIN_SDK_VERSION \
  --prefix=$PWD/build/$ANDROID_ARCH
 

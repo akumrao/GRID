@@ -14,8 +14,16 @@ SET(T31SDK "/workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software/Ingenic-SDK-T
 
 else(${CROSS_PLATEFORM} STREQUAL "android")
 
-SET(SSL_ROOT "/workspace/MagicAI/src/sfu/deps/openssl/build/openssl/arm64-v8a/")
-SET(SSL_LIB "/workspace/MagicAI/src/sfu/deps/openssl/build/openssl/arm64-v8a/lib")
+
+if (${ANDROID_ABI} STREQUAL "arm64-v8a")
+    SET(SSL_ROOT "/workspace/MagicAI/src/sfu/deps/openssl/build/openssl/arm64-v8a/")
+    SET(SSL_LIB "/workspace/MagicAI/src/sfu/deps/openssl/build/openssl/arm64-v8a/lib")
+elseif (${ANDROID_ABI} STREQUAL "armeabi-v7a")
+    SET(SSL_ROOT "/workspace/MagicAI/src/sfu/deps/openssl/build/openssl/armeabi-v7a/")
+    SET(SSL_LIB "/workspace/MagicAI/src/sfu/deps/openssl/build/openssl/armeabi-v7a/lib")
+endif()
+
+
 
 endif()
 
