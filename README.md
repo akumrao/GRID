@@ -1,5 +1,6 @@
-# High performing AI for Face Detection for T31 chipset. 
+# High performing AI for Face Detection for Ingenic T31 chipset. 
 
+Size of webrtc is around 3 MB. Size of the firmware is around 5 Mb. With RTCP feedback, REMB and Transport-CC congestion control, IR CUT, Night vision, QR scanning, GOP varies from 64 to 800 
 
 # TO build
 sudo bash 
@@ -168,3 +169,24 @@ install nasm 2.16 from  https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/ . Ot
  cp -r -p  /workspace/webrtc/src/third_party/rnnoise /arvind/workspace/webrtc/src/third_party/
  cp -r -p  /workspace/webrtc/src/third_party/usrsctp /arvind/workspace/webrtc/src/third_party/
  cp -r -p  /workspace/webrtc/src/base/third_party/libevent   /arvind/workspace/webrtc/src/base/third_party/
+
+
+
+## To bundle binaries and create fresh flash images, with following steps.  
+
+binwalk -e system.img
+
+mkfs.jffs2 -o otasystem.img -r _system.img.extracted/jffs2-root/ -e 0x8000 -s 0xb00000 -n -l -X zlib
+
+flash_eraseall /dev/mtd2
+
+sync
+
+flashcp -v /mnt/OTA/otasystem.img /dev/mtd2
+
+sync
+
+cp /tmp/Upgrade/upGradeFlag.system /configs/upGradeFlag
+
+sync
+
