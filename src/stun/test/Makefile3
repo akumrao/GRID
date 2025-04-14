@@ -1,0 +1,45 @@
+################################################################################
+### CUSTOMIZE BELOW HERE #######################################################
+
+CC	= gcc
+CXX     = g++
+TARGET=integrity 
+SOURCES=$(wildcard message_integrity.cpp ../src/*.cpp  )
+
+CXXFLAGS   := -g   -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized
+
+
+CPPFLAGS   := -I../include 
+
+              
+LDFLAGS   := -L/usr/lib/x86_64-linux-gnu
+
+
+
+LDLIBS    := -lpthread -lm -ldl -lssl -lcrypto -lz
+
+#SLIBS     := 
+
+
+################################################################################
+### DO NOT EDIT THE FOLLOWING LINES ############################################
+
+
+# define list of objects
+OBJSC=$(SOURCES:.cpp=.o)
+OBJS=$(OBJSC:.cpp=.o)
+
+# the target is obtained linking all .o files
+all: $(SOURCES) $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) $(OBJS) $(LDLIBS) $(SLIBS) -o $(TARGET)
+
+purge: clean
+	rm -f $(TARGET)
+
+clean:
+	rm -f  $(OBJS)
+
+################################################################################
+################################################################################
