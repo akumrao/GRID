@@ -46,8 +46,7 @@ int main() {
  stun::Reader reader;
  // reader.on_message = on_stun_message;
  reader.process((uint8_t*)req, sizeof(req) - 1, &msg);
- 
- on_stun_message( &msg,  nullptr );
+
  
  return 0;
 }

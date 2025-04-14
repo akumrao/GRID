@@ -53,11 +53,7 @@ Once the connectivity checks are completed ICE needs to determine which candidat
 Nomination of Pairs
 Final Selection 
  
+ * https://info.support.huawei.com/hedex/api/pages/EDOC1100331435/AEM10132/04/resources/dc/dc_fd_stun_0005.html
  * 
- * 
- * https://medium.com/@jamesbordane57/stun-server-what-is-session-traversal-utilities-for-nat-8a82d561533a
- * 
- * https://subspace.com/resources/stun-101-subspace
- 
  * https://github.com/diederickh/WebRTC/blob/master/src/test_webrtc_ice_agent.cpp
  */

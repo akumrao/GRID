@@ -54,10 +54,13 @@
 static void on_stun_message(stun::Message* msg, void* user);
 static void create_stun_message();  /* creates a stun message for which we know the result */
 
+static void create_stun_message_juice();
+
+
 int main() {
 
   printf("\n\ntest_stun_message_integrity\n\n");
-
+  {
   /* from: http://tools.ietf.org/html/rfc5769#section-2.2 */
 #if USE_WEBRTC
     const unsigned char respv4[] = "\x00\x01\x00\x58\x21\x12\xa4\x42\x48\x75\x38\x77\x4e\x4f\x49\x53\x62\x54\x65\x4a\x00\x06\x00\x1b\x35\x50\x4e\x32\x71\x6d\x57\x71\x42\x6c\x3a\x34\x68\x52\x42\x6d\x66\x4b\x48\x75\x58\x6a\x4f\x67\x6b\x56\x4a\x00\x80\x2a\x00\x08\xd2\xdb\x70\x25\x70\x6b\xcd\x98\x00\x25\x00\x00\x00\x24\x00\x04\x6e\x7f\x1e\xff\x00\x08\x00\x14\x5a\xca\x22\xd7\xf4\x39\xfa\xde\xaf\xd3\x9b\xd6\xec\x00\xd4\x96\xe2\x17\x09\x32\x80\x28\x00\x04\x78\x5d\x2e\xeb";
@@ -75,9 +78,12 @@ int main() {
     "\x2a\xf9\xba\x53\xf0\x6b\xe7\xd7"
     "\x80\x28\x00\x04"
     "\xc0\x7d\x4c\x96";
-#endif
 
+  
   int nl = 0;
+  
+  printf("size= %d", sizeof(respv4) -1);
+  
   printf("\n--------\n");
   for (int i = 0; i < sizeof(respv4) - 1; ++i, ++nl) {
     if (nl == 4) {
@@ -93,8 +99,62 @@ int main() {
   stun::Reader reader;
 
   reader.process((uint8_t*)respv4, sizeof(respv4) - 1, &msg); /* we do -1 to exclude the string terminating nul char. */
+  }
+  
+  
+  {
+   unsigned char  buffer[40+1];
+  
+   FILE *fp;
+    // Open file in binary write mode
+    fp = fopen("./stun3", "rb");
+    if (fp == NULL) {
+        perror("Error opening file");
+        return 1; // Return error code
+    }
 
+    // Write the first employee record to the file
+    if (fread(buffer, 40, 1, fp) != 1) {
+        perror("Error writing to file");
+        fclose(fp);
+        return 1;
+    }
+
+   
+
+    // Close the file
+    if (fclose(fp) != 0) {
+        perror("Error closing the file");
+        return 1;
+    }
+  
+  
+     int nl = 0;
+  
+  printf("size= %d", sizeof(buffer) -1);
+  
+  printf("\n--------\n");
+  for (int i = 0; i < sizeof(buffer) - 1; ++i, ++nl) {
+    if (nl == 4) {
+      printf("\n");
+      nl=0;
+    }
+    printf("%02X ", buffer[i]);
+  }
+  printf("\n--------\n");
+
+  /* we use our reader to parse the message */
+  stun::Message msg;
+  stun::Reader reader;
+
+  reader.process((uint8_t*)buffer, sizeof(buffer) - 1, &msg); /* we do -1 to exclude the string terminating nul char. */
+    
+  }
+//#endif
+  
   create_stun_message();
+    
+  create_stun_message_juice();
 
   return 0;
 }
@@ -155,7 +215,7 @@ static void create_stun_message() {
   /* write */
   stun::Message response(stun::STUN_BINDING_RESPONSE);
   response.setTransactionID(0x6636762f, 0x4e31416f, 0x4939794a);
-  response.addAttribute(new stun::XorMappedAddress("192.168.56.1", 55164));
+  response.addAttribute(new stun::XorMappedAddress("192.168.0.19", 55164));
   response.addAttribute(new stun::MessageIntegrity());
   response.addAttribute(new stun::Fingerprint());
   
@@ -175,4 +235,40 @@ static void create_stun_message() {
   stun::Message msg;
   stun::Reader reader;
   reader.process(&writer.buffer[0], writer.buffer.size(), &msg);
+  
+}
+
+
+
+
+static void create_stun_message_juice() {
+  
+  printf("creating Juice stun message.\n");
+
+  /* write */
+  stun::Message response(stun::STUN_BINDING_REQUEST);
+  response.setTransactionID(0x8c7cc0e7, 0x8e993bf, 0xce7ed169);
+  response.addAttribute(new stun::Software("libjuice"));
+  response.addAttribute(new stun::Fingerprint());
+  
+  
+  stun::Writer writer;
+  writer.writeMessage(&response, "");
+
+  printf("---------------\n");
+  for (size_t i = 0; i < writer.buffer.size(); ++i) {
+    if (i == 0 || i % 4 == 0) {
+      printf("\n");
+    }
+    printf("%02X ", writer.buffer[i]);
+  }
+  printf("\n---------------\n");
+
+  /* and read it again. */
+  stun::Message msg;
+  stun::Reader reader;
+  reader.process(&writer.buffer[0], writer.buffer.size(), &msg);
+  
+
+  
 }

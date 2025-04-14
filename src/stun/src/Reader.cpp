@@ -56,6 +56,8 @@ namespace stun {
     msg->transaction[1] = readU32();
     msg->transaction[2] = readU32();
 
+    printf("stun::Reade msg len %d, transactionids %x, %x, %x \n ", msg->length,  msg->transaction[0],  msg->transaction[1],  msg->transaction[2] );
+
     /* validate */
     if (!stun_validate_cookie(msg->cookie)) {
       printf("stun::Reader - warning: invalid STUN cookie, number of bytes: %u\n", nbytes);
@@ -103,6 +105,7 @@ namespace stun {
           Username* username = new Username();
           username->value = readString(attr_length);
           attr = (Attribute*) username;
+          printf("stun::Reader - verbose: username:%s \n", username->value.buffer.data());
           break;
         }
 
@@ -110,6 +113,7 @@ namespace stun {
           Software* software = new Software();
           software->value = readString(attr_length);
           attr = (Attribute*) software;
+          printf("stun::Reader - verbose: software %s \n", software->value.buffer.data());
           break;
         }
 
@@ -117,6 +121,7 @@ namespace stun {
           XorMappedAddress* address = readXorMappedAddress();
           if (address) {
             attr = (Attribute*) address;
+            printf("stun::Reader - verbose: address:%s, port: %d\n", address->address.c_str(), address->port);
           }
           break;
         }
@@ -147,6 +152,7 @@ namespace stun {
           /* CRC32-bit, see http://tools.ietf.org/html/rfc5389#section-15.5 */
           Fingerprint* fp = new Fingerprint();
           fp->crc = readU32();
+          printf("stun::Reader - verbose: Fingerprint: %x\n",fp->crc);
           attr = (Attribute*) fp;
           break;
         }
@@ -154,6 +160,7 @@ namespace stun {
         case STUN_ATTR_ICE_CONTROLLED: {
           IceControlled* ic = new IceControlled();
           ic->tie_breaker = readU64();
+          printf("stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLED: %ld\n", ic->tie_breaker);
           attr = (Attribute*) ic;
           break;
         }
@@ -161,6 +168,7 @@ namespace stun {
         case STUN_ATTR_ICE_CONTROLLING: {
           IceControlling* ic = new IceControlling();
           ic->tie_breaker = readU64();
+           printf("stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLING: %ld\n", ic->tie_breaker);
           attr = (Attribute*) ic;
           break;
         }
