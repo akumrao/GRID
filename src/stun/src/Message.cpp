@@ -33,15 +33,22 @@ namespace stun {
       return;
     }
 
-    transaction[0] = from->transaction[0];
-    transaction[1] = from->transaction[1];
-    transaction[2] = from->transaction[2];
+//    transaction[0] = from->transaction[0];
+//    transaction[1] = from->transaction[1];
+//    transaction[2] = from->transaction[2];
   }
 
-  void Message::setTransactionID(uint32_t a, uint32_t b, uint32_t c) {
-    transaction[0] = a;
-    transaction[1] = b;
-    transaction[2] = c;
+  void Message::setTransactionID() {
+//    transaction[0] = a;
+//    transaction[1] = b;
+//    transaction[2] = c;
+    random_bytes(transaction_id, STUN_TRANSACTION_ID_SIZE);
+    printf("Message::Set msg  transactionids: ");
+       for (int k = 0; k < STUN_TRANSACTION_ID_SIZE; ++k) {
+         printf("%02X ", transaction_id[k]);
+    }
+    printf("\n");
+
   }
 
   bool Message::find(MessageIntegrity** result) {

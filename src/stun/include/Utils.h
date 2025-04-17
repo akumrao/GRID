@@ -37,6 +37,9 @@ namespace stun {
   bool compute_fingerprint(std::vector<uint8_t>& buffer, uint32_t& result);
 
 
+  
+   int random_bytes(void *buf, size_t size);
+   
 } /* namespace stun */
 
 #endif

@@ -61,9 +61,12 @@ namespace stun {
     writeU16(msg->type); 
     writeU16(0);                   /* length */
     writeU32(0x2112A442);          /* cookie */
-    writeU32(msg->transaction[0]); /* transaction */
-    writeU32(msg->transaction[1]); /* transaction */
-    writeU32(msg->transaction[2]); /* transaction */
+//    writeU32(msg->transaction[0]); /* transaction */
+//    writeU32(msg->transaction[1]); /* transaction */
+//    writeU32(msg->transaction[2]); /* transaction */
+    
+    writeBytes(msg->transaction_id, STUN_TRANSACTION_ID_SIZE);
+    
 
     size_t prev_nbytes = buffer.size(); /* used to compute the total bytes an attribute takes up. */
     size_t prev_length = buffer.size(); /* used to compute the attribute length, excluding the attribute-type, attribute-length field and any padded bytes. */ 
@@ -223,6 +226,9 @@ namespace stun {
 
     writeU16(port);
     writeU32(ip);
+    
+    exit(0); // TBD for IPV6
+    
   }
 
   void Writer::writeString(StringValue v) {

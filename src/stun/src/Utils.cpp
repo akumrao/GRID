@@ -9,6 +9,63 @@
 
 namespace stun {
 
+// getrandom() is not available in Android NDK API < 28 and needs glibc >= 2.25
+#if defined(__linux__) && !defined(__ANDROID__) && (!defined(__GLIBC__) || __GLIBC__ > 2 || __GLIBC_MINOR__ >= 25)
+
+#include <errno.h>
+#include <sys/random.h>
+
+ int random_bytes(void *buf, size_t size) {
+	ssize_t ret = getrandom(buf, size, 0);
+	if (ret < 0) {
+		printf("getrandom failed, errno=%d", errno);
+		return -1;
+	}
+	if ((size_t)ret < size) {
+		printf("getrandom returned too few bytes, size=%zu, returned=%zu", size, (size_t)ret);
+		return -1;
+	}
+	return 0;
+}
+
+#elif defined(_WIN32)
+
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0601 // Windows 7
+#endif
+
+#include <windows.h>
+//
+#include <bcrypt.h>
+
+static int random_bytes(void *buf, size_t size) {
+	// Requires Windows 7 or later
+	NTSTATUS status = BCryptGenRandom(NULL, (PUCHAR)buf, (ULONG)size, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
+	return !status ? 0 : -1;
+}
+
+#else
+static int random_bytes(void *buf, size_t size) {
+	(void)buf;
+	(void)size;
+	return -1;
+}
+#endif
+
+static unsigned int generate_seed() {
+#ifdef _WIN32
+	return (unsigned int)GetTickCount();
+#else
+	struct timespec ts;
+	if (clock_gettime(CLOCK_REALTIME, &ts) == 0)
+		return (unsigned int)(ts.tv_sec ^ ts.tv_nsec);
+	else
+		return (unsigned int)time(NULL);
+#endif
+}
+
+
+
   bool compute_hmac_sha1(uint8_t* message, uint32_t nbytes, std::string key, uint8_t* output) {
 
     if (!message) { 
@@ -144,6 +201,8 @@ namespace stun {
     return true;
   }
 
+#define STUN_FINGERPRINT_XOR 0x5354554e
+
   bool compute_fingerprint(std::vector<uint8_t>& buffer, uint32_t& result) {
 
     uint32_t dx = 20;
@@ -192,7 +251,7 @@ namespace stun {
     buffer[2] = (offset >> 8) & 0xFF;
     buffer[3] = offset & 0xFF;
 
-    result = crc32(0L, &buffer[0], offset + 12) ^ 0x5354554e;
+    result = crc32(0L, &buffer[0], offset + 12) ^ STUN_FINGERPRINT_XOR;
     
     /* and reset the size */
     buffer[2] = curr_size[0];

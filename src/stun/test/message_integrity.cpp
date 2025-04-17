@@ -36,8 +36,9 @@
 
   N.B. be aware of the 32-bit memory alignment
 
-
 */
+
+
 #include <stdio.h>
 #include <vector>
 #include <Utils.h>
@@ -60,8 +61,10 @@ static void create_stun_message_juice();
 int main() {
 
   printf("\n\ntest_stun_message_integrity\n\n");
+#if 1
   {
-  /* from: http://tools.ietf.org/html/rfc5769#section-2.2 */
+  /*from: http://tools.ietf.org/html/rfc5769#section-2.2 */
+      
 #if USE_WEBRTC
     const unsigned char respv4[] = "\x00\x01\x00\x58\x21\x12\xa4\x42\x48\x75\x38\x77\x4e\x4f\x49\x53\x62\x54\x65\x4a\x00\x06\x00\x1b\x35\x50\x4e\x32\x71\x6d\x57\x71\x42\x6c\x3a\x34\x68\x52\x42\x6d\x66\x4b\x48\x75\x58\x6a\x4f\x67\x6b\x56\x4a\x00\x80\x2a\x00\x08\xd2\xdb\x70\x25\x70\x6b\xcd\x98\x00\x25\x00\x00\x00\x24\x00\x04\x6e\x7f\x1e\xff\x00\x08\x00\x14\x5a\xca\x22\xd7\xf4\x39\xfa\xde\xaf\xd3\x9b\xd6\xec\x00\xd4\x96\xe2\x17\x09\x32\x80\x28\x00\x04\x78\x5d\x2e\xeb";
 #else
@@ -79,6 +82,7 @@ int main() {
     "\x80\x28\x00\x04"
     "\xc0\x7d\x4c\x96";
 
+#endif
   
   int nl = 0;
   
@@ -101,20 +105,22 @@ int main() {
   reader.process((uint8_t*)respv4, sizeof(respv4) - 1, &msg); /* we do -1 to exclude the string terminating nul char. */
   }
   
+#endif
   
   {
-   unsigned char  buffer[40+1];
+   unsigned char  buffer[104+1];
   
    FILE *fp;
     // Open file in binary write mode
-    fp = fopen("./stun3", "rb");
+    fp = fopen("/tmp/stun10", "rb");
     if (fp == NULL) {
         perror("Error opening file");
         return 1; // Return error code
     }
 
+    int sz =0; 
     // Write the first employee record to the file
-    if (fread(buffer, 40, 1, fp) != 1) {
+    if ((sz = fread(buffer, 1, 104, fp)) == 0) {
         perror("Error writing to file");
         fclose(fp);
         return 1;
@@ -131,10 +137,10 @@ int main() {
   
      int nl = 0;
   
-  printf("size= %d", sizeof(buffer) -1);
+  printf("size= %d", sz);
   
   printf("\n--------\n");
-  for (int i = 0; i < sizeof(buffer) - 1; ++i, ++nl) {
+  for (int i = 0; i < sz - 1; ++i, ++nl) {
     if (nl == 4) {
       printf("\n");
       nl=0;
@@ -147,7 +153,7 @@ int main() {
   stun::Message msg;
   stun::Reader reader;
 
-  reader.process((uint8_t*)buffer, sizeof(buffer) - 1, &msg); /* we do -1 to exclude the string terminating nul char. */
+  reader.process((uint8_t*)buffer,sz, &msg); /* we do -1 to exclude the string terminating nul char. */
     
   }
 //#endif
@@ -214,7 +220,7 @@ static void create_stun_message() {
 
   /* write */
   stun::Message response(stun::STUN_BINDING_RESPONSE);
-  response.setTransactionID(0x6636762f, 0x4e31416f, 0x4939794a);
+  response.setTransactionID();
   response.addAttribute(new stun::XorMappedAddress("192.168.0.19", 55164));
   response.addAttribute(new stun::MessageIntegrity());
   response.addAttribute(new stun::Fingerprint());
@@ -247,7 +253,7 @@ static void create_stun_message_juice() {
 
   /* write */
   stun::Message response(stun::STUN_BINDING_REQUEST);
-  response.setTransactionID(0x8c7cc0e7, 0x8e993bf, 0xce7ed169);
+  response.setTransactionID();
   response.addAttribute(new stun::Software("libjuice"));
   response.addAttribute(new stun::Fingerprint());
   

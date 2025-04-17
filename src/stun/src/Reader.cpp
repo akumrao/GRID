@@ -52,12 +52,19 @@ namespace stun {
     msg->type = readU16();
     msg->length = readU16();
     msg->cookie = readU32();
-    msg->transaction[0] = readU32();
-    msg->transaction[1] = readU32();
-    msg->transaction[2] = readU32();
+    memcpy(msg->transaction_id,  getArray(STUN_TRANSACTION_ID_SIZE), STUN_TRANSACTION_ID_SIZE);
+//  msg->transaction[0] = readU32();
+//  msg->transaction[1] = readU32();
+//  msg->transaction[2] = readU32();
 
-    printf("stun::Reade msg len %d, transactionids %x, %x, %x \n ", msg->length,  msg->transaction[0],  msg->transaction[1],  msg->transaction[2] );
+    //printf("stun::Reade msg len %d, transactionids %x, %x, %x \n ", msg->length,  msg->transaction[0],  msg->transaction[1],  msg->transaction[2] );
 
+    printf("stun::Reade msg  transactionids: ");
+       for (int k = 0; k < STUN_TRANSACTION_ID_SIZE; ++k) {
+         printf("%02X ", msg->transaction_id[k]);
+    }
+    printf("\n");
+          
     /* validate */
     if (!stun_validate_cookie(msg->cookie)) {
       printf("stun::Reader - warning: invalid STUN cookie, number of bytes: %u\n", nbytes);
@@ -67,15 +74,15 @@ namespace stun {
       return 1;
     }
 
-    /* copy the data into the message, @todo - is this used anywhere; and do we need it? */
-    std::copy(data, data + nbytes, std::back_inserter(msg->buffer));
-
     /* parse the rest of the message */
     int c = 0;
     uint16_t attr_type;
     uint16_t attr_length;
     uint32_t attr_offset;
     uint32_t prev_dx;
+    
+    if(bytesLeft() != msg->length,bytesLeft())
+    printf("stun::Read Error msg len %d, bytesLeft %d \n ", msg->length,bytesLeft());
     
     while (bytesLeft() >= 4) {
       
@@ -118,7 +125,7 @@ namespace stun {
         }
 
         case STUN_ATTR_XOR_MAPPED_ADDRESS: {
-          XorMappedAddress* address = readXorMappedAddress();
+          XorMappedAddress* address = readXorMappedAddress( msg);
           if (address) {
             attr = (Attribute*) address;
             printf("stun::Reader - verbose: address:%s, port: %d\n", address->address.c_str(), address->port);
@@ -283,7 +290,8 @@ namespace stun {
     return result;
   }
 
-
+#define STUN_MAGIC 0x2112A442
+  
   void Reader::skip(uint32_t nbytes) {
     if (dx + nbytes > buffer.size()) {
       printf("Error: trying to skip %u bytes, but we only have %u left in STUN.\n", nbytes, bytesLeft());
@@ -306,8 +314,14 @@ namespace stun {
     return v;
   }
 
+   unsigned char* Reader::getArray(uint16_t len) {
+    unsigned char* ret =  ptr();
+    dx += len;
+    return ret;
+  }
+
   /* See http://tools.ietf.org/html/rfc5389#section-15.2 */
-  XorMappedAddress* Reader::readXorMappedAddress() {
+  XorMappedAddress* Reader::readXorMappedAddress( Message* msg) {
 
     if (bytesLeft() < 8) {
       printf("Error: cannot read a XorMappedAddress as the buffer is too small in stun::Reader.\n");
@@ -315,11 +329,15 @@ namespace stun {
     }
     
     XorMappedAddress* addr = new XorMappedAddress();
-    uint32_t ip = 0;
-    uint8_t cookie[] = { 0x42, 0xA4, 0x12, 0x21 }; 
-    uint8_t* port_ptr = (uint8_t*) &addr->port;
-    uint8_t* ip_ptr = (uint8_t*) &ip;
-    unsigned char ip_addr[16];
+  
+    //uint8_t cookie[] = { 0x42, 0xA4, 0x12, 0x21 }; 
+      uint8_t mask[16];
+    const uint32_t magic = htonl(STUN_MAGIC);
+    memcpy(mask, (const uint8_t*)&magic, 4);
+    memcpy(mask + 4, msg->transaction_id, 12);
+    
+    //uint8_t* port_ptr = (uint8_t*) &addr->port;
+   
 
     /* skip the first byte */
     skip(1); 
@@ -333,29 +351,68 @@ namespace stun {
     }
 
     /* read the port. */
-    addr->port = readU16();
-    port_ptr[0] = port_ptr[0] ^ cookie[2];
-    port_ptr[1] = port_ptr[1] ^ cookie[3];
+    addr->port = readU16() ^ *((uint16_t *)mask);
+   // port_ptr[0] = port_ptr[0] ^ cookie[2];
+   // port_ptr[1] = port_ptr[1] ^ cookie[3];
 
     /* read the address part. */
     if (addr->family == STUN_IP4) {
+        
+        //unsigned char bytes[4];
+        //unsigned char ip_addr[16];
+        //memcpy(bytes, getArray(4), 4 );
+        
+        unsigned char *tmp =  getArray(4);
 
-      ip = readU32();
+     // uint32_t ip = 0;
+      //uint8_t* bytes = (uint8_t*) &ip;
+      
+     // ip = readU32();
 
-      ip_ptr[0] = ip_ptr[0] ^ cookie[0];
-      ip_ptr[1] = ip_ptr[1] ^ cookie[1];
-      ip_ptr[2] = ip_ptr[2] ^ cookie[2];
-      ip_ptr[3] = ip_ptr[3] ^ cookie[3];
+//      ip_ptr[0] = ip_ptr[0] ^ cookie[0];
+//      ip_ptr[1] = ip_ptr[1] ^ cookie[1];
+//      ip_ptr[2] = ip_ptr[2] ^ cookie[2];
+//      ip_ptr[3] = ip_ptr[3] ^ cookie[3];
+      
+     // struct sockaddr_in sa;
+      
 
-      sprintf((char*)ip_addr, "%u.%u.%u.%u", ip_ptr[3], ip_ptr[2], ip_ptr[1], ip_ptr[0]);
+      
+        addr->sin.sin_family = AF_INET;
+	addr->sin.sin_port =  addr->port;
+        uint8_t *bytes = (uint8_t *)&addr->sin.sin_addr;
+        
+                
+        for (int i = 0; i < 4; ++i)
+            bytes[i] = tmp[i] ^ mask[i];
 
-      std::copy(ip_addr, ip_addr + 16, std::back_inserter(addr->address));
+        inet_ntop(AF_INET, &addr->sin.sin_addr,(char *) addr->address.data(), INET_ADDRSTRLEN);
+
+        //sprintf((char*)ip_addr, "%u.%u.%u.%u", bytes[0], bytes[1], bytes[2], bytes[3]);
+       // std::copy(ip_addr, ip_addr + 16, std::back_inserter(addr->address));
+
     }
     else if (addr->family == STUN_IP6) {
-      /* @todo read the address for ipv6 in stun::Reader::readXorMappedAddress(). */
-      printf("Warning: we have to implement the IPv6 address in stun::Reader.\n");
-      delete addr;
-      return NULL;
+      
+        unsigned char *tmp =  getArray(16);   
+        addr->sin6.sin6_family = AF_INET6;
+        addr->sin6.sin6_port =  addr->port;
+        uint8_t *bytes = (uint8_t *)&addr->sin6.sin6_addr;
+
+        for (int i = 0; i < 16; ++i)
+           bytes[i] = tmp[i] ^ mask[i];
+
+        inet_ntop(AF_INET6, &addr->sin6.sin6_addr,(char *) addr->address.data(), INET6_ADDRSTRLEN);
+      //   struct sockaddr_in6 sa6;
+	//char astring[INET6_ADDRSTRLEN];
+
+	// IPv6 string to sockaddr_in6.
+	//inet_pton(AF_INET6, "2001:db8:63b3:1::3490", &(sa6.sin6_addr));
+
+	// sockaddr_in6 to IPv6 string.
+	//inet_ntop(AF_INET6, &(sa6.sin6_addr), astring, INET6_ADDRSTRLEN);
+	//printf(“%s\n”, astring);
+
     }
     else {
       printf("Warning: we shouldn't arrive here in stun::Reader.\n");

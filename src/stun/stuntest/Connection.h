@@ -1,55 +1,141 @@
-/*
+/* This file is part of mediaserver. A webrtc sfu server.
+ * Copyright (C) 2018 Arvind Umrao <akumrao@yahoo.com> & Herman Umrao<hermanumrao@gmail.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ */
 
-  Connection
-  -----------
-  This code is still experimental and the API will/may change. At this 
-  moment I'm not sure how to abstract the network I/O (udp/tcp) and the 
-  coupling with DTLS. 
+#include "base/base.h"
+#include "base/logger.h"
+#include "base/application.h"
+#include "net/UdpSocket.h"
+//#include "base/test.h"
+#include "base/time.h"
 
-  At this moment there is a base Connection and an ConnectionUDP class.
 
-*/
-#ifndef RTC_CONNECTION_H
-#define RTC_CONNECTION_H
 
-extern "C" {
-#  include <uv.h>  
-}
+#include "net/TcpServer.h"
 
-#include <stdlib.h>
-#include <stdint.h>
-#include <string>
+#include "base/time.h"
+#include "net/netInterface.h"
 
-typedef void(*connection_on_data_callback)(std::string rip, uint16_t rport,              /* local ip and port */
-                                           std::string lip, uint16_t lport,              /* remote ip and port */
-                                           uint8_t* data, uint32_t nbytes, void* user);  /* gets called when a connection receives some data. */
 
-namespace rtc {
 
-  class Connnection {
-  };
+#include <Reader.h>
+#include <Writer.h>
 
-  class ConnectionUDP {
+using std::endl;
+using namespace base;
+using namespace net;
+//using namespace base::test;
 
-  public:
-    ConnectionUDP();
-    bool bind(std::string ip, uint16_t port);
-    void update();
-    //    void send(uint8_t* data, uint32_t nbytes); /* @todo - deprecated, use sendTo */
-    void sendTo(std::string rip, uint16_t rport, uint8_t* data, uint32_t nbytes);
-  public:
-    std::string ip;
-    uint16_t port;
-    struct sockaddr_in raddr;  /* receive */
-    //    struct sockaddr* saddr; /* send (will not be necessary anymore! @todo remove when ice things are working) */
-    uv_udp_t sock;
-    uv_loop_t* loop;
+class testUdpServer : public UdpServer::Listener {
+public:
 
-    /* callbacks */
-    connection_on_data_callback on_data;
-    void* user;
-  };
+    testUdpServer(std::string IP, int port):IP(IP), port(port) {
+    }
 
-} /* namespace rtc */
+    void start() {
+        udpServer = new UdpServer( this, IP, port);
+        udpServer->bind();
+    }
 
-#endif
+  
+
+    void shutdown() {
+
+        delete udpServer;
+        udpServer = nullptr;
+
+    }
+
+
+    void send( uint8_t* data, uint32_t nbytes, std::string ip, int port );
+      
+    void OnUdpSocketPacketReceived(UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr); 
+
+    UdpServer *udpServer;
+
+    std::string IP;
+    int port;
+
+};
+
+
+class tesTcpServer : public Listener {
+public:
+
+    tesTcpServer() {
+    }
+
+    void start(std::string ip, int port) {
+        // socket.send("Arvind", "127.0.0.1", 7331);
+        tcpServer = new TcpServer(this, ip, port);
+
+    }
+
+    void shutdown() {
+        // socket.send("Arvind", "127.0.0.1", 7331);
+        delete tcpServer;
+        tcpServer = nullptr;
+
+    }
+
+    void on_close(Listener* connection) {
+
+        std::cout << "TCP server closing, LocalIP" << connection->GetLocalIp() << " PeerIP" << connection->GetPeerIp() << std::endl << std::flush;
+
+    }
+
+    void on_read(Listener* connection, const char* data, size_t len); 
+    
+    TcpServer *tcpServer;
+
+};
+
+
+
+
+
+
+
+class tesTcpClient {
+public:
+
+    tesTcpClient() {}
+
+    void start(std::string ip, int port) {
+
+        // socket.send("Arvind", "127.0.0.1", 7331);
+        tcpClient = new TcpConnectionBase();
+
+        tcpClient->Connect(ip, port);
+
+
+    }
+
+    void shutdown() {
+        // socket.send("Arvind", "127.0.0.1", 7331);
+        delete tcpClient;
+        tcpClient = nullptr;
+
+    }
+
+    void on_close(Listener* connection) {
+
+        std::cout << " Close Con LocalIP" << connection->GetLocalIp() << " PeerIP" << connection->GetPeerIp() << std::endl << std::flush;
+
+    }
+
+    void sendit( uint8_t* data, size_t len );
+    
+    void on_read(Listener* connection, const char* data, size_t len) ;
+    
+
+   // TcpConnection *tcpClient; // do not use this this is for RTP
+    TcpConnectionBase *tcpClient;
+
+};

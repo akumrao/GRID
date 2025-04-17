@@ -10,48 +10,37 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <Connection.h>
-#include <Reader.h>
-#include <Writer.h>
 
-#define PASSWORD "Q9wQj99nsQzldVI5ZuGXbEWRK5RhRXdC"  /* our ice-pwd value */
+
+//#include <udpClient.h>
+
+
 
 static void on_udp_data(std::string rip, uint16_t rport, std::string lip, uint16_t lport, uint8_t* data, uint32_t nbytes, void* user);             /* gets called when we recieve data on our 'candidate' */
 
-rtc::ConnectionUDP* udp_ptr = NULL;
+//rtc::ConnectionUDP* udp_ptr = NULL;
 bool stun_done = false;
 
 int main() 
 
 {
 
-  rtc::ConnectionUDP sock;
+    
+    
+    Logger::instance().add(new ConsoleChannel("debug", Level::Trace));
+
+    
+    
+
   
 
   printf("\n\ntest_ice\n\n");
 
   /* read SDP file. */
  
-  stun::Reader stun;
 
-/*
-    if (offer.find(sdp::SDP_AUDIO, &audio)) {
-      audio->remove(sdp::SDP_ATTR_CANDIDATE);
-      audio->remove(sdp::SDP_ATTR_ICE_UFRAG);
-      audio->remove(sdp::SDP_ATTR_ICE_PWD);
-      audio->remove(sdp::SDP_ATTR_ICE_OPTIONS);
-      audio->remove(sdp::SDP_ATTR_FINGERPRINT);
-      audio->remove(sdp::SDP_ATTR_SETUP);
-      audio->add(new sdp::Attribute("ice-ufrag", ice_ufrag, sdp::SDP_ATTR_ICE_UFRAG));
-      audio->add(new sdp::Attribute("ice-pwd", ice_pwd, sdp::SDP_ATTR_ICE_PWD));
-      audio->add(new sdp::Attribute("candidate", "4252876256 1 udp 2122260223 192.168.0.194 59976 typ host"));
-      audio->add(new sdp::AttributeFingerprint("sha-256", fingerprint));
-      audio->add(new sdp::AttributeSetup(sdp::SDP_PASSIVE));
-    }
-  }
 
- 
 
- */
   
   
   #define STUN_SERVER_IP "74.125.250.129"
@@ -61,7 +50,7 @@ int main()
   
     /* write */
   stun::Message response(stun::STUN_BINDING_REQUEST);
-  response.setTransactionID(0x8c7cc0e7, 0x8e993bf, 0xce7ed169);
+  response.setTransactionID();
   response.addAttribute(new stun::Software("libjuice"));
   response.addAttribute(new stun::Fingerprint());
   
@@ -81,51 +70,59 @@ int main()
 
    
    
-    if (!sock.bind("192.168.0.19", 59976)) {
-    exit(1);
+//    if (!sock.bind("192.168.0.19", 59976)) {
+//    exit(1);
   
-}
+//}
    
    
 
-  sock.on_data = on_udp_data;
-  sock.user = (void*)&stun;
+//  sock.on_data = on_udp_data;
+//  sock.user = (void*)&stun;
 
-  sock.sendTo(STUN_SERVER_IP, STUN_SERVER_PORT, &writer.buffer[0], writer.buffer.size());
+ // sock.sendTo(STUN_SERVER_IP, STUN_SERVER_PORT, &writer.buffer[0], writer.buffer.size());
   
   
   
   /* start receiving data */
-  while (true) {
-    sock.update();
-  }
+//  while (true) {
+//    sock.update();
+//  }
+   
+   
+   
+   
+    Application app;
+
+    testUdpServer socket("0.0.0.0", 6000);
+    socket.start();
+
+    socket.send( &writer.buffer[0], writer.buffer.size(), STUN_SERVER_IP , STUN_SERVER_PORT);
+    
+    
+    
+//    tesTcpServer tsvsocket;
+//    tsvsocket.start("0.0.0.0", 6000);
+//    
+//    
+//    tesTcpClient socket;
+//    socket.start(STUN_SERVER_IP , STUN_SERVER_PORT);
+//    
+//    socket.sendit( &writer.buffer[0], writer.buffer.size());    
+
+   // app.waitForShutdown([&](void*) {
+    
+    
+    app.run();
+
+    socket.shutdown();
+
+   // });
+        
+        
   return 0;
 }
 
-static void on_udp_data(std::string rip, uint16_t rport, 
-                        std::string lip, uint16_t lport, 
-                        uint8_t* data, uint32_t nbytes, void* user) 
-{
-  stun::Message msg;
-  stun::Reader* stun = static_cast<stun::Reader*>(user);
-  int r = stun->process(data, nbytes, &msg);
 
-  if (r == 0) {
-    /* valid stun message */
-    msg.computeMessageIntegrity(PASSWORD);
-  }
-  else if (r == 1) {
-    /* other data, e.g. DTLS ClientHello or SRTP data */   
-   // if (dtls_parser_ptr) {
-      //dtls_parser_ptr->process(data, nbytes);
-   // }
-  }
-  else {
-    printf("Error: unhandled stun::Reader::process() result.\n");
-    exit(1);
-  }
-}
 
-static void on_dtls_data(uint8_t* data, uint32_t nbytes, void* user) {
-  /* handle dtls data, e.g. send back to sock. */
-}
+

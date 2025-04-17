@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 #include <Types.h>
-
+#include <arpa/inet.h>
 namespace stun {
 
   /* --------------------------------------------------------------------- */
@@ -57,6 +57,8 @@ namespace stun {
     uint8_t family;
     uint16_t port;
     std::string address;  /* IP address in string notation: 192.168.0.1 */
+    struct sockaddr_in sin;
+    struct sockaddr_in6 sin6;
   };
 
   /* --------------------------------------------------------------------- */

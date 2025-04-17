@@ -15,6 +15,7 @@
 #include <Attribute.h>
 #include <Types.h>
 
+#define STUN_TRANSACTION_ID_SIZE 12
 namespace stun {
 
   class Message {
@@ -23,7 +24,7 @@ namespace stun {
     ~Message();
     void addAttribute(Attribute* attr);                        /* Add an attribute to the message who takes ownership (will delete all attributes in the d'tor. */
     void copyTransactionID(Message* from);                     /* Copy the transaction ID from the given messsage. */
-    void setTransactionID(uint32_t a, uint32_t b, uint32_t c); /* Set the transaction ID from the given values. */
+    void setTransactionID();                                   /* Set the transaction ID from the given values. */
     bool hasAttribute(AttributeType atype);                    /* Check if the given attribute is found in one of the attributes */
     bool find(MessageIntegrity** result);                      /* Find a message integrity attribute. */
     bool find(XorMappedAddress** result);                      /* Find a xor-mapped-address attribute.*/
@@ -46,7 +47,8 @@ namespace stun {
     uint16_t type;
     uint16_t length;
     uint32_t cookie;
-    uint32_t transaction[3];
+    //uint32_t transaction[3];
+    uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
     std::vector<Attribute*> attributes;
     std::vector<uint8_t> buffer;
   };
