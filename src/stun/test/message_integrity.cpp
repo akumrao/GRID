@@ -61,7 +61,7 @@ static void create_stun_message_juice();
 int main() {
 
   printf("\n\ntest_stun_message_integrity\n\n");
-#if 1
+#if 0
   {
   /*from: http://tools.ietf.org/html/rfc5769#section-2.2 */
       
@@ -107,20 +107,25 @@ int main() {
   
 #endif
   
+  for( int i =0 ; i< 56; ++i)
   {
-   unsigned char  buffer[104+1];
+    char file[256];
+      
+    unsigned char  buffer[256+1];
   
-   FILE *fp;
+    FILE *fp;
+    sprintf( file,"/tmp/stun%d", i );
     // Open file in binary write mode
-    fp = fopen("/tmp/stun10", "rb");
+    fp = fopen(file, "rb");
     if (fp == NULL) {
         perror("Error opening file");
-        return 1; // Return error code
+        //return 1; // Return error code
+        continue;
     }
 
     int sz =0; 
     // Write the first employee record to the file
-    if ((sz = fread(buffer, 1, 104, fp)) == 0) {
+    if ((sz = fread(buffer, 1, 256, fp)) == 0) {
         perror("Error writing to file");
         fclose(fp);
         return 1;

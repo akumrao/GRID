@@ -81,7 +81,7 @@ namespace stun {
     uint32_t attr_offset;
     uint32_t prev_dx;
     
-    if(bytesLeft() != msg->length,bytesLeft())
+    if(bytesLeft() != msg->length)
     printf("stun::Read Error msg len %d, bytesLeft %d \n ", msg->length,bytesLeft());
     
     while (bytesLeft() >= 4) {

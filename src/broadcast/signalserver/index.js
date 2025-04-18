@@ -86,7 +86,7 @@ async function runWebServer() {
         } = config;
         webServer.listen(listenPort, listenIp, () => {
             console.log('server is running');
-            console.log(`open http://127.0.0.1:${listenPort} in your web browser`);
+            console.log(`open https://127.0.0.1:${listenPort} in your web browser`);
             resolve();
         });
     });
@@ -245,7 +245,7 @@ async function runSocketServer() {
             message.from = socket.id;
 
 
-            console.log('app message: ', message.type);
+            console.log('app message: %o', message);
 
             console.log( message.room );
 
