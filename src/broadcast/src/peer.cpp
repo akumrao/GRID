@@ -63,12 +63,12 @@ Peer::Peer(
     _config.servers.push_back(stun);
     
     
-    webrtc::PeerConnectionInterface::IceServer turn;
-    turn.uri = "turn:13.235.182.183:3478?transport=udp";
-    turn.username = "test"; 
-    turn.password = "test123";         
-    _config.servers.push_back(turn);        
-      
+//    webrtc::PeerConnectionInterface::IceServer turn;
+//    turn.uri = "turn:13.235.182.183:3478?transport=udp";
+//    turn.username = "test"; 
+//    turn.password = "test123";         
+//    _config.servers.push_back(turn);        
+//      
       
     //  config_.sdp_semantics = sdp_semantics;
 
@@ -84,15 +84,16 @@ Peer::Peer(
     _config.rtcp_mux_policy = webrtc::PeerConnectionInterface::kRtcpMuxPolicyRequire;
     _config.bundle_policy = webrtc::PeerConnectionInterface::kBundlePolicyMaxBundle;
     _config.type = webrtc::PeerConnectionInterface::kAll;
-    _config.candidate_network_policy = webrtc::PeerConnectionInterface::kCandidateNetworkPolicyLowCost;
-    //_config.disable_ipv6 = false;
+    //_config.candidate_network_policy = webrtc::PeerConnectionInterface::kCandidateNetworkPolicyLowCost;
+    _config.disable_ipv6 = false;
+    
    // _config.disable_ipv6_on_wifi = false;
-    _config.tcp_candidate_policy = webrtc::PeerConnectionInterface::kTcpCandidatePolicyDisabled;
-
+    _config.tcp_candidate_policy = webrtc::PeerConnectionInterface::kTcpCandidatePolicyEnabled;
     // _config.min_port =80000;
     //_config.max_port =100000;
-    // _config.enable_ice_renomination = true;
-    //_config.ice_candidate_pool_size=1;
+    _config.enable_ice_renomination = true;
+
+    _config.ice_candidate_pool_size=4;
 }
 
 

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+
+    <title> Camera view </title>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="css/test.css" />
+
+  </head>
+
+  <body>
+    <h1>Camera view </h1>
+
+    <div>
+      <button onclick="addIdentity()">Add this Identity</button>
+      <input id="txtname" type="text" value="arvind" maxlength="25" size="25" />
+
+      <button onclick="startRecording()">Start Recording</button>
+
+      <label for="audioFromCam">AudioFromCam:</label> 
+      <input type="checkbox" id="audioFromCam" onclick="audioFromCam()"></input>
+      <label for="audioFromApp">AudioFromApp:</label> 
+      <input type="checkbox" id="audioFromApp" onclick="audioFromApp()"> </input>
+      <input type='text' id='idips' />
+
+
+    <div>
+
+    <textarea id="w3review" name="w3review" rows="4" cols="50"> </textarea>
+    
+    </div>
+
+    <img id="image" alt="Add Identity" />
+    </div>
+
+    <div id="divvideos">
+     <!--  <video id="localVideo" autoplay controls></video> -->
+      <video id="remoteVideo" autoplay controls muted></video>
+      <br> </br>
+      <button onclick="showRecording()">Show Recordings</button>
+      <input id="txtshowRec" type="text" value="" maxlength="25" size="25" />
+      
+      <ul id="myUL"> </ul>
+    </div>
+
+      <section>
+      <div >
+        <form id="fileInfo">
+          <input type="file" id="fileInput" name="files"/>
+        </form>
+        <button disabled id="sendFile">Send</button>
+        <button disabled id="abortButton">Abort</button>
+        <button id="rebootButton"  onclick="rebootCam()" >Reboot Camera</button>
+        <button id="resetButton"  onclick="resetCam()" >Reset Camera</button>
+        <button id="debugCam"  onclick="debugCam()" >Log Debug</button>
+        <button id="setIRCUTCam"  onclick="setIRCUTCam()" > NightVision </button>
+        <button id="resetIRCUTCam"  onclick="resetIRCUTCam()" > Disable_NightVision </button>
+        <button id="butHD"  onclick="setHD()" > HD </button>
+        <button id="butSD"  onclick="setSD()"> SD </button>
+
+      </div>
+
+      <div class="progress">
+        <div class="label">Send progress: </div>
+        <progress id="sendProgress" max="0" value="0"></progress>
+      </div>
+
+   
+      <span id="status"></span>
+
+    </section>
+
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="js/lib/adapter.js"></script>
+    <script src="js/test.js"></script>
+
+  </body>
+
+</html>
