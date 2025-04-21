@@ -195,12 +195,12 @@ static void on_stun_message(stun::Message* msg, void* user) {
     printf("%u\n", msg_size);
     
     /* Now we need to rewrite the Message-Length field big endian */
-    uint8_t* new_len = (uint8_t*)& msg_size;
-    msg->buffer[2] = new_len[1];
-    msg->buffer[3] = new_len[0];
+  //  uint8_t* new_len = (uint8_t*)& msg_size;
+//    msg->buffer[2] = new_len[1];
+  //  msg->buffer[3] = new_len[0];
 
-    uint8_t sha[20];
-    stun::Reader reader;
+   // uint8_t sha[20];
+    //stun::Reader reader;
 
     /* Ok, this part is a bit confusing. We have 2 different size variables to take into account:
 
@@ -211,11 +211,11 @@ static void on_stun_message(stun::Message* msg, void* user) {
        MESSAGE-INTEGRITY element, but INCLUDING the Stun message header which is 20 bytes. 
        So here we simply subtract 4 bytes from the computed msg_size.
     */
-    uint32_t data_size = msg_size - 4;
-    stun::compute_hmac_sha1(&msg->buffer[0], data_size, PASSWD, sha);
+   // uint32_t data_size = msg_size - 4;
+  //  stun::compute_hmac_sha1(&msg->buffer[0], data_size, PASSWD, sha);
 
     /* or we can use the build in function :-) */
-    msg->computeMessageIntegrity(PASSWD);
+  //  msg->computeMessageIntegrity(PASSWD);
   }
 }
 

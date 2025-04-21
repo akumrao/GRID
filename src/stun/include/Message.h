@@ -29,8 +29,6 @@ namespace stun {
     bool find(MessageIntegrity** result);                      /* Find a message integrity attribute. */
     bool find(XorMappedAddress** result);                      /* Find a xor-mapped-address attribute.*/
     bool find(Fingerprint** result);                           /* Find a fingerprint attrbiute. */
-    bool computeMessageIntegrity(std::string key);             /* When the message contains a MessageIntegrity element, this will compute the HMAC-SHA1 message integrity. */
-    bool computeFingerprint();                                 /* When the message contains a Fingerprint attriute (must be added after the MessageInterity attribute), this will calculate and set CRC value. Important: make sure that you computer the fingerprint AFTER you've computed the message-integrity  */
 
     template<class T> bool find(uint16_t atype, T** result) {
       *result = NULL;
@@ -50,7 +48,6 @@ namespace stun {
     //uint32_t transaction[3];
     uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
     std::vector<Attribute*> attributes;
-    std::vector<uint8_t> buffer;
   };
 
 } /* namespace stun */

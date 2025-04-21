@@ -1,5 +1,6 @@
 #include <string.h>
 #include <Reader.h>
+#include <Utils.h>
 #include <openssl/engine.h>
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
@@ -21,6 +22,7 @@ namespace stun {
   /* @todo Reader::process - we need to implement the rules as described here: http://tools.ietf.org/html/rfc5389#section-7.3 */
   int Reader::process(uint8_t* data, uint32_t nbytes, Message* msg) {
 
+    
     if (!data) {
       printf("stun::Reader - error: received invalid data in Reader::process().\n");
       return -1;
@@ -35,6 +37,7 @@ namespace stun {
       return 1;
     }
     
+
     /* resetting the buffer - @todo - at the bottom of this function we erase all read bytes which isn't 100% necessary as we process a full packet a time */
     dx = 0;
     buffer.clear();
@@ -69,7 +72,7 @@ namespace stun {
     if (!stun_validate_cookie(msg->cookie)) {
       printf("stun::Reader - warning: invalid STUN cookie, number of bytes: %u\n", nbytes);
       printf("stun::Reader - warning: invalid cookie data: %02X %02X %02X %02X\n", data[0], data[1], data[2], data[3]);
-      msg->buffer.clear();
+      buffer.clear();
       dx = 0;
       return 1;
     }
@@ -138,7 +141,7 @@ namespace stun {
           Priority* prio = new Priority();
           prio->value = readU32();
           attr = (Attribute*) prio;
-          printf("stun::Reader - verbose: priority: %u\n", prio->value);
+          printf("stun::Reader - verbose: priority: %x\n", prio->value);
           break;
         } 
 
@@ -167,7 +170,7 @@ namespace stun {
         case STUN_ATTR_ICE_CONTROLLED: {
           IceControlled* ic = new IceControlled();
           ic->tie_breaker = readU64();
-          printf("stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLED: %ld\n", ic->tie_breaker);
+          printf("stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLED:  %lx\n", ic->tie_breaker);
           attr = (Attribute*) ic;
           break;
         }
@@ -175,7 +178,7 @@ namespace stun {
         case STUN_ATTR_ICE_CONTROLLING: {
           IceControlling* ic = new IceControlling();
           ic->tie_breaker = readU64();
-           printf("stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLING: %ld\n", ic->tie_breaker);
+           printf("stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLING: %lx\n", ic->tie_breaker);
           attr = (Attribute*) ic;
           break;
         }
@@ -208,9 +211,9 @@ namespace stun {
 
     /* and erase any read data. */
     /* @todo - we could use buffer.clear() here ... */
-    buffer.erase(buffer.begin(), buffer.begin() + dx);
+   // buffer.erase(buffer.begin(), buffer.begin() + dx);
     
-    dx = 0;
+   // dx = 0;
 
     return 0;
   }
@@ -425,6 +428,36 @@ namespace stun {
 
   uint8_t* Reader::ptr() {
     return &buffer[dx];
+  }
+  
+  
+  
+    bool Reader::computeMessageIntegrity(Message* msg, std::string key) {
+
+    MessageIntegrity* integ = NULL;
+    if (!key.size()) { 
+      printf("Error: cannot compute message integrity in stun::Message because the key is empty.\n");
+      return false;
+    }
+
+    if (!msg->attributes.size() || !msg->find(&integ)) {
+      printf("Error: cannot compute the message integrity in stun::Message because the message doesn't contain a MessageIntegrity attribute.\n");
+      return false;
+    }
+
+    return compute_message_integrity(buffer, key, integ->sha1);
+  }
+
+
+  bool Reader::computeFingerprint(Message* msg) {
+
+    Fingerprint* finger = NULL;
+    if (!msg->attributes.size() || !msg->find(&finger)) {
+      printf("Error: cannot compute fingerprint because there is not fingerprint attribute.\n");
+      return false;
+    }
+
+    return compute_fingerprint(buffer, finger->crc);
   }
 
   /* --------------------------------------------------------------------- */

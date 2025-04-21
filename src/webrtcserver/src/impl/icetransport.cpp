@@ -68,7 +68,7 @@ IceTransport::IceTransport(const Configuration &config, candidate_callback candi
 		break;
 	case plog::info:
 	case plog::debug: // juice debug is output as verbose
-		level = JUICE_LOG_LEVEL_INFO;
+		level = JUICE_LOG_LEVEL_VERBOSE;
 		break;
 	default:
 		level = JUICE_LOG_LEVEL_VERBOSE;

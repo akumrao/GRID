@@ -28,7 +28,7 @@
 
 
 
-#define SERVER_HOST "100.94.120.72"
+#define SERVER_HOST "192.168.0.19"
 #define SERVER_PORT 9090 //443
 
 //#define JOIN_ROOM  "foo"  
@@ -56,7 +56,7 @@ json jtest = R"(
     "listenIps": [
       {
         "ip": "0.0.0.0",
-        "announcedIp": "100.94.120.72"
+        "announcedIp": "192.168.0.19"
       }
     ],
     "routerCapabilities": {
@@ -384,7 +384,7 @@ json jtest = R"(
       "data": {
         "listenIps": [
           {
-            "ip": "100.94.120.72"
+            "ip": "192.168.0.19"
           }
         ],
         "enableUdp": true,
@@ -784,7 +784,7 @@ int testStart( )
     Channel::Notifier::ClassInit(&sig);
 
 
-    #define SERVER_HOST1 "100.94.120.72"
+    #define SERVER_HOST1 "192.168.0.19"
     #define SERVER_PORT1 9090 //443
 
 

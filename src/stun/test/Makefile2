@@ -4,12 +4,12 @@
 CC	= gcc
 CXX     = g++
 TARGET=fingerprint 
-SOURCES=$(wildcard message_fingerprint.cpp ../src/*.cpp  )
+SOURCES=$(wildcard message_fingerprint.cpp ../src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp )
 
 CXXFLAGS   := -g   -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized
 
 
-CPPFLAGS   := -I../include 
+CPPFLAGS   := -I../include -I../../libuv/include -I../../libuv/src 
 
               
 LDFLAGS   := -L/usr/lib/x86_64-linux-gnu

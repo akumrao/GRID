@@ -10,11 +10,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <Connection.h>
-
+#include <Agent.h>
 
 //#include <udpClient.h>
 
-
+using namespace stun;
 
 static void on_udp_data(std::string rip, uint16_t rport, std::string lip, uint16_t lport, uint8_t* data, uint32_t nbytes, void* user);             /* gets called when we recieve data on our 'candidate' */
 
@@ -27,20 +27,22 @@ int main()
 
     
     
-    Logger::instance().add(new ConsoleChannel("debug", Level::Trace));
+ Logger::instance().add(new ConsoleChannel("debug", Level::Trace));
 
-    
-    
 
   
 
   printf("\n\ntest_ice\n\n");
+  
+  
+  Agent agent;
+  
+  agent.getInterfaces();
+  
+  return 0;
 
   /* read SDP file. */
  
-
-
-
   
   
   #define STUN_SERVER_IP "74.125.250.129"

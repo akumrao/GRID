@@ -48,6 +48,11 @@ namespace stun {
     uint8_t* ptr();                                             /* returns a pointer to the current read index of the buffer. */
     
   public:
+    bool computeMessageIntegrity(Message* msg, std::string key);             /* When the message contains a MessageIntegrity element, this will compute the HMAC-SHA1 message integrity. */
+    bool computeFingerprint(Message* msg);                                 /* When the message contains a Fingerprint attriute (must be added after the MessageInterity attribute), this will calculate and set CRC value. Important: make sure that you computer the fingerprint AFTER you've computed the message-integrity  */
+
+    
+    private:
     std::vector<uint8_t> buffer;
     size_t dx;
   };

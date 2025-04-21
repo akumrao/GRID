@@ -72,32 +72,6 @@ namespace stun {
     return false;
   }
 
-  bool Message::computeMessageIntegrity(std::string key) {
 
-    MessageIntegrity* integ = NULL;
-    if (!key.size()) { 
-      printf("Error: cannot compute message integrity in stun::Message because the key is empty.\n");
-      return false;
-    }
-
-    if (!attributes.size() || !find(&integ)) {
-      printf("Error: cannot compute the message integrity in stun::Message because the message doesn't contain a MessageIntegrity attribute.\n");
-      return false;
-    }
-
-    return compute_message_integrity(buffer, key, integ->sha1);
-  }
-
-
-  bool Message::computeFingerprint() {
-
-    Fingerprint* finger = NULL;
-    if (!attributes.size() || !find(&finger)) {
-      printf("Error: cannot compute fingerprint because there is not fingerprint attribute.\n");
-      return false;
-    }
-
-    return compute_fingerprint(buffer, finger->crc);
-  }
 
 } /* namespace stun */
