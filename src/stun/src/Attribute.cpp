@@ -65,10 +65,14 @@ namespace stun {
 
   /* --------------------------------------------------------------------- */
 
-  MessageIntegrity::MessageIntegrity() 
-    :Attribute(STUN_ATTR_MESSAGE_INTEGRITY)
+  MessageIntegrity::MessageIntegrity(int sz) 
+    :sz(sz), Attribute(STUN_ATTR_MESSAGE_INTEGRITY)
   {
-    memset(sha1, 0x00, 20);
+    if(sz == 20)
+    memset(sha.sha1, 0x00, 20);
+    else
+    memset(sha.sha256, 0x00, 32);
+    
   }
 
   /* --------------------------------------------------------------------- */

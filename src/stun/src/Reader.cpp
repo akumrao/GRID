@@ -146,11 +146,11 @@ namespace stun {
         } 
 
         case STUN_ATTR_MESSAGE_INTEGRITY: {     
-          MessageIntegrity* integ = new MessageIntegrity();
-          memcpy(integ->sha1, &buffer[dx], 20);
+          MessageIntegrity* integ = new MessageIntegrity(20);
+          memcpy(integ->sha.sha1, &buffer[dx], 20);
           printf("stun::Reader - received Message-Integrity: ");
           for (int k = 0; k < 20; ++k) {
-            printf("%02X ", integ->sha1[k]);
+            printf("%02X ", integ->sha.sha1[k]);
           }
           printf("\n");
           attr = (Attribute*) integ;
@@ -178,10 +178,113 @@ namespace stun {
         case STUN_ATTR_ICE_CONTROLLING: {
           IceControlling* ic = new IceControlling();
           ic->tie_breaker = readU64();
-           printf("stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLING: %lx\n", ic->tie_breaker);
+          printf("stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLING: %lx\n", ic->tie_breaker);
           attr = (Attribute*) ic;
           break;
         }
+        
+        case STUN_ATTR_USERHASH: {
+            printf("STUN_ATTR_USERHASH\n");
+            if (attr_length != USERHASH_SIZE) {
+			printf("STUN user hash value too long, length=%zu", attr_length);
+			return -1;
+		}
+            memcpy(msg->credentials.userhash, getArray(USERHASH_SIZE), USERHASH_SIZE);
+            msg->credentials.enable_userhash = true;
+                
+            break;
+        }
+        case STUN_ATTR_REALM: {
+		printf("Reading realm\n");
+		if (attr_length + 1 > STUN_MAX_REALM_LEN) {
+			printf("STUN realm attribute value too long, length=%zu", attr_length);
+			return -1;
+		}
+		memcpy(msg->credentials.realm, getArray(attr_length), attr_length);
+		msg->credentials.realm[attr_length] = '\0';
+		printf("Got realm: %s \n", msg->credentials.realm);
+                
+                skip(1);// padding
+		break;
+	}
+	case STUN_ATTR_NONCE: {
+		printf("Reading nonce \n");
+		if (attr_length + 1 > STUN_MAX_NONCE_LEN) {
+			printf("STUN nonce attribute value too long, length=%zu \n", attr_length);
+			return -1;
+		}
+		memcpy(msg->credentials.nonce, getArray(attr_length), attr_length);
+		msg->credentials.nonce[attr_length] = '\0';
+		printf("Got nonce: %s \n", msg->credentials.nonce);
+
+		// If the nonce of a response starts with the nonce cookie, decode the Security Feature bits
+		// See https://www.rfc-editor.org/rfc/rfc8489.html#section-9.2
+		if ((msg->type == STUN_BINDING_RESPONSE) &&
+		    strlen(msg->credentials.nonce) > STUN_NONCE_COOKIE_LEN + 4 &&
+		    strncmp(msg->credentials.nonce, STUN_NONCE_COOKIE, STUN_NONCE_COOKIE_LEN) == 0) {
+			char encoded_security_bits[5];
+			memcpy(encoded_security_bits, msg->credentials.nonce + STUN_NONCE_COOKIE_LEN, 4);
+			encoded_security_bits[4] = '\0';
+
+			uint8_t bytes[4];
+			bytes[0] = 0;
+//			int len = BASE64_DECODE(encoded_security_bits, bytes + 1, 3);
+//			if (len == 3) {
+//				*security_bits = ntohl(*((uint32_t *)bytes));
+//				JLOG_VERBOSE("Nonce has cookie, Security Feature bits are 0x%lX",
+//				             (unsigned long)*security_bits);
+//			} else {
+//				JLOG_WARN("Nonce has cookie, but the encoded Security Feature bits field \"%s\" is "
+//				          "invalid",
+//				          encoded_security_bits);
+//				security_bits = 0;
+//			}
+		}
+//                else if (msg->msg_class == STUN_CLASS_RESP_ERROR) {
+//			printf("Remote agent does not support RFC 8489");
+//		}
+                 skip(3);// padding
+		break;
+	}
+	case STUN_ATTR_PASSWORD_ALGORITHM: {
+		printf("Reading password algorithm\n");
+		if (attr_length < sizeof(struct stun_value_password_algorithm)) {
+			printf("STUN password algorithm value too short, length=%zu \n", attr_length);
+			return -1;
+		}
+		if ((msg->type != STUN_BINDING_RESPONSE)) {
+			stun_value_password_algorithm pwa ;
+                        memcpy( &pwa, getArray(attr_length),attr_length );
+			stun_password_algorithm_t algorithm = (stun_password_algorithm_t)ntohs(pwa.algorithm);
+			if (algorithm == STUN_PASSWORD_ALGORITHM_MD5 ||
+			    algorithm == STUN_PASSWORD_ALGORITHM_SHA256)
+				msg->credentials.password_algorithm = algorithm;
+			else
+				printf("Unknown password algorithm 0x%hX \n", algorithm);
+		} else {
+			printf("Found password algorithm in response, ignoring \n");
+		}
+		break;
+	}
+        
+        case STUN_ATTR_MESSAGE_INTEGRITY_SHA256: {
+                if (attr_length != HMAC_SHA256_SIZE)
+                        return false;
+
+                MessageIntegrity* integ = new MessageIntegrity(32);
+                memcpy(integ->sha.sha256, &buffer[dx], 32);
+                printf("stun::Reader - received Message-Integrity: ");
+                for (int k = 0; k < 32; ++k) {
+                  printf("%02X ", integ->sha.sha1[k]);
+                }
+                printf("\n");
+                attr = (Attribute*) integ;
+                skip(32);
+                break;
+
+                break;
+        }
+        
 
         default: {
           printf("stun::Reader - error: unhandled STUN attribute %s of length: %u, this will result in incorrect message integrity\n", attribute_type_to_string(attr_type).c_str(), attr_length);
@@ -318,6 +421,11 @@ namespace stun {
   }
 
    unsigned char* Reader::getArray(uint16_t len) {
+       
+    if (bytesLeft() < len) {
+      printf("Error: trying to read a getArray from the buffer, but the buffer is not big enough.\n");
+      return nullptr;
+    }
     unsigned char* ret =  ptr();
     dx += len;
     return ret;
@@ -414,7 +522,6 @@ namespace stun {
 
 	// sockaddr_in6 to IPv6 string.
 	//inet_ntop(AF_INET6, &(sa6.sin6_addr), astring, INET6_ADDRSTRLEN);
-	//printf(“%s\n”, astring);
 
     }
     else {
@@ -445,7 +552,7 @@ namespace stun {
       return false;
     }
 
-    return compute_message_integrity(buffer, key, integ->sha1);
+    return compute_message_integrity(buffer, key, integ->sha.sha1);
   }
 
 

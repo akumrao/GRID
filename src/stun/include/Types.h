@@ -49,6 +49,9 @@ namespace stun {
     STUN_ATTR_ICE_CONTROLLING      = 0x802a,                 /* See: http://tools.ietf.org/html/rfc5245#section-19.1 */
     STUN_ATTR_RESPONSE_ORIGIN      = 0x802b,
     STUN_ATTR_OTHER_ADDRESS        = 0x802c,
+    STUN_ATTR_USERHASH             = 0x001E,
+    STUN_ATTR_PASSWORD_ALGORITHM   = 0x001D,
+    STUN_ATTR_MESSAGE_INTEGRITY_SHA256 = 0x001C,
   };
 
   /* --------------------------------------------------------------------- */

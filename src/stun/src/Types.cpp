@@ -37,6 +37,9 @@ namespace stun {
       case STUN_ATTR_ICE_CONTROLLING: { return "STUN_ATTR_ICE_CONTROLLING"; }
       case STUN_ATTR_RESPONSE_ORIGIN: { return "STUN_ATTR_RESPONSE_ORIGIN"; }
       case STUN_ATTR_OTHER_ADDRESS: { return "STUN_ATTR_OTHER_ADDRESS"; }
+      case STUN_ATTR_USERHASH: { return "STUN_ATTR_USERHASH"; }
+      case STUN_ATTR_PASSWORD_ALGORITHM: { return "STUN_ATTR_PASSWORD_ALGORITHM"; }
+      case STUN_ATTR_MESSAGE_INTEGRITY_SHA256: { return "STUN_ATTR_MESSAGE_INTEGRITY_SHA256"; }
       default: { return "unknown"; } 
     }
   }

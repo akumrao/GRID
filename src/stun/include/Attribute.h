@@ -97,8 +97,14 @@ namespace stun {
 
   class MessageIntegrity : public Attribute {
   public:
-    MessageIntegrity();
-    uint8_t sha1[20];
+    MessageIntegrity(int size);
+    union
+    {
+        uint8_t sha1[20];
+        uint8_t sha256[32];
+    }sha;
+     
+    int sz;
   };
 
 } /* namespace stun */

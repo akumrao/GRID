@@ -227,7 +227,7 @@ static void create_stun_message() {
   stun::Message response(stun::STUN_BINDING_RESPONSE);
   response.setTransactionID();
   response.addAttribute(new stun::XorMappedAddress("192.168.0.19", 55164));
-  response.addAttribute(new stun::MessageIntegrity());
+  response.addAttribute(new stun::MessageIntegrity(20));
   response.addAttribute(new stun::Fingerprint());
   
   stun::Writer writer;

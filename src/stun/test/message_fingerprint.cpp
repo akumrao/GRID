@@ -100,8 +100,6 @@ int main() {
         printf("\n-----------\n\n");
 
         
-        
-          /* @todo - stun::Reader does not call on_message anymore! */
         stun::Message msg;
         stun::Reader reader;
         // reader.on_message = on_stun_message;
@@ -113,17 +111,10 @@ int main() {
          
 	if (msg.priority != 0x6e0001ff)
 		return -1;
-
 	if (msg.ice_controlled != 0x932ff9b151263b36LL)
 		return -1;
+        */
 
-	if (!msg.has_integrity)
-		return -1;
-
-	if (!_juice_stun_check_integrity(message1, sizeof(message1), &msg, "VOkJxbRl1RmTxUk/WvJxBt"))
-		return -1;
-         
-         */
         if( r == 0)
         {
             bool ret = reader.computeMessageIntegrity(&msg, "VOkJxbRl1RmTxUk/WvJxBt");
@@ -208,6 +199,17 @@ int main() {
         stun::Reader reader;
         // reader.on_message = on_stun_message;
         int r = reader.process((uint8_t*) message1, sizeof (message1) , &msg);
+        
+        if( r == 0)
+        {
+            bool ret = reader.computeMessageIntegrity(&msg, "TheMatrIX");
+            if(ret)
+            {
+                printf("\n check_integrity passed \n");
+            }
+            else
+                printf("\n check_integrity falled \n");
+        }
     }
     
 
