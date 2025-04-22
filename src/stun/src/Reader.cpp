@@ -114,6 +114,11 @@ namespace stun {
         case STUN_ATTR_USERNAME: { 
           Username* username = new Username();
           username->value = readString(attr_length);
+         
+          memcpy(msg->credentials.username,  username->value.buffer.data(), attr_length);
+          msg->credentials.username[attr_length] = '\0';
+          
+                  
           attr = (Attribute*) username;
           printf("stun::Reader - verbose: username:%s \n", username->value.buffer.data());
           break;
@@ -275,12 +280,11 @@ namespace stun {
                 memcpy(integ->sha.sha256, &buffer[dx], 32);
                 printf("stun::Reader - received Message-Integrity: ");
                 for (int k = 0; k < 32; ++k) {
-                  printf("%02X ", integ->sha.sha1[k]);
+                  printf("%02X ", integ->sha.sha256[k]);
                 }
                 printf("\n");
                 attr = (Attribute*) integ;
                 skip(32);
-                break;
 
                 break;
         }
@@ -537,11 +541,53 @@ namespace stun {
     return &buffer[dx];
   }
   
+  #define HASH_MD5_SIZE 16
+
+size_t generate_hmac_key(Message* msg, std::string &password, std::string &key)
+{
+    if (*msg->credentials.realm != '\0') {
+        // long-term credentials
+        if( *msg->credentials.username == '\0')
+           printf("Generating HMAC key for long-term credentials with empty STUN username \n");
+
+        char input[MAX_HMAC_INPUT_LEN];
+        int input_len = snprintf(input, MAX_HMAC_INPUT_LEN, "%s:%s:%s", msg->credentials.username,
+                msg->credentials.realm, password.size() ? password.data() : "");
+        if (input_len < 0)
+            return 0;
+
+        if (input_len >= MAX_HMAC_INPUT_LEN)
+            input_len = MAX_HMAC_INPUT_LEN - 1;
+
+        switch (msg->credentials.password_algorithm) {
+            case STUN_PASSWORD_ALGORITHM_SHA256:
+               // hash_sha256(input, input_len, key);
+                sha256(input, key);
+                return 32;
+            default:
+              //  hash_md5(input, input_len, key);
+                return HASH_MD5_SIZE;
+        }
+    } else {
+        // short-term credentials
+//        int key_len = snprintf((char *) key, MAX_HMAC_KEY_LEN, "%s", password ? password : "");
+//        if (key_len < 0)
+//            return 0;
+//
+//        if (key_len >= MAX_HMAC_KEY_LEN)
+//            key_len = MAX_HMAC_KEY_LEN - 1;
+        key = password;
+        return key.length();
+    }
+}
   
-  
-    bool Reader::computeMessageIntegrity(Message* msg, std::string key) {
+bool Reader::computeMessageIntegrity(Message* msg, std::string password) {
 
     MessageIntegrity* integ = NULL;
+    
+    std::string key;
+    int keylen = generate_hmac_key( msg,password, key );
+            
     if (!key.size()) { 
       printf("Error: cannot compute message integrity in stun::Message because the key is empty.\n");
       return false;
@@ -552,7 +598,7 @@ namespace stun {
       return false;
     }
 
-    return compute_message_integrity(buffer, key, integ->sha.sha1);
+    return compute_message_integrity(buffer, key, keylen, keylen == 20 ? integ->sha.sha1: integ->sha.sha256);
   }
 
 

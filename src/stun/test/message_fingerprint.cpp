@@ -2,6 +2,7 @@
 #include <Utils.h>
 #include <Reader.h>
 #include <Writer.h>
+#include <string.h>
 
 #define PASSWD "VOkJxbRl1RmTxUk/WvJxBt"
 static void on_stun_message(stun::Message* msg, void* user);
@@ -202,6 +203,8 @@ int main() {
         
         if( r == 0)
         {
+            strcpy(msg.credentials.username, "マトリックス");
+                
             bool ret = reader.computeMessageIntegrity(&msg, "TheMatrIX");
             if(ret)
             {

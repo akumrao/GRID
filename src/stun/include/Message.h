@@ -47,6 +47,12 @@ namespace stun {
 #define HMAC_SHA1_SIZE 20
 #define HMAC_SHA256_SIZE 32
     
+    
+// sequence of less than 513 bytes [...]
+#define STUN_MAX_USERNAME_LEN 513 + 1
+#define STUN_MAX_PASSWORD_LEN STUN_MAX_USERNAME_LEN    
+#define MAX_HMAC_INPUT_LEN (STUN_MAX_USERNAME_LEN + STUN_MAX_REALM_LEN + STUN_MAX_PASSWORD_LEN + 2)
+    
 struct stun_value_password_algorithm {
 	uint16_t algorithm;
 	uint16_t parameters_length;

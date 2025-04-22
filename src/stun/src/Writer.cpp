@@ -26,7 +26,7 @@ namespace stun {
     MessageIntegrity* mit = NULL;
     uint8_t sha1[20] = { 0 };
     if (msg->find(STUN_ATTR_MESSAGE_INTEGRITY, &mit)) {
-      if (compute_message_integrity(buffer, messageIntegrityPassword, sha1)) {
+      if (compute_message_integrity(buffer, messageIntegrityPassword, 20, sha1)) {
         for(size_t i = 0; i < 20; ++i) {
           buffer[mit->offset + 4 + i] = sha1[i];
         }
@@ -185,7 +185,7 @@ namespace stun {
   void Writer::writeMessageIntegrity(MessageIntegrity* integ) {
     writeU16(integ->type);
     writeU16(20); /* size of sha1 */
-    writeBytes(integ->sha1, 20);
+    writeBytes(integ->sha.sha1, 20);
   }
 
   void Writer::writeFingerprint(Fingerprint* fp) {

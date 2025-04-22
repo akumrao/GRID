@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <Message.h>
 #include <Utils.h>
+#include <cstring>
 
 namespace stun {
 
@@ -12,6 +13,7 @@ namespace stun {
     ,length(0)
     ,cookie(0x2112a442)
   {
+      memset(&credentials ,'\0', sizeof(stun_credentials_t)) ;
   }
 
   Message::~Message() {
@@ -52,7 +54,7 @@ namespace stun {
   }
 
   bool Message::find(MessageIntegrity** result) {
-    return find<MessageIntegrity>(STUN_ATTR_MESSAGE_INTEGRITY, result);
+    return (find<MessageIntegrity>(STUN_ATTR_MESSAGE_INTEGRITY, result) ||  find<MessageIntegrity>(STUN_ATTR_MESSAGE_INTEGRITY_SHA256, result)) ;
   }
 
   bool Message::find(XorMappedAddress** result) {

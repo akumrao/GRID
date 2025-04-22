@@ -7,6 +7,21 @@
 
 namespace stun {
   
+    struct stun_header {
+	uint16_t type;
+	uint16_t length;
+	uint32_t magic;
+	uint8_t transaction_id[12];
+};
+
+
+struct stun_attr {
+	uint16_t type;
+	uint16_t length;
+	uint8_t value[];
+};
+
+
   /* 
      Compute the hmac-sha1 over message.
 
@@ -15,7 +30,7 @@ namespace stun {
      std::string key:   key to use for hmac 
      uint8_t* output:   we write the sha1 into this buffer.
    */
-  bool compute_hmac_sha1(uint8_t* message, uint32_t nbytes, std::string key, uint8_t* output);
+  bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz, uint8_t* output);
 
   /* 
      Compute the Message-Integrity of a stun message. 
@@ -25,7 +40,7 @@ namespace stun {
      std::string key:              key to use for hmac 
      uint8_t* output:              will be filled with the correct hmac-sha1 of that represents the integrity message value. 
   */
-  bool compute_message_integrity(std::vector<uint8_t>& buffer, std::string key, uint8_t* output);
+  bool compute_message_integrity(std::vector<uint8_t>& buffer, std::string key, int sz, uint8_t* output);
 
   /* 
      Compute the fingerprint value for the stun message.
@@ -39,6 +54,8 @@ namespace stun {
 
   
    int random_bytes(void *buf, size_t size);
+   
+   void sha256(const std::string& str , std::string& key) ;
    
 } /* namespace stun */
 
