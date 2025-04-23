@@ -203,7 +203,7 @@ static unsigned int generate_seed() {
 //        dx++;
 //      }
 //
-//      if (type == STUN_ATTR_MESSAGE_INTEGRITY || type == STUN_ATTR_MESSAGE_INTEGRITY_SHA256) {
+//      if (type == STUN_ATTR_MESSAGE_INTEGRITY ) {
 //        break;
 //      }
 //

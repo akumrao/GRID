@@ -4,7 +4,7 @@
 CC	= gcc
 CXX     = g++
 TARGET=stunClient 
-SOURCES=$(wildcard stun.cpp Connection.cpp ../src/*.cpp ../../base/src/*.cpp  ../../net/src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp )
+SOURCES=$(wildcard main.cpp Connection.cpp ../src/*.cpp ../../base/src/*.cpp  ../../net/src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp )
 
 CXXFLAGS   := -g   -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized
 

@@ -11,10 +11,12 @@
 #include <stdlib.h>
 #include <Connection.h>
 #include <Agent.h>
+#include "configuration.h"
 
 //#include <udpClient.h>
 
 using namespace stun;
+using namespace rtc;
 
 static void on_udp_data(std::string rip, uint16_t rport, std::string lip, uint16_t lport, uint8_t* data, uint32_t nbytes, void* user);             /* gets called when we recieve data on our 'candidate' */
 
@@ -30,8 +32,23 @@ int main()
  Logger::instance().add(new ConsoleChannel("debug", Level::Trace));
 
 
-  
+    Configuration config1;
+    config1.iceTransportPolicy = TransportPolicy::Relay; // force relay
 
+    // TURN server example (use your own server in production)
+    config1.iceServers.emplace_back(
+        "turn:openrelayproject:openrelayproject@openrelay.metered.ca:80");
+
+    //PeerConnection pc1(config1);
+
+    Configuration config2;
+	// STUN server example
+    config2.iceServers.emplace_back("stun:stun.l.google.com:19302");
+
+    // STUN server example (use your own server in production)
+        
+ 
+  
   printf("\n\ntest_ice\n\n");
   
   
