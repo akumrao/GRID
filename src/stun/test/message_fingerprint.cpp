@@ -203,7 +203,7 @@ int main() {
         
         if( r == 0)
         {
-            strcpy(msg.credentials.username, "マトリックス");
+            strcpy(msg.credentials.username, "マトリックス"); //マトリックス"
                 
             bool ret = reader.computeMessageIntegrity(&msg, "TheMatrIX");
             if(ret)

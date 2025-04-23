@@ -25,6 +25,11 @@ static void on_udp_data(  const char* data, uint32_t nbytes)
 }
 
 
+void testUdpServer::cbDnsResolve(addrinfo* res, std::string ip)
+{
+
+}
+
 void testUdpServer::send( uint8_t* data, uint32_t nbytes, std::string ip, int port )
 {
      udpServer->send( (char*) data, nbytes , ip , port);

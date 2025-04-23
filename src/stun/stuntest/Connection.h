@@ -14,7 +14,7 @@
 #include "net/UdpSocket.h"
 //#include "base/test.h"
 #include "base/time.h"
-
+#include "net/dns.h"
 
 
 #include "net/TcpServer.h"
@@ -32,7 +32,7 @@ using namespace base;
 using namespace net;
 //using namespace base::test;
 
-class testUdpServer : public UdpServer::Listener {
+class testUdpServer : public GetAddrInfoReq, public UdpServer::Listener {
 public:
 
     testUdpServer(std::string IP, int port):IP(IP), port(port) {
@@ -51,7 +51,8 @@ public:
         udpServer = nullptr;
 
     }
-
+    
+    virtual void cbDnsResolve(addrinfo* res, std::string ip) override;
 
     void send( uint8_t* data, uint32_t nbytes, std::string ip, int port );
       
