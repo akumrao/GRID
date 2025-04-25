@@ -112,6 +112,13 @@ typedef enum {
 	RTC_CERTIFICATE_RSA = 2,
 } rtcCertificateType;
 
+typedef enum {
+	RTC_DIRECTION_UNKNOWN = 0,
+	RTC_DIRECTION_SENDONLY = 1,
+	RTC_DIRECTION_RECVONLY = 2,
+	RTC_DIRECTION_SENDRECV = 3,
+	RTC_DIRECTION_INACTIVE = 4
+} rtcDirection;
 
 
 typedef enum { RTC_TRANSPORT_POLICY_ALL = 0, RTC_TRANSPORT_POLICY_RELAY = 1 } rtcTransportPolicy;
