@@ -33,10 +33,26 @@ int main()
     config1.iceTransportPolicy = TransportPolicy::All; // force relay
     // STUN server example
     config1.iceServers.emplace_back("stun:stun.l.google.com:19302");
+    
+    //config1.iceServers.emplace_back("stun:stun4.l.google.com:19302");
+    
+    config1.iceServers.emplace_back("turn:openrelayproject:openrelayproject@openrelay.metered.ca:80");
+     
+    
+    //stun01.sipphone.com
+    //stun.ekiga.net
+    //stun.fwdnet.net
+    //stun.ideasip.com
+    //stun.iptel.org
+    //stun.rixtelecom.se
+    //stun.schlund.de
+    //stunserver.org
+    //stun.softjoys.
+             
 
     Configuration config2;
     // TURN server example (use your own server in production)
-    config1.iceServers.emplace_back("turn:openrelayproject:openrelayproject@openrelay.metered.ca:80");
+    config2.iceServers.emplace_back("turn:openrelayproject:openrelayproject@openrelay.metered.ca:80");
 
     PeerConnection pc1(config1);
 

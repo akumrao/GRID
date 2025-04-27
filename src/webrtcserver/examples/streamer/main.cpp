@@ -96,7 +96,7 @@ void sendCandidate( const std::string &mid, int mlineindex, const std::string &s
 
     SInfo << "send:"  <<  sdp << "candidate to: "<< from<< std::endl;
     
-    mysocket->emit("message", m);
+    //mysocket->emit("message", m);
 }
 
 void sendSdp( const std::string &sdp, const std::string &type   )
@@ -118,7 +118,7 @@ void sendSdp( const std::string &sdp, const std::string &type   )
 
     SInfo << "send:"  << type << " to: "<< from<< std::endl;
     
-    mysocket->emit("message", m);
+  //  mysocket->emit("message", m);
                 
 }
 
@@ -297,6 +297,12 @@ int main(int argc, char **argv) try {
 
     string localId = "server";
     cout << "The local ID is: " << localId << endl;
+    
+    
+   // std::string id ="server";
+
+   // clients.emplace(id, createPeerConnection(config,  id));
+    
 
 //    auto ws = make_shared<WebSocket>();
 //

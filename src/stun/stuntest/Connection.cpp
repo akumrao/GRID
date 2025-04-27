@@ -80,7 +80,7 @@ void Transport::resolveStunServer( )
     {
         SInfo << "resolve " <<  icesv.hostname << ":" << icesv.port;
         resolve(icesv.hostname, icesv.port, Application::uvGetLoop());
-        break;
+        //break;
     }
    
 }

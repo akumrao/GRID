@@ -19,8 +19,10 @@ namespace base {
                     return;
                 }
                 
-                 char addr[40] = {'\0'};
-                 
+                char addr[40] = {'\0'};
+
+                struct addrinfo* start =  res;
+                
                 for (;res != NULL; res = res->ai_next) 
                 { 
                     
