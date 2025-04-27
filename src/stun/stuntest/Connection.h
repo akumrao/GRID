@@ -21,7 +21,7 @@
 
 #include "base/time.h"
 #include "net/netInterface.h"
-
+#include "configuration.h"
 
 
 #include <Reader.h>
@@ -30,9 +30,10 @@
 using std::endl;
 using namespace base;
 using namespace net;
+using namespace rtc;
 //using namespace base::test;
 
-class testUdpServer : public GetAddrInfoReq, public UdpServer::Listener {
+class testUdpServer: public UdpServer::Listener {
 public:
 
     testUdpServer(std::string IP, int port):IP(IP), port(port) {
@@ -43,7 +44,6 @@ public:
         udpServer->bind();
     }
 
-  
 
     void shutdown() {
 
@@ -52,7 +52,6 @@ public:
 
     }
     
-    virtual void cbDnsResolve(addrinfo* res, std::string ip) override;
 
     void send( uint8_t* data, uint32_t nbytes, std::string ip, int port );
       
@@ -140,3 +139,20 @@ public:
     TcpConnectionBase *tcpClient;
 
 };
+
+
+
+
+ class Transport: public GetAddrInfoReq
+ {
+ public:
+        Transport( Configuration &Config): mConfig(Config)
+        {
+            
+        }
+        void resolveStunServer();
+        virtual void cbDnsResolve(addrinfo* res, std::string ip) override;
+        
+        Configuration &mConfig;
+     
+ };

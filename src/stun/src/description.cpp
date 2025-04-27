@@ -65,8 +65,12 @@ namespace rtc {
 
 namespace utils = impl::utils;
 
-Description::Description(const string &sdp, Type type, Role role)
-    : mType(Type::Unspec), mRole(role) {
+void Description::readSdp(const string &sdp, Type type, Role role)
+{
+    
+        mType =type;
+        mRole = role;
+ 
 	hintType(type);
 
 	int index = -1;
@@ -175,9 +179,10 @@ Description::Description(const string &sdp, Type type, Role role)
 	}
 }
 
-Description::Description(const string &sdp, string typeString)
-    : Description(sdp, !typeString.empty() ? stringToType(typeString) : Type::Unspec,
-                  Role::ActPass) {}
+Description::Description()
+{
+}
+
 
 Description::Type Description::type() const { return mType; }
 
@@ -244,7 +249,7 @@ void Description::Entry::removeAttribute(const string &attr) {
 	    mAttributes.end());
 }
 
-std::vector<Candidate> Description::candidates() const { return mCandidates; }
+//std::vector<Candidate> Description::candidates() const { return mCandidates; }
 
 std::vector<Candidate> Description::extractCandidates() {
 	std::vector<Candidate> result;

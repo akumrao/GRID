@@ -73,7 +73,19 @@ static unsigned int generate_seed() {
 
 
 
-  bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz, uint8_t* output) {
+void random_str64(char *buf, size_t size) {
+  static const char chars64[] =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+  size_t i = 0;
+  for (i = 0; i + 1 < size; ++i) {
+    uint8_t byte = 0;
+    random_bytes(&byte, 1);
+    buf[i] = chars64[byte & 0x3F];
+  }
+  buf[i] = '\0';
+}
+
+bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz, uint8_t* output) {
 
     if (!message) { 
       printf("Error: can't compute hmac_sha1 as the input message is empty in compute_hmac_sha1().\n");

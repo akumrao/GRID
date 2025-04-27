@@ -45,8 +45,11 @@ public:
 		Unknown = RTC_DIRECTION_UNKNOWN
 	};
 
-	Description(const string &sdp, Type type = Type::Unspec, Role role = Role::ActPass);
-	Description(const string &sdp, string typeString);
+	void readSdp(const string &sdp, Type type = Type::Unspec, Role role = Role::ActPass);
+        
+        
+        Description();
+	//Description(const string &sdp, string typeString);
 
 	Type type() const;
 	string typeString() const;
@@ -67,11 +70,14 @@ public:
 	void addAttribute(string attr);
 	void removeAttribute(const string &attr);
 
-	std::vector<Candidate> candidates() const;
+	std::vector<Candidate> mcandidates() const;
 	std::vector<Candidate> extractCandidates();
 	bool hasCandidate(const Candidate &candidate) const;
 	void addCandidate(Candidate candidate);
 	void addCandidates(std::vector<Candidate> candidates);
+        
+        //std::vector<Candidate> candidates();
+        
 	void endCandidates();
 
 	operator string() const;
@@ -307,6 +313,18 @@ private:
 	// Candidates
 	std::vector<Candidate> mCandidates;
 	bool mEnded = false;
+        
+        
+        
+public:
+    	char ice_ufrag[256 + 1]; // 4 to 256 characters
+	char ice_pwd[256 + 1];   // 22 to 256 characters
+	bool ice_lite;
+	ice_candidate_t candidates[20];
+	int candidates_count;
+	bool finished;
+
+
 };
 
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, const Description &description);

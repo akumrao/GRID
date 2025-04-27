@@ -4,11 +4,37 @@
 #define RTC_CANDIDATE_H
 
 #include "common.h"
-
 #include <string>
+
+#include <sys/socket.h>
 
 namespace rtc {
 
+    typedef enum ice_candidate_type {
+	ICE_CANDIDATE_TYPE_UNKNOWN,
+	ICE_CANDIDATE_TYPE_HOST,
+	ICE_CANDIDATE_TYPE_SERVER_REFLEXIVE,
+	ICE_CANDIDATE_TYPE_PEER_REFLEXIVE,
+	ICE_CANDIDATE_TYPE_RELAYED,
+} ice_candidate_type_t;
+
+typedef struct addr_record {
+	struct sockaddr_storage addr;
+	socklen_t len;
+} addr_record_t;
+
+ 
+typedef struct ice_candidate {
+	ice_candidate_type_t type;
+	uint32_t priority;
+	int component;
+	char foundation[32 + 1]; // 1 to 32 characters
+	char transport[32 + 1];
+	char hostname[256 + 1];
+	char service[32 + 1];
+	addr_record_t resolved;
+} ice_candidate_t;    
+    
 class RTC_CPP_EXPORT Candidate {
 public:
 	enum class Family { Unresolved, Ipv4, Ipv6 };

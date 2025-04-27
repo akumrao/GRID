@@ -25,10 +25,6 @@ static void on_udp_data(  const char* data, uint32_t nbytes)
 }
 
 
-void testUdpServer::cbDnsResolve(addrinfo* res, std::string ip)
-{
-
-}
 
 void testUdpServer::send( uint8_t* data, uint32_t nbytes, std::string ip, int port )
 {
@@ -75,5 +71,24 @@ void tesTcpClient::on_read(Listener* connection, const char* data, size_t len) {
     std::cout  << "len: " << len << std::endl << std::flush;
 
     on_udp_data(data ,len );
+}
+
+void Transport::resolveStunServer( )
+{
+    
+    for( IceServer &icesv:  mConfig.iceServers  )
+    {
+        SInfo << "resolve " <<  icesv.hostname << ":" << icesv.port;
+        resolve(icesv.hostname, icesv.port, Application::uvGetLoop());
+        break;
+    }
+   
+}
+ 
+ 
+void Transport::cbDnsResolve(addrinfo* res, std::string ip)
+{
+    
+    SInfo <<  "ip " <<  ip;
 
 }

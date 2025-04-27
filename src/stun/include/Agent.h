@@ -7,6 +7,10 @@
 #include <Attribute.h>
 #include <Types.h>
 
+//using namespace rtc;
+
+
+
 #define STUN_TRANSACTION_ID_SIZE 12
 namespace stun {
 
@@ -41,6 +45,8 @@ namespace stun {
     uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
     std::vector<Attribute*> attributes;
     std::vector<uint8_t> buffer;
+//    Description *description;
+    
   };
 
 } /* namespace stun */

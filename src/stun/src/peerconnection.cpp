@@ -31,8 +31,12 @@ namespace rtc {
 
 PeerConnection::PeerConnection( Configuration &config): mConfig(config)
 {
+       
 	STrace << "Creating PeerConnection";
 
+       // mLocalDescription = new Description();
+        //mRemoteDescription = new Description();
+        
 	if (config.portRangeEnd && config.portRangeBegin > config.portRangeEnd)
 		throw std::invalid_argument("Invalid port range");
 
@@ -160,7 +164,7 @@ void PeerConnection::setLocalDescription(Description::Type type) {
 	}
 	}
 
-//	auto iceTransport = initIceTransport();
+  // auto iceTransport = initIceTransport();
 //
 //	Description local = iceTransport->getLocalDescription(type);
 //	processLocalDescription(std::move(local));

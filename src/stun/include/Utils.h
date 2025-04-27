@@ -55,6 +55,8 @@ struct stun_attr {
   
    int random_bytes(void *buf, size_t size);
    
+   void random_str64(char *buf, size_t size);
+   
    void sha256(const std::string& str , std::string& key) ;
    
 } /* namespace stun */

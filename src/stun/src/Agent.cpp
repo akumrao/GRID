@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <Agent.h>
 #include <uv.h>
-
+#include "base/logger.h"
+#include <Utils.h>
+using namespace base;
 
 namespace stun {
 
@@ -10,13 +12,13 @@ namespace stun {
 
   Agent::Agent()
   {
+      
+    
   }
 
   Agent::~Agent() {
    
   }
-
-
 
 
   bool Agent::getInterfaces() {
