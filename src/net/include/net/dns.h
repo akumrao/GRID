@@ -39,7 +39,7 @@ namespace base {
 
             void resolve(const std::string& host, int port, uv_loop_t * loop = Application::uvGetLoop()) ;
 
-            uv_getaddrinfo_t req;
+            uv_getaddrinfo_t *req;
         };
 
     } // namespace net

@@ -15,6 +15,11 @@ namespace base {
                 
                 if (status < 0 || !res) {
                     LTrace(  "getaddrinfo callback error ", uv_err_name(status));
+                    
+                    if(res)
+                    uv_freeaddrinfo(res);
+                    delete handle;
+                    
                     obj->cbDnsResolve(nullptr, "");
                     return;
                 }
@@ -43,12 +48,15 @@ namespace base {
                 
 
                 uv_freeaddrinfo(res);
+                
+                delete handle;
 
             }
 
             void GetAddrInfoReq::resolve(const std::string& host, int port, uv_loop_t * loop) {
 
-                req.data = this;
+                req = new uv_getaddrinfo_t; 
+                req->data = this;
                 int r;
 
                 struct addrinfo hints;
@@ -62,7 +70,7 @@ namespace base {
                 hints.ai_flags = AI_ADDRCONFIG;
 
                 r = uv_getaddrinfo(loop,
-                        &req,
+                        req,
                         on_resolved,
                         host.c_str(),
                         util::itostr(port).c_str(),
