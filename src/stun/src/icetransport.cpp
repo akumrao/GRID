@@ -3,7 +3,7 @@
 #include "icetransport.h"
 #include "configuration.h"
 
-#include "utils.h"
+#include "Utils.h"
 
 #include <algorithm>
 #include <iostream>
@@ -25,7 +25,7 @@
 #include <sys/types.h>
 
 using namespace base;
-
+using namespace stun;
 using namespace std::chrono_literals;
 using std::chrono::system_clock;
 
@@ -42,9 +42,9 @@ void IceTransport::Cleanup() {
 	// Dummy
 }
 
-IceTransport::IceTransport(const Configuration &config, candidate_callback candidateCallback,
+IceTransport::IceTransport(const Configuration &config,  Description &description, candidate_callback candidateCallback,
                            state_callback stateChangeCallback,
-                           gathering_state_callback gatheringStateChangeCallback):
+                           gathering_state_callback gatheringStateChangeCallback): description(description),
     
       mMid("0"), mGatheringState(GatheringState::New),
       mCandidateCallback(std::move(candidateCallback)),
@@ -221,24 +221,29 @@ Description::Role IceTransport::role() const { return mRole; }
 
 Description *IceTransport::getLocalDescription(Description::Type type)  {
 	char sdp[4096];
-//	if (juice_get_local_description(mAgent.get(), sdp, 4096) < 0)
-	//	throw std::runtime_error("Failed to generate local SDP");
+        
+         
+        random_str64(description.ice_ufrag, 4 + 1);
+        random_str64(description.ice_pwd, 22 + 1);
+        description.ice_lite = false;
+        description.candidates_count = 0;
+        description.finished = false;
+        SInfo << "Created local description: ufrag= "<<  description.ice_ufrag  <<  " pwd "  <<   description.ice_pwd;
+        
+        if (ice_generate_sdp(&description, sdp, 4096) < 0)
+        {
+            throw std::runtime_error("Failed to generate local SDP");
+        }
 
 	// RFC 5763: The endpoint that is the offerer MUST use the setup attribute value of
 	// setup:actpass.
 	// See https://www.rfc-editor.org/rfc/rfc5763.html#section-5
-//	Description *desc = new Description(string(sdp), type, type == Description::Type::Offer ? Description::Role::ActPass : mRole);
-//        
-//           
-////        random_str64(description->ice_ufrag, 4 + 1);
-////        random_str64(description->ice_pwd, 22 + 1);
-////        description->ice_lite = false;
-////        description->candidates_count = 0;
-////        description->finished = false;
-//       // JLOG_DEBUG("Created local description: ufrag=\"%s\", pwd=\"%s\"", description->ice_ufrag,    description->ice_pwd);
-//
-//	desc->addIceOption("trickle");
-	return nullptr;
+        
+        description.readSdp( string(sdp), type, type == Description::Type::Offer ? Description::Role::ActPass : mRole);
+	description.addIceOption("trickle");
+        
+        
+	return &description;
 }
 
 void IceTransport::setRemoteDescription(const Description *description) {

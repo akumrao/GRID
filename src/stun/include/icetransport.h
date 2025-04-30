@@ -7,7 +7,7 @@
 #include "common.h"
 #include "configuration.h"
 #include "description.h"
-#include "peerconnection.h"
+//#include "peerconnection.h"
 
 
 #include <atomic>
@@ -32,7 +32,7 @@ public:
 	using candidate_callback = std::function<void(const Candidate &candidate)>;
 	using gathering_state_callback = std::function<void(GatheringState state)>;
 
-	IceTransport(const Configuration &config, candidate_callback candidateCallback,
+	IceTransport(const Configuration &config, Description &description,  candidate_callback candidateCallback,
 	             state_callback stateChangeCallback,
 	             gathering_state_callback gatheringStateChangeCallback);
 	~IceTransport();
@@ -79,7 +79,7 @@ private:
 
         int mTurnServersAdded;
         
-      //  Description *description;
+        Description &description;
         
 };
 

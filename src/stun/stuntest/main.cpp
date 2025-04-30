@@ -36,7 +36,7 @@ int main()
     
     //config1.iceServers.emplace_back("stun:stun4.l.google.com:19302");
     
-    config1.iceServers.emplace_back("turn:openrelayproject:openrelayproject@openrelay.metered.ca:80");
+    //config1.iceServers.emplace_back("turn:openrelayproject:openrelayproject@openrelay.metered.ca:80");
      
     
     //stun01.sipphone.com
@@ -144,15 +144,17 @@ int main()
 
     Application app;
     
+
+    
+    Agent agent;
+
+    agent.getInterfaces();
     
     Transport transport(config1);
     
     transport.resolveStunServer( );
     
-//    
-//    Agent agent;
-//
-//    agent.getInterfaces();
+
 //
 //    //return 0;
 //    

@@ -5,7 +5,6 @@
 
 //#include "impl/certificate.h"
 //#include "impl/dtlstransport.h"
-//#include "impl/icetransport.h"
 //#include "impl/internals.h"
 //#include "impl/peerconnection.h"
 //#include "impl/sctptransport.h"
@@ -50,6 +49,7 @@ PeerConnection::PeerConnection( Configuration &config): mConfig(config)
 			SError << "MTU set to " << config.mtu;
 		}
 	}
+        negotiationNeeded();
 }
 
 PeerConnection::~PeerConnection() {
@@ -71,15 +71,16 @@ void PeerConnection::close() {
 
 
 bool PeerConnection::negotiationNeeded() const {
+//        mNegotiationNeeded.exchange() = true;
 	return true;
 }
 
-Description* PeerConnection::localDescription() const {
+Description PeerConnection::localDescription() const {
 	std::lock_guard<std::recursive_mutex> lock(mLocalDescriptionMutex);
 	return mLocalDescription;
 }
 
-Description* PeerConnection::remoteDescription() const {
+Description PeerConnection::remoteDescription() const {
 	std::lock_guard<std::recursive_mutex> lock(mRemoteDescriptionMutex);
 	return mRemoteDescription;
 }
@@ -126,11 +127,11 @@ void PeerConnection::setLocalDescription(Description::Type type) {
 			type = Description::Type::Offer;
 	}
 
-	// Only a local offer resets the negotiation needed flag
-	if (type == Description::Type::Offer && !mNegotiationNeeded.exchange(false)) {
-		SDebug << "No negotiation needed";
-		return;
-	}
+//	// Only a local offer resets the negotiation needed flag
+//	if (type == Description::Type::Offer && !mNegotiationNeeded.exchange(false)) {
+//		SDebug << "No negotiation needed";
+//		return;
+//	}
 
 	// Get the new signaling state
 	SignalingState newSignalingState;
@@ -164,9 +165,10 @@ void PeerConnection::setLocalDescription(Description::Type type) {
 	}
 	}
 
-  // auto iceTransport = initIceTransport();
-//
-//	Description local = iceTransport->getLocalDescription(type);
+        IceTransport *iceTransport = initIceTransport();
+
+	Description *local = iceTransport->getLocalDescription(type);
+        
 //	processLocalDescription(std::move(local));
 //
 //	changeSignalingState(newSignalingState);
@@ -370,69 +372,92 @@ void PeerConnection::onIceStateChange(std::function<void(IceState state)> callba
 //	mTrackCallback = callback;
 //}
 //
-//shared_ptr<IceTransport> PeerConnection::initIceTransport() {
-//	try {
-//		if (auto transport = std::atomic_load(&mIceTransport))
-//			return transport;
-//
-//		PLOG_VERBOSE << "Starting ICE transport";
-//
-//		auto transport = std::make_shared<IceTransport>(
-//		    mConfig, weak_bind(&PeerConnection::processLocalCandidate, this, _1),
-//		    [this, weak_this = weak_from_this()](IceTransport::State state) {
-//			    auto shared_this = weak_this.lock();
-//			    if (!shared_this)
-//				    return;
-//			    switch (state) {
-//			    case IceTransport::State::Connecting:
-//				    changeState(State::Connecting);
-//				    break;
-//			    case IceTransport::State::Failed:
-//				    changeState(State::Failed);
-//				    break;
-//			    case IceTransport::State::Connected:
-//				    initDtlsTransport();
-//				    break;
-//			    case IceTransport::State::Disconnected:
-//				    changeState(State::Disconnected);
-//				    break;
-//			    default:
-//				    // Ignore
-//				    break;
-//			    }
-//		    },
-//		    [this, weak_this = weak_from_this()](IceTransport::GatheringState state) {
-//			    auto shared_this = weak_this.lock();
-//			    if (!shared_this)
-//				    return;
-//			    switch (state) {
-//			    case IceTransport::GatheringState::InProgress:
-//				    changeGatheringState(GatheringState::InProgress);
-//				    break;
-//			    case IceTransport::GatheringState::Complete:
-//				    endLocalCandidates();
-//				    changeGatheringState(GatheringState::Complete);
-//				    break;
-//			    default:
-//				    // Ignore
-//				    break;
-//			    }
-//		    });
-//
+void PeerConnection::processLocalCandidate(Candidate candidate) 
+{
+	//std::lock_guard lock(mLocalDescriptionMutex);
+//	if (!mLocalDescription)
+//		throw std::logic_error("Got a local candidate without local description");
+
+	if (mConfig.iceTransportPolicy == TransportPolicy::Relay &&
+		candidate.type() != Candidate::Type::Relayed) {
+		STrace << "Not issuing local candidate because of transport policy: " << candidate;
+		return;
+	}
+
+	STrace << "Issuing local candidate: " << candidate;
+
+	candidate.resolve(Candidate::ResolveMode::Simple);
+	mLocalDescription.addCandidate(candidate);
+
+	//mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),
+	//				   &localCandidateCallback, std::move(candidate));
+}
+
+void PeerConnection::iceState(IceTransport::State state) {
+
+    switch (state) {
+        case IceTransport::State::Connecting:
+            //changeState(State::Connecting);
+            break;
+        case IceTransport::State::Failed:
+           // changeState(State::Failed);
+            break;
+        case IceTransport::State::Connected:
+         //   initDtlsTransport();
+            break;
+        case IceTransport::State::Disconnected:
+          //  changeState(State::Disconnected);
+            break;
+        default:
+            // Ignore
+            break;
+    };
+}
+void PeerConnection::iceGathering(IceTransport::GatheringState state) {
+
+    switch (state) {
+        case IceTransport::GatheringState::InProgress:
+            //changeGatheringState(GatheringState::InProgress);
+            break;
+        case IceTransport::GatheringState::Complete:
+           /// endLocalCandidates();
+            //changeGatheringState(GatheringState::Complete);
+            break;
+        default:
+            // Ignore
+            break;
+    }
+}
+
+IceTransport* PeerConnection::initIceTransport() 
+{
+
+	try {
+		//if (auto transport = std::atomic_load(&mIceTransport))
+		//	return transport;
+
+		STrace << "Starting ICE transport";
+
+		IceTransport *transport = new IceTransport(
+		    mConfig, mLocalDescription , 
+                     std::bind(&PeerConnection::processLocalCandidate, this, _1),    
+		    std::bind(&PeerConnection::iceState, this, _1),
+		    std::bind(&PeerConnection::iceGathering, this, _1)) ;
+
 //		std::atomic_store(&mIceTransport, transport);
 //		if (mState == State::Closed) {
 //			mIceTransport.reset();
 //			throw std::runtime_error("Connection is closed");
 //		}
 //		transport->start();
-//		return transport;
-//
-//	} catch (const std::exception &e) {
-//		PLOG_ERROR << e.what();
-//		changeState(State::Failed);
-//		throw std::runtime_error("ICE transport initialization failed");
-//	}
-//}
+		return transport;
+
+	} catch (const std::exception &e) {
+		STrace << e.what();
+		//changeState(State::Failed);
+		throw std::runtime_error("ICE transport initialization failed");
+	}
+}
 
 //void PeerConnection::onLocalCandidate(std::function<void(Candidate candidate)> callback) {
 //	impl()->localCandidateCallback = callback;

@@ -18,13 +18,11 @@
 
 #include <atomic>
 
+#include "icetransport.h"
+
 namespace rtc {
 
-namespace impl {
 
-struct PeerConnection;
-
-}
 
 struct RTC_CPP_EXPORT DataChannelInit {
 //	Reliability reliability = {};
@@ -87,8 +85,8 @@ public:
 //	SignalingState signalingState() const;
 	bool negotiationNeeded() const;
 	bool hasMedia() const;
-	Description* localDescription() const;
-	Description* remoteDescription() const;
+	Description localDescription() const;
+	Description remoteDescription() const;
 	size_t remoteMaxMessageSize() const;
 	string localAddress() const;
 	string remoteAddress() const;
@@ -137,7 +135,7 @@ public:
 	//std::atomic<bool> closing = false;
 
         std::atomic<State> mState{State::New};
-        std::atomic<IceState> iceState{IceState::New};
+        std::atomic<IceState> mIceState{IceState::New};
 	std::atomic<GatheringState> mGatheringState{GatheringState::New};
 	std::atomic<SignalingState> mSignalingState{SignalingState::Stable};
 	std::atomic<bool> mNegotiationNeeded{false};
@@ -155,7 +153,16 @@ public:
         
         
         mutable std::recursive_mutex mLocalDescriptionMutex, mRemoteDescriptionMutex;
-        Description *mLocalDescription, *mRemoteDescription;        
+        Description mLocalDescription, mRemoteDescription;  
+
+        void processLocalCandidate(Candidate candidate);
+         
+        IceTransport *initIceTransport();
+
+        void iceState(IceTransport::State state);
+
+        void iceGathering(IceTransport::GatheringState state);
+               
         
 };
 

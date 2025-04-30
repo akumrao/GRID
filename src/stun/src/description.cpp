@@ -39,7 +39,7 @@ inline string get_first_line(const string &str) {
 	return line;
 }
 
-inline std::pair<const string&, const string&> parse_pair(const string& attr) {
+inline std::pair<const string, const string> parse_pair(const string& attr) {
 	 string key, value;
 	if (size_t separator = attr.find(':'); separator != string::npos) {
 		key = attr.substr(0, separator);
@@ -92,17 +92,17 @@ void Description::readSdp(const string &sdp, Type type, Role role)
 
 		} else if (match_prefix(line, "a=")) { // Attribute line
 			string attr = line.substr(2);
-			auto [key, value] = parse_pair(attr);
+			std::pair<const string&, const string&> pr = parse_pair(attr);
 
-			if (key == "setup") {
-				if (value == "active")
+			if (pr.first == "setup") {
+				if (pr.second == "active")
 					mRole = Role::Active;
-				else if (value == "passive")
+				else if (pr.second == "passive")
 					mRole = Role::Passive;
 				else
 					mRole = Role::ActPass;
 
-			} else if (key == "fingerprint") {
+			} else if (pr.first == "fingerprint") {
 				// RFC 8122: The fingerprint attribute may be either a session-level or a
 				// media-level SDP attribute. If it is a session-level attribute, it applies to all
 				// TLS sessions for which no media-level fingerprint attribute is defined.
@@ -138,35 +138,35 @@ void Description::readSdp(const string &sdp, Type type, Role role)
 //						PLOG_WARNING << "Unknown certificate fingerprint algorithm: " << first;
 //					}
 //				}
-			} else if (key == "ice-ufrag") {
+			} else if (pr.first == "ice-ufrag") {
 				// RFC 8839: The "ice-pwd" and "ice-ufrag" attributes can appear at either the
 				// session-level or media-level. When present in both, the value in the media-level
 				// takes precedence.
 				if (mIceUfrag.length() == 0 || index == 0) // media-level for first media overrides session-level
-					mIceUfrag = value;
-			} else if (key == "ice-pwd") {
+					mIceUfrag = pr.second;
+			} else if (pr.first == "ice-pwd") {
 				// RFC 8839: The "ice-pwd" and "ice-ufrag" attributes can appear at either the
 				// session-level or media-level. When present in both, the value in the media-level
 				// takes precedence.
 				if (mIcePwd.length() == 0 || index == 0) // media-level for first media overrides session-level
-					mIcePwd = value;
-			} else if (key == "ice-options") {
+					mIcePwd = pr.second;
+			} else if (pr.first == "ice-options") {
 				// RFC 8839: The "ice-options" attribute is a session-level and media-level
 				// attribute.
 				if (mIceOptions.empty())
-					mIceOptions = utils::explode(string(value), ',');
-			} else if (key == "candidate") {
+					mIceOptions = utils::explode(string(pr.second), ',');
+			} else if (pr.first == "candidate") {
 				addCandidate(Candidate(attr, bundleMid()));
-			} else if (key == "end-of-candidates") {
+			} else if (pr.first == "end-of-candidates") {
 				mEnded = true;
 			} else if (current) {
-				//current->parseSdpLine(std::move(line));
+				current->parseSdpLine(std::move(line));
 			} else {
 				mAttributes.emplace_back(attr);
 			}
 
 		} else if (current) {
-			//current->parseSdpLine(std::move(line));
+			current->parseSdpLine(std::move(line));
 		}
 	}
 
@@ -691,11 +691,11 @@ string Description::Entry::generateSdpLines(const string& eol) const {
 void Description::Entry::parseSdpLine(const string& line) {
 	if (match_prefix(line, "a=")) {
 		const string& attr = line.substr(2);
-		auto [key, value] = parse_pair(attr);
+		std::pair<const string&, const string&> pr = parse_pair(attr);
 
-		if (key == "mid") {
-			mMid = value;
-		} else if (key == "extmap") {
+		if (pr.first == "mid") {
+			mMid = pr.second;
+		} else if (pr.first == "extmap") {
 //			auto id = Description::Media::ExtMap::parseId(value);
 //			auto it = mExtMaps.find(id);
 //			if (it == mExtMaps.end())
@@ -707,11 +707,11 @@ void Description::Entry::parseSdpLine(const string& line) {
 			mDirection = Direction::SendOnly;
 		else if (attr == "recvonly")
 			mDirection = Direction::RecvOnly;
-		else if (key == "sendrecv")
+		else if (pr.first == "sendrecv")
 			mDirection = Direction::SendRecv;
-		else if (key == "inactive")
+		else if (pr.first == "inactive")
 			mDirection = Direction::Inactive;
-		else if (key == "bundle-only") {
+		else if (pr.first == "bundle-only") {
 			// RFC 8843: When an offerer generates a subsequent offer, in which it wants to disable
 			// a bundled "m=" section from a BUNDLE group, the offerer [...] MUST NOT assign an SDP
 			// 'bundle-only' attribute to the "m=" section.
@@ -872,12 +872,12 @@ string Description::Application::generateSdpLines(const string& eol) const {
 void Description::Application::parseSdpLine(const string& line) {
 	if (match_prefix(line, "a=")) {
 		const string& attr = line.substr(2);
-		auto [key, value] = parse_pair(attr);
+		std::pair<const string&, const string&> pr = parse_pair(attr);
 
-		if (key == "sctp-port") {
-			mSctpPort = to_integer<uint16_t>(value);
-		} else if (key == "max-message-size") {
-			mMaxMessageSize = to_integer<size_t>(value);
+		if (pr.first == "sctp-port") {
+			mSctpPort = to_integer<uint16_t>(pr.second);
+		} else if (pr.first == "max-message-size") {
+			mMaxMessageSize = to_integer<size_t>(pr.second);
 		} else {
 			Entry::parseSdpLine(line);
 		}
@@ -1070,7 +1070,7 @@ void Description::Application::parseSdpLine(const string& line) {
 //void Description::Media::parseSdpLine(const string& line) {
 //	if (match_prefix(line, "a=")) {
 //		const string& attr = line.substr(2);
-//		auto [key, value] = parse_pair(attr);
+//		std::pair<const string&, const string&> pr = parse_pair(attr);
 //
 //		if (key == "rtpmap") {
 //			auto pt = Description::Media::RtpMap::parsePayloadType(value);
