@@ -3,12 +3,16 @@
 #ifndef RTC_PEER_CONNECTION_H
 #define RTC_PEER_CONNECTION_H
 
-//#include "candidate.hpp"
+#include "candidate.h"
 #include "common.h"
 #include "configuration.h"
-//#include "datachannel.h"
+#include "datachannel.h"
 #include "description.h"
-//#include "reliability.h"
+#include "reliability.h"
+#include "certificate.h"
+
+#include "datachannel.h"
+
 //#include "track.h"
 #include "rtc.h"
 #include <chrono>
@@ -19,10 +23,15 @@
 #include <atomic>
 
 #include "icetransport.h"
+#include <unordered_map>
+
+
+//#include <shared_mutex>
+
 
 namespace rtc {
 
-
+ struct DataChannel;
 
 struct RTC_CPP_EXPORT DataChannelInit {
 //	Reliability reliability = {};
@@ -107,6 +116,12 @@ public:
 //
 //	 shared_ptr<Track> addTrack(Description::Media description);
 //	void onTrack(std::function<void(std::shared_ptr<Track> track)> callback);
+        
+        void processLocalDescription(Description *description);
+        
+        bool changeSignalingState(SignalingState newState);
+        
+        string localBundleMid();
 
 	void onLocalDescription(std::function<void(Description description)> callback);
 	void onLocalCandidate(std::function<void(Candidate candidate)> callback);
@@ -117,6 +132,9 @@ public:
 
 	void resetCallbacks();
 	CertificateFingerprint remoteFingerprint();
+        
+        shared_ptr<Certificate> mCertificate;
+
 
 	// Stats
 	void clearStats();
@@ -163,6 +181,10 @@ public:
 
         void iceGathering(IceTransport::GatheringState state);
                
+        
+        std::unordered_map<uint16_t, DataChannel*> mDataChannels; // by stream ID
+	std::vector<DataChannel*> mUnassignedDataChannels;
+	std::mutex mDataChannelsMutex;
         
 };
 

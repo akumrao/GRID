@@ -79,7 +79,7 @@ private:
 
         int mTurnServersAdded;
         
-        Description &description;
+        Description description;
         
 };
 

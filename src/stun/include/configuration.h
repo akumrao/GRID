@@ -44,6 +44,8 @@ enum class CertificateType {
 
 enum class TransportPolicy { All = RTC_TRANSPORT_POLICY_ALL, Relay = RTC_TRANSPORT_POLICY_RELAY };
 
+const size_t DEFAULT_LOCAL_MAX_MESSAGE_SIZE = 256 * 1024;
+        
 struct RTC_CPP_EXPORT Configuration {
 	// ICE settings
 	std::vector<IceServer> iceServers;
@@ -67,7 +69,7 @@ struct RTC_CPP_EXPORT Configuration {
 	size_t mtu;
 
 	// Local maximum message size for Data Channels
-	size_t maxMessageSize;
+	size_t maxMessageSize{DEFAULT_LOCAL_MAX_MESSAGE_SIZE};
 
 	// Certificates and private keys
 	string certificatePemFile;

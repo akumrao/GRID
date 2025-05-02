@@ -452,32 +452,32 @@ bool Description::hasAudioOrVideo() const {
 	return false;
 }
 
-//bool Description::hasMid(const string& mid) const {
-//	for (const auto &entry : mEntries)
-//		if (entry->mid() == mid)
-//			return true;
-//
-//	return false;
-//}
+bool Description::hasMid(const string& mid)  {
+	for (const auto &entry : mEntries)
+		if (entry->mid() == mid)
+			return true;
+
+	return false;
+}
 
 //int Description::addMedia(Media media) {
 //	mEntries.emplace_back(std::make_shared<Media>(std::move(media)));
 //	return int(mEntries.size()) - 1;
 //}
 //
-//int Description::addMedia(Application application) {
-//	removeApplication();
-//	mApplication = std::make_shared<Application>(std::move(application));
-//	mEntries.emplace_back(mApplication);
-//	return int(mEntries.size()) - 1;
-//}
+int Description::addMedia(Application application) {
+	removeApplication();
+	mApplication = std::make_shared<Application>(std::move(application));
+	mEntries.emplace_back(mApplication);
+	return int(mEntries.size()) - 1;
+}
 
-//int Description::addApplication(string mid) { return addMedia(Application(std::move(mid))); }
-//
-//const Description::Application *Description::application() const { return mApplication.get(); }
-//
-//Description::Application *Description::application() { return mApplication.get(); }
-//
+int Description::addApplication(string mid) { return addMedia(Application(std::move(mid))); }
+
+const Description::Application *Description::application() const { return mApplication.get(); }
+
+Description::Application *Description::application() { return mApplication.get(); }
+
 //int Description::addVideo(string mid, Direction dir) {
 //	return addMedia(Video(std::move(mid), dir));
 //}
@@ -486,10 +486,10 @@ bool Description::hasAudioOrVideo() const {
 //	return addMedia(Audio(std::move(mid), dir));
 //}
 //
-//void Description::clearMedia() {
-//	mEntries.clear();
-//	mApplication.reset();
-//}
+void Description::clearMedia() {
+	mEntries.clear();
+	mApplication.reset();
+}
 
 //variant<Description::Media *, Description::Application *> Description::media(int index) {
 //	if (index < 0 || index >= int(mEntries.size()))
@@ -533,7 +533,7 @@ bool Description::hasAudioOrVideo() const {
 //	}
 //}
 //
-//int Description::mediaCount() const { return int(mEntries.size()); }
+int Description::mediaCount() const { return int(mEntries.size()); }
 
 Description::Entry::Entry(const string &mline, string mid, Direction dir)
     : mMid(std::move(mid)), mDirection(dir) {

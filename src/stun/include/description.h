@@ -271,18 +271,18 @@ public:
 
 	bool hasApplication() const;
 	bool hasAudioOrVideo() const;
-//	bool hasMid(const string& mid) const;
+	bool hasMid(const string& mid);
 //
 //	int addMedia(Media media);
-//	int addMedia(Application application);
-//	int addApplication(string mid = "data");
+	int addMedia(Application application);
+	int addApplication(string mid = "data");
 //	int addVideo(string mid = "video", Direction dir = Direction::SendOnly);
 //	int addAudio(string mid = "audio", Direction dir = Direction::SendOnly);
-//	void clearMedia();
+	void clearMedia();
 //
 //	variant<Media *, Application *> media(int index);
 //	variant<const Media *, const Application *> media(int index) const;
-//	int mediaCount() const;
+	int mediaCount() const;
 
 	const Application *application() const;
 	Application *application();

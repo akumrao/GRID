@@ -299,9 +299,9 @@ int main(int argc, char **argv) try {
     cout << "The local ID is: " << localId << endl;
     
     
-   // std::string id ="server";
+    std::string id ="server";
 
-   // clients.emplace(id, createPeerConnection(config,  id));
+   clients.emplace(id, createPeerConnection(config,  id));
     
 
 //    auto ws = make_shared<WebSocket>();

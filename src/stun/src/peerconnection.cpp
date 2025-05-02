@@ -93,6 +93,105 @@ Description PeerConnection::remoteDescription() const {
 //	return local && local->hasAudioOrVideo();
 //}
 
+
+
+void PeerConnection::processLocalDescription(Description *description) {
+    
+    	const uint16_t localSctpPort = 5000;
+        //const size_t DEFAULT_LOCAL_MAX_MESSAGE_SIZE = 256 * 1024;
+	const size_t localMaxMessageSize = mConfig.maxMessageSize;//(DEFAULT_LOCAL_MAX_MESSAGE_SIZE);
+        
+        
+        description->clearMedia();
+        
+	uint16_t remoteSctpPort;
+//	if (auto remote = remoteDescription())
+//		remoteSctpPort = remote->sctpPort();
+
+//	//std::lock_guard lock(mLocalDescriptionMutex);
+//	mLocalDescription.emplace(std::move(description));
+        
+        
+        	// Add application for data channels
+        if (!description->hasApplication())
+        {
+                    //std::shared_lock<std::mutex> lock(mDataChannelsMutex);
+                    if (!mDataChannels.size() || !mUnassignedDataChannels.size()) {
+                            // Prevents mid collision with remote or local tracks
+                            unsigned int m = 0;
+                            while (description->hasMid(std::to_string(m)))
+                                    ++m;
+
+                            Description::Application app(std::to_string(m));
+                            app.setSctpPort(localSctpPort);
+                            app.setMaxMessageSize(localMaxMessageSize);
+
+                            SDebug << "Adding application to local description, mid=\"" << app.mid()      << "\"";
+
+                            description->addMedia(std::move(app));
+                    }
+        }
+
+        // There might be no media at this point, for instance if the user deleted tracks
+        if (description->mediaCount() == 0)
+                throw std::runtime_error("No DataChannel or Track to negotiate");
+
+
+	// Set local fingerprint (wait for certificate if necessary)
+	description->setFingerprint(mCertificate->fingerprint());
+
+	STrace << "Issuing local description: " << description;
+
+
+	//updateTrackSsrcCache(description);
+
+	{
+		// Set as local description
+		std::lock_guard<std::recursive_mutex> lock(mLocalDescriptionMutex);
+
+		std::vector<Candidate> existingCandidates;
+		if (mLocalDescription.candidates_count) {
+			existingCandidates = mLocalDescription.extractCandidates();
+			//mCurrentLocalDescription.emplace(std::move(*mLocalDescription));
+		}
+
+		//mLocalDescription.emplace(description);
+		mLocalDescription.addCandidates(std::move(existingCandidates));
+	}
+
+//	mProcessor.enqueue(&PeerConnection::trigger<Description>, shared_from_this(),
+//	                   &localDescriptionCallback, std::move(description));
+
+//	// Reciprocated tracks might need to be open
+//	if (auto dtlsTransport = std::atomic_load(&mDtlsTransport);
+//	    dtlsTransport && dtlsTransport->state() == Transport::State::Connected)
+//		mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
+                     
+         //   description->setFingerprint(mCertificate.get()->fingerprint());
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+	//description->setFingerprint(mCertificate->fingerprint());
+	//description->setSctpPort(remoteSctpPort.value_or(DEFAULT_SCTP_PORT));
+	//description->setMaxMessageSize(LOCAL_MAX_MESSAGE_SIZE);
+
+	mLocalDescriptionCallback(*description);
+}
+
+
+string PeerConnection::localBundleMid() {
+	//std::lock_guard lock(mLocalDescriptionMutex);
+	return  mLocalDescription.bundleMid();
+}
+
+
 void PeerConnection::setLocalDescription(Description::Type type) {
 	STrace << "Setting local description, type=" << Description::typeToString(type);
 
@@ -169,13 +268,27 @@ void PeerConnection::setLocalDescription(Description::Type type) {
 
 	Description *local = iceTransport->getLocalDescription(type);
         
-//	processLocalDescription(std::move(local));
-//
-//	changeSignalingState(newSignalingState);
-//
-//	if (mGatheringState == GatheringState::New) {
-//		iceTransport->gatherLocalCandidates(localBundleMid());
-//	}
+	processLocalDescription(local);
+
+	changeSignalingState(newSignalingState);
+
+        if (mGatheringState == GatheringState::New) {
+		iceTransport->gatherLocalCandidates(localBundleMid());
+	}
+}
+
+
+bool PeerConnection::changeSignalingState(SignalingState newState) {
+	if (mSignalingState.exchange(newState) == newState)
+		return false;
+
+	std::ostringstream s;
+	s << newState;
+ 	SInfo << "Changed signaling state to " << s.str();
+	//mProcessor.enqueue(&PeerConnection::trigger<SignalingState>, shared_from_this(),
+	//				   &signalingStateChangeCallback, newState);
+
+	return true;
 }
 
 void PeerConnection::setRemoteDescription(Description description) {
