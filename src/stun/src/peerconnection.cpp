@@ -33,8 +33,17 @@ PeerConnection::PeerConnection( Configuration &config): mConfig(config)
        
 	STrace << "Creating PeerConnection";
 
-       // mLocalDescription = new Description();
-        //mRemoteDescription = new Description();
+    	if (config.certificatePemFile.size() && config.keyPemFile.size()) {
+//		std::promise<certificate_ptr> cert;
+//		cert.set_value(std::make_shared<Certificate>(
+//		    config.certificatePemFile->find(PemBeginCertificateTag) != string::npos
+//		        ? Certificate::FromString(*config.certificatePemFile, *config.keyPemFile)
+//		        : Certificate::FromFile(*config.certificatePemFile, *config.keyPemFile,
+//		                                config.keyPemPass.value_or(""))));
+		//mCertificate = cert.get_future();
+	} else  {
+		mCertificate = make_certificate(config.certificateType);
+	} 
         
 	if (config.portRangeEnd && config.portRangeBegin > config.portRangeEnd)
 		throw std::invalid_argument("Invalid port range");
@@ -139,8 +148,12 @@ void PeerConnection::processLocalDescription(Description *description) {
 
 	// Set local fingerprint (wait for certificate if necessary)
 	description->setFingerprint(mCertificate->fingerprint());
+        
+       
+        std::cout << "Issuing local description: " << description->generateSdp("\r\n") << std::endl << std::flush;
+        
 
-	STrace << "Issuing local description: " << description;
+	STrace << "Issuing local description: " << description->generateSdp("\r\n");
 
 
 	//updateTrackSsrcCache(description);
@@ -171,18 +184,8 @@ void PeerConnection::processLocalDescription(Description *description) {
         
         
         
-        
-        
-        
-        
-        
-        
-        
-	//description->setFingerprint(mCertificate->fingerprint());
-	//description->setSctpPort(remoteSctpPort.value_or(DEFAULT_SCTP_PORT));
-	//description->setMaxMessageSize(LOCAL_MAX_MESSAGE_SIZE);
 
-	mLocalDescriptionCallback(*description);
+	//mLocalDescriptionCallback(*description);
 }
 
 

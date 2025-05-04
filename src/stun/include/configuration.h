@@ -27,6 +27,7 @@ struct RTC_CPP_EXPORT IceServer {
 	          RelayType relayType_ = RelayType::TurnUdp);
 
 	string hostname;
+        string ip;
 	uint16_t port;
 	Type type;
 	string username;

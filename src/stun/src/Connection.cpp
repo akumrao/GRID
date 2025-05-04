@@ -1,7 +1,8 @@
 #include <Connection.h>
 #include <string.h>
 
-
+namespace rtc
+{
 static void on_udp_data(  const char* data, uint32_t nbytes) 
 {
   stun::Message msg;
@@ -79,16 +80,21 @@ void Transport::resolveStunServer( )
     for( IceServer &icesv:  mConfig.iceServers  )
     {
         SInfo << "resolve " <<  icesv.hostname << ":" << icesv.port;
-        resolve(icesv.hostname, icesv.port, Application::uvGetLoop());
+        resolve(icesv.hostname, icesv.port, Application::uvGetLoop(), &icesv);
         //break;
     }
    
 }
  
  
-void Transport::cbDnsResolve(addrinfo* res, std::string ip)
+void Transport::cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr)
 {
     
-    SInfo <<  "ip " <<  ip;
+    IceServer *icesv = (IceServer *)ptr;
+    icesv->ip = ip;
+
+     SInfo <<  "IceServer" <<  ip << ":" << port  ;
+}
+
 
 }

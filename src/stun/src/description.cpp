@@ -13,7 +13,9 @@
 #include <random>
 #include <sstream>
 #include <unordered_map>
+#include <base/logger.h>
 
+using namespace base;
 using std::chrono::system_clock;
 
 namespace {
@@ -106,38 +108,34 @@ void Description::readSdp(const string &sdp, Type type, Role role)
 				// RFC 8122: The fingerprint attribute may be either a session-level or a
 				// media-level SDP attribute. If it is a session-level attribute, it applies to all
 				// TLS sessions for which no media-level fingerprint attribute is defined.
-//				if (!mFingerprint || index == 0) { // first media overrides session-level
-//					auto fingerprintExploded = utils::explode(string(value), ' ');
-//					if (fingerprintExploded.size() != 2) {
-//						PLOG_WARNING << "Unknown SDP fingerprint format: " << value;
-//						continue;
-//					}
-//
-//					auto first = fingerprintExploded.at(0);
-//					std::transform(first.begin(), first.end(), first.begin(),
-//					               [](char c) { return char(std::tolower(c)); });
-//
-//					std::optional<CertificateFingerprint::Algorithm> fingerprintAlgorithm;
-//
-//					for (auto a : std::array<CertificateFingerprint::Algorithm, 5>{
-//					         CertificateFingerprint::Algorithm::Sha1,
-//					         CertificateFingerprint::Algorithm::Sha224,
-//					         CertificateFingerprint::Algorithm::Sha256,
-//					         CertificateFingerprint::Algorithm::Sha384,
-//					         CertificateFingerprint::Algorithm::Sha512}) {
-//						if (first == CertificateFingerprint::AlgorithmIdentifier(a)) {
-//							fingerprintAlgorithm = a;
-//							break;
-//						}
-//					}
-//
-//					if (fingerprintAlgorithm.has_value()) {
-//						setFingerprint(CertificateFingerprint{
-//						    fingerprintAlgorithm.value(), std::move(fingerprintExploded.at(1))});
-//					} else {
-//						PLOG_WARNING << "Unknown certificate fingerprint algorithm: " << first;
-//					}
-//				}
+				if (!mFingerprint.value.size() || index == 0) { // first media overrides session-level
+					auto fingerprintExploded = utils::explode(string(pr.second), ' ');
+					if (fingerprintExploded.size() != 2) {
+						SWarn << "Unknown SDP fingerprint format: " << pr.second;
+						continue;
+					}
+
+					auto first = fingerprintExploded.at(0);
+					std::transform(first.begin(), first.end(), first.begin(),
+					               [](char c) { return char(std::tolower(c)); });
+
+					CertificateFingerprint::Algorithm fingerprintAlgorithm;
+
+					for (auto a : std::array<CertificateFingerprint::Algorithm, 5>{
+					         CertificateFingerprint::Algorithm::Sha1,
+					         CertificateFingerprint::Algorithm::Sha224,
+					         CertificateFingerprint::Algorithm::Sha256,
+					         CertificateFingerprint::Algorithm::Sha384,
+					         CertificateFingerprint::Algorithm::Sha512}) {
+						if (first == CertificateFingerprint::AlgorithmIdentifier(a)) {
+							fingerprintAlgorithm = a;
+							break;
+						}
+					}
+
+                                    setFingerprint(CertificateFingerprint{
+                                        fingerprintAlgorithm, std::move(fingerprintExploded.at(1))});
+				}
 			} else if (pr.first == "ice-ufrag") {
 				// RFC 8839: The "ice-pwd" and "ice-ufrag" attributes can appear at either the
 				// session-level or media-level. When present in both, the value in the media-level
@@ -310,44 +308,43 @@ string Description::generateSdp(const string& eol) const {
 	sdp << "a=msid-semantic:WMS *" << eol;
 	if (!mIceOptions.empty())
 		sdp << "a=ice-options:" << utils::implode(mIceOptions, ',') << eol;
-//	if (mFingerprint)
-//		sdp << "a=fingerprint:"
-//		    << CertificateFingerprint::AlgorithmIdentifier(mFingerprint->algorithm) << " "
-//		    << mFingerprint->value << eol;
+	if (mFingerprint.value.size())
+		sdp << "a=fingerprint:"
+		    << CertificateFingerprint::AlgorithmIdentifier(mFingerprint.algorithm) << " "
+		    << mFingerprint.value << eol;
 
 	for (const auto &attr : mAttributes)
 		sdp << "a=" << attr << eol;
 
 	auto cand = defaultCandidate();
-//	const string addr = cand && cand->isResolved()
-//	                        ? (string(cand->family() == Candidate::Family::Ipv6 ? "IP6" : "IP4") +
-//	                           " " + *cand->address())
-//	                        : "IP4 0.0.0.0";
-//	const uint16_t port =
-//	    cand && cand->isResolved() ? *cand->port() : 9; // Port 9 is the discard protocol
+	const string addr =  cand.isResolved()
+	                        ? (string(cand.family() == Candidate::Family::Ipv6 ? "IP6" : "IP4") +
+	                           " " + cand.address())
+	                        : "IP4 0.0.0.0";
+	const uint16_t port =   cand.isResolved() ? cand.port() : 9; // Port 9 is the discard protocol
 
 	// Entries
 	bool first = true;
-//	for (const auto &entry : mEntries) {
-//		sdp << entry->generateSdp(eol, addr, port);
-//
-//		// RFC 8829: Attributes that SDP permits to be at either the session level or the media level
-//		// SHOULD generally be at the media level even if they are identical.
-//		sdp << "a=setup:" << mRole << eol;
-//		if (mIceUfrag)
-//			sdp << "a=ice-ufrag:" << *mIceUfrag << eol;
-//		if (mIcePwd)
-//			sdp << "a=ice-pwd:" << *mIcePwd << eol;
-//
-//		if (!entry->isRemoved() && std::exchange(first, false)) {
-//			// Candidates
-//			for (const auto &candidate : mCandidates)
-//				sdp << string(candidate) << eol;
-//
-//			if (mEnded)
-//				sdp << "a=end-of-candidates" << eol;
-//		}
-//	}
+	for (const auto &entry : mEntries) {
+		sdp << entry->generateSdp(eol, addr, port);
+
+		// RFC 8829: Attributes that SDP permits to be at either the session level or the media level
+		// SHOULD generally be at the media level even if they are identical.
+		sdp << "a=setup:" << mRole << eol;
+		if (mIceUfrag.size())
+			sdp << "a=ice-ufrag:" << mIceUfrag << eol;
+		if (mIcePwd.size())
+			sdp << "a=ice-pwd:" << mIcePwd << eol;
+
+		if (!entry->isRemoved() && std::exchange(first, false)) {
+			// Candidates
+			for (const auto &candidate : mCandidates)
+				sdp << string(candidate) << eol;
+
+			if (mEnded)
+				sdp << "a=end-of-candidates" << eol;
+		}
+	}
 
 	return sdp.str();
 }
@@ -362,12 +359,11 @@ string Description::generateApplicationSdp(const string& eol) const {
 	sdp << "t=0 0" << eol;
 
 	auto cand = defaultCandidate();
-//	const string addr = cand && cand->isResolved()
-//	                        ? (string(cand->family() == Candidate::Family::Ipv6 ? "IP6" : "IP4") +
-//	                           " " + *cand->address())
-////	                        : "IP4 0.0.0.0";
-//	const uint16_t port =
-//	    cand && cand->isResolved() ? *cand->port() : 9; // Port 9 is the discard protocol
+	const string addr =  cand.isResolved()
+	                        ? (string(cand.family() == Candidate::Family::Ipv6 ? "IP6" : "IP4") +
+	                           " " + cand.address())
+	                        : "IP4 0.0.0.0";
+	const uint16_t port =  cand.isResolved() ? cand.port() : 9; // Port 9 is the discard protocol
 
 	// Session-level attributes
 	sdp << "a=msid-semantic:WMS *" << eol;
@@ -379,7 +375,7 @@ string Description::generateApplicationSdp(const string& eol) const {
 
 	// Application
 	auto app = mApplication ? mApplication : std::make_shared<Application>();
-	//sdp << app->generateSdp(eol, addr, port);
+	sdp << app->generateSdp(eol, addr, port);
 
 	// Media-level attributes
 	sdp << "a=setup:" << mRole << eol;
@@ -387,10 +383,10 @@ string Description::generateApplicationSdp(const string& eol) const {
 		sdp << "a=ice-ufrag:" << mIceUfrag << eol;
 	if (mIcePwd.length())
 		sdp << "a=ice-pwd:" << mIcePwd << eol;
-//	if (mFingerprint)
-//		sdp << "a=fingerprint:"
-//		    << CertificateFingerprint::AlgorithmIdentifier(mFingerprint->algorithm) << " "
-//		    << mFingerprint->value << eol;
+	if (mFingerprint.value.size())
+		sdp << "a=fingerprint:"
+		    << CertificateFingerprint::AlgorithmIdentifier(mFingerprint.algorithm) << " "
+		    << mFingerprint.value << eol;
 
 	// Candidates
 	for (const auto &candidate : mCandidates)
@@ -407,11 +403,11 @@ Candidate Description::defaultCandidate() const {
 	Candidate result;
 	for (const auto &c : mCandidates) {
 		if (c.type() == Candidate::Type::Host) {
-//			if (!result ||
-//			    (result->family() == Candidate::Family::Ipv6 &&
-//			     c.family() == Candidate::Family::Ipv4) ||
-//			    (result->family() == c.family() && result->priority() < c.priority()))
-//				result.emplace(c);
+			if (
+			    (result.family() == Candidate::Family::Ipv6 &&
+			     c.family() == Candidate::Family::Ipv4) ||
+			    (result.family() == c.family() && result.priority() < c.priority()))
+				result = c;
 		}
 	}
 	return result;
@@ -848,7 +844,7 @@ Description::Application Description::Application::reciprocate() const {
 
 void Description::Application::setSctpPort(uint16_t port) { mSctpPort = port; }
 
-//void Description::Application::hintSctpPort(uint16_t port) { mSctpPort = mSctpPort.value_or(port); }
+void Description::Application::hintSctpPort(uint16_t port) { mSctpPort = port; }
 
 void Description::Application::setMaxMessageSize(size_t size) { mMaxMessageSize = size; }
 

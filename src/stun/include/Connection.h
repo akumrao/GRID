@@ -1,3 +1,7 @@
+#ifndef CONNEC_TRANSPORT_H
+#define CONNEC_TRANSPORT_H
+
+
 /* This file is part of mediaserver. A webrtc sfu server.
  * Copyright (C) 2018 Arvind Umrao <akumrao@yahoo.com> & Herman Umrao<hermanumrao@gmail.com>
  *
@@ -30,8 +34,11 @@
 using std::endl;
 using namespace base;
 using namespace net;
-using namespace rtc;
+///using namespace rtc;
 //using namespace base::test;
+
+namespace rtc {
+    
 
 class testUdpServer: public UdpServer::Listener {
 public:
@@ -151,8 +158,13 @@ public:
             
         }
         void resolveStunServer();
-        virtual void cbDnsResolve(addrinfo* res, std::string ip) override;
+        void cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr) override;
         
         Configuration &mConfig;
      
  };
+ 
+ 
+}
+ 
+ #endif

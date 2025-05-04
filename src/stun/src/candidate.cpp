@@ -58,11 +58,13 @@ Candidate::Candidate(string candidate) : Candidate() {
 		parse(std::move(candidate));
 }
 
-Candidate::Candidate(string candidate, string mid) : Candidate() {
+Candidate::Candidate(string candidate, string mid) : Candidate()
+{
 	if (!candidate.empty())
 		parse(std::move(candidate));
-	// (!mid.empty())
-	//	mMid.emplace(std::move(mid));
+        
+	if(!mid.empty())
+		mMid = mid;
 }
 
 void Candidate::parse(string candidate) {
@@ -122,8 +124,8 @@ void Candidate::parse(string candidate) {
 }
 
 void Candidate::hintMid(string mid) {
-	//if (!mMid.length())
-	//	mMid.emplace(std::move(mid));
+	if (!mMid.length())
+		mMid = std::move(mid);
 }
 
 void Candidate::changeAddress(string addr) { changeAddress(std::move(addr), mService); }
@@ -216,7 +218,7 @@ string Candidate::candidate() const {
 	return oss.str();
 }
 
-//string Candidate::mid() const { return mMid.value_or("0"); }
+string Candidate::mid() const { return mMid; }
 
 Candidate::operator string() const {
 	std::ostringstream line;
@@ -236,13 +238,13 @@ bool Candidate::isResolved() const { return mFamily != Family::Unresolved; }
 
 Candidate::Family Candidate::family() const { return mFamily; }
 
-//string Candidate::address() const {
-//	return isResolved() ? std::make_optional(mAddress) : nullopt;
-//}
-//
-//uint16_t Candidate::port() const {
-//	return isResolved() ? std::make_optional(mPort) : nullopt;
-//}
+string Candidate::address() const {
+	return isResolved() ? mAddress : "";
+}
+
+uint16_t Candidate::port() const {
+	return isResolved() ? mPort : 0;
+}
 
 std::ostream &operator<<(std::ostream &out, const Candidate &candidate) {
 	return out << string(candidate);

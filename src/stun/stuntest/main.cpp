@@ -13,6 +13,7 @@
 #include <Agent.h>
 #include "configuration.h"
 #include "peerconnection.h"
+#include "tls.h"
 
 //#include <udpClient.h>
 
@@ -28,6 +29,11 @@ int main()
 {
 
     Logger::instance().add(new ConsoleChannel("debug", Level::Trace));
+    
+    
+    openssl::init();
+
+    Application app;
 
     Configuration config1;
     config1.iceTransportPolicy = TransportPolicy::All; // force relay
@@ -142,7 +148,7 @@ int main()
 
 
 
-    Application app;
+    
     
 
     

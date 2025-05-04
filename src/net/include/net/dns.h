@@ -30,16 +30,19 @@ namespace base {
 
         struct GetAddrInfoReq {
 
-            virtual void cbDnsResolve(addrinfo* res, std::string ip) {
+            virtual void cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr) {
                // LTrace("GetAddrInfoReq::cbDnsResolve");
             }
 
     
             static void on_resolved(uv_getaddrinfo_t* handle, int status, struct addrinfo* res) ;
 
-            void resolve(const std::string& host, int port, uv_loop_t * loop = Application::uvGetLoop()) ;
+            void resolve(const std::string& host, int port, uv_loop_t * loop = Application::uvGetLoop(), void* ptr=nullptr) ;
 
             uv_getaddrinfo_t *req;
+            
+            void* clsPtr{nullptr}; 
+
         };
 
     } // namespace net

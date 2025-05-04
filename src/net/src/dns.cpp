@@ -12,19 +12,20 @@ namespace base {
                 //struct getaddrinfo_req* req;
                 
                 GetAddrInfoReq *obj = (GetAddrInfoReq*) handle->data;
-                
+               
                 if (status < 0 || !res) {
-                    LTrace(  "getaddrinfo callback error ", uv_err_name(status));
+                    LError(  "getaddrinfo callback error ", uv_err_name(status));
                     
                     if(res)
                     uv_freeaddrinfo(res);
                     delete handle;
                     
-                    obj->cbDnsResolve(nullptr, "");
+                    //obj->cbDnsResolve(nullptr, "",0);
                     return;
                 }
                 
                 char addr[40] = {'\0'};
+                int port =0; 
 
                 struct addrinfo* start =  res;
                 
@@ -34,28 +35,37 @@ namespace base {
                     if (res->ai_family == AF_INET) {
                         // ipv4
                         //char c[17] = { '\0' };
-                        uv_ip4_name((sockaddr_in*)(res->ai_addr), addr, 16);
+                        
+                        sockaddr_in* tmp  =   (sockaddr_in*) res->ai_addr;
+                        port= htons(tmp->sin_port);
+                        uv_ip4_name(tmp, addr, 16);
+                        
+        
+                        
                     } else if (res->ai_family == AF_INET6) {
                         // ipv6
                         //char c[40] = { '\0' };
-                        uv_ip6_name((sockaddr_in6*)(res->ai_addr), addr, 39);
+                        sockaddr_in6* tmp  =   (sockaddr_in6*) res->ai_addr;
+                        port= htons(tmp->sin6_port);
+                        uv_ip6_name(tmp, addr, 39);
                     }
                     LTrace("address ",  addr);
                     // uv_tcp_connect(connect_req, socket, (const struct sockaddr*) res->ai_addr, on_connect);
 
-                    obj->cbDnsResolve(res, addr);
+                    obj->cbDnsResolve(res, addr, port, obj->clsPtr);
                 }
                 
 
-                uv_freeaddrinfo(res);
+                uv_freeaddrinfo(start);
                 
                 delete handle;
 
             }
 
-            void GetAddrInfoReq::resolve(const std::string& host, int port, uv_loop_t * loop) {
+            void GetAddrInfoReq::resolve(const std::string& host, int port, uv_loop_t * loop, void* ptr) {
 
                 req = new uv_getaddrinfo_t; 
+                this->clsPtr =ptr;
                 req->data = this;
                 int r;
 

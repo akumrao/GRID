@@ -42,13 +42,14 @@ void IceTransport::Cleanup() {
 	// Dummy
 }
 
-IceTransport::IceTransport(const Configuration &config,  Description &description, candidate_callback candidateCallback,
+IceTransport::IceTransport( Configuration &config,  Description &description, candidate_callback candidateCallback,
                            state_callback stateChangeCallback,
                            gathering_state_callback gatheringStateChangeCallback): description(description),
     
       mMid("0"), mGatheringState(GatheringState::New),
       mCandidateCallback(std::move(candidateCallback)),
-      mGatheringStateChangeCallback(std::move(gatheringStateChangeCallback))
+      mGatheringStateChangeCallback(std::move(gatheringStateChangeCallback)),
+      Transport(config)  
       {
 
 	SDebug << "Initializing ICE transport (libjuice)";
@@ -282,6 +283,7 @@ bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
 void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> additionalIceServers) {
 	mMid = std::move(mid);
 
+         resolveStunServer( );
 	//std::shuffle(additionalIceServers.begin(), additionalIceServers.end(), utils::random_engine());
 	for (const auto &server : additionalIceServers)
 		addIceServer(server);
@@ -392,5 +394,14 @@ void IceTransport::GatheringDoneCallback(juice_agent_t *, void *user_ptr) {
 
 
 
+
+void IceTransport::cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr)
+{
+ 
+    SInfo <<  "IceServer" <<  ip << ":" << port  ;
+   
+    IceServer *icesv = (IceServer *)ptr;
+    icesv->ip = ip;
+}
 
 } // namespace rtc::impl

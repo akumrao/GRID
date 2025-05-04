@@ -8,7 +8,7 @@
 #include "configuration.h"
 #include "description.h"
 //#include "peerconnection.h"
-
+#include <Connection.h>
 
 #include <atomic>
 #include <chrono>
@@ -19,7 +19,7 @@ namespace rtc {
 	
 
         
-class IceTransport {
+class IceTransport : public Transport {
 public:
 	static void Init();
 	static void Cleanup();
@@ -32,7 +32,7 @@ public:
 	using candidate_callback = std::function<void(const Candidate &candidate)>;
 	using gathering_state_callback = std::function<void(GatheringState state)>;
 
-	IceTransport(const Configuration &config, Description &description,  candidate_callback candidateCallback,
+	IceTransport( Configuration &config, Description &description,  candidate_callback candidateCallback,
 	             state_callback stateChangeCallback,
 	             gathering_state_callback gatheringStateChangeCallback);
 	~IceTransport();
@@ -68,6 +68,8 @@ private:
         
         int ice_generate_sdp(Description *description,  char *buffer, size_t size);
         int ice_generate_candidate_sdp(const ice_candidate_t *candidate, char *buffer, size_t size);
+        
+        void cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr) ;
 
 	Description::Role mRole;
 	string mMid;
