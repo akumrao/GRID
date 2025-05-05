@@ -9,8 +9,8 @@
 #include <iostream>
 #include <random>
 #include <sstream>
-
 #include "base/logger.h"
+#include <Agent.h>
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -42,9 +42,9 @@ void IceTransport::Cleanup() {
 	// Dummy
 }
 
-IceTransport::IceTransport( Configuration &config,  Description &description, candidate_callback candidateCallback,
+IceTransport::IceTransport( Configuration &config,  Description &localdescription, candidate_callback candidateCallback,
                            state_callback stateChangeCallback,
-                           gathering_state_callback gatheringStateChangeCallback): description(description),
+                           gathering_state_callback gatheringStateChangeCallback): localDes(localdescription),
     
       mMid("0"), mGatheringState(GatheringState::New),
       mCandidateCallback(std::move(candidateCallback)),
@@ -224,14 +224,14 @@ Description *IceTransport::getLocalDescription(Description::Type type)  {
 	char sdp[4096];
         
          
-        random_str64(description.ice_ufrag, 4 + 1);
-        random_str64(description.ice_pwd, 22 + 1);
-        description.ice_lite = false;
-        description.candidates_count = 0;
-        description.finished = false;
-        SInfo << "Created local description: ufrag= "<<  description.ice_ufrag  <<  " pwd "  <<   description.ice_pwd;
+        random_str64(localDes.ice_ufrag, 4 + 1);
+        random_str64(localDes.ice_pwd, 22 + 1);
+        localDes.ice_lite = false;
+        localDes.candidates_count = 0;
+        localDes.finished = false;
+        SInfo << "Created local description: ufrag= "<<  localDes.ice_ufrag  <<  " pwd "  <<   localDes.ice_pwd;
         
-        if (ice_generate_sdp(&description, sdp, 4096) < 0)
+        if (ice_generate_sdp(&localDes, sdp, 4096) < 0)
         {
             throw std::runtime_error("Failed to generate local SDP");
         }
@@ -240,11 +240,11 @@ Description *IceTransport::getLocalDescription(Description::Type type)  {
 	// setup:actpass.
 	// See https://www.rfc-editor.org/rfc/rfc5763.html#section-5
         
-        description.readSdp( string(sdp), type, type == Description::Type::Offer ? Description::Role::ActPass : mRole);
-	description.addIceOption("trickle");
+        localDes.readSdp( string(sdp), type, type == Description::Type::Offer ? Description::Role::ActPass : mRole);
+	localDes.addIceOption("trickle");
         
         
-	return &description;
+	return &localDes;
 }
 
 void IceTransport::setRemoteDescription(const Description *description) {
@@ -282,8 +282,20 @@ bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
 
 void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> additionalIceServers) {
 	mMid = std::move(mid);
+        
+        
+        static int inc = 7000;
+        Agent agent( localDes);
 
-         resolveStunServer( );
+        agent.getInterfaces(++inc);
+
+        socket = new testUdpServer("0.0.0.0", inc );
+
+        socket->start();
+    
+    
+
+        resolveStunServer( );
 	//std::shuffle(additionalIceServers.begin(), additionalIceServers.end(), utils::random_engine());
 	for (const auto &server : additionalIceServers)
 		addIceServer(server);
@@ -402,6 +414,51 @@ void IceTransport::cbDnsResolve(addrinfo* res, std::string ip, int port,  void* 
    
     IceServer *icesv = (IceServer *)ptr;
     icesv->ip = ip;
+    
+   StartAgent( icesv->ip,  icesv->port);
 }
+
+void IceTransport::StartAgent( std::string &stunip, uint16_t &stunport)
+{
+    
+
+        /* write */
+    stun::Message response(stun::STUN_BINDING_REQUEST);
+    response.setTransactionID();
+    response.addAttribute(new stun::Software("libjuice"));
+    response.addAttribute(new stun::Fingerprint());
+
+
+    stun::Writer writer;
+    writer.writeMessage(&response, "");
+
+    printf("---------------\n");
+    for (size_t i = 0; i < writer.buffer.size(); ++i) {
+        if (i == 0 || i % 4 == 0) {
+            printf("\n");
+        }
+        printf("%02X ", writer.buffer[i]);
+    }
+    printf("\n---------------\n");
+
+
+    socket->send(&writer.buffer[0], writer.buffer.size(), stunip, stunport);
+
+//
+
+    //    tesTcpServer tsvsocket;
+    //    tsvsocket.start("0.0.0.0", 6000);
+    //    
+    //    
+    //    tesTcpClient socket;
+    //    socket.start(STUN_SERVER_IP , STUN_SERVER_PORT);
+    //    
+    //    socket.sendit( &writer.buffer[0], writer.buffer.size());    
+
+    
+}
+
+
+
 
 } // namespace rtc::impl

@@ -18,10 +18,13 @@ namespace rtc {
 	ICE_CANDIDATE_TYPE_RELAYED,
 } ice_candidate_type_t;
 
-typedef struct addr_record {
-	struct sockaddr_storage addr;
-	socklen_t len;
-} addr_record_t;
+
+#define ICE_CANDIDATE_PREF_HOST 126
+#define ICE_CANDIDATE_PREF_PEER_REFLEXIVE 110
+#define ICE_CANDIDATE_PREF_SERVER_REFLEXIVE 100
+#define ICE_CANDIDATE_PREF_RELAYED 0
+
+
 
  
 typedef struct ice_candidate {
@@ -32,7 +35,7 @@ typedef struct ice_candidate {
 	char transport[32 + 1];
 	char hostname[256 + 1];
 	char service[32 + 1];
-	addr_record_t resolved;
+
 } ice_candidate_t;    
     
 class RTC_CPP_EXPORT Candidate {

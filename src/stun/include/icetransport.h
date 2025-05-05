@@ -49,8 +49,6 @@ public:
 
 
 
-
-
 	bool getSelectedCandidatePair(Candidate *local, Candidate *remote);
 
 private:
@@ -71,6 +69,8 @@ private:
         
         void cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr) ;
 
+        void StartAgent( std::string &stunip, uint16_t &stunport);
+
 	Description::Role mRole;
 	string mMid;
 	std::chrono::milliseconds mTrickleTimeout;
@@ -81,8 +81,8 @@ private:
 
         int mTurnServersAdded;
         
-        Description description;
-        
+        Description &localDes;
+        testUdpServer *socket{nullptr};
 };
 
 } // namespace rtc::impl

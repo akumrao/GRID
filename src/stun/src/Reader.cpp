@@ -466,7 +466,7 @@ namespace stun {
     }
 
     /* read the port. */
-    addr->port = readU16() ^ *((uint16_t *)mask);
+    addr->port = *((uint16_t *)getArray(2)) ^ *((uint16_t *)mask);
    // port_ptr[0] = port_ptr[0] ^ cookie[2];
    // port_ptr[1] = port_ptr[1] ^ cookie[3];
 
@@ -502,6 +502,7 @@ namespace stun {
             bytes[i] = tmp[i] ^ mask[i];
 
         inet_ntop(AF_INET, &addr->sin.sin_addr,(char *) addr->address.data(), INET_ADDRSTRLEN);
+        addr->port = htons(addr->sin.sin_port);
 
         //sprintf((char*)ip_addr, "%u.%u.%u.%u", bytes[0], bytes[1], bytes[2], bytes[3]);
        // std::copy(ip_addr, ip_addr + 16, std::back_inserter(addr->address));
@@ -518,6 +519,9 @@ namespace stun {
            bytes[i] = tmp[i] ^ mask[i];
 
         inet_ntop(AF_INET6, &addr->sin6.sin6_addr,(char *) addr->address.data(), INET6_ADDRSTRLEN);
+        
+        addr->port = htons(addr->sin6.sin6_port);
+         
       //   struct sockaddr_in6 sa6;
 	//char astring[INET6_ADDRSTRLEN];
 

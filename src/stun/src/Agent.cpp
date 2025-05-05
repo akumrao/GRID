@@ -4,54 +4,156 @@
 #include <uv.h>
 #include "base/logger.h"
 #include <Utils.h>
+
 using namespace base;
+
+
+#define ICE_MAX_CANDIDATES_COUNT 20 
+
+
+#define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
 namespace stun {
 
-  /* --------------------------------------------------------------------- */
+    /* --------------------------------------------------------------------- */
 
-  Agent::Agent()
-  {
-      
-    
-  }
-
-  Agent::~Agent() {
-   
-  }
+    Agent::Agent( Description &locadesp):locadesp(locadesp)
+    {
 
 
-  bool Agent::getInterfaces() {
-
-      char buf[512];
-    uv_interface_address_t *info;
-    int count, i;
-
-    uv_interface_addresses(&info, &count);
-    i = count;
-
-    printf("Number of interfaces: %d\n", count);
-    while (i--) {
-        uv_interface_address_t interface_a = info[i];
-
-        printf("Name: %s\n", interface_a.name);
-        printf("Internal? %s\n", interface_a.is_internal ? "Yes" : "No");
-        
-        if (interface_a.address.address4.sin_family == AF_INET) {
-            uv_ip4_name(&interface_a.address.address4, buf, sizeof(buf));
-            printf("IPv4 address: %s\n", buf);
-        }
-        else if (interface_a.address.address4.sin_family == AF_INET6) {
-            uv_ip6_name(&interface_a.address.address6, buf, sizeof(buf));
-            printf("IPv6 address: %s\n", buf);
-        }
-
-        printf("\n");
     }
 
-    uv_free_interface_addresses(info, count);
-    return 0;
+    Agent::~Agent() {
 
-  }
+    }
+
+    bool Agent::getInterfaces( int port) {
+
+        char buf[512];
+        uv_interface_address_t *info;
+        int count, i;
+
+        uv_interface_addresses(&info, &count);
+        i = count;
+
+        SInfo << "Number of interfaces: " <<  count;
+        while (i--) {
+            uv_interface_address_t interface_a = info[i];
+        
+            //SInfo << "Internal? %s\n", interface_a.is_internal ? "Yes" : "No");
+
+            if(!interface_a.is_internal)
+            {
+                  SInfo << "Name: %s\n", interface_a.name;
+                  
+                if (interface_a.address.address4.sin_family == AF_INET) {
+                    uv_ip4_name(&interface_a.address.address4, buf, sizeof (buf));
+                    ice_create_host_candidate(buf, port, AF_INET);
+                    SInfo << "IPv4 address: " <<  buf;
+                } else if (interface_a.address.address4.sin_family == AF_INET6) {
+                    uv_ip6_name(&interface_a.address.address6, buf, sizeof (buf));
+                    ice_create_host_candidate(buf, port, AF_INET6);
+                    SInfo << "IPv6 address: " <<  buf;
+                }
+            }
+
+        }
+
+        uv_free_interface_addresses(info, count);
+        return 0;
+
+    }
+
+    int Agent::ice_create_host_candidate( char *ip,  uint16_t port, int family ) {
+
+        ice_candidate_t candidate;
+        if (ice_create_local_candidate(ICE_CANDIDATE_TYPE_HOST, 1, locadesp.candidates_count,  ip, port, family, &candidate)) {
+            printf("Failed to create host candidate");
+        }
+        
+        
+       // ice_add_candidate(   )
+
+    }
+
+    int Agent::ice_create_local_candidate(ice_candidate_type_t type, int component, int index, char *ip,  uint16_t port, int family,  ice_candidate_t *candidate) {
+        memset(candidate, 0, sizeof (*candidate));
+        candidate->type = type;
+        candidate->component = component;
+        //candidate->resolved = *record;
+        strcpy(candidate->foundation, "-");
+
+        candidate->priority = ice_compute_priority(candidate->type, family, candidate->component, index);
+
+//        if (getnameinfo((struct sockaddr *) &record->addr, record->len, candidate->hostname, 256,
+//                candidate->service, 32, NI_NUMERICHOST | NI_NUMERICSERV | NI_DGRAM)) {
+//            printf("getnameinfo failed, errno=%d", sockerrno);
+//            return -1;
+//        }
+        return 0;
+    }
+    
+    int Agent::ice_add_candidate(ice_candidate_t *candidate, Description *description) 
+    {
+	if (candidate->type == ICE_CANDIDATE_TYPE_UNKNOWN)
+		return -1;
+
+	if (description->candidates_count >= ICE_MAX_CANDIDATES_COUNT) {
+	        SError << "Description already has the maximum number of candidates";
+		return -1;
+	}
+
+	if (strcmp(candidate->foundation, "-") == 0)
+		snprintf(candidate->foundation, 32, "%u",
+		         (unsigned int)(description->candidates_count + 1));
+
+	ice_candidate_t *pos = description->candidates + description->candidates_count;
+	*pos = *candidate;
+	++description->candidates_count;
+	return 0;
+    }
+    
+    uint32_t Agent::ice_compute_priority(ice_candidate_type_t type, int family, int component, int index) {
+	// Compute candidate priority according to RFC 8445
+	// See https://www.rfc-editor.org/rfc/rfc8445.html#section-5.1.2.1
+	uint32_t p = 0;
+
+	switch (type) {
+	case ICE_CANDIDATE_TYPE_HOST:
+		p += ICE_CANDIDATE_PREF_HOST;
+		break;
+	case ICE_CANDIDATE_TYPE_PEER_REFLEXIVE:
+		p += ICE_CANDIDATE_PREF_PEER_REFLEXIVE;
+		break;
+	case ICE_CANDIDATE_TYPE_SERVER_REFLEXIVE:
+		p += ICE_CANDIDATE_PREF_SERVER_REFLEXIVE;
+		break;
+	case ICE_CANDIDATE_TYPE_RELAYED:
+		p += ICE_CANDIDATE_PREF_RELAYED;
+		break;
+	default:
+		break;
+	}
+	p <<= 16;
+
+	switch (family) {
+	case AF_INET:
+		p += 32767;
+		break;
+	case AF_INET6:
+		p += 65535;
+		break;
+	default:
+		break;
+	}
+	p -= CLAMP(index, 0, 32767);
+	p <<= 8;
+
+	p += 256 - CLAMP(component, 1, 256);
+	return p;
+    }
+
+
+
 
 } /* namespace stun */

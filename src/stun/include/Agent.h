@@ -6,8 +6,10 @@
 
 #include <Attribute.h>
 #include <Types.h>
+#include "candidate.h"
+#include "description.h"
 
-//using namespace rtc;
+using namespace rtc;
 
 
 
@@ -24,17 +26,17 @@ namespace stun {
 	JUICE_STATE_FAILED
 } juice_state_t;
 
-//typedef void (*juice_cb_state_changed_t)(juice_agent_t *agent, juice_state_t state, void *user_ptr);
-//typedef void (*juice_cb_candidate_t)(juice_agent_t *agent, const char *sdp, void *user_ptr);
-//typedef void (*juice_cb_gathering_done_t)(juice_agent_t *agent, void *user_ptr);
-//typedef void (*juice_cb_recv_t)(juice_agent_t *agent, const char *data, size_t size,
+//typedef void (*_cb_state_changed_t)(juice_agent_t *agent, juice_state_t state, void *user_ptr);
+//typedef void (*cb_candidate_t)(juice_agent_t *agent, const char *sdp, void *user_ptr);
+//typedef void (*cb_gathering_done_t)(juice_agent_t *agent, void *user_ptr);
+//typedef void (*cb_recv_t)(juice_agent_t *agent, const char *data, size_t size,
 //                                void *user_ptr);
 
   class Agent {
   public:
-    Agent();
+    Agent(Description &locadesp);
     ~Agent();
-    bool getInterfaces();
+    bool getInterfaces( int port);
 
 
   public:
@@ -45,7 +47,12 @@ namespace stun {
     uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
     std::vector<Attribute*> attributes;
     std::vector<uint8_t> buffer;
-//    Description *description;
+    Description &locadesp;
+    
+    int ice_create_host_candidate( char *ip,  uint16_t port , int family);
+    int ice_create_local_candidate(ice_candidate_type_t type, int component, int index, char *ip,  uint16_t port, int family, ice_candidate_t *candidate);
+    uint32_t ice_compute_priority(ice_candidate_type_t type, int family, int component, int index);
+    int ice_add_candidate(ice_candidate_t *candidate, Description *description);
     
   };
 
