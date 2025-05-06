@@ -147,7 +147,7 @@ namespace base {
             send(str.c_str(), str.length());
         }
 
-        void HttpsClient::cbDnsResolve(addrinfo* res, std::string ip) {
+        void HttpsClient::cbDnsResolve(addrinfo* res, std::string ip,  int port,  void* ptr) {
             if (_connect) return;
 
             if (!_connect) {
@@ -424,7 +424,7 @@ namespace base {
                    return;
                }
 
-               void HttpsClient::cbDnsResolve(addrinfo* res, std::string ip) {
+               void HttpsClient::cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr) {
 
                    end_time = base::Application::GetTime();
 

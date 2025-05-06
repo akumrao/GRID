@@ -50,6 +50,7 @@ namespace stun {
     Description &locadesp;
     
     int ice_create_host_candidate( char *ip,  uint16_t port , int family);
+    int ice_create_reflexive_candidate( char *ip,  uint16_t port, int family );
     int ice_create_local_candidate(ice_candidate_type_t type, int component, int index, char *ip,  uint16_t port, int family, ice_candidate_t *candidate);
     uint32_t ice_compute_priority(ice_candidate_type_t type, int family, int component, int index);
     int ice_add_candidate(ice_candidate_t *candidate, Description *description);

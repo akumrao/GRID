@@ -48,7 +48,7 @@ namespace base {
             void on_connect() override;
             void on_close() override;
 
-            virtual void cbDnsResolve(addrinfo* res, std::string ip) override;
+            virtual void cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr) override;
 
             /* Pure virtual methods inherited from ::TcpHTTPConnection. */
         public:
@@ -130,7 +130,7 @@ namespace base {
                    void on_connect();
                    void on_close();
 
-                   virtual void cbDnsResolve(addrinfo* res, std::string ip);
+                   virtual void cbDnsResolve(addrinfo* res, std::string ip,  int port,  void* ptr);
 
 
         public:

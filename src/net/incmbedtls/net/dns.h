@@ -30,7 +30,7 @@ namespace base {
 
         struct GetAddrInfoReq {
 
-            virtual void cbDnsResolve(addrinfo* res, std::string ip) {
+            virtual void cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr) {
                 LTrace("GetAddrInfoReq::cbDnsResolve");
             }
 

@@ -8,7 +8,7 @@
 using namespace base;
 
 
-#define ICE_MAX_CANDIDATES_COUNT 20 
+
 
 
 #define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
@@ -67,13 +67,22 @@ namespace stun {
     int Agent::ice_create_host_candidate( char *ip,  uint16_t port, int family ) {
 
         ice_candidate_t candidate;
-        if (ice_create_local_candidate(ICE_CANDIDATE_TYPE_HOST, 1, locadesp.candidates_count,  ip, port, family, &candidate)) {
+        if (ice_create_local_candidate(ICE_CANDIDATE_TYPE_HOST, 1, locadesp.localCanSdp.candidates_count,  ip, port, family, &candidate)) {
             printf("Failed to create host candidate");
         }
         
-        
-       // ice_add_candidate(   )
+        ice_add_candidate( &candidate, &locadesp   );
+    }
+    
+    
+    int Agent::ice_create_reflexive_candidate( char *ip,  uint16_t port, int family ) {
 
+        ice_candidate_t candidate;
+        if (ice_create_local_candidate(ICE_CANDIDATE_TYPE_SERVER_REFLEXIVE, 1, locadesp.localCanSdp.candidates_count,  ip, port, family, &candidate)) {
+            printf("Failed to create host candidate");
+        }
+        
+        ice_add_candidate( &candidate, &locadesp   );
     }
 
     int Agent::ice_create_local_candidate(ice_candidate_type_t type, int component, int index, char *ip,  uint16_t port, int family,  ice_candidate_t *candidate) {
@@ -98,18 +107,20 @@ namespace stun {
 	if (candidate->type == ICE_CANDIDATE_TYPE_UNKNOWN)
 		return -1;
 
-	if (description->candidates_count >= ICE_MAX_CANDIDATES_COUNT) {
+	if (description->localCanSdp.candidates_count  >= ICE_MAX_CANDIDATES_COUNT) {
 	        SError << "Description already has the maximum number of candidates";
 		return -1;
 	}
 
 	if (strcmp(candidate->foundation, "-") == 0)
 		snprintf(candidate->foundation, 32, "%u",
-		         (unsigned int)(description->candidates_count + 1));
+		         (unsigned int)(description->localCanSdp.candidates_count + 1));
 
-	ice_candidate_t *pos = description->candidates + description->candidates_count;
-	*pos = *candidate;
-	++description->candidates_count;
+	//ice_candidate_t *pos = description->candidates + description->localCanSdp.candidates_count;
+	//*pos = *candidate;
+        description->localCanSdp.candidates.push_back(*candidate);
+        
+	++description->localCanSdp.candidates_count;
 	return 0;
     }
     

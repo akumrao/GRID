@@ -10,6 +10,9 @@
 #include <map>
 #include <vector>
 
+
+#define ICE_MAX_CANDIDATES_COUNT 20 
+
 namespace rtc {
 
 const string DEFAULT_OPUS_AUDIO_PROFILE =
@@ -31,6 +34,17 @@ struct CertificateFingerprint {
 	Algorithm algorithm;
 	string value;
 };
+
+
+typedef struct ice_description {
+	char ice_ufrag[256 + 1]; // 4 to 256 characters
+	char ice_pwd[256 + 1];   // 22 to 256 characters
+	bool ice_lite;
+	//ice_candidate_t candidates[ICE_MAX_CANDIDATES_COUNT];
+        std::vector<ice_candidate_t> candidates;
+	int candidates_count;
+	bool finished;
+} ice_description_t;
 
 class RTC_CPP_EXPORT Description {
 public:
@@ -314,15 +328,8 @@ private:
 	std::vector<Candidate> mCandidates;
 	bool mEnded = false;
         
-        
-        
 public:
-    	char ice_ufrag[256 + 1]; // 4 to 256 characters
-	char ice_pwd[256 + 1];   // 22 to 256 characters
-	bool ice_lite;
-	ice_candidate_t candidates[20];
-	int candidates_count;
-	bool finished;
+    	 ice_description_t localCanSdp;
 
 
 };

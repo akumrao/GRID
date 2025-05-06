@@ -161,7 +161,7 @@ int IceTransport::ice_generate_candidate_sdp(const ice_candidate_t *candidate, c
 
 int IceTransport::ice_generate_sdp(Description *description,  char *buffer, size_t size)
 {
-	if (!*description->ice_ufrag || !*description->ice_pwd)
+	if (!*description->localCanSdp.ice_ufrag || !*description->localCanSdp.ice_pwd)
 		return -1;
 
 	int len = 0;
@@ -171,16 +171,16 @@ int IceTransport::ice_generate_sdp(Description *description,  char *buffer, size
 	// Round 0: description
 	// Round i with i>0 and i<count+1: candidate i-1
 	// Round count + 1: end-of-candidates and ice-options lines
-	for (int i = 0; i < description->candidates_count + 2; ++i) {
+	for (int i = 0; i < description->localCanSdp.candidates_count + 2; ++i) {
 		int ret;
 		if (i == 0) {
 			ret = snprintf(begin, end - begin, "a=ice-ufrag:%s\r\na=ice-pwd:%s\r\n",
-			               description->ice_ufrag, description->ice_pwd);
-			if (description->ice_lite)
+			               description->localCanSdp.ice_ufrag, description->localCanSdp.ice_pwd);
+			if (description->localCanSdp.ice_lite)
 				ret = snprintf(begin, end - begin, "a=ice-lite\r\n");
 
-		} else if (i < description->candidates_count + 1) {
-			const ice_candidate_t *candidate = description->candidates + i - 1;
+		} else if (i < description->localCanSdp.candidates_count + 1) {
+			const ice_candidate_t *candidate = &description->localCanSdp.candidates[i - 1];
 			if (candidate->type == ICE_CANDIDATE_TYPE_UNKNOWN ||
 			    candidate->type == ICE_CANDIDATE_TYPE_PEER_REFLEXIVE)
 				continue;
@@ -191,7 +191,7 @@ int IceTransport::ice_generate_sdp(Description *description,  char *buffer, size
 		} else { // i == description->candidates_count + 1
 			// RFC 8445 10. ICE Option: An agent compliant to this specification MUST inform the
 			// peer about the compliance using the 'ice2' option.
-			if (description->finished)
+			if (description->localCanSdp.finished)
 				ret = snprintf(begin, end - begin, "a=end-of-candidates\r\na=ice-options:ice2\r\n");
 			else
 				ret = snprintf(begin, end - begin, "a=ice-options:ice2,trickle\r\n");
@@ -224,12 +224,12 @@ Description *IceTransport::getLocalDescription(Description::Type type)  {
 	char sdp[4096];
         
          
-        random_str64(localDes.ice_ufrag, 4 + 1);
-        random_str64(localDes.ice_pwd, 22 + 1);
-        localDes.ice_lite = false;
-        localDes.candidates_count = 0;
-        localDes.finished = false;
-        SInfo << "Created local description: ufrag= "<<  localDes.ice_ufrag  <<  " pwd "  <<   localDes.ice_pwd;
+        random_str64(localDes.localCanSdp.ice_ufrag, 4 + 1);
+        random_str64(localDes.localCanSdp.ice_pwd, 22 + 1);
+        localDes.localCanSdp.ice_lite = false;
+        localDes.localCanSdp.candidates_count = 0;
+        localDes.localCanSdp.finished = false;
+        SInfo << "Created local description: ufrag= "<<  localDes.localCanSdp.ice_ufrag  <<  " pwd "  <<   localDes.localCanSdp.ice_pwd;
         
         if (ice_generate_sdp(&localDes, sdp, 4096) < 0)
         {
@@ -286,14 +286,16 @@ void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> addi
         
         static int inc = 7000;
         Agent agent( localDes);
-
-        agent.getInterfaces(++inc);
-
-        socket = new testUdpServer("0.0.0.0", inc );
-
+        
+        socket = new testUdpServer("0.0.0.0", ++inc );
         socket->start();
     
     
+
+        agent.getInterfaces(inc);
+
+        localDes.generateSdp();
+        
 
         resolveStunServer( );
 	//std::shuffle(additionalIceServers.begin(), additionalIceServers.end(), utils::random_engine());
