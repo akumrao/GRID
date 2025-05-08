@@ -93,7 +93,10 @@ namespace stun {
         strcpy(candidate->foundation, "-");
 
         candidate->priority = ice_compute_priority(candidate->type, family, candidate->component, index);
-
+        
+        strcpy (candidate->hostname, ip);
+        sprintf( candidate->service, "%d", port);
+        
 //        if (getnameinfo((struct sockaddr *) &record->addr, record->len, candidate->hostname, 256,
 //                candidate->service, 32, NI_NUMERICHOST | NI_NUMERICSERV | NI_DGRAM)) {
 //            printf("getnameinfo failed, errno=%d", sockerrno);

@@ -65,7 +65,7 @@ private:
         
         
         int ice_generate_sdp(Description *description,  char *buffer, size_t size);
-        int ice_generate_candidate_sdp(const ice_candidate_t *candidate, char *buffer, size_t size);
+
         
         void cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr) ;
 

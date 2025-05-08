@@ -14,8 +14,11 @@
 #include "configuration.h"
 #include "peerconnection.h"
 #include "tls.h"
+#include "json.hpp" 
 
 //#include <udpClient.h>
+
+using json = nlohmann::json;
 
 using namespace stun;
 using namespace rtc;
@@ -73,6 +76,32 @@ int main()
                     std::cout << "Description 1: " << sdp << endl;
                     // pc2.setRemoteDescription(string(sdp));
         }
+    });
+    
+    
+//    pc1.onLocalDescription([ pc1](rtc::Description description) {
+////		json message = {{"id", id},
+////		                {"type", description.typeString()},
+////		                {"description", std::string(description)}};
+//        
+//       // SInfo << "send:"  << description.typeString() <<  " des "<<  std::string(description);
+//          
+//     //  pc->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
+//       // sendSdp( std::string(description), description.typeString());
+//        // Make the answer
+////		if (auto ws = wws.lock())
+////			ws->send(message.dump());
+//    });
+
+    pc1.onLocalCandidate([ ](rtc::Candidate candidate) {
+            json message = {
+                            {"type", "candidate"},
+                            {"candidate", std::string(candidate)},
+                            {"mid", candidate.mid()}};
+
+     //   sendCandidate( candidate.mid(), 1,  std::string(candidate)  );
+//            if (auto ws = wws.lock())
+//                    ws->send(message.dump());
     });
 
     pc1.onSignalingStateChange([](PeerConnection::SignalingState state) {

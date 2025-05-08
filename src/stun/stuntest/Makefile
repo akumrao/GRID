@@ -9,7 +9,7 @@ SOURCES=$(wildcard main.cpp Connection.cpp ../src/*.cpp ../../base/src/*.cpp  ..
 CXXFLAGS   := -g   -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized
 
 
-CPPFLAGS   := -I./ -I../include -I../../base/include/ -I../../net/include/  -I../../libuv/include -I../../libuv/src 
+CPPFLAGS   := -I./ -I../include -I../../base/include/ -I../../net/include/  -I../../libuv/include -I../../libuv/src  -I../../facedetec/include/json/
 
               
 LDFLAGS   := -L/usr/lib/x86_64-linux-gnu

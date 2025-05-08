@@ -5,6 +5,10 @@
 #include <openssl/hmac.h>
 #include <openssl/evp.h>
 
+#include <base/logger.h>
+
+using namespace base;
+
 namespace stun {
 
   /* --------------------------------------------------------------------- */
@@ -24,11 +28,13 @@ namespace stun {
 
     
     if (!data) {
-      printf("stun::Reader - error: received invalid data in Reader::process().\n");
+        
+        
+      LError("stun::Reader - error: received invalid data in Reader::process()");
       return -1;
     }
     if (!msg) {
-      printf("stun::Reader - error: invalid stun::Message passed into Reader::process().\n");
+      LError("stun::Reader - error: invalid stun::Message passed into Reader::process()");
       return -1;
     }
 
@@ -49,7 +55,7 @@ namespace stun {
       return 1;
     }
 
-    printf("stun::Reader - verbose: data to process: %u bytes, %lu.\n", nbytes, buffer.size());
+    STrace << "stun::Reader - verbose: data to process: " << nbytes << " bytes, " <<  buffer.size();
     
     /* create the base message */
     msg->type = readU16();
@@ -70,7 +76,7 @@ namespace stun {
           
     /* validate */
     if (!stun_validate_cookie(msg->cookie)) {
-      printf("stun::Reader - warning: invalid STUN cookie, number of bytes: %u\n", nbytes);
+      SWarn << "stun::Reader - warning: invalid STUN cookie, number of bytes: "  << nbytes;
       printf("stun::Reader - warning: invalid cookie data: %02X %02X %02X %02X\n", data[0], data[1], data[2], data[3]);
       buffer.clear();
       dx = 0;
@@ -136,7 +142,7 @@ namespace stun {
           XorMappedAddress* address = readXorMappedAddress( msg);
           if (address) {
             attr = (Attribute*) address;
-            printf("stun::Reader - verbose: address:%s, port: %d\n", address->address.c_str(), address->port);
+            STrace << "stun::Reader - verbose: address: "<<  address->address  << " port: " <<  address->address <<  address->port;
           }
           break;
         }
@@ -191,7 +197,7 @@ namespace stun {
         case STUN_ATTR_USERHASH: {
             printf("STUN_ATTR_USERHASH\n");
             if (attr_length != USERHASH_SIZE) {
-			printf("STUN user hash value too long, length=%zu", attr_length);
+			SWarn << "STUN user hash value too long, length= " << attr_length;
 			return -1;
 		}
             memcpy(msg->credentials.userhash, getArray(USERHASH_SIZE), USERHASH_SIZE);
@@ -202,7 +208,7 @@ namespace stun {
         case STUN_ATTR_REALM: {
 		printf("Reading realm\n");
 		if (attr_length + 1 > STUN_MAX_REALM_LEN) {
-			printf("STUN realm attribute value too long, length=%zu", attr_length);
+			SWarn << "STUN realm attribute value too long, length= " <<  attr_length;
 			return -1;
 		}
 		memcpy(msg->credentials.realm, getArray(attr_length), attr_length);
@@ -215,7 +221,7 @@ namespace stun {
 	case STUN_ATTR_NONCE: {
 		printf("Reading nonce \n");
 		if (attr_length + 1 > STUN_MAX_NONCE_LEN) {
-			printf("STUN nonce attribute value too long, length=%zu \n", attr_length);
+			SWarn << "STUN nonce attribute value too long, length= " <<  attr_length;
 			return -1;
 		}
 		memcpy(msg->credentials.nonce, getArray(attr_length), attr_length);
@@ -404,7 +410,7 @@ namespace stun {
   
   void Reader::skip(uint32_t nbytes) {
     if (dx + nbytes > buffer.size()) {
-      printf("Error: trying to skip %u bytes, but we only have %u left in STUN.\n", nbytes, bytesLeft());
+      SError << "Error: trying to skip " <<  nbytes <<  " bytes, but we only have %u left in STUN " << bytesLeft();
       return;
     }
     dx += nbytes;
@@ -415,7 +421,7 @@ namespace stun {
     StringValue v;
 
     if (bytesLeft() < len) {
-      printf("Error: trying to read a StringValue from the buffer, but the buffer is not big enough.\n");
+      LError("Error: trying to read a StringValue from the buffer, but the buffer is not big enough");
       return v;
     }
 
@@ -427,7 +433,7 @@ namespace stun {
    unsigned char* Reader::getArray(uint16_t len) {
        
     if (bytesLeft() < len) {
-      printf("Error: trying to read a getArray from the buffer, but the buffer is not big enough.\n");
+      LError("Error: trying to read a getArray from the buffer, but the buffer is not big enough.");
       return nullptr;
     }
     unsigned char* ret =  ptr();
@@ -439,7 +445,7 @@ namespace stun {
   XorMappedAddress* Reader::readXorMappedAddress( Message* msg) {
 
     if (bytesLeft() < 8) {
-      printf("Error: cannot read a XorMappedAddress as the buffer is too small in stun::Reader.\n");
+      LError("Error: cannot read a XorMappedAddress as the buffer is too small in stun::Reader");
       return NULL;
     }
     
@@ -460,7 +466,7 @@ namespace stun {
     /* read family: 0x01 = IP4, 0x02 = IP6 */
     addr->family = readU8();
     if (addr->family != STUN_IP4 && addr->family != STUN_IP6) {
-      printf("Error: invalid family for the xor mapped address in stun::Reader.\n");
+      LError("Error: invalid family for the xor mapped address in stun::Reader");
       delete addr;
       return NULL;
     }
@@ -593,12 +599,12 @@ bool Reader::computeMessageIntegrity(Message* msg, std::string password) {
     int keylen = generate_hmac_key( msg,password, key );
             
     if (!key.size()) { 
-      printf("Error: cannot compute message integrity in stun::Message because the key is empty.\n");
+      LError("Error: cannot compute message integrity in stun::Message because the key is empty");
       return false;
     }
 
     if (!msg->attributes.size() || !msg->find(&integ)) {
-      printf("Error: cannot compute the message integrity in stun::Message because the message doesn't contain a MessageIntegrity attribute.\n");
+      LError("Error: cannot compute the message integrity in stun::Message because the message doesn't contain a MessageIntegrity attribute.");
       return false;
     }
 
@@ -610,7 +616,7 @@ bool Reader::computeMessageIntegrity(Message* msg, std::string password) {
 
     Fingerprint* finger = NULL;
     if (!msg->attributes.size() || !msg->find(&finger)) {
-      printf("Error: cannot compute fingerprint because there is not fingerprint attribute.\n");
+      LError("Error: cannot compute fingerprint because there is not fingerprint attribute");
       return false;
     }
 

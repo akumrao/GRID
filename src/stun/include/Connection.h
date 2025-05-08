@@ -16,7 +16,7 @@
 #include "base/logger.h"
 #include "base/application.h"
 #include "net/UdpSocket.h"
-//#include "base/test.h"
+#include "description.h"
 #include "base/time.h"
 #include "net/dns.h"
 
@@ -43,7 +43,7 @@ namespace rtc {
 class testUdpServer: public UdpServer::Listener {
 public:
 
-    testUdpServer(std::string IP, int port):IP(IP), port(port) {
+    testUdpServer(std::string IP, int port, Description &locadesp):IP(IP), port(port), locadesp(locadesp) {
     }
 
     void start() {
@@ -65,6 +65,8 @@ public:
     void OnUdpSocketPacketReceived(UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr); 
 
     UdpServer *udpServer;
+    Description &locadesp;
+     
 
     std::string IP;
     int port;

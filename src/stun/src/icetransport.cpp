@@ -2,7 +2,7 @@
 
 #include "icetransport.h"
 #include "configuration.h"
-
+#include "sdpcommon.h"
 #include "Utils.h"
 
 #include <algorithm>
@@ -130,33 +130,7 @@ void IceTransport::addIceServer(IceServer server) {
 
 
 
-int IceTransport::ice_generate_candidate_sdp(const ice_candidate_t *candidate, char *buffer, size_t size) {
-	const char *type = NULL;
-	const char *suffix = NULL;
-	switch (candidate->type) {
-	case ICE_CANDIDATE_TYPE_HOST:
-		type = "host";
-		break;
-	case ICE_CANDIDATE_TYPE_PEER_REFLEXIVE:
-		type = "prflx";
-		break;
-	case ICE_CANDIDATE_TYPE_SERVER_REFLEXIVE:
-		type = "srflx";
-		suffix = "raddr 0.0.0.0 rport 0"; // This is needed for compatibility with Firefox
-		break;
-	case ICE_CANDIDATE_TYPE_RELAYED:
-		type = "relay";
-		suffix = "raddr 0.0.0.0 rport 0"; // This is needed for compatibility with Firefox
-		break;
-	default:
-		SError << "Unknown candidate type";
-		return -1;
-	}
-	return snprintf(buffer, size, "a=candidate:%s %u UDP %u %s %s typ %s%s%s",
-	                candidate->foundation, candidate->component, candidate->priority,
-	                candidate->hostname, candidate->service, type, suffix ? " " : "",
-	                suffix ? suffix : "");
-}
+
 
 
 int IceTransport::ice_generate_sdp(Description *description,  char *buffer, size_t size)
@@ -287,14 +261,23 @@ void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> addi
         static int inc = 7000;
         Agent agent( localDes);
         
-        socket = new testUdpServer("0.0.0.0", ++inc );
+        socket = new testUdpServer("0.0.0.0", ++inc , localDes );
         socket->start();
     
     
 
         agent.getInterfaces(inc);
+        
+        char buffer[4096];
+        
+        ice_candidate_t *candidate = &localDes.localCanSdp.candidates[0];
+        
+        
+        ice_generate_candidate_sdp(candidate, buffer, 4096);
+        
+        SInfo << buffer;
 
-        localDes.generateSdp();
+      //  localDes.generateSdp();
         
 
         resolveStunServer( );

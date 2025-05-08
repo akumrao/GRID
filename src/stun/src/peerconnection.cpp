@@ -185,7 +185,7 @@ void PeerConnection::processLocalDescription(Description *description) {
         
         
 
-	//mLocalDescriptionCallback(*description);
+	mLocalDescriptionCallback(*description);
 }
 
 
