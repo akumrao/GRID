@@ -5,6 +5,9 @@
 #include "base/logger.h"
 #include <Utils.h>
 
+#include "sdpcommon.h"
+
+
 using namespace base;
 
 
@@ -17,7 +20,7 @@ namespace stun {
 
     /* --------------------------------------------------------------------- */
 
-    Agent::Agent( Description &locadesp):locadesp(locadesp)
+    Agent::Agent( Description &locadesp, candidate_callback &candidateCallback):locadesp(locadesp), mCandidateCallback(candidateCallback)
     {
 
 
@@ -44,7 +47,7 @@ namespace stun {
 
             if(!interface_a.is_internal)
             {
-                  SInfo << "Name: %s\n", interface_a.name;
+                  SInfo << "Name: " <<  interface_a.name;
                   
                 if (interface_a.address.address4.sin_family == AF_INET) {
                     uv_ip4_name(&interface_a.address.address4, buf, sizeof (buf));
@@ -66,7 +69,7 @@ namespace stun {
 
     int Agent::ice_create_host_candidate( char *ip,  uint16_t port, int family ) {
 
-        ice_candidate_t candidate;
+        Candidate candidate;
         if (ice_create_local_candidate(ICE_CANDIDATE_TYPE_HOST, 1, locadesp.localCanSdp.candidates_count,  ip, port, family, &candidate)) {
             printf("Failed to create host candidate");
         }
@@ -77,7 +80,7 @@ namespace stun {
     
     int Agent::ice_create_reflexive_candidate( char *ip,  uint16_t port, int family ) {
 
-        ice_candidate_t candidate;
+        Candidate candidate;
         if (ice_create_local_candidate(ICE_CANDIDATE_TYPE_SERVER_REFLEXIVE, 1, locadesp.localCanSdp.candidates_count,  ip, port, family, &candidate)) {
             printf("Failed to create host candidate");
         }
@@ -85,17 +88,18 @@ namespace stun {
         ice_add_candidate( &candidate, &locadesp   );
     }
 
-    int Agent::ice_create_local_candidate(ice_candidate_type_t type, int component, int index, char *ip,  uint16_t port, int family,  ice_candidate_t *candidate) {
+    int Agent::ice_create_local_candidate(ice_candidate_type_t type, int component, int index, char *ip,  uint16_t port, int family,  Candidate *candidate) {
         memset(candidate, 0, sizeof (*candidate));
-        candidate->type = type;
-        candidate->component = component;
+        candidate->cand.type  = type;
+        candidate->cand.component = component;
         //candidate->resolved = *record;
-        strcpy(candidate->foundation, "-");
+        strcpy(candidate->cand.foundation, "-");
 
-        candidate->priority = ice_compute_priority(candidate->type, family, candidate->component, index);
+        candidate->cand.priority = ice_compute_priority(candidate->cand.type, family, candidate->cand.component, index);
         
-        strcpy (candidate->hostname, ip);
-        sprintf( candidate->service, "%d", port);
+        strcpy (candidate->cand.hostname, ip);
+        
+        candidate->cand.port =  port;
         
 //        if (getnameinfo((struct sockaddr *) &record->addr, record->len, candidate->hostname, 256,
 //                candidate->service, 32, NI_NUMERICHOST | NI_NUMERICSERV | NI_DGRAM)) {
@@ -105,9 +109,12 @@ namespace stun {
         return 0;
     }
     
-    int Agent::ice_add_candidate(ice_candidate_t *candidate, Description *description) 
+    int Agent::ice_add_candidate(Candidate *candidate, Description *description) 
     {
-	if (candidate->type == ICE_CANDIDATE_TYPE_UNKNOWN)
+        
+        mCandidateCallback(*candidate);
+        
+	if (candidate->cand.type == ICE_CANDIDATE_TYPE_UNKNOWN)
 		return -1;
 
 	if (description->localCanSdp.candidates_count  >= ICE_MAX_CANDIDATES_COUNT) {
@@ -115,16 +122,24 @@ namespace stun {
 		return -1;
 	}
 
-	if (strcmp(candidate->foundation, "-") == 0)
-		snprintf(candidate->foundation, 32, "%u",
+	if (strcmp(candidate->cand.foundation, "-") == 0)
+		snprintf(candidate->cand.foundation, 32, "%u",
 		         (unsigned int)(description->localCanSdp.candidates_count + 1));
 
 	//ice_candidate_t *pos = description->candidates + description->localCanSdp.candidates_count;
 	//*pos = *candidate;
-        description->localCanSdp.candidates.push_back(*candidate);
+        description->localCanSdp.candidates.push_back(candidate->cand);
         
 	++description->localCanSdp.candidates_count;
-	return 0;
+	
+        
+        char buffer[4096];
+        
+        ice_generate_candidate_sdp(&candidate->cand, buffer, 4096);
+        
+        SInfo << buffer;
+        return 0;
+
     }
     
     uint32_t Agent::ice_compute_priority(ice_candidate_type_t type, int family, int component, int index) {

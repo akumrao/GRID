@@ -22,12 +22,12 @@ namespace stun {
   {
   }
 
-  XorMappedAddress::XorMappedAddress(std::string addr, uint16_t port, uint8_t fam)
+  XorMappedAddress::XorMappedAddress(const char * addr, uint16_t port, uint8_t fam)
     :Attribute(STUN_ATTR_XOR_MAPPED_ADDRESS)
-    ,address(addr)
     ,port(port)
     ,family(fam)
   {
+      strcpy(address, addr );
   }
 
   /* --------------------------------------------------------------------- */

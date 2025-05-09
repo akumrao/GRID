@@ -216,7 +216,7 @@ namespace stun {
     port_ptr[1] = port_ptr[1] ^ cookie[3];
  
     /* convert the address string into a uint32_t */
-    inet_pton(AF_INET, xma->address.c_str(), ip_copy_ptr);
+    inet_pton(AF_INET, xma->address, ip_copy_ptr);
     
     /* xor the ip */
     ip_ptr[0] = ip_copy_ptr[3] ^ cookie[0];

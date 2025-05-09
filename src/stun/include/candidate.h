@@ -34,7 +34,8 @@ typedef struct ice_candidate {
 	char foundation[32 + 1]; // 1 to 32 characters
 	char transport[32 + 1];
 	char hostname[256 + 1];
-	char service[32 + 1];
+	//char service[32 + 1];
+        uint16_t port;
 
 } ice_candidate_t;    
     
@@ -70,24 +71,27 @@ public:
 	Family family() const;
 	string address() const;
 	uint16_t port() const;
-
 private:
 	void parse(string candidate);
 
-	string mFoundation;
-	uint32_t mComponent, mPriority;
+	//string mFoundation;
+	//uint32_t mComponent, mPriority;
 	string mTypeString, mTransportString;
-	Type mType;
+	//Type mType;
 	TransportType mTransportType;
-	string mNode, mService;
+	string mNode;//, mService;
 	string mTail;
 
 	string mMid;
 
 	// Extracted on resolution
 	Family mFamily;
-	string mAddress;
-	uint16_t mPort;
+	//string mAddress;
+	//
+        
+public:
+    ice_candidate_t cand;
+        
 };
 
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, const Candidate &candidate);

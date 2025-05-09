@@ -10,7 +10,7 @@
 #include <random>
 #include <sstream>
 #include "base/logger.h"
-#include <Agent.h>
+
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -44,10 +44,10 @@ void IceTransport::Cleanup() {
 
 IceTransport::IceTransport( Configuration &config,  Description &localdescription, candidate_callback candidateCallback,
                            state_callback stateChangeCallback,
-                           gathering_state_callback gatheringStateChangeCallback): localDes(localdescription),
+                           gathering_state_callback gatheringStateChangeCallback): localDes(localdescription),agent( localdescription, candidateCallback),
     
       mMid("0"), mGatheringState(GatheringState::New),
-      mCandidateCallback(std::move(candidateCallback)),
+      mCandidateCallback(candidateCallback),
       mGatheringStateChangeCallback(std::move(gatheringStateChangeCallback)),
       Transport(config)  
       {
@@ -259,23 +259,14 @@ void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> addi
         
         
         static int inc = 7000;
-        Agent agent( localDes);
+       
         
-        socket = new testUdpServer("0.0.0.0", ++inc , localDes );
+        socket = new testUdpServer("0.0.0.0", ++inc , agent );
         socket->start();
-    
-    
 
         agent.getInterfaces(inc);
         
-        char buffer[4096];
-        
-        ice_candidate_t *candidate = &localDes.localCanSdp.candidates[0];
-        
-        
-        ice_generate_candidate_sdp(candidate, buffer, 4096);
-        
-        SInfo << buffer;
+
 
       //  localDes.generateSdp();
         

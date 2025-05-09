@@ -507,7 +507,7 @@ namespace stun {
         for (int i = 0; i < 4; ++i)
             bytes[i] = tmp[i] ^ mask[i];
 
-        inet_ntop(AF_INET, &addr->sin.sin_addr,(char *) addr->address.data(), INET_ADDRSTRLEN);
+        inet_ntop(AF_INET, &addr->sin.sin_addr,(char *) addr->address, INET_ADDRSTRLEN);
         addr->port = htons(addr->sin.sin_port);
 
         //sprintf((char*)ip_addr, "%u.%u.%u.%u", bytes[0], bytes[1], bytes[2], bytes[3]);
@@ -524,7 +524,7 @@ namespace stun {
         for (int i = 0; i < 16; ++i)
            bytes[i] = tmp[i] ^ mask[i];
 
-        inet_ntop(AF_INET6, &addr->sin6.sin6_addr,(char *) addr->address.data(), INET6_ADDRSTRLEN);
+        inet_ntop(AF_INET6, &addr->sin6.sin6_addr,(char *) addr->address, INET6_ADDRSTRLEN);
         
         addr->port = htons(addr->sin6.sin6_port);
          

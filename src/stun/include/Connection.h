@@ -16,17 +16,18 @@
 #include "base/logger.h"
 #include "base/application.h"
 #include "net/UdpSocket.h"
-#include "description.h"
+//#include "description.h"
 #include "base/time.h"
 #include "net/dns.h"
 
+#include <Agent.h>
 
 #include "net/TcpServer.h"
 
 #include "base/time.h"
 #include "net/netInterface.h"
 #include "configuration.h"
-
+#include <Agent.h>
 
 #include <Reader.h>
 #include <Writer.h>
@@ -34,7 +35,7 @@
 using std::endl;
 using namespace base;
 using namespace net;
-///using namespace rtc;
+using namespace stun;
 //using namespace base::test;
 
 namespace rtc {
@@ -42,9 +43,10 @@ namespace rtc {
 
 class testUdpServer: public UdpServer::Listener {
 public:
+    
 
-    testUdpServer(std::string IP, int port, Description &locadesp):IP(IP), port(port), locadesp(locadesp) {
-    }
+
+    testUdpServer(std::string IP, int port, Agent &agent);
 
     void start() {
         udpServer = new UdpServer( this, IP, port);
@@ -65,12 +67,13 @@ public:
     void OnUdpSocketPacketReceived(UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr); 
 
     UdpServer *udpServer;
-    Description &locadesp;
+   // Description &locadesp;
      
 
     std::string IP;
     int port;
 
+    Agent &agent;
 };
 
 

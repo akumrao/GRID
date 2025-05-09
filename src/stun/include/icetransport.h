@@ -9,7 +9,7 @@
 #include "description.h"
 //#include "peerconnection.h"
 #include <Connection.h>
-
+#include <Agent.h>
 #include <atomic>
 #include <chrono>
 #include <mutex>
@@ -83,6 +83,8 @@ private:
         
         Description &localDes;
         testUdpServer *socket{nullptr};
+        
+         Agent agent;
 };
 
 } // namespace rtc::impl

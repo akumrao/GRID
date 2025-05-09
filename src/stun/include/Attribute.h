@@ -53,7 +53,7 @@ namespace stun {
   class XorMappedAddress : public Attribute {
   public:
     XorMappedAddress();
-    XorMappedAddress(std::string addr, uint16_t p, uint8_t fam = STUN_IP4);
+    XorMappedAddress(const char * addr, uint16_t p, uint8_t fam = STUN_IP4);
     uint8_t family;
     uint16_t port;
     char address[47];  /* IP address in string notation: 192.168.0.1 */

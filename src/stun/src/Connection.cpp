@@ -1,5 +1,5 @@
 #include <Connection.h>
-#include <Agent.h>
+
 #include <string.h>
 
 
@@ -10,6 +10,12 @@ namespace rtc
 {
 
 
+
+testUdpServer::testUdpServer(std::string IP, int port,   Agent &agent ) :IP(IP), port(port), agent(agent) {
+    
+    int x = 0;
+
+}
 
 void testUdpServer::send( uint8_t* data, uint32_t nbytes, std::string ip, int port )
 {
@@ -40,7 +46,7 @@ void testUdpServer::OnUdpSocketPacketReceived(UdpServer* socket, const char* dat
      // msg.computeMessageIntegrity(PASSWORD);
 
         
-        Agent agent( locadesp);
+        //Agent agent( locadesp);
         
         
         XorMappedAddress* result;

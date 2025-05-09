@@ -79,25 +79,37 @@ int main()
     });
     
     
-//    pc1.onLocalDescription([ pc1](rtc::Description description) {
-////		json message = {{"id", id},
-////		                {"type", description.typeString()},
-////		                {"description", std::string(description)}};
-//        
-//       // SInfo << "send:"  << description.typeString() <<  " des "<<  std::string(description);
-//          
-//     //  pc->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
-//       // sendSdp( std::string(description), description.typeString());
-//        // Make the answer
-////		if (auto ws = wws.lock())
-////			ws->send(message.dump());
-//    });
+    pc1.onLocalDescription([ ](rtc::Description description) 
+    {
+        std::string tmp = description.typeString();
+     
+        std::string tmp2 = std::string(description);
+        
+        SInfo << tmp;
+        
+         SInfo << tmp2;
+
+		json message = {
+                                {"type", description.typeString()},
+		                {"description", std::string(description)}};
+//                
+//                  SInfo << message.dump();
+        
+       // SInfo << "send:"  << description.typeString() <<  " des "<<  std::string(description);
+          
+     //  pc->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
+       // sendSdp( std::string(description), description.typeString());
+        // Make the answer
+//		if (auto ws = wws.lock())
+//			ws->send(message.dump());
+    });
 
     pc1.onLocalCandidate([ ](rtc::Candidate candidate) {
             json message = {
                             {"type", "candidate"},
                             {"candidate", std::string(candidate)},
-                            {"mid", candidate.mid()}};
+                            {"mid", candidate.mid()}};            
+            SInfo << message.dump();
 
      //   sendCandidate( candidate.mid(), 1,  std::string(candidate)  );
 //            if (auto ws = wws.lock())
