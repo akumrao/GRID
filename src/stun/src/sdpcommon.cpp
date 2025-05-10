@@ -13,23 +13,23 @@ using std::chrono::system_clock;
 
 namespace rtc {
 
-
+//	enum class Type { Unknown, Host, ServerReflexive, PeerReflexive, Relayed };
     
-    int ice_generate_candidate_sdp(const ice_candidate_t *candidate, char *buffer, size_t size) {
+    int ice_generate_candidate_sdp(const Candidate *candidate, char *buffer, size_t size) {
 	const char *type = NULL;
 	const char *suffix = NULL;
-	switch (candidate->type) {
-	case ICE_CANDIDATE_TYPE_HOST:
+	switch (candidate->mType) {
+            case Candidate::Type::Host:
 		type = "host";
 		break;
-	case ICE_CANDIDATE_TYPE_PEER_REFLEXIVE:
+	case Candidate::Type::PeerReflexive:
 		type = "prflx";
 		break;
-	case ICE_CANDIDATE_TYPE_SERVER_REFLEXIVE:
+	case Candidate::Type::ServerReflexive:
 		type = "srflx";
 		suffix = "raddr 0.0.0.0 rport 0"; // This is needed for compatibility with Firefox
 		break;
-	case ICE_CANDIDATE_TYPE_RELAYED:
+	case Candidate::Type::Relayed:
 		type = "relay";
 		suffix = "raddr 0.0.0.0 rport 0"; // This is needed for compatibility with Firefox
 		break;
@@ -37,9 +37,8 @@ namespace rtc {
 		SError << "Unknown candidate type";
 		return -1;
 	}
-	return snprintf(buffer, size, "a=candidate:%s %u UDP %u %s %s typ %s%s%s",
-	                candidate->foundation, candidate->component, candidate->priority,
-	                candidate->hostname, candidate->service, type, suffix ? " " : "",
+	return snprintf(buffer, size, "a=candidate:%s %u UDP %u %s %u typ %s%s%s",    candidate->mFoundation, candidate->mComponent, candidate->mPriority, 
+	                candidate->mAddress , candidate->mPort, type, suffix ? " " : "",
 	                suffix ? suffix : "");
     }
 

@@ -16,7 +16,7 @@
 
 namespace rtc {
 	
-    int ice_generate_candidate_sdp(const ice_candidate_t *candidate, char *buffer, size_t size);
+    int ice_generate_candidate_sdp(const Candidate *candidate, char *buffer, size_t size);
 
 
 } // namespace rtc::impl

@@ -41,7 +41,7 @@ typedef struct ice_description {
 	char ice_pwd[256 + 1];   // 22 to 256 characters
 	bool ice_lite;
 	//ice_candidate_t candidates[ICE_MAX_CANDIDATES_COUNT];
-        std::vector<ice_candidate_t> candidates;
+        std::vector<Candidate> candidates;
 	int candidates_count;
 	bool finished;
 } ice_description_t;
