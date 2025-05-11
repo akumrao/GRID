@@ -51,7 +51,7 @@ namespace rtc {
 Candidate::Candidate()
     : mFoundation("none"), mComponent(0), mPriority(0), mTypeString("unknown"),
       mTransportString("unknown"), mType(Type::Unknown), mTransportType(TransportType::Unknown),
-      mNode("0.0.0.0"), mService("9"), mFamily(Family::Unresolved), mPort(0) {}
+      mNode("0.0.0.0"), mService("9"), mFamily(-1), mPort(0) {}
 
 Candidate::Candidate(string candidate) : Candidate() {
 	if (!candidate.empty())
@@ -138,7 +138,7 @@ void Candidate::changeAddress(string addr, string service) {
 	mNode = std::move(addr);
 	mService = std::move(service);
 
-	mFamily = Family::Unresolved;
+	mFamily = -1;
 	mAddress.clear();
 	mPort = 0;
 
@@ -181,7 +181,7 @@ bool Candidate::resolve(ResolveMode mode) {
 						return false;
 					}
 					mAddress = nodebuffer;
-					mFamily = p->ai_family == AF_INET6 ? Family::Ipv6 : Family::Ipv4;
+					mFamily = p->ai_family ;
 					STrace << "Resolved candidate: " << mAddress << ' ' << mPort;
 					break;
 				}
@@ -191,7 +191,7 @@ bool Candidate::resolve(ResolveMode mode) {
 		freeaddrinfo(result);
 	}
 
-	return mFamily != Family::Unresolved;
+	return mFamily != -1;
 }
 
 Candidate::Type Candidate::type() const { return mType; }
@@ -234,9 +234,9 @@ bool Candidate::operator!=(const Candidate &other) const {
 	return mFoundation != other.mFoundation;
 }
 
-bool Candidate::isResolved() const { return mFamily != Family::Unresolved; }
+bool Candidate::isResolved() const { return mFamily != -1; }
 
-Candidate::Family Candidate::family() const { return mFamily; }
+int Candidate::family() const { return mFamily; }
 
 string Candidate::address() const {
 	return isResolved() ? mAddress : "";

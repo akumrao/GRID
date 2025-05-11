@@ -502,7 +502,7 @@ void PeerConnection::processLocalCandidate(Candidate candidate)
 
 	STrace << "Issuing local candidate: " << candidate;
 
-	candidate.resolve(Candidate::ResolveMode::Simple);
+	//candidate.resolve(Candidate::ResolveMode::Simple);
 	mLocalDescription.addCandidate(candidate);
 
 	//mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),

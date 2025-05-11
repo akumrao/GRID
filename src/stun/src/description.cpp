@@ -318,7 +318,7 @@ string Description::generateSdp(const string& eol) const {
 
 	auto cand = defaultCandidate();
 	const string addr =  cand.isResolved()
-	                        ? (string(cand.family() == Candidate::Family::Ipv6 ? "IP6" : "IP4") +
+	                        ? (string(cand.family() == AF_INET6 ? "IP6" : "IP4") +
 	                           " " + cand.address())
 	                        : "IP4 0.0.0.0";
 	const uint16_t port =   cand.isResolved() ? cand.port() : 9; // Port 9 is the discard protocol
@@ -360,7 +360,7 @@ string Description::generateApplicationSdp(const string& eol) const {
 
 	auto cand = defaultCandidate();
 	const string addr =  cand.isResolved()
-	                        ? (string(cand.family() == Candidate::Family::Ipv6 ? "IP6" : "IP4") +
+	                        ? (string(cand.family() == AF_INET6 ? "IP6" : "IP4") +
 	                           " " + cand.address())
 	                        : "IP4 0.0.0.0";
 	const uint16_t port =  cand.isResolved() ? cand.port() : 9; // Port 9 is the discard protocol
@@ -404,8 +404,8 @@ Candidate Description::defaultCandidate() const {
 	for (const auto &c : mCandidates) {
 		if (c.type() == Candidate::Type::Host) {
 			if (
-			    (result.family() == Candidate::Family::Ipv6 &&
-			     c.family() == Candidate::Family::Ipv4) ||
+			    (result.family() == AF_INET6 &&
+			     c.family() == AF_INET) ||
 			    (result.family() == c.family() && result.priority() < c.priority()))
 				result = c;
 		}

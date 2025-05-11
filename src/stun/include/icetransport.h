@@ -29,7 +29,7 @@ public:
 
 	enum class GatheringState { New = 0, InProgress = 1, Complete = 2 };
 
-	using candidate_callback = std::function<void(const Candidate &candidate)>;
+	using candidate_callback = std::function<void(const Candidate candidate)>;
 	using gathering_state_callback = std::function<void(GatheringState state)>;
 
 	IceTransport( Configuration &config, Description &description,  candidate_callback candidateCallback,

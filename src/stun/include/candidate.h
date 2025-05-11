@@ -10,13 +10,13 @@
 
 namespace rtc {
 
-    typedef enum ice_candidate_type {
-	ICE_CANDIDATE_TYPE_UNKNOWN,
-	ICE_CANDIDATE_TYPE_HOST,
-	ICE_CANDIDATE_TYPE_SERVER_REFLEXIVE,
-	ICE_CANDIDATE_TYPE_PEER_REFLEXIVE,
-	ICE_CANDIDATE_TYPE_RELAYED,
-} ice_candidate_type_t;
+//    typedef enum ice_candidate_type {
+//	ICE_CANDIDATE_TYPE_UNKNOWN,
+//	ICE_CANDIDATE_TYPE_HOST,
+//	ICE_CANDIDATE_TYPE_SERVER_REFLEXIVE,
+//	ICE_CANDIDATE_TYPE_PEER_REFLEXIVE,
+//	ICE_CANDIDATE_TYPE_RELAYED,
+//} ice_candidate_type_t;
 
 
 #define ICE_CANDIDATE_PREF_HOST 126
@@ -27,21 +27,21 @@ namespace rtc {
 
 
  
-typedef struct ice_candidate {
-	ice_candidate_type_t type;
-	uint32_t priority;
-	int component;
-	char foundation[32 + 1]; // 1 to 32 characters
-	char transport[32 + 1];
-	char hostname[256 + 1];
-	//char service[32 + 1];
-        uint16_t port;
-
-} ice_candidate_t;    
+//typedef struct ice_candidate {
+//	ice_candidate_type_t type;
+//	uint32_t priority;
+//	int component;
+//	char foundation[32 + 1]; // 1 to 32 characters
+//	char transport[32 + 1];
+//	char hostname[256 + 1];
+//	//char service[32 + 1];
+//        uint16_t port;
+//
+//} ice_candidate_t;    
     
 class RTC_CPP_EXPORT Candidate {
 public:
-	enum class Family { Unresolved, Ipv4, Ipv6 };
+	//enum class Family { Unresolved, Ipv4, Ipv6 };
 	enum class Type { Unknown, Host, ServerReflexive, PeerReflexive, Relayed };
 	enum class TransportType { Unknown, Udp, TcpActive, TcpPassive, TcpSo, TcpUnknown };
 
@@ -68,29 +68,29 @@ public:
 	bool operator!=(const Candidate &other) const;
 
 	bool isResolved() const;
-	Family family() const;
+	int family() const;
 	string address() const;
 	uint16_t port() const;
 private:
 	void parse(string candidate);
-
-	//string mFoundation;
-	//uint32_t mComponent, mPriority;
+public:
+	string mFoundation;
+	uint32_t mComponent, mPriority;
 	string mTypeString, mTransportString;
-	//Type mType;
+	Type mType;
 	TransportType mTransportType;
-	string mNode;//, mService;
+	string mNode, mService;
 	string mTail;
 
 	string mMid;
 
 	// Extracted on resolution
-	Family mFamily;
-	//string mAddress;
-	//
+	int mFamily{-1};
+	string mAddress;
+	uint16_t mPort;
         
-public:
-    ice_candidate_t cand;
+
+  //  ice_candidate_t cand;
         
 };
 

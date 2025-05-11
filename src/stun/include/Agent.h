@@ -39,7 +39,7 @@ namespace stun {
     //	using gathering_state_callback = std::function<void(GatheringState state)>;
       
          
-    Agent(Description &locadesp, candidate_callback &candidateCallback);
+    Agent(Description &locadesp, candidate_callback candidateCallback);
     ~Agent();
     bool getInterfaces( int port);
 
@@ -60,7 +60,7 @@ namespace stun {
     uint32_t ice_compute_priority(Candidate::Type type, int family, int component, int index);
     int ice_add_candidate(Candidate *candidate, Description *description);
     
-   candidate_callback &mCandidateCallback;
+   candidate_callback mCandidateCallback;
     
   };
 

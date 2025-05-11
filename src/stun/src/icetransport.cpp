@@ -154,9 +154,9 @@ int IceTransport::ice_generate_sdp(Description *description,  char *buffer, size
 				ret = snprintf(begin, end - begin, "a=ice-lite\r\n");
 
 		} else if (i < description->localCanSdp.candidates_count + 1) {
-			const ice_candidate_t *candidate = &description->localCanSdp.candidates[i - 1];
-			if (candidate->type == ICE_CANDIDATE_TYPE_UNKNOWN ||
-			    candidate->type == ICE_CANDIDATE_TYPE_PEER_REFLEXIVE)
+			const Candidate *candidate = &description->localCanSdp.candidates[i - 1];
+			if (candidate->mType == Candidate::Type::Unknown ||
+			    candidate->mType == Candidate::Type::PeerReflexive)
 				continue;
 			char tmp[4096];
 			if (ice_generate_candidate_sdp(candidate, tmp, 4096) < 0)
@@ -195,9 +195,12 @@ IceTransport::~IceTransport() {
 Description::Role IceTransport::role() const { return mRole; }
 
 Description *IceTransport::getLocalDescription(Description::Type type)  {
-	char sdp[4096];
+	
+
+    //    Candidate candidate
+    //    mCandidateCallback(candidate);
         
-         
+        char sdp[4096];
         random_str64(localDes.localCanSdp.ice_ufrag, 4 + 1);
         random_str64(localDes.localCanSdp.ice_pwd, 22 + 1);
         localDes.localCanSdp.ice_lite = false;
