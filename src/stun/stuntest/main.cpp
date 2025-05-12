@@ -60,6 +60,8 @@ int main()
     config2.iceServers.emplace_back("turn:openrelayproject:openrelayproject@openrelay.metered.ca:80");
 
     PeerConnection pc1(config1);
+    
+    PeerConnection pc2(config1);
 
 
     pc1.onStateChange([](PeerConnection::State state) {

@@ -41,7 +41,8 @@ void testUdpServer::OnUdpSocketPacketReceived(UdpServer* socket, const char* dat
     stun::Reader stun;
     int r = stun.process((uint8_t*)data, len, &msg);
 
-    if (r == 0) {
+    if (r == 0) 
+    {
       /* valid stun message */
      // msg.computeMessageIntegrity(PASSWORD);
 

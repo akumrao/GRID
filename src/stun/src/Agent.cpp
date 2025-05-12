@@ -104,7 +104,7 @@ namespace stun {
         
         candidate->mAddress =  ip;
         
-        candidate->mNode =  port;
+        candidate->mPort=  port;
         
          candidate->mFamily = family;
         
@@ -119,7 +119,7 @@ namespace stun {
     int Agent::ice_add_candidate(Candidate *candidate, Description *description) 
     {
         
-        mCandidateCallback(*candidate);
+       
         
 //	if (candidate->cand.type == ICE_CANDIDATE_TYPE_UNKNOWN)
 //		return -1;
@@ -145,6 +145,9 @@ namespace stun {
         ice_generate_candidate_sdp(candidate, buffer, 4096);
         
         SInfo << buffer;
+        
+        mCandidateCallback(*candidate);
+        
         return 0;
 
     }

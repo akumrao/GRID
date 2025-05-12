@@ -15,6 +15,8 @@
 #include <thread>
 
 namespace rtc {
+    
+    int ice_type_suffix(const Candidate *candidate,  char **type , char **suffix  );
 	
     int ice_generate_candidate_sdp(const Candidate *candidate, char *buffer, size_t size);
 

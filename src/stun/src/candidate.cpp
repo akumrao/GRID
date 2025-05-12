@@ -8,7 +8,7 @@
 #include <cctype>
 #include <sstream>
 #include <unordered_map>
-
+#include "sdpcommon.h"
 #ifdef _WIN32
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -49,8 +49,8 @@ inline void trim_end(string &str) {
 namespace rtc {
 
 Candidate::Candidate()
-    : mFoundation("none"), mComponent(0), mPriority(0), mTypeString("unknown"),
-      mTransportString("unknown"), mType(Type::Unknown), mTransportType(TransportType::Unknown),
+    : mFoundation("none"), mComponent(0), mPriority(0), 
+      mTransportString("UDP"), mType(Type::Unknown), mTransportType(TransportType::Unknown),
       mNode("0.0.0.0"), mService("9"), mFamily(-1), mPort(0) {}
 
 Candidate::Candidate(string candidate) : Candidate() {
@@ -210,7 +210,19 @@ string Candidate::candidate() const {
 	else
 		oss << mNode << sp << mService;
 
-	oss << sp << "typ" << sp << mTypeString;
+        char *type = NULL;
+	char *suffix = NULL;
+        
+        int ret = ice_type_suffix(this, &type, &suffix );
+        
+        if(!ret)
+        { 
+            char tmp[100];
+            int ret = ice_type_suffix(this, &type, &suffix );
+            snprintf(tmp, 99, "%s%s%s",  type, suffix ? " " : "",   suffix ? suffix : "");
+            
+            oss << sp << "typ" << sp << tmp;
+        }
 
 	if (!mTail.empty())
 		oss << sp << mTail;
