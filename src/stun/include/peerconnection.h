@@ -119,6 +119,10 @@ public:
         
         void processLocalDescription(Description *description);
         
+        
+        void processRemoteCandidate(Candidate candidate);
+        
+        
         bool changeSignalingState(SignalingState newState);
         
         string localBundleMid();
@@ -180,6 +184,8 @@ public:
         void iceState(IceTransport::State state);
 
         void iceGathering(IceTransport::GatheringState state);
+        
+        IceTransport *iceTransport{nullptr};
                
         
         std::unordered_map<uint16_t, DataChannel*> mDataChannels; // by stream ID

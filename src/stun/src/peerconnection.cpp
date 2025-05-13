@@ -58,6 +58,9 @@ PeerConnection::PeerConnection( Configuration &config): mConfig(config)
 			SError << "MTU set to " << config.mtu;
 		}
 	}
+        
+        iceTransport = initIceTransport();
+        
         negotiationNeeded();
 }
 
@@ -163,7 +166,7 @@ void PeerConnection::processLocalDescription(Description *description) {
 		std::lock_guard<std::recursive_mutex> lock(mLocalDescriptionMutex);
 
 		std::vector<Candidate> existingCandidates;
-		if (mLocalDescription.localCanSdp.candidates_count) {
+		if (mLocalDescription.desc.candidates_count) {
 			existingCandidates = mLocalDescription.extractCandidates();
 			//mCurrentLocalDescription.emplace(std::move(*mLocalDescription));
 		}
@@ -267,7 +270,7 @@ void PeerConnection::setLocalDescription(Description::Type type) {
 	}
 	}
 
-        IceTransport *iceTransport = initIceTransport();
+        
 
 	Description *local = iceTransport->getLocalDescription(type);
         
@@ -396,7 +399,40 @@ void PeerConnection::setRemoteDescription(Description description) {
 
 void PeerConnection::addRemoteCandidate(Candidate candidate) {
 	STrace << "Adding remote candidate: " << string(candidate);
-	//processRemoteCandidate(std::move(candidate));
+	processRemoteCandidate(candidate);
+}
+
+
+
+void PeerConnection::processRemoteCandidate(Candidate candidate) {
+	//auto iceTransport = std::atomic_load(&mIceTransport);
+	{
+		// Set as remote candidate
+	//	std::lock_guard lock(mRemoteDescriptionMutex);
+//		if (!mRemoteDescription)
+//			throw std::logic_error("Got a remote candidate without remote description");
+//
+//		if (!iceTransport)
+//			throw std::logic_error("Got a remote candidate without ICE transport");
+//
+//		candidate.hintMid(mRemoteDescription->bundleMid());
+//
+//		if (mRemoteDescription->hasCandidate(candidate))
+//			return; // already in description, ignore
+
+//		candidate.resolve(Candidate::ResolveMode::Simple);
+		mRemoteDescription.addCandidate(candidate);
+	}
+
+	//if (candidate.isResolved()) 
+        {
+		iceTransport->addRemoteCandidate(&candidate);
+	} 
+        //else 
+        {
+		// We might need a lookup, do it asynchronously
+	
+	}
 }
 
 //void PeerConnection::setMediaHandler(shared_ptr<MediaHandler> handler) {
@@ -504,6 +540,9 @@ void PeerConnection::processLocalCandidate(Candidate candidate)
 
 	//candidate.resolve(Candidate::ResolveMode::Simple);
 	mLocalDescription.addCandidate(candidate);
+        
+        if(mLocalCandidateCallback)
+        mLocalCandidateCallback(candidate);
 
 	//mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),
 	//				   &localCandidateCallback, std::move(candidate));
@@ -555,7 +594,7 @@ IceTransport* PeerConnection::initIceTransport()
 		STrace << "Starting ICE transport";
 
 		IceTransport *transport = new IceTransport(
-		    mConfig, mLocalDescription , 
+		    mConfig, mLocalDescription , mRemoteDescription,
                      std::bind(&PeerConnection::processLocalCandidate, this, _1),    
 		    std::bind(&PeerConnection::iceState, this, _1),
 		    std::bind(&PeerConnection::iceGathering, this, _1)) ;

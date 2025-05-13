@@ -39,11 +39,11 @@ struct CertificateFingerprint {
 typedef struct ice_description {
 	char ice_ufrag[256 + 1]; // 4 to 256 characters
 	char ice_pwd[256 + 1];   // 22 to 256 characters
-	bool ice_lite;
+	bool ice_lite{false};
 	//ice_candidate_t candidates[ICE_MAX_CANDIDATES_COUNT];
         std::vector<Candidate> candidates;
-	int candidates_count;
-	bool finished;
+	int candidates_count{0};
+	bool finished{false};
 } ice_description_t;
 
 class RTC_CPP_EXPORT Description {
@@ -329,7 +329,7 @@ private:
 	bool mEnded = false;
         
 public:
-    	 ice_description_t localCanSdp;
+    	 ice_description_t desc;
 
 
 };

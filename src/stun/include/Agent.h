@@ -11,9 +11,25 @@
 
 using namespace rtc;
 
+#define MIN_STUN_RETRANSMISSION_TIMEOUT 500 // msecs
+#define MAX_STUN_CHECK_RETRANSMISSION_COUNT 6  // exponential backoff, total 39500ms
+#define MAX_STUN_SERVER_RETRANSMISSION_COUNT 5 // total 23500ms
 
 
 #define STUN_TRANSACTION_ID_SIZE 12
+// Max STUN and TURN server entries
+#define MAX_SERVER_ENTRIES_COUNT 2 // max STUN server entries
+#define MAX_RELAY_ENTRIES_COUNT 2  // max TURN server entries
+#define MAX_STUN_SERVER_RECORDS_COUNT MAX_SERVER_ENTRIES_COUNT
+#define MAX_CANDIDATE_PAIRS_COUNT (ICE_MAX_CANDIDATES_COUNT * (1 + MAX_RELAY_ENTRIES_COUNT))
+#define MAX_STUN_ENTRIES_COUNT (MAX_CANDIDATE_PAIRS_COUNT + MAX_STUN_SERVER_RECORDS_COUNT)
+
+
+
+// RFC 8445: ICE agents SHOULD use a default Ta value, 50 ms, but MAY use another value based on the
+// characteristics of the associated data.
+#define STUN_PACING_TIME 50 // msecs
+
 namespace stun {
 
     
@@ -25,6 +41,71 @@ namespace stun {
 	JUICE_STATE_COMPLETED,
 	JUICE_STATE_FAILED
 } juice_state_t;
+
+
+typedef enum ice_candidate_pair_state {
+	ICE_CANDIDATE_PAIR_STATE_PENDING,
+	ICE_CANDIDATE_PAIR_STATE_SUCCEEDED,
+	ICE_CANDIDATE_PAIR_STATE_FAILED,
+	ICE_CANDIDATE_PAIR_STATE_FROZEN,
+} ice_candidate_pair_state_t;
+
+
+typedef struct ice_candidate_pair {
+	Candidate *local;
+	Candidate *remote;
+	uint64_t priority;
+	ice_candidate_pair_state_t state;
+	bool nominated;
+	bool nomination_requested;
+	int64_t consent_expiry;
+} ice_candidate_pair_t;
+
+
+
+typedef enum agent_mode {
+	AGENT_MODE_UNKNOWN,
+	AGENT_MODE_CONTROLLED,
+	AGENT_MODE_CONTROLLING
+} agent_mode_t;
+
+
+typedef enum agent_stun_entry_type {
+	AGENT_STUN_ENTRY_TYPE_EMPTY,
+	AGENT_STUN_ENTRY_TYPE_SERVER,
+	AGENT_STUN_ENTRY_TYPE_RELAY,
+	AGENT_STUN_ENTRY_TYPE_CHECK
+} agent_stun_entry_type_t;
+
+typedef enum agent_stun_entry_state {
+	AGENT_STUN_ENTRY_STATE_PENDING,
+	AGENT_STUN_ENTRY_STATE_CANCELLED,
+	AGENT_STUN_ENTRY_STATE_FAILED,
+	AGENT_STUN_ENTRY_STATE_SUCCEEDED,
+	AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE,
+	AGENT_STUN_ENTRY_STATE_IDLE
+} agent_stun_entry_state_t;
+
+typedef struct agent_stun_entry {
+	agent_stun_entry_type_t type;
+	agent_stun_entry_state_t state;
+	agent_mode_t mode;
+	ice_candidate_pair_t *pair;
+	addr_record_t record;
+	addr_record_t relayed;
+	uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
+	int64_t next_transmission;
+	int64_t retransmission_timeout;
+	int retransmissions;
+	bool transaction_id_expired;
+
+	// TURN
+	//agent_turn_state_t *turn;
+	//unsigned int turn_redirections;
+	//struct agent_stun_entry *relay_entry;
+
+} agent_stun_entry_t;
+
 
 //typedef void (*_cb_state_changed_t)(juice_agent_t *agent, juice_state_t state, void *user_ptr);
 //typedef void (*cb_candidate_t)(juice_agent_t *agent, const char *sdp, void *user_ptr);
@@ -39,7 +120,7 @@ namespace stun {
     //	using gathering_state_callback = std::function<void(GatheringState state)>;
       
          
-    Agent(Description &locadesp, candidate_callback candidateCallback);
+    Agent(Description &localdesp, Description &remotedesp, candidate_callback candidateCallback);
     ~Agent();
     bool getInterfaces( int port);
 
@@ -52,15 +133,58 @@ namespace stun {
     uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
     std::vector<Attribute*> attributes;
     std::vector<uint8_t> buffer;
-    Description &locadesp;
+    Description &localdesp;
+    
+    Description &remotedesp;
     
     int ice_create_host_candidate( char *ip,  uint16_t port , int family);
     int ice_create_reflexive_candidate( char *ip,  uint16_t port, int family );
     int ice_create_local_candidate(int component, int index, char *ip,  uint16_t port, int family, Candidate *candidate);
     uint32_t ice_compute_priority(Candidate::Type type, int family, int component, int index);
-    int ice_add_candidate(Candidate *candidate, Description *description);
+    int ice_add_candidate( Candidate *candidate, Description *description);
+    int ice_remote_candidate(const Candidate *candidate);
     
    candidate_callback mCandidateCallback;
+   
+
+  //  ice_description_t local;
+   // ice_description_t remote;
+
+    ice_candidate_pair_t candidate_pairs[MAX_CANDIDATE_PAIRS_COUNT];
+    ice_candidate_pair_t *ordered_pairs[MAX_CANDIDATE_PAIRS_COUNT];
+    ice_candidate_pair_t *selected_pair;
+    int candidate_pairs_count;
+
+    
+    
+    void agent_update_ordered_pairs() ;
+    
+    int agent_add_candidate_pairs_for_remote( Candidate *remote) ;
+    
+    int agent_add_candidate_pair( Candidate *local, // local may be NULL
+                             Candidate *remote);
+    
+        
+    int ice_create_candidate_pair(Candidate *local, Candidate *remote, bool is_controlling,
+                              ice_candidate_pair_t *pair);
+ 
+    int ice_update_candidate_pair(ice_candidate_pair_t *pair, bool is_controlling);
+    
+    int ice_candidates_count(const ice_description_t *description, Candidate::Type type); 
+    
+    void agent_arm_transmission( agent_stun_entry_t *entry, int64_t delay); 
+    
+    int agent_unfreeze_candidate_pair( ice_candidate_pair_t *pair);
+    
+    
+    agent_mode_t mode{AGENT_MODE_UNKNOWN};
+    int entries_count;
+    
+
+    agent_stun_entry_t entries[MAX_STUN_ENTRIES_COUNT];
+    
+    std::string localMid;
+
     
   };
 

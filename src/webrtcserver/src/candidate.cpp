@@ -214,7 +214,11 @@ string Candidate::candidate() const {
 	return oss.str();
 }
 
-string Candidate::mid() const { return mMid.value_or("0"); }
+string Candidate::mid() const { 
+    
+    return mMid.value_or("0");
+
+}
 
 Candidate::operator string() const {
 	std::ostringstream line;

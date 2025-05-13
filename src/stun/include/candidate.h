@@ -24,6 +24,10 @@ namespace rtc {
 #define ICE_CANDIDATE_PREF_SERVER_REFLEXIVE 100
 #define ICE_CANDIDATE_PREF_RELAYED 0
 
+typedef struct addr_record {
+	struct sockaddr_storage addr;
+	socklen_t len;
+} addr_record_t;
 
 
  
@@ -89,6 +93,7 @@ public:
 	string mAddress;
 	uint16_t mPort;
         
+        addr_record_t resolved;
 
   //  ice_candidate_t cand;
         

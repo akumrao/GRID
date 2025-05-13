@@ -264,7 +264,7 @@ void Description::addCandidate(Candidate candidate) {
 	candidate.hintMid(bundleMid());
 
 	if (!hasCandidate(candidate))
-		mCandidates.emplace_back(std::move(candidate));
+		mCandidates.emplace_back(candidate);
 }
 
 void Description::addCandidates(std::vector<Candidate> candidates) {

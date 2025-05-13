@@ -34,8 +34,6 @@ public:
 	using candidate_callback = std::function<void(const Candidate candidate)>;
 	using gathering_state_callback = std::function<void(GatheringState state)>;
         
-        IceTransport() delete;
-
 	IceTransport(const Configuration &config, candidate_callback candidateCallback,
 	             state_callback stateChangeCallback,
 	             gathering_state_callback gatheringStateChangeCallback);

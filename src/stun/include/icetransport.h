@@ -32,7 +32,7 @@ public:
 	using candidate_callback = std::function<void(const Candidate candidate)>;
 	using gathering_state_callback = std::function<void(GatheringState state)>;
 
-	IceTransport( Configuration &config, Description &description,  candidate_callback candidateCallback,
+	IceTransport( Configuration &config, Description &localDesc, Description & remoteDesc,  candidate_callback candidateCallback,
 	             state_callback stateChangeCallback,
 	             gathering_state_callback gatheringStateChangeCallback);
 	~IceTransport();
@@ -82,6 +82,8 @@ private:
         int mTurnServersAdded;
         
         Description &localDes;
+        Description &remoteDes;
+         
         testUdpServer *socket{nullptr};
         
          Agent agent;

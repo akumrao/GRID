@@ -81,7 +81,7 @@ int main()
     });
     
     
-    pc1.onLocalDescription([ ](rtc::Description description) 
+    pc1.onLocalDescription([&pc2 ](rtc::Description description) 
     {
         std::string tmp = description.typeString();
      
@@ -93,12 +93,12 @@ int main()
 
 		json message = {
                                 {"type", description.typeString()},
-		                {"description", std::string(description)}};
+		                {"description",}};
+            // pc2.setRemoteDescription(description);
+           // pc->setLocalDescription( Description::Type::Answer);
 //                
 //                  SInfo << message.dump();
-        
        // SInfo << "send:"  << description.typeString() <<  " des "<<  std::string(description);
-          
      //  pc->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
        // sendSdp( std::string(description), description.typeString());
         // Make the answer
@@ -106,7 +106,7 @@ int main()
 //			ws->send(message.dump());
     });
 
-    pc1.onLocalCandidate([ ](rtc::Candidate candidate) {
+    pc1.onLocalCandidate([&pc2 ](rtc::Candidate candidate) {
             json message = {
                             {"type", "candidate"},
                             {"candidate", std::string(candidate)},
@@ -116,6 +116,9 @@ int main()
      //   sendCandidate( candidate.mid(), 1,  std::string(candidate)  );
 //            if (auto ws = wws.lock())
 //                    ws->send(message.dump());
+           pc2.addRemoteCandidate(candidate ) ;
+                
+     
     });
 
     pc1.onSignalingStateChange([](PeerConnection::SignalingState state) {

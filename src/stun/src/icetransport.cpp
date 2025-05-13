@@ -42,9 +42,9 @@ void IceTransport::Cleanup() {
 	// Dummy
 }
 
-IceTransport::IceTransport( Configuration &config,  Description &localdescription, candidate_callback candidateCallback,
+IceTransport::IceTransport( Configuration &config,  Description &localdescription,  Description &remoteDes, candidate_callback candidateCallback,
                            state_callback stateChangeCallback,
-                           gathering_state_callback gatheringStateChangeCallback): localDes(localdescription),agent( localdescription, candidateCallback),
+                           gathering_state_callback gatheringStateChangeCallback): localDes(localdescription), remoteDes(remoteDes), agent( localdescription, remoteDes, candidateCallback),
     
       mMid("0"), mGatheringState(GatheringState::New),
       mCandidateCallback(candidateCallback),
@@ -135,7 +135,7 @@ void IceTransport::addIceServer(IceServer server) {
 
 int IceTransport::ice_generate_sdp(Description *description,  char *buffer, size_t size)
 {
-	if (!*description->localCanSdp.ice_ufrag || !*description->localCanSdp.ice_pwd)
+	if (!*description->desc.ice_ufrag || !*description->desc.ice_pwd)
 		return -1;
 
 	int len = 0;
@@ -145,16 +145,16 @@ int IceTransport::ice_generate_sdp(Description *description,  char *buffer, size
 	// Round 0: description
 	// Round i with i>0 and i<count+1: candidate i-1
 	// Round count + 1: end-of-candidates and ice-options lines
-	for (int i = 0; i < description->localCanSdp.candidates_count + 2; ++i) {
+	for (int i = 0; i < description->desc.candidates_count + 2; ++i) {
 		int ret;
 		if (i == 0) {
 			ret = snprintf(begin, end - begin, "a=ice-ufrag:%s\r\na=ice-pwd:%s\r\n",
-			               description->localCanSdp.ice_ufrag, description->localCanSdp.ice_pwd);
-			if (description->localCanSdp.ice_lite)
+			               description->desc.ice_ufrag, description->desc.ice_pwd);
+			if (description->desc.ice_lite)
 				ret = snprintf(begin, end - begin, "a=ice-lite\r\n");
 
-		} else if (i < description->localCanSdp.candidates_count + 1) {
-			const Candidate *candidate = &description->localCanSdp.candidates[i - 1];
+		} else if (i < description->desc.candidates_count + 1) {
+			const Candidate *candidate = &description->desc.candidates[i - 1];
 			if (candidate->mType == Candidate::Type::Unknown ||
 			    candidate->mType == Candidate::Type::PeerReflexive)
 				continue;
@@ -165,7 +165,7 @@ int IceTransport::ice_generate_sdp(Description *description,  char *buffer, size
 		} else { // i == description->candidates_count + 1
 			// RFC 8445 10. ICE Option: An agent compliant to this specification MUST inform the
 			// peer about the compliance using the 'ice2' option.
-			if (description->localCanSdp.finished)
+			if (description->desc.finished)
 				ret = snprintf(begin, end - begin, "a=end-of-candidates\r\na=ice-options:ice2\r\n");
 			else
 				ret = snprintf(begin, end - begin, "a=ice-options:ice2,trickle\r\n");
@@ -201,12 +201,12 @@ Description *IceTransport::getLocalDescription(Description::Type type)  {
     //    mCandidateCallback(candidate);
         
         char sdp[4096];
-        random_str64(localDes.localCanSdp.ice_ufrag, 4 + 1);
-        random_str64(localDes.localCanSdp.ice_pwd, 22 + 1);
-        localDes.localCanSdp.ice_lite = false;
-        localDes.localCanSdp.candidates_count = 0;
-        localDes.localCanSdp.finished = false;
-        SInfo << "Created local description: ufrag= "<<  localDes.localCanSdp.ice_ufrag  <<  " pwd "  <<   localDes.localCanSdp.ice_pwd;
+        random_str64(localDes.desc.ice_ufrag, 4 + 1);
+        random_str64(localDes.desc.ice_pwd, 22 + 1);
+        localDes.desc.ice_lite = false;
+        localDes.desc.candidates_count = 0;
+        localDes.desc.finished = false;
+        SInfo << "Created local description: ufrag= "<<  localDes.desc.ice_ufrag  <<  " pwd "  <<   localDes.desc.ice_pwd;
         
         if (ice_generate_sdp(&localDes, sdp, 4096) < 0)
         {
@@ -254,12 +254,13 @@ bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
 	if (!candidate->isResolved())
 		return false;
 
+        agent.ice_remote_candidate(   candidate  );
 	//return juice_add_remote_candidate(mAgent.get(), string(candidate).c_str()) >= 0;
 }
 
 void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> additionalIceServers) {
 	mMid = std::move(mid);
-        
+         agent.localMid = mMid;
         
         static int inc = 7000;
        
