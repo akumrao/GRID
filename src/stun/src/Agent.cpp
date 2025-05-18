@@ -133,6 +133,13 @@ namespace stun {
     {
         
         ice_add_candidate( (Candidate *)candidate, &remotedesp  );
+        
+        
+        if (agent_add_candidate_pairs_for_remote((Candidate *)candidate)) {
+         	LWarn("Failed to add candidate pair");
+		return -2;
+	}
+        
     } 
     
     
