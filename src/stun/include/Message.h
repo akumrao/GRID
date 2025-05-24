@@ -15,6 +15,12 @@
 #include <Attribute.h>
 #include <Types.h>
 
+#include "candidate.h"
+
+
+using namespace rtc;
+
+
 #define STUN_TRANSACTION_ID_SIZE 12
 
 
@@ -81,6 +87,7 @@ typedef struct stun_credentials {
 
   class Message {
   public:
+    //Message( stun_class_t msg_class = STUN_CLASS_REQUEST , stun_method_t msg_method = STUN_METHOD_BINDING);
     Message(uint16_t type = STUN_MSG_TYPE_NONE);
     ~Message();
     void addAttribute(Attribute* attr);                        /* Add an attribute to the message who takes ownership (will delete all attributes in the d'tor. */
@@ -90,6 +97,7 @@ typedef struct stun_credentials {
     bool find(MessageIntegrity** result);                      /* Find a message integrity attribute. */
     bool find(XorMappedAddress** result);                      /* Find a xor-mapped-address attribute.*/
     bool find(Fingerprint** result);                           /* Find a fingerprint attrbiute. */
+    bool find(Priority** result);
 
     template<class T> bool find(uint16_t atype, T** result) {
       *result = NULL;
@@ -103,13 +111,25 @@ typedef struct stun_credentials {
     }
 
   public:
-    uint16_t type;
+   // uint16_t type;
+      
+    stun_class_t msg_class;
+    stun_method_t msg_method;
+    uint16_t type;    
     uint16_t length;
     uint32_t cookie;
     //uint32_t transaction[3];
     stun_credentials_t credentials;
     uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
     std::vector<Attribute*> attributes;
+    
+    unsigned int error_code;
+    
+    uint64_t ice_controlling{0};
+    uint64_t ice_controlled{0};
+    
+    addr_record_t mapped;
+            
   };
 
 } /* namespace stun */

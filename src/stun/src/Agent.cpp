@@ -35,9 +35,14 @@ namespace stun {
     {
 
         int x = 1;
+        _timer.cb_timeout = std::bind(&Agent::onTimer, this);
+        _timer.Start(200,200);
+       
     }
 
     Agent::~Agent() {
+        
+         _timer.Stop();
 
     }
 
@@ -56,17 +61,32 @@ namespace stun {
         
             //SInfo << "Internal? %s\n", interface_a.is_internal ? "Yes" : "No");
 
+            Candidate candidate;
+            candidate.mType = Candidate::Type::Host;
+        
             if(!interface_a.is_internal)
             {
                   SInfo << "Name: " <<  interface_a.name;
                   
                 if (interface_a.address.address4.sin_family == AF_INET) {
                     uv_ip4_name(&interface_a.address.address4, buf, sizeof (buf));
-                    ice_create_host_candidate(buf, port, AF_INET);
+                   
+                    
+                    std::memcpy(&candidate.resolved.addr , &interface_a.address.address4, sizeof(interface_a.address.address4));
+                    candidate.resolved.len = sizeof(interface_a.address.address4);
+                            
+                    ice_create_host_candidate(buf, port, AF_INET, &candidate);        
+                    
                     SInfo << "IPv4 address: " <<  buf;
                 } else if (interface_a.address.address4.sin_family == AF_INET6) {
                     uv_ip6_name(&interface_a.address.address6, buf, sizeof (buf));
-                    ice_create_host_candidate(buf, port, AF_INET6);
+                    
+                    
+                    std::memcpy(&candidate.resolved.addr , &interface_a.address.address6, sizeof(interface_a.address.address6));
+                    candidate.resolved.len = sizeof(interface_a.address.address6);
+                    
+                    ice_create_host_candidate(buf, port, AF_INET6, &candidate);
+                    
                     SInfo << "IPv6 address: " <<  buf;
                 }
             }
@@ -78,30 +98,44 @@ namespace stun {
 
     }
 
-    int Agent::ice_create_host_candidate( char *ip,  uint16_t port, int family ) {
+    int Agent::ice_create_host_candidate( char *ip,  uint16_t port, int family, Candidate *candidate ) {
 
-        Candidate candidate;
+   
         
-        candidate.mType = Candidate::Type::Host;
-        
-        if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  ip, port, family, &candidate)) {
+        if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  ip, port, family, candidate)) {
             printf("Failed to create host candidate");
         }
         
-        ice_add_candidate( &candidate, &localdesp   );
+        ice_add_candidate( candidate, &localdesp   );
     }
     
     
-    int Agent::ice_create_reflexive_candidate( char *ip,  uint16_t port, int family ) {
+    int Agent::ice_create_local_reflexive_candidate( char *ip,  uint16_t port, int family, Candidate *candidate) {
 
-        Candidate candidate;
-        candidate.mType = Candidate::Type::ServerReflexive;
-         
-        if (ice_create_local_candidate(1, localdesp.desc.candidates_count,  ip, port, family, &candidate)) {
+       
+        if (candidate->mType !=  Candidate::Type::ServerReflexive && candidate->mType  !=  Candidate::Type::PeerReflexive) {
+		LError("Invalid type for local reflexive candidate");
+		return -1;
+	}
+        
+        
+        if (ice_find_candidate_from_addr(&localdesp, &candidate->resolved, family == AF_INET6 ? Candidate::Type::Unknown : candidate->mType )) {
+                  LTrace("A local candidate exists for the mapped address");
+                  return 0;
+        }
+        
+        
+        if (candidate->mType == Candidate::Type::PeerReflexive && ice_candidates_count(&localdesp.desc, Candidate::Type::PeerReflexive) >= MAX_PEER_REFLEXIVE_CANDIDATES_COUNT) {
+		LInfo("Local description has the maximum number of peer reflexive candidates, ignoring");
+		return 0;
+	}
+        
+
+        if (ice_create_local_candidate(1, localdesp.desc.candidates_count,  ip, port, family, candidate)) {
             printf("Failed to create host candidate");
         }
         
-        ice_add_candidate( &candidate, &localdesp   );
+        ice_add_candidate( candidate, &localdesp   );
     }
 
     int Agent::ice_create_local_candidate( int component, int index, char *ip,  uint16_t port, int family,  Candidate *candidate) {
@@ -114,7 +148,6 @@ namespace stun {
         candidate->mPriority  = ice_compute_priority(candidate->mType, family, candidate->mComponent, index);
         
         candidate->mAddress =  ip;
-        
         candidate->mPort=  port;
         
         candidate->mFamily = family;
@@ -128,8 +161,97 @@ namespace stun {
     }
     
     
+        //	enum class Type { Unknown, Host, ServerReflexive, PeerReflexive, Relayed };
+    uint32_t Agent::ice_compute_priority(Candidate::Type type, int family, int component, int index) {
+	// Compute candidate priority according to RFC 8445
+	// See https://www.rfc-editor.org/rfc/rfc8445.html#section-5.1.2.1
+	uint32_t p = 0;
+
+	switch (type) {
+            case Candidate::Type::Host:
+		p += ICE_CANDIDATE_PREF_HOST;
+		break;
+	case Candidate::Type::ServerReflexive:
+		p += ICE_CANDIDATE_PREF_PEER_REFLEXIVE;
+		break;
+	case Candidate::Type::PeerReflexive:
+		p += ICE_CANDIDATE_PREF_SERVER_REFLEXIVE;
+		break;
+	case Candidate::Type::Relayed:
+		p += ICE_CANDIDATE_PREF_RELAYED;
+		break;
+	default:
+		break;
+	}
+	p <<= 16;
+
+	switch (family) {
+	case AF_INET:
+		p += 32767;
+		break;
+	case AF_INET6:
+		p += 65535;
+		break;
+	default:
+		break;
+	}
+	p -= CLAMP(index, 0, 32767);
+	p <<= 8;
+
+	p += 256 - CLAMP(component, 1, 256);
+	return p;
+    }
     
-    int Agent::ice_remote_candidate(const Candidate *candidate)
+    
+    
+        int  Agent::agent_add_remote_peer_reflexive_candidate( uint32_t priority, const addr_record_t *record)
+        {
+            
+            if (ice_find_candidate_from_addr(&remotedesp, record, Candidate::Type::Unknown)) {
+                    LTrace("A remote candidate exists for the remote address");
+                    return 0;
+            }
+            Candidate candidate;
+            candidate.mType = Candidate::Type::PeerReflexive;
+            candidate.resolved =  *record;
+            
+            char buf[512];
+            uint16_t port;
+            
+            if(record->addr.ss_family == AF_INET6)
+            {
+                uv_ip6_name((sockaddr_in6* )&record->addr, buf, sizeof (buf));
+		port = ntohs( ((sockaddr_in6 *)&record->addr)->sin6_port);
+                                
+            }
+            else if(record->addr.ss_family == AF_INET )
+            {
+                 uv_ip4_name((sockaddr_in*)&record->addr, buf, sizeof (buf));
+                 port =  ntohs( ((sockaddr_in *)&record->addr)->sin_port); 
+            }
+            
+            if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  buf,  0, -record->addr.ss_family,  &candidate)) {
+                    LError("Failed to create reflexive candidate");
+                    return -1;
+            }
+            if (ice_candidates_count(&remotedesp.desc , Candidate::Type::PeerReflexive ) >=    MAX_PEER_REFLEXIVE_CANDIDATES_COUNT) {
+                    LInfo( "Remote description has the maximum number of peer reflexive candidates, ignoring");
+                    return 0;
+            }
+            if (ice_add_candidate(&candidate, &remotedesp)) {
+                    LError("Failed to add candidate to remote description");
+                    return -1;
+            }
+
+            SDebug << "Obtained a new remote reflexive candidate, priority=" << (unsigned long)priority;
+
+            Candidate *remote = &remotedesp.desc.candidates[remotedesp.desc.candidates.size() -1];
+            remote->mPriority = priority;
+
+            return agent_add_candidate_pairs_for_remote( remote);
+    }
+    
+    int Agent::ice_add_remote_candidate(const Candidate *candidate)
     {
         
         ice_add_candidate( (Candidate *)candidate, &remotedesp  );
@@ -180,52 +302,7 @@ namespace stun {
         return 0;
 
     }
-    //	enum class Type { Unknown, Host, ServerReflexive, PeerReflexive, Relayed };
-    uint32_t Agent::ice_compute_priority(Candidate::Type type, int family, int component, int index) {
-	// Compute candidate priority according to RFC 8445
-	// See https://www.rfc-editor.org/rfc/rfc8445.html#section-5.1.2.1
-	uint32_t p = 0;
 
-	switch (type) {
-            case Candidate::Type::Host:
-		p += ICE_CANDIDATE_PREF_HOST;
-		break;
-	case Candidate::Type::ServerReflexive:
-		p += ICE_CANDIDATE_PREF_PEER_REFLEXIVE;
-		break;
-	case Candidate::Type::PeerReflexive:
-		p += ICE_CANDIDATE_PREF_SERVER_REFLEXIVE;
-		break;
-	case Candidate::Type::Relayed:
-		p += ICE_CANDIDATE_PREF_RELAYED;
-		break;
-	default:
-		break;
-	}
-	p <<= 16;
-
-	switch (family) {
-	case AF_INET:
-		p += 32767;
-		break;
-	case AF_INET6:
-		p += 65535;
-		break;
-	default:
-		break;
-	}
-	p -= CLAMP(index, 0, 32767);
-	p <<= 8;
-
-	p += 256 - CLAMP(component, 1, 256);
-	return p;
-    }
-    
-    
-    
-    
-    
-    
     
     void Agent::agent_update_ordered_pairs() 
     {
@@ -362,7 +439,7 @@ namespace stun {
 //	}
 
 	STrace << "Registering STUN entry  " <<   entries_count << " for candidate pair checking";
-	agent_stun_entry_t *entry = entries + entries_count;
+	agent_stun_entry_t *entry = m_entries + entries_count;
 	entry->type = AGENT_STUN_ENTRY_TYPE_CHECK;
 	entry->state = AGENT_STUN_ENTRY_STATE_IDLE;
 	entry->mode = AGENT_MODE_UNKNOWN;
@@ -409,7 +486,7 @@ namespace stun {
                     return 0;
 
             for (int i = 0; i < entries_count; ++i) {
-                    agent_stun_entry_t *entry = entries + i;
+                    agent_stun_entry_t *entry = m_entries + i;
                     if (pair == pair) {
                             pair->state = ICE_CANDIDATE_PAIR_STATE_PENDING;
                             entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
@@ -440,20 +517,831 @@ namespace stun {
             }
 
             // Find a time slot
-            agent_stun_entry_t *other = entries;
-            while (other != entries + entries_count) {
+            agent_stun_entry_t *other = m_entries;
+            while (other != m_entries + entries_count) {
                     if (other != entry) {
                             int64_t other_transmission = other->next_transmission;
                             int64_t timediff = entry->next_transmission - other_transmission;
                             if (other_transmission && abs((int)timediff) < STUN_PACING_TIME) {
                                     entry->next_transmission = other_transmission + STUN_PACING_TIME;
-                                    other = entries;
+                                    other = m_entries;
                                     continue;
                             }
                     }
                     ++other;
             }
     }
+    
+    
+    void Agent::onTimer()
+    {
+//        if (expired())
+//            // Attempt to re-allocate
+//            sendAllocate();
+//
+//        else if (timeRemaining() < lifetime() * 0.33)
+//            sendRefresh();
+//
+//        _observer.onTimer(*this);
+        
+        int x = 1;
+    }
+
+    
+    
+    bool is_stun_datagram(const void *data, size_t size) {
+	// RFC 8489: The most significant 2 bits of every STUN message MUST be zeroes. This can be used
+	// to differentiate STUN packets from other protocols when STUN is multiplexed with other
+	// protocols on the same port.
+	if (!size || *((uint8_t *)data) & 0xC0) {
+		LTrace("Not a STUN message: first 2 bits are not zeroes");
+		return false;
+	}
+
+	if (size < sizeof(struct stun_header)) {
+		STrace << "Not a STUN message: message too short, size=" <<  size;
+		return false;
+	}
+
+	const struct stun_header *header = (const struct stun_header *) data;
+	if (ntohl(header->magic) != STUN_MAGIC) {
+		LTrace("Not a STUN message: magic number invalid");
+		return false;
+	}
+
+	// RFC 8489: The message length MUST contain the size of the message in bytes, not including the
+	// 20-byte STUN header.  Since all STUN attributes are padded to a multiple of 4 bytes, the last
+	// 2 bits of this field are always zero.  This provides another way to distinguish STUN packets
+	// from packets of other protocols.
+	const size_t length = ntohs(header->length);
+	if (length & 0x03) {
+		STrace << "Not a STUN message: invalid length " << length << " not multiple of 4";
+		return false;
+	}
+	if (size != sizeof(struct stun_header) + length) {
+		STrace << "Not a STUN message: invalid length "<< length << " while expecting "<<         size - sizeof(struct stun_header);
+		return false;
+	}
+
+	return true;
+}
+    
+    int Agent::onStunMessage( char *buf, size_t len, const addr_record_t *src,  const addr_record_t *relayed)
+    {
+	STrace << "Received datagram, size "<<  len;
+
+	if(state == JUICE_STATE_DISCONNECTED || state == JUICE_STATE_GATHERING)
+		return 0;
+
+	if (is_stun_datagram(buf, len)) {
+//		if (LDebug_ENABLED) {
+//			char src_str[ADDR_MAX_STRING_LEN];
+//			addr_record_to_string(src, src_str, ADDR_MAX_STRING_LEN);
+//			if (relayed) {
+//				char relayed_str[ADDR_MAX_STRING_LEN];
+//				addr_record_to_string(relayed, relayed_str, ADDR_MAX_STRING_LEN);
+//				LDebug("Received STUN datagram from %s relayed via %s", src_str, relayed_str);
+//			} else {
+//				LDebug("Received STUN datagram from %s", src_str);
+//			}
+//		}
+
+                
+                stun::Message msg;
+                stun::Reader reader;
+                if( !reader.process((uint8_t*) buf, len, &msg))
+                {
+                    LError("STUN message reading failed");
+		    return -1;
+                }
+  
+  
+		return agent_dispatch_stun( buf, len, &msg, src, relayed);
+	}
+
+//	if (LDebug_ENABLED) {
+//		char src_str[ADDR_MAX_STRING_LEN];
+//		addr_record_to_string(src, src_str, ADDR_MAX_STRING_LEN);
+//		if (relayed) {
+//			char relayed_str[ADDR_MAX_STRING_LEN];
+//			addr_record_to_string(relayed, relayed_str, ADDR_MAX_STRING_LEN);
+//			LDebug("Received non-STUN datagram from %s relayed via %s", src_str, relayed_str);
+//		} else {
+//			LDebug("Received non-STUN datagram from %s", src_str);
+//		}
+//	}
+        
+        /*
+	agent_stun_entry_t *entry = agent_find_entry_from_record(agent, src, relayed);
+	if (!entry) {
+		LWarn("Received a datagram from unknown address, ignoring");
+		return -1;
+	}
+	switch (entry->type) {
+	case AGENT_STUN_ENTRY_TYPE_RELAY:
+		if (is_channel_data(buf, len)) {
+			LDebug("Received ChannelData datagram");
+			return agent_process_channel_data(agent, entry, buf, len);
+		}
+		break;
+
+	case AGENT_STUN_ENTRY_TYPE_CHECK:
+		LDebug("Received application datagram");
+		if (agent->config.cb_recv)
+			agent->config.cb_recv(agent, buf, len, agent->config.user_ptr);
+		return 0;
+
+	default:
+		break;
+	}
+
+	LWarn("Received unexpected non-STUN datagram, ignoring");
+	return -1;
+        
+        */
+}
+
+    
+    
+    
+int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  const addr_record_t *src, const addr_record_t *relayed)
+{
+    
+   //msg->hasAttribute(stun::STUN_ATTR_USE_CANDIDATE)
+    
+    if (msg->msg_method  == STUN_METHOD_BINDING && msg->hasAttribute(stun::STUN_ATTR_MESSAGE_INTEGRITY )) {
+            LTrace("STUN message is from the remote peer");
+            // Verify the message now
+            if (agent_verify_stun_binding( buf, size, msg)) {
+                    LWarn("STUN message verification failed");
+                    return -1;
+            }
+            
+            Priority *result;
+            if( !msg->find(&result ))
+            {
+                SError << " Priority attribute is not in stun message";
+                exit(0);
+            }
+            
+  
+            
+            if (agent_add_remote_peer_reflexive_candidate( result->value, src)) {
+                    LWarn("Failed to add remote peer reflexive candidate from STUN message");
+            }
+    }
+
+    agent_stun_entry_t *entry = NULL;
+    if (STUN_IS_RESPONSE(msg->msg_class)) {
+            LTrace("STUN message is a response, looking for transaction ID");
+            entry = agent_find_entry_from_transaction_id(msg->transaction_id);
+            if (!entry) {
+                    LDebug("No STUN entry matching transaction ID, ignoring");
+                    return -1;
+            }
+    } else {
+            LTrace("STUN message is a request or indication, looking for remote address");
+            entry = agent_find_entry_from_record( src, relayed);
+            if (entry) {
+                    LTrace("Found STUN entry matching remote address");
+            } else {
+                    // This may happen normally, for instance when there is no space left for reflexive
+                    // candidates
+                    LDebug("No STUN entry matching remote address, ignoring");
+                    return 0;
+            }
+    }
+
+    switch (msg->msg_method) {
+    case STUN_METHOD_BINDING:
+            // Message was verified earlier, no need to re-verify
+            if (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK && !msg->hasAttribute(stun::STUN_ATTR_MESSAGE_INTEGRITY ) &&
+                (msg->msg_class == STUN_CLASS_REQUEST || msg->msg_class == STUN_CLASS_RESP_SUCCESS)) {
+                    LWarn("Missing integrity in STUN Binding message from remote peer, ignoring");
+                    return -1;
+            }
+           return agent_process_stun_binding( msg, entry, src, relayed);
+
+    case STUN_METHOD_ALLOCATE:
+    case STUN_METHOD_REFRESH:
+            if (agent_verify_credentials( entry, buf, size, msg)) {
+                    LWarn("Ignoring TURN Allocate message with invalid credentials (Is server authentication disabled?)");
+                    return -1;
+            }
+           // return agent_process_turn_allocate(agent, msg, entry);
+            SError << "Turn Relay agent not supported " ;
+            exit(0);
+
+    case STUN_METHOD_CREATE_PERMISSION:
+            if (agent_verify_credentials( entry, buf, size, msg)) {
+                    LWarn("Ignoring TURN CreatePermission message with invalid credentials");
+                    return -1;
+            }
+           // return agent_process_turn_create_permission(agent, msg, entry);
+            SError << "Turn Relay agent not supported " ;
+            exit(0);
+
+    case STUN_METHOD_CHANNEL_BIND:
+            if (agent_verify_credentials( entry, buf, size, msg)) {
+                    LWarn("Ignoring TURN ChannelBind message with invalid credentials");
+                    return -1;
+            }
+           // return agent_process_turn_channel_bind(agent, msg, entry);
+            SError << "Turn Relay agent not supported " ;
+            exit(0);
+    case STUN_METHOD_DATA:
+            //return agent_process_turn_data(agent, msg, entry);
+            SError << "Turn Relay agent not supported " ;
+            exit(0);
+
+    default:
+            SWarn << "Unknown STUN method 0x%X, ignoring " <<  msg->msg_method;
+            return -1;
+    }
+}
+
+
+
+
+
+
+
+
+int Agent::agent_verify_stun_binding( char *buf, size_t size, stun::Message *msg)
+{
+	if (msg->msg_method != STUN_METHOD_BINDING)
+		return -1;
+
+	if (msg->msg_class == STUN_CLASS_INDICATION || msg->msg_class == STUN_CLASS_RESP_ERROR)
+		return 0;
+
+	if (!msg->hasAttribute(stun::STUN_ATTR_MESSAGE_INTEGRITY )) {
+		LWarn("Missing integrity in STUN message");
+		return -1;
+	}
+
+	// Check username (The USERNAME attribute is not present in responses)
+	if (msg->msg_class == STUN_CLASS_REQUEST) {
+		char username[STUN_MAX_USERNAME_LEN];
+		strcpy(username, msg->credentials.username);
+		char *separator = strchr(username, ':');
+		if (!separator) {
+			SWarn << "STUN username invalid, username= " <<  username;
+			return -1;
+		}
+		*separator = '\0';
+		const char *local_ufrag = username;
+		const char *remote_ufrag = separator + 1;
+		if (strcmp(local_ufrag, localdesp.desc.ice_ufrag) != 0) {
+			SWarn << "STUN local ufrag check failed, expected= " << localdesp.desc.ice_ufrag  << " actual= " << local_ufrag;
+			return -1;
+		}
+		// RFC 8445 7.3. STUN Server Procedures:
+		// It is possible (and in fact very likely) that the initiating agent will receive a Binding
+		// request prior to receiving the candidates from its peer.  If this happens, the agent MUST
+		// immediately generate a response.
+		if (*remotedesp.desc.ice_ufrag != '\0' &&
+		    strcmp(remote_ufrag, remotedesp.desc.ice_ufrag) != 0) {
+			SWarn << "STUN remote ufrag check failed, expected= " << remotedesp.desc.ice_ufrag <<  " actual= " <<  remote_ufrag;
+			return -1;
+		}
+	}
+	// Check password
+	const char *password =
+	    msg->msg_class == STUN_CLASS_REQUEST ?  localdesp.desc.ice_pwd : remotedesp.desc.ice_pwd;
+	if (*password == '\0') {
+		LWarn("STUN integrity check failed, unknown password");
+		return -1;
+	}
+//	if (!stun_check_integrity(buf, size, msg, password)) {
+//		SWarn << "STUN integrity check failed, password= " <<  password;
+//		return -1;
+//	}
+//        
+        
+        stun::Message rmsg;
+        stun::Reader reader;
+        int r = reader.process((uint8_t*) buf, size , &rmsg);  // // TBD:  No need to reparse the buffer// Use compute_message_integrity function directly
+        if( r == 0)
+        {
+            bool ret = reader.computeMessageIntegrity(&rmsg, password);  
+            if(!ret)
+            {
+               SWarn << "STUN integrity check failed, password= " <<  password;
+		return -1;
+            }
+        }
+        
+        
+	return 0;
+}
+
+
+
+
+int Agent::agent_verify_credentials( const agent_stun_entry_t *entry, char *buf,   size_t size, stun::Message *msg)
+{
+	// RFC 8489: If the response is an error response with an error code of 400 (Bad Request) and
+	// does not contain either the MESSAGE-INTEGRITY or MESSAGE-INTEGRITY-SHA256 attribute, then the
+	// response MUST be discarded, as if it were never received.  This means that retransmits, if
+	// applicable, will continue.
+	if (msg->msg_class == STUN_CLASS_INDICATION ||
+	    (msg->msg_class == STUN_CLASS_RESP_ERROR && msg->error_code != 400))
+		return 0;
+
+	if (!msg->hasAttribute(stun::STUN_ATTR_MESSAGE_INTEGRITY )) {
+		LWarn("Missing integrity in STUN message");
+		return -1;
+	}
+//	if (!entry->turn) {
+//		LWarn("No credentials for entry");
+//		return -1;
+//	}
+//	stun_credentials_t *credentials = &entry->turn->credentials;
+//	const char *password = entry->turn->password;
+
+	// Prepare credentials
+//	strcpy(msg->credentials.realm, credentials->realm);
+//	strcpy(msg->credentials.nonce, credentials->nonce);
+//	strcpy(msg->credentials.username, credentials->username);
+
+	// Check credentials
+//	if (!stun_check_integrity(buf, size, msg, password)) {
+//		LWarn("STUN integrity check failed");
+//		return -1;
+//	}
+	return 0;
+}
+
+
+static bool addr_is_equal(const struct sockaddr *a, const struct sockaddr *b, bool compare_ports) {
+	if (a->sa_family != b->sa_family)
+		return false;
+
+	switch (a->sa_family) {
+	case AF_INET: {
+		const struct sockaddr_in *ain = (const struct sockaddr_in *)a;
+		const struct sockaddr_in *bin = (const struct sockaddr_in *)b;
+		if (memcmp(&ain->sin_addr, &bin->sin_addr, 4) != 0)
+			return false;
+		if (compare_ports && ain->sin_port != bin->sin_port)
+			return false;
+		break;
+	}
+	case AF_INET6: {
+		const struct sockaddr_in6 *ain6 = (const struct sockaddr_in6 *)a;
+		const struct sockaddr_in6 *bin6 = (const struct sockaddr_in6 *)b;
+		if (memcmp(&ain6->sin6_addr, &bin6->sin6_addr, 16) != 0)
+			return false;
+		if (compare_ports && ain6->sin6_port != bin6->sin6_port)
+			return false;
+		break;
+	}
+	default:
+		return false;
+	}
+
+	return true;
+}
+
+Candidate *Agent::ice_find_candidate_from_addr(Description *description,  const addr_record_t *record,  Candidate::Type type)
+{
+	
+     
+    for( int i =0; i < description->desc.candidates.size(); ++i)
+    {
+    
+        Candidate *cur = & description->desc.candidates[i];
+    
+    
+	//Candidate *end = cur + description->candidates_count;
+	//while (cur != end) 
+        //{
+		if ((type == Candidate::Type::Unknown || cur->mType == type) &&
+		    addr_is_equal((struct sockaddr *)&record->addr, (struct sockaddr *)&cur->resolved.addr,
+		                  true))
+			return cur;
+		//++cur;
+	//}
+    }
+	return NULL;
+}
+
+
+
+agent_stun_entry_t *Agent::agent_find_entry_from_transaction_id( const uint8_t *transaction_id) 
+{
+	for (int i = 0; i < entries_count; ++i) {
+		agent_stun_entry_t *entry = m_entries + i;
+		if (memcmp(transaction_id, entry->transaction_id, STUN_TRANSACTION_ID_SIZE) == 0) {
+			STrace << "STUN entry " << i  << " matching incoming transaction ID ";
+			return entry;
+		}
+//		if (entry->turn) {
+//			if (turn_retrieve_transaction_id(&entry->turn->map, transaction_id, NULL)) {
+//				LTrace("STUN entry %d matching incoming transaction ID (TURN)", i);
+//				return entry;
+//			}
+//		}
+	}
+	return NULL;
+}
+
+
+static inline bool pair_is_relayed(const ice_candidate_pair_t *pair) {
+	return pair->local && pair->local->type() == Candidate::Type::Relayed;
+}
+
+static inline bool entry_is_relayed(const agent_stun_entry_t *entry) {
+	return entry->pair && pair_is_relayed(entry->pair);
+}
+
+static bool addr_record_is_equal(const addr_record_t *a, const addr_record_t *b, bool compare_ports) {
+	return addr_is_equal((const struct sockaddr *)&a->addr, (const struct sockaddr *)&b->addr,
+	                     compare_ports);
+}
+
+agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *record, const addr_record_t *relayed) 
+{
+	agent_stun_entry_t *selected_entry = &m_selected_entry;
+
+	if (selected_entry && selected_entry->pair && selected_entry->pair->nominated) {
+		// As an optimization, try to match the nominated entry first
+		if (relayed) {
+//			if (entry_is_relayed(selected_entry) &&
+//			    addr_record_is_equal(&selected_entry->pair->local->resolved, relayed, true) &&
+//			    addr_record_is_equal(&selected_entry->record, record, true)) {
+//				LDebug("STUN selected entry matching incoming relayed address");
+//				return selected_entry;
+			}
+		} else {
+//			if (!entry_is_relayed(selected_entry) &&
+//			    addr_record_is_equal(&selected_entry->record, record, true)) {
+//				LDebug("STUN selected entry matching incoming address");
+//				return selected_entry;
+//			}
+//		}
+	}
+
+	if (relayed) {
+//		for (int i = 0; i < agent->entries_count; ++i) {
+//			agent_stun_entry_t *entry = agent->entries + i;
+//			if (entry_is_relayed(entry) &&
+//			    addr_record_is_equal(&entry->pair->local->resolved, relayed, true) &&
+//			    addr_record_is_equal(&entry->record, record, true)) {
+//				LDebug("STUN entry %d matching incoming relayed address", i);
+//				return entry;
+//			}
+//		}
+	} else {
+		// Try to match pairs by priority first
+		ice_candidate_pair_t *matching_pair = NULL;
+		for (int i = 0; i < candidate_pairs_count; ++i) {
+			ice_candidate_pair_t *pair = ordered_pairs[i];
+			if (!pair_is_relayed(pair) &&
+			    addr_record_is_equal(&pair->remote->resolved, record, true)) {
+				matching_pair = pair;
+				break;
+			}
+		}
+
+		if (matching_pair) {
+			// Just find the corresponding entry
+			for (int i = 0; i < entries_count; ++i) {
+				agent_stun_entry_t *entry = m_entries + i;
+				if (entry->pair == matching_pair) {
+					SDebug << "STUN entry " << i  << " pair matching incoming address";
+					return entry;
+				}
+			}
+		}
+
+		// Try to match entries directly
+		for (int i = 0; i < entries_count; ++i) {
+			agent_stun_entry_t *entry = m_entries + i;
+			if (!entry_is_relayed(entry) && addr_record_is_equal(&entry->record, record, true)) {
+				SDebug << "STUN entry " << i << "  matching incoming address";
+				return entry;
+			}
+		}
+	}
+	return NULL;
+}
+
+
+
+
+int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t *entry, const addr_record_t *src,    const addr_record_t *relayed) 
+{
+
+	switch (msg->msg_class) {
+	case STUN_CLASS_REQUEST: {
+		LDebug("Received STUN Binding request");
+		if (entry->type != AGENT_STUN_ENTRY_TYPE_CHECK)
+			return -1;
+
+		ice_candidate_pair_t *pair = entry->pair;
+		if (msg->ice_controlling == msg->ice_controlled) {
+			LWarn("Controlling and controlled attributes mismatch in request");
+			//agent_send_stun_binding(agent, entry, STUN_CLASS_RESP_ERROR, 400, msg->transaction_id,     NULL);
+			return -1;
+		}
+		// RFC8445 7.3.1.1. Detecting and Repairing Role Conflicts:
+		// If the agent is in the controlling role, and the ICE-CONTROLLING attribute is present in
+		// the request:
+		//  * If the agent's tiebreaker value is larger than or equal to the contents of the
+		//  ICE-CONTROLLING attribute, the agent generates a Binding error response and includes an
+		//  ERROR-CODE attribute with a value of 487 (Role Conflict) but retains its role.
+		//  * If the agent's tiebreaker value is less than the contents of the ICE-CONTROLLING
+		//  attribute, the agent switches to the controlled role.
+		if (mode == AGENT_MODE_CONTROLLING && msg->ice_controlling) {
+			LWarn("ICE role conflict (both controlling)");
+			if (ice_tiebreaker >= msg->ice_controlling) {
+				LDebug("Asking remote peer to switch roles");
+				//agent_send_stun_binding(agent, entry, STUN_CLASS_RESP_ERROR, 487,  msg->transaction_id, NULL);
+			} else {
+				LDebug("Switching to controlled role");
+				mode = AGENT_MODE_CONTROLLED;
+				agent_update_candidate_pairs();
+			}
+			break;
+		}
+		// If the agent is in the controlled role, and the ICE-CONTROLLED attribute is present in
+		// the request:
+		//  * If the agent's tiebreaker value is larger than or equal to the contents of the
+		//  ICE-CONTROLLED attribute, the agent switches to the controlling role.
+		//  * If the agent's tiebreaker value is less than the contents of the ICE-CONTROLLED
+		//  attribute, the agent generates a Binding error response and includes an ERROR-CODE
+		//  attribute with a value of 487 (Role Conflict) but retains its role.
+		if (mode == AGENT_MODE_CONTROLLED && msg->ice_controlled) {
+			LWarn("ICE role conflict (both controlled)");
+			if (ice_tiebreaker >= msg->ice_controlling) {
+				LDebug("Switching to controlling role");
+				mode = AGENT_MODE_CONTROLLING;
+				agent_update_candidate_pairs();
+			} else {
+				LDebug("Asking remote peer to switch roles");
+				//agent_send_stun_binding(agent, entry, STUN_CLASS_RESP_ERROR, 487, msg->transaction_id, NULL);
+			}
+			break;
+		}
+		if (msg->hasAttribute(STUN_ATTR_USE_CANDIDATE )) {
+			if (!msg->ice_controlling) {
+				LWarn("STUN message use_candidate missing ice_controlling attribute");
+				//agent_send_stun_binding(agent, entry, STUN_CLASS_RESP_ERROR, 400,      msg->transaction_id, NULL);
+				return -1;
+			}
+			// RFC 8445 7.3.1.5. Updating the Nominated Flag:
+			// If the state of this pair is Succeeded, it means that the check previously sent by
+			// this pair produced a successful response and generated a valid pair. The agent sets
+			// the nominated flag value of the valid pair to true.
+			if (pair->state == ICE_CANDIDATE_PAIR_STATE_SUCCEEDED) {
+				LDebug("Got a nominated pair (controlled)");
+				pair->nominated = true;
+			} else if (!pair->nomination_requested) {
+				LDebug("Pair nomination requested (controlled)");
+				pair->nomination_requested = true;
+			}
+		}
+		// Response
+		//if (agent_send_stun_binding(agent, entry, STUN_CLASS_RESP_SUCCESS, 0, msg->transaction_id, src))
+                {
+			LError("Failed to send STUN Binding response");
+			return -1;
+		}
+		// Triggered check
+		// RFC 8445: If the state of that pair is Succeeded, nothing further is done. If the state
+		// of that pair is In-Progress, [...] the agent MUST [...] trigger a new connectivity check
+		// of the pair. [...] If the state of that pair is Waiting, Frozen, or Failed, the agent
+		// MUST [...] trigger a new connectivity check of the pair.
+		if (pair->state != ICE_CANDIDATE_PAIR_STATE_SUCCEEDED && *remotedesp.desc.ice_ufrag != '\0') {
+			LDebug("Triggered pair check");
+			pair->state = ICE_CANDIDATE_PAIR_STATE_PENDING;
+			entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
+			agent_arm_transmission(entry, STUN_PACING_TIME);
+		}
+		break;
+	}
+	case STUN_CLASS_RESP_SUCCESS: {
+		LDebug("Received STUN Binding success response from %s",
+		           entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer" : "server");
+
+		if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER)
+			LInfo("STUN server binding successful");
+
+		if (entry->state != AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE) {
+			entry->state = AGENT_STUN_ENTRY_STATE_SUCCEEDED;
+			entry->next_transmission = 0;
+		}
+
+		if (!selected_pair || !selected_pair->nominated) {
+			// We want to send keepalives now
+			entry->state = AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE;
+			agent_arm_keepalive( entry);
+		}
+
+		if (msg->mapped.len && !relayed) {
+			LTrace("Response has mapped address");
+
+//			if (LInfo_ENABLED && entry->type != AGENT_STUN_ENTRY_TYPE_CHECK) {
+//				char mapped_str[ADDR_MAX_STRING_LEN];
+//				addr_record_to_string(&msg->mapped, mapped_str, ADDR_MAX_STRING_LEN);
+//				LInfo("Got STUN mapped address %s from server", mapped_str);
+//			}
+                        //Type { Unknown, Host, ServerReflexive, PeerReflexive, Relayed };
+
+			Candidate::Type type = (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK)
+			                                ? Candidate::Type::PeerReflexive
+			                                : Candidate::Type::ServerReflexive;
+                        
+                        
+                        Candidate candidate;
+                        candidate.mType = type;
+                        candidate.resolved = msg->mapped;
+                        
+                        char buf[512];
+                        uint16_t port;
+
+                        if(candidate.resolved.addr.ss_family == AF_INET6)
+                        {
+                            uv_ip6_name((sockaddr_in6* )&candidate.resolved, buf, sizeof (buf));
+                            port = ntohs( ((sockaddr_in6 *)&candidate.resolved)->sin6_port);
+
+                        }
+                        else if(candidate.resolved.addr.ss_family == AF_INET )
+                        {
+                             uv_ip4_name((sockaddr_in*)&candidate.resolved, buf, sizeof (buf));
+                             port =  ntohs( ((sockaddr_in *)&candidate.resolved)->sin_port); 
+                        }
+            
+                        
+			if (ice_create_local_reflexive_candidate(buf, port,candidate.resolved.addr.ss_family  , &candidate)) {
+				LWarn("Failed to add local peer reflexive candidate from STUN mapped address");
+			}
+		}
+
+		if (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK) {
+			ice_candidate_pair_t *pair = entry->pair;
+			if (!pair) {
+				LError("STUN entry for candidate pair checking has no candidate pair");
+				return -1;
+			}
+
+			// 7.2.5.2.1. Non-Symmetric Transport Addresses:
+			// The ICE agent MUST check that the source and destination transport addresses in the
+			// Binding request and response are symmetric. [...] If the addresses are not symmetric,
+			// the agent MUST set the candidate pair state to Failed.
+			if (!addr_record_is_equal(src, &entry->record, true)) {
+				LDebug(
+				    "Candidate pair check failed (non-symmetric source address in response)");
+				entry->state = AGENT_STUN_ENTRY_STATE_FAILED;
+				entry->next_transmission = 0;
+				if (pair)
+					pair->state = ICE_CANDIDATE_PAIR_STATE_FAILED;
+				break;
+			}
+
+			if (pair->state != ICE_CANDIDATE_PAIR_STATE_SUCCEEDED) {
+				LDebug("Candidate pair check succeeded");
+				pair->state = ICE_CANDIDATE_PAIR_STATE_SUCCEEDED;
+			}
+
+			if (!pair->local && msg->mapped.len)
+				pair->local = ice_find_candidate_from_addr(&localdesp, &msg->mapped, Candidate::Type::Unknown);
+
+			// Update consent timestamp
+			pair->consent_expiry = current_timestamp() + CONSENT_TIMEOUT;
+
+			// RFC 8445 7.3.1.5. Updating the Nominated Flag:
+			// [...] once the check is sent and if it generates a successful response, and
+			// generates a valid pair, the agent sets the nominated flag of the pair to true.
+			if (pair->nomination_requested) {
+				LDebug("Got a nominated pair (%s)",
+				           mode == AGENT_MODE_CONTROLLING ? "controlling" : "controlled");
+				pair->nominated = true;
+			}
+		} else if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER) {
+                    //agent_update_gathering_done();
+                    SInfo << "agent_update_gathering_done()";    
+		}       
+		break;
+	}
+	case STUN_CLASS_RESP_ERROR: {
+		if (msg->error_code != STUN_ERROR_INTERNAL_VALIDATION_FAILED) {
+			if (msg->error_code == 487)
+				SDebug << "Got STUN Binding error response, code= " <<    (unsigned int)msg->error_code;
+			else
+				SWarn << "Got STUN Binding error response, code= " <<    (unsigned int)msg->error_code;
+		}
+
+		if (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK) {
+			if (msg->error_code == 487) {
+				if (entry->mode == mode) {
+					// RFC 8445 7.2.5.1. Role Conflict:
+					// If the Binding request generates a 487 (Role Conflict) error response, and if
+					// the ICE agent included an ICE-CONTROLLED attribute in the request, the agent
+					// MUST switch to the controlling role. If the agent included an ICE-CONTROLLING
+					// attribute in the request, the agent MUST switch to the controlled role. Once
+					// the agent has switched its role, the agent MUST [...] set the candidate pair
+					// state to Waiting [and] change the tiebreaker value.
+					LWarn("ICE role conflict");
+					LDebug("Switching roles to %s as requested",
+					           entry->mode == AGENT_MODE_CONTROLLING ? "controlled"
+					                                                 : "controlling");
+					mode = entry->mode == AGENT_MODE_CONTROLLING ? AGENT_MODE_CONTROLLED
+					                                                    : AGENT_MODE_CONTROLLING;
+					random_bytes(&ice_tiebreaker, sizeof(ice_tiebreaker));
+					agent_update_candidate_pairs(); // expires transaction IDs
+
+					if (entry->state != AGENT_STUN_ENTRY_STATE_IDLE) { // Check might not be started
+						entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
+						agent_arm_transmission( entry, 0);
+					}
+				} else {
+					SDebug << "Already switched roles to %s as requested" << (mode == AGENT_MODE_CONTROLLING ? "controlling" : "controlled");
+				}
+			} else {
+				// 7.2.5.2.4. Unrecoverable STUN Response:
+				// If the Binding request generates a STUN error response that is unrecoverable
+				// [RFC5389], the ICE agent SHOULD set the candidate pair state to Failed.
+				LDebug("Chandidate pair check failed (unrecoverable error)");
+				entry->state = AGENT_STUN_ENTRY_STATE_FAILED;
+				entry->next_transmission = 0;
+				if (entry->pair)
+					entry->pair->state = ICE_CANDIDATE_PAIR_STATE_FAILED;
+			}
+		} else if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER) {
+			LInfo("STUN server binding failed (unrecoverable error)");
+			entry->state = AGENT_STUN_ENTRY_STATE_FAILED;
+			//agent_update_gathering_done();
+                        SInfo << "agent_update_gathering_done()";    
+		}
+		break;
+	}
+	case STUN_CLASS_INDICATION: {
+		LTrace("Received STUN Binding indication");
+		break;
+	}
+	default: {
+		LWarn("Got STUN unexpected binding message, class=%u", (unsigned int)msg->msg_class);
+		return -1;
+	}
+	}
+	return 0;
+}
+
+
+void Agent::agent_update_candidate_pairs()
+{
+	bool is_controlling = mode == AGENT_MODE_CONTROLLING;
+	for (int i = 0; i < candidate_pairs_count; ++i) {
+		ice_candidate_pair_t *pair = candidate_pairs + i;
+		ice_update_candidate_pair(pair, is_controlling);
+	}
+	agent_update_ordered_pairs();
+
+	// Expire all transaction IDs for checks
+	for (int i = 0; i < entries_count; ++i) {
+		agent_stun_entry_t *entry = m_entries + i;
+		if (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK) {
+			entry->transaction_id_expired = true;
+		}
+	}
+}
+
+
+// TURN refresh period
+#define TURN_LIFETIME 600000                        // msecs (10 min)
+#define TURN_REFRESH_PERIOD (TURN_LIFETIME - 60000) // msecs (lifetime - 1 min)
+// RFC 8445: Agents SHOULD use a Tr value of 15 seconds. Agents MAY use a bigger value but MUST NOT
+// use a value smaller than 15 seconds.
+#define STUN_KEEPALIVE_PERIOD 15000 // msecs
+
+void Agent::agent_arm_keepalive(agent_stun_entry_t *entry) 
+{
+	if (entry->state == AGENT_STUN_ENTRY_STATE_SUCCEEDED)
+		entry->state = AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE;
+
+	if (entry->state != AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE)
+		return;
+
+	int64_t period;
+	switch (entry->type) {
+	case AGENT_STUN_ENTRY_TYPE_RELAY:
+		period = localdesp.desc.candidates.size()  > 0 ? TURN_REFRESH_PERIOD : STUN_KEEPALIVE_PERIOD;
+		break;
+	case AGENT_STUN_ENTRY_TYPE_SERVER:
+		period = STUN_KEEPALIVE_PERIOD;
+		break;
+	default:
+		period = STUN_KEEPALIVE_PERIOD;
+
+		break;
+	}
+
+	entry->transaction_id_expired = true;
+	agent_arm_transmission( entry, period);
+}
 
 
 } /* namespace stun */

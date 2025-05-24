@@ -19,6 +19,7 @@
 #ifndef STUN_READER_H
 #define STUN_READER_H
 
+#define STUN_MAGIC 0x2112A442
 
 #include <stdint.h>
 #include <vector>

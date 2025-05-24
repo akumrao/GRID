@@ -8,8 +8,13 @@
 #include <Types.h>
 #include "candidate.h"
 #include "description.h"
+#include "base/Timer.h"
+#include <Message.h>
+
 
 using namespace rtc;
+using namespace base;
+using namespace stun;
 
 #define MIN_STUN_RETRANSMISSION_TIMEOUT 500 // msecs
 #define MAX_STUN_CHECK_RETRANSMISSION_COUNT 6  // exponential backoff, total 39500ms
@@ -23,12 +28,19 @@ using namespace rtc;
 #define MAX_STUN_SERVER_RECORDS_COUNT MAX_SERVER_ENTRIES_COUNT
 #define MAX_CANDIDATE_PAIRS_COUNT (ICE_MAX_CANDIDATES_COUNT * (1 + MAX_RELAY_ENTRIES_COUNT))
 #define MAX_STUN_ENTRIES_COUNT (MAX_CANDIDATE_PAIRS_COUNT + MAX_STUN_SERVER_RECORDS_COUNT)
+#define MAX_HOST_CANDIDATES_COUNT ((ICE_MAX_CANDIDATES_COUNT - MAX_STUN_SERVER_RECORDS_COUNT) / 2)
+#define MAX_PEER_REFLEXIVE_CANDIDATES_COUNT MAX_HOST_CANDIDATES_COUNT
 
 
+#define STUN_IS_RESPONSE(msg_class) (msg_class & 0x0100)
 
 // RFC 8445: ICE agents SHOULD use a default Ta value, 50 ms, but MAY use another value based on the
 // characteristics of the associated data.
 #define STUN_PACING_TIME 50 // msecs
+
+// Consent freshness
+// RFC 7675: Consent expires after 30 seconds.
+#define CONSENT_TIMEOUT 30000 // msecs
 
 namespace stun {
 
@@ -137,13 +149,22 @@ typedef struct agent_stun_entry {
     
     Description &remotedesp;
     
-    int ice_create_host_candidate( char *ip,  uint16_t port , int family);
-    int ice_create_reflexive_candidate( char *ip,  uint16_t port, int family );
+    //local candidate
+    int ice_create_host_candidate( char *ip,  uint16_t port , int family, Candidate *candidate);
+    int ice_create_local_reflexive_candidate( char *ip,  uint16_t port, int family, Candidate *candidate );
     int ice_create_local_candidate(int component, int index, char *ip,  uint16_t port, int family, Candidate *candidate);
     uint32_t ice_compute_priority(Candidate::Type type, int family, int component, int index);
+        
+        
+    //Remote candidate
+    int ice_add_remote_candidate(const Candidate *candidate);
+    int  agent_add_remote_peer_reflexive_candidate( uint32_t priority, const addr_record_t *record); // peer-reflex only
+
+
+
     int ice_add_candidate( Candidate *candidate, Description *description);
-    int ice_remote_candidate(const Candidate *candidate);
-    
+        
+        
    candidate_callback mCandidateCallback;
    
 
@@ -170,6 +191,8 @@ typedef struct agent_stun_entry {
  
     int ice_update_candidate_pair(ice_candidate_pair_t *pair, bool is_controlling);
     
+    void agent_update_candidate_pairs();
+    
     int ice_candidates_count(const ice_description_t *description, Candidate::Type type); 
     
     void agent_arm_transmission( agent_stun_entry_t *entry, int64_t delay); 
@@ -181,10 +204,35 @@ typedef struct agent_stun_entry {
     int entries_count;
     
 
-    agent_stun_entry_t entries[MAX_STUN_ENTRIES_COUNT];
+    agent_stun_entry_t m_entries[MAX_STUN_ENTRIES_COUNT];
     
     std::string localMid;
 
+    
+    juice_state_t state;
+    
+    Timer _timer{ nullptr};
+     
+    void onTimer();
+    
+    /// ON return messages 
+    int onStunMessage( char *buf, size_t len, const addr_record_t *src,  const addr_record_t *relayed);
+    int agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  const addr_record_t *src, const addr_record_t *relayed);
+    int agent_verify_stun_binding( char *buf, size_t size, stun::Message *msg);
+    int agent_verify_credentials( const agent_stun_entry_t *entry, char *buf,   size_t size, stun::Message *msg);
+    
+    Candidate* ice_find_candidate_from_addr(Description *description,  const addr_record_t *record,  Candidate::Type type);
+    agent_stun_entry_t* agent_find_entry_from_transaction_id( const uint8_t *transaction_id) ;
+    agent_stun_entry_t* agent_find_entry_from_record( const addr_record_t *record, const addr_record_t *relayed); 
+    
+    int agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t *entry, const addr_record_t *src,    const addr_record_t *relayed); 
+    
+    void agent_arm_keepalive(agent_stun_entry_t *entry);
+    
+    agent_stun_entry_t m_selected_entry;
+    
+    uint64_t ice_tiebreaker;  // random number
+        
     
   };
 

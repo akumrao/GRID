@@ -254,7 +254,7 @@ bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
 	if (!candidate->isResolved())
 		return false;
 
-        agent.ice_remote_candidate(   candidate  );
+        agent.ice_add_remote_candidate(   candidate  );
 	//return juice_add_remote_candidate(mAgent.get(), string(candidate).c_str()) >= 0;
 }
 
@@ -262,6 +262,11 @@ void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> addi
 	mMid = std::move(mid);
          agent.localMid = mMid;
         
+        if (agent.mode == AGENT_MODE_UNKNOWN) {
+
+		agent.mode = AGENT_MODE_CONTROLLING;
+	}
+         
         static int inc = 7000;
        
         

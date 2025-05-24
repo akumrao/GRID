@@ -16,6 +16,15 @@ namespace stun {
       memset(&credentials ,'\0', sizeof(stun_credentials_t)) ;
   }
 
+/*    
+  Message::Message(stun_class_t msg_class, stun_method_t msg_method)
+    : msg_class(msg_class),  msg_method(msg_method)
+    ,length(0)
+    ,cookie(0x2112a442)
+  {
+      memset(&credentials ,'\0', sizeof(stun_credentials_t)) ;
+  }
+*/
   Message::~Message() {
     std::vector<Attribute*>::iterator it = attributes.begin();
     while (it != attributes.end()) {
@@ -63,6 +72,10 @@ namespace stun {
 
   bool Message::find(Fingerprint** result) {
     return find<Fingerprint>(STUN_ATTR_FINGERPRINT, result);
+  }
+  
+  bool Message::find(Priority** result) {
+    return find<Priority>(STUN_ATTR_PRIORITY, result);
   }
 
   bool Message::hasAttribute(AttributeType atype) {

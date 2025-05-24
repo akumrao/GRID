@@ -59,6 +59,10 @@ namespace stun {
     
     /* create the base message */
     msg->type = readU16();
+  
+    msg->msg_class = (stun_class_t)( msg->type & STUN_CLASS_MASK);
+    msg->msg_method = (stun_method_t)( msg->type & ~STUN_CLASS_MASK);
+    
     msg->length = readU16();
     msg->cookie = readU32();
     memcpy(msg->transaction_id,  getArray(STUN_TRANSACTION_ID_SIZE), STUN_TRANSACTION_ID_SIZE);
@@ -183,6 +187,7 @@ namespace stun {
           ic->tie_breaker = readU64();
           printf("stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLED:  %lx\n", ic->tie_breaker);
           attr = (Attribute*) ic;
+          msg->ice_controlled = ic->tie_breaker;
           break;
         }
 
@@ -191,25 +196,43 @@ namespace stun {
           ic->tie_breaker = readU64();
           printf("stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLING: %lx\n", ic->tie_breaker);
           attr = (Attribute*) ic;
+          msg->ice_controlling = ic->tie_breaker;
+          break;
+        }
+
+         case STUN_ATTR_ERR_CODE: {
+
+            if (attr_length < sizeof (struct stun_value_error_code)) {
+                SDebug << "STUN error code value too short, length= " << attr_length;
+                return -1;
+            }
+		
+            stun_value_error_code error;
+            memcpy( &error, getArray(attr_length),attr_length );
+            msg->error_code = (error.code_class & 0x07) * 100 + error.code_number;
+
+            if (msg->error_code == 401 || msg->error_code == 438) { // Unauthenticated or Stale Nonce
+                SDebug << "Got STUN error code " << msg->error_code;
+            }
           break;
         }
         
         case STUN_ATTR_USERHASH: {
             printf("STUN_ATTR_USERHASH\n");
             if (attr_length != USERHASH_SIZE) {
-			SWarn << "STUN user hash value too long, length= " << attr_length;
-			return -1;
-		}
+        			SWarn << "STUN user hash value too long, length= " << attr_length;
+        			return -1;
+        		}
             memcpy(msg->credentials.userhash, getArray(USERHASH_SIZE), USERHASH_SIZE);
             msg->credentials.enable_userhash = true;
                 
             break;
         }
         case STUN_ATTR_REALM: {
-		printf("Reading realm\n");
-		if (attr_length + 1 > STUN_MAX_REALM_LEN) {
-			SWarn << "STUN realm attribute value too long, length= " <<  attr_length;
-			return -1;
+      		printf("Reading realm\n");
+      		if (attr_length + 1 > STUN_MAX_REALM_LEN) {
+      			SWarn << "STUN realm attribute value too long, length= " <<  attr_length;
+      			return -1;
 		}
 		memcpy(msg->credentials.realm, getArray(attr_length), attr_length);
 		msg->credentials.realm[attr_length] = '\0';
@@ -406,7 +429,7 @@ namespace stun {
     return result;
   }
 
-#define STUN_MAGIC 0x2112A442
+
   
   void Reader::skip(uint32_t nbytes) {
     if (dx + nbytes > buffer.size()) {

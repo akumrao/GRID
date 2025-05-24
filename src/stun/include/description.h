@@ -84,7 +84,7 @@ public:
 	void addAttribute(string attr);
 	void removeAttribute(const string &attr);
 
-	std::vector<Candidate> mcandidates() const;
+	//std::vector<Candidate> mcandidates() const;
 	std::vector<Candidate> extractCandidates();
 	bool hasCandidate(const Candidate &candidate) const;
 	void addCandidate(Candidate candidate);

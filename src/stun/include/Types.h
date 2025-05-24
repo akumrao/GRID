@@ -14,8 +14,42 @@ namespace stun {
     STUN_BINDING_REQUEST         = 0x0001,
     STUN_BINDING_RESPONSE        = 0x0101,
     STUN_BINDING_ERROR_RESPONSE  = 0x0111,
-    STUN_BINDING_INDICATION      = 0x0011
+    STUN_BINDING_INDICATION      = 0x0011,
+            
   };
+
+    
+struct stun_value_error_code {
+	uint16_t reserved;
+	uint8_t code_class; // lower 3 bits only, higher bits are reserved
+	uint8_t code_number;
+	uint8_t reason[];
+};
+
+#define STUN_ERROR_INTERNAL_VALIDATION_FAILED 599
+
+   
+#define STUN_CLASS_MASK 0x0110
+
+    enum stun_class_t {
+           STUN_CLASS_REQUEST = 0x0000,
+           STUN_CLASS_INDICATION = 0x0010,
+           STUN_CLASS_RESP_SUCCESS = 0x0100,
+           STUN_CLASS_RESP_ERROR = 0x0110
+   } ;
+
+    enum stun_method_t {
+            STUN_METHOD_BINDING = 0x0001,
+
+            // Methods for TURN
+            // See https://www.rfc-editor.org/rfc/rfc8656.html#section-17
+            STUN_METHOD_ALLOCATE = 0x003,
+            STUN_METHOD_REFRESH = 0x004,
+            STUN_METHOD_SEND = 0x006,
+            STUN_METHOD_DATA = 0x007,
+            STUN_METHOD_CREATE_PERMISSION = 0x008,
+            STUN_METHOD_CHANNEL_BIND = 0x009
+    } ;
 
   enum AttributeType {
     STUN_ATTR_TYPE_NONE            = 0x0000,

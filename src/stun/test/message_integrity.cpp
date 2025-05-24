@@ -122,6 +122,8 @@ int main() {
         //return 1; // Return error code
         continue;
     }
+    
+    printf("\n%s\n", file);
 
     int sz =0; 
     // Write the first employee record to the file

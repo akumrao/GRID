@@ -54,7 +54,14 @@ void testUdpServer::OnUdpSocketPacketReceived(UdpServer* socket, const char* dat
                 
         msg.find( &result );
         
-        agent.ice_create_reflexive_candidate( result->address,  result->port, result->family );
+        Candidate candidate;
+        candidate.mType = Candidate::Type::ServerReflexive;
+        
+        std::memcpy(&candidate.resolved.addr , remoteAddr, sizeof(struct sockaddr));
+        candidate.resolved.len = sizeof(struct sockaddr);
+                    
+
+        agent.ice_create_local_reflexive_candidate( result->address,  result->port, result->family, &candidate );
        
         // printf("final family: %u, address:%s, port: %d\n", result->family,  result->address, result->port);
         SInfo << "family " << result->family << " address " <<  result->address << " port " << result->port   ;
