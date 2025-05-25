@@ -34,7 +34,7 @@ namespace stun {
     Agent::Agent( Description &localdesp, Description &remotedesp,  candidate_callback candidateCallback):localdesp(localdesp), remotedesp(remotedesp), mCandidateCallback(candidateCallback)
     {
 
-        int x = 1;
+        random_bytes(&ice_tiebreaker, sizeof(ice_tiebreaker));
         _timer.cb_timeout = std::bind(&Agent::onTimer, this);
         _timer.Start(200,200);
        
@@ -1043,7 +1043,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 		ice_candidate_pair_t *pair = entry->pair;
 		if (msg->ice_controlling == msg->ice_controlled) {
 			LWarn("Controlling and controlled attributes mismatch in request");
-			//agent_send_stun_binding(agent, entry, STUN_CLASS_RESP_ERROR, 400, msg->transaction_id,     NULL);
+			agent_send_stun_binding( entry, STUN_CLASS_RESP_ERROR, 400, msg->transaction_id,     NULL);
 			return -1;
 		}
 		// RFC8445 7.3.1.1. Detecting and Repairing Role Conflicts:
@@ -1058,7 +1058,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 			LWarn("ICE role conflict (both controlling)");
 			if (ice_tiebreaker >= msg->ice_controlling) {
 				LDebug("Asking remote peer to switch roles");
-				//agent_send_stun_binding(agent, entry, STUN_CLASS_RESP_ERROR, 487,  msg->transaction_id, NULL);
+				agent_send_stun_binding( entry, STUN_CLASS_RESP_ERROR, 487,  msg->transaction_id, NULL);
 			} else {
 				LDebug("Switching to controlled role");
 				mode = AGENT_MODE_CONTROLLED;
@@ -1081,14 +1081,14 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 				agent_update_candidate_pairs();
 			} else {
 				LDebug("Asking remote peer to switch roles");
-				//agent_send_stun_binding(agent, entry, STUN_CLASS_RESP_ERROR, 487, msg->transaction_id, NULL);
+				agent_send_stun_binding( entry, STUN_CLASS_RESP_ERROR, 487, msg->transaction_id, NULL);
 			}
 			break;
 		}
 		if (msg->hasAttribute(STUN_ATTR_USE_CANDIDATE )) {
 			if (!msg->ice_controlling) {
 				LWarn("STUN message use_candidate missing ice_controlling attribute");
-				//agent_send_stun_binding(agent, entry, STUN_CLASS_RESP_ERROR, 400,      msg->transaction_id, NULL);
+				agent_send_stun_binding( entry, STUN_CLASS_RESP_ERROR, 400,      msg->transaction_id, NULL);
 				return -1;
 			}
 			// RFC 8445 7.3.1.5. Updating the Nominated Flag:
@@ -1104,7 +1104,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 			}
 		}
 		// Response
-		//if (agent_send_stun_binding(agent, entry, STUN_CLASS_RESP_SUCCESS, 0, msg->transaction_id, src))
+		if (agent_send_stun_binding( entry, STUN_CLASS_RESP_SUCCESS, 0, msg->transaction_id, src))
                 {
 			LError("Failed to send STUN Binding response");
 			return -1;
@@ -1143,12 +1143,11 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 		if (msg->mapped.len && !relayed) {
 			LTrace("Response has mapped address");
 
-//			if (LInfo_ENABLED && entry->type != AGENT_STUN_ENTRY_TYPE_CHECK) {
+//			if (_DEBUG && entry->type != AGENT_STUN_ENTRY_TYPE_CHECK) {
 //				char mapped_str[ADDR_MAX_STRING_LEN];
 //				addr_record_to_string(&msg->mapped, mapped_str, ADDR_MAX_STRING_LEN);
 //				LInfo("Got STUN mapped address %s from server", mapped_str);
 //			}
-                        //Type { Unknown, Host, ServerReflexive, PeerReflexive, Relayed };
 
 			Candidate::Type type = (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK)
 			                                ? Candidate::Type::PeerReflexive
@@ -1343,5 +1342,162 @@ void Agent::agent_arm_keepalive(agent_stun_entry_t *entry)
 	agent_arm_transmission( entry, period);
 }
 
+
+
+
+int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_class, unsigned int error_code, const uint8_t *transaction_id, const addr_record_t *mapped) {
+	// Send STUN Binding
+	SDebug << "Sending STUN Binding "  <<     (msg_class == STUN_CLASS_REQUEST  ? "request" : (msg_class == STUN_CLASS_INDICATION ? "indication" : "response"));
+
+//	stun_message_t msg;
+//	memset(&msg, 0, sizeof(msg));
+//	msg.msg_class = msg_class;
+//	msg.msg_method = STUN_METHOD_BINDING;
+
+	if ((msg_class == STUN_CLASS_RESP_SUCCESS || msg_class == STUN_CLASS_RESP_ERROR) &&
+	    !transaction_id) {
+		LError("No transaction ID specified for STUN response");
+		return -1;
+	}
+        
+        
+                /* write */
+        stun::Message response(msg_class,STUN_METHOD_BINDING );
+        
+//        response.addAttribute(new stun::XorMappedAddress("192.168.0.19", 55164));
+//        response.addAttribute(new stun::MessageIntegrity(20));
+//        response.addAttribute(new stun::Fingerprint());
+//
+//  stun::Writer writer;
+//  writer.writeMessage(&response, "75C96DDDFC38D194FEDF75986CF962A2D56F3B65F1F7");
+//  
+
+	if (transaction_id)
+		response.setTransactionID((uint8_t*)transaction_id);
+	else if (msg_class == STUN_CLASS_INDICATION)
+		response.setTransactionID();
+	else
+		response.setTransactionID(entry->transaction_id);
+
+	const char *password = NULL;
+	if (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK) {
+		// RFC 8445 7.2.2. Forming Credentials:
+		// A connectivity-check Binding request MUST utilize the STUN short-term credential
+		// mechanism. The username for the credential is formed by concatenating the username
+		// fragment provided by the peer with the username fragment of the ICE agent sending the
+		// request, separated by a colon (":"). The password is equal to the password provided by
+		// the peer.
+		switch (msg_class) {
+		case STUN_CLASS_REQUEST: {
+			if (*remotedesp.desc.ice_ufrag == '\0' || *remotedesp.desc.ice_pwd == '\0') {
+				LDebug("Missing remote ICE credentials, dropping STUN binding request");
+				return 0;
+			}
+			snprintf(response.credentials.username, STUN_MAX_USERNAME_LEN, "%s:%s",remotedesp.desc.ice_ufrag, localdesp.desc.ice_ufrag);
+			password = remotedesp.desc.ice_pwd;
+                        
+                        if(mode == AGENT_MODE_CONTROLLING)
+                        {
+                            response.ice_controlling = ice_tiebreaker;
+                            IceControlling *iceControlling = new stun::IceControlling();
+                            iceControlling->tie_breaker =ice_tiebreaker; 
+                            response.addAttribute(iceControlling);   
+                            
+                        }
+                        else if(mode == AGENT_MODE_CONTROLLED)
+                        {
+                            response.ice_controlled = ice_tiebreaker;
+                            IceControlled *ice_controlled = new stun::IceControlled();
+                            ice_controlled->tie_breaker =ice_tiebreaker; 
+                            response.addAttribute(ice_controlled);   
+                        }
+
+
+			// RFC 8445 7.1.1. PRIORITY
+			// The PRIORITY attribute MUST be included in a Binding request and be set to the value
+			// computed by the algorithm in Section 5.1.2 for the local candidate, but with the
+			// candidate type preference of peer-reflexive candidates.
+			int family = entry->record.addr.ss_family;
+			int index = entry->pair && entry->pair->local
+			                ? (int)(entry->pair->local - &localdesp.desc.candidates[0] )    //arvind
+			                : 0;
+                        
+                        Priority *priority = new stun::Priority();
+                        
+			priority->value  =   ice_compute_priority( Candidate::Type::PeerReflexive, family, 1, index);
+                        
+                        response.addAttribute(priority);
+
+			// RFC 8445 8.1.1. Nominating Pairs:
+			// Once the controlling agent has picked a valid pair for nomination, it repeats the
+			// connectivity check that produced this valid pair [...], this time with the
+			// USE-CANDIDATE attribute.
+			bool use_candidate = mode == AGENT_MODE_CONTROLLING && entry->pair &&
+			                    entry->pair->nomination_requested && !entry->pair->nominated;
+                        
+                        if(use_candidate)
+                        response.addAttribute(new stun::UseCandidate);
+
+			entry->mode = mode; // save current mode in case of conflict
+			break;
+		}
+		case STUN_CLASS_RESP_SUCCESS:
+		case STUN_CLASS_RESP_ERROR: {
+			password = localdesp.desc.ice_pwd;
+			response.error_code = error_code;
+			if (mapped)
+				response.mapped = *mapped;
+
+			break;
+		}
+		case STUN_CLASS_INDICATION: {
+			// RFC8445 11. Keepalives:
+			// When STUN is being used for keepalives, a STUN Binding Indication is used. The
+			// Indication MUST NOT utilize any authentication mechanism. It SHOULD contain the
+			// FINGERPRINT attribute to aid in demultiplexing, but it SHOULD NOT contain any other
+			// attributes.
+		}
+		}
+	}
+
+//	char buffer[BUFFER_SIZE];
+//	int size = stun_write(buffer, BUFFER_SIZE, &msg, password);
+//	if (size <= 0) {
+//		JLOG_ERROR("STUN message write failed");
+//		return -1;
+//	}
+//
+//	if (entry->relay_entry) {
+//		// The datagram must be sent through the relay
+//		LDebug("Sending STUN message via relay");
+//		int ret;
+//		if (entry->pair && entry->pair->nominated)
+//			ret = agent_channel_send(agent, entry->relay_entry, &entry->record, buffer, size, 0);
+//		else
+//			ret = agent_relay_send(agent, entry->relay_entry, &entry->record, buffer, size, 0);
+//
+//		if (ret < 0) {
+//			LWarn("STUN message send via relay failed");
+//			return -1;
+//		}
+//		return 0;
+//	}
+//
+//	// Direct send
+//	int ret = agent_direct_send(agent, &entry->record, buffer, size, 0);
+//	if (ret < 0) {
+//		if (ret == SENETUNREACH)
+//			LInfo("STUN binding failed: Network unreachable");
+//		else
+//			LWarn("STUN message send failed");
+//
+//		return -1;
+//	}
+        
+        stun::Writer writer;
+        writer.writeMessage(&response, password );
+        
+	return 0;
+}
 
 } /* namespace stun */

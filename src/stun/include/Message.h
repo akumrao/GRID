@@ -87,12 +87,13 @@ typedef struct stun_credentials {
 
   class Message {
   public:
-    //Message( stun_class_t msg_class = STUN_CLASS_REQUEST , stun_method_t msg_method = STUN_METHOD_BINDING);
+    Message( stun_class_t msg_class , stun_method_t msg_method );
     Message(uint16_t type = STUN_MSG_TYPE_NONE);
     ~Message();
     void addAttribute(Attribute* attr);                        /* Add an attribute to the message who takes ownership (will delete all attributes in the d'tor. */
     void copyTransactionID(Message* from);                     /* Copy the transaction ID from the given messsage. */
-    void setTransactionID();                                   /* Set the transaction ID from the given values. */
+    void setTransactionID(); 
+    void setTransactionID( uint8_t *transaction_id);           /* Set the transaction ID from the given values. */
     bool hasAttribute(AttributeType atype);                    /* Check if the given attribute is found in one of the attributes */
     bool find(MessageIntegrity** result);                      /* Find a message integrity attribute. */
     bool find(XorMappedAddress** result);                      /* Find a xor-mapped-address attribute.*/

@@ -225,7 +225,10 @@ typedef struct agent_stun_entry {
     agent_stun_entry_t* agent_find_entry_from_transaction_id( const uint8_t *transaction_id) ;
     agent_stun_entry_t* agent_find_entry_from_record( const addr_record_t *record, const addr_record_t *relayed); 
     
-    int agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t *entry, const addr_record_t *src,    const addr_record_t *relayed); 
+    int agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t *entry, const addr_record_t *src,    const addr_record_t *relayed);
+    
+    int agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_class, unsigned int error_code, const uint8_t *transaction_id, const addr_record_t *mapped);
+
     
     void agent_arm_keepalive(agent_stun_entry_t *entry);
     

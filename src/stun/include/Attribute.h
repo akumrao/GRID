@@ -85,6 +85,17 @@ namespace stun {
     uint64_t tie_breaker;
   };
 
+  
+ /* --------------------------------------------------------------------- */
+  
+  class UseCandidate : public Attribute {
+    public:
+       UseCandidate():Attribute(STUN_ATTR_USE_CANDIDATE)
+       {
+       }
+     
+  };
+    
   /* --------------------------------------------------------------------- */
 
   class Priority : public Attribute {

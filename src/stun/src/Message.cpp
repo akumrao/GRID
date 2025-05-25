@@ -16,15 +16,15 @@ namespace stun {
       memset(&credentials ,'\0', sizeof(stun_credentials_t)) ;
   }
 
-/*    
+    
   Message::Message(stun_class_t msg_class, stun_method_t msg_method)
-    : msg_class(msg_class),  msg_method(msg_method)
+    : type( (uint16_t) msg_class | (uint16_t)msg_method )
     ,length(0)
     ,cookie(0x2112a442)
   {
       memset(&credentials ,'\0', sizeof(stun_credentials_t)) ;
   }
-*/
+
   Message::~Message() {
     std::vector<Attribute*>::iterator it = attributes.begin();
     while (it != attributes.end()) {
@@ -62,6 +62,11 @@ namespace stun {
 
   }
 
+   void Message::setTransactionID( uint8_t *transactionid) {
+        memcpy(transaction_id, transactionid, STUN_TRANSACTION_ID_SIZE);
+   }
+
+  
   bool Message::find(MessageIntegrity** result) {
     return (find<MessageIntegrity>(STUN_ATTR_MESSAGE_INTEGRITY, result) ||  find<MessageIntegrity>(STUN_ATTR_MESSAGE_INTEGRITY_SHA256, result)) ;
   }
