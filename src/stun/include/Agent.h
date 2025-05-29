@@ -150,9 +150,9 @@ typedef struct agent_stun_entry {
     Description &remotedesp;
     
     //local candidate
-    int ice_create_host_candidate( char *ip,  uint16_t port , int family, Candidate *candidate);
-    int ice_create_local_reflexive_candidate( char *ip,  uint16_t port, int family, Candidate *candidate );
-    int ice_create_local_candidate(int component, int index, char *ip,  uint16_t port, int family, Candidate *candidate);
+    int ice_create_host_candidate( Candidate *candidate);
+    int ice_create_local_reflexive_candidate( Candidate *candidate );
+    int ice_create_local_candidate(int component, int index, Candidate *candidate);
     uint32_t ice_compute_priority(Candidate::Type type, int family, int component, int index);
         
         

@@ -61,10 +61,10 @@ void testUdpServer::OnUdpSocketPacketReceived(UdpServer* socket, const char* dat
         candidate.resolved.len = sizeof(struct sockaddr);
                     
 
-        agent.ice_create_local_reflexive_candidate( result->address,  result->port, result->family, &candidate );
+        agent.ice_create_local_reflexive_candidate( &candidate );
        
         // printf("final family: %u, address:%s, port: %d\n", result->family,  result->address, result->port);
-        SInfo << "family " << result->family << " address " <<  result->address << " port " << result->port   ;
+        //SInfo << "family " << result->family << " address " <<  result->address << " port " << result->port   ;
         
         
        // socket = new testUdpServer("0.0.0.0", ++inc , localDes );

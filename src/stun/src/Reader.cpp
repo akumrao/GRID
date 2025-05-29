@@ -117,7 +117,7 @@ namespace stun {
 
         /* no parsing needed for these */
         case STUN_ATTR_USE_CANDIDATE: {
-          attr = new Attribute();
+          attr = new UseCandidate();
           break;
         }
 
@@ -143,10 +143,17 @@ namespace stun {
         }
 
         case STUN_ATTR_XOR_MAPPED_ADDRESS: {
-          XorMappedAddress* address = readXorMappedAddress( msg);
+          XorMappedAddress* address = readXorMappedAddress( msg, attr_length);
+          
+          
           if (address) {
+            
+             char buf[512];  uint16_t port;
+             
+            address->addressToString(buf, port);
+                      
             attr = (Attribute*) address;
-            STrace << "stun::Reader - verbose: address: "<<  address->address  << " port: " <<  address->address <<  address->port;
+            STrace << "stun::Reader - verbose: address: "<<  buf  << " port: " << port;
           }
           break;
         }
@@ -303,7 +310,7 @@ namespace stun {
         
         case STUN_ATTR_MESSAGE_INTEGRITY_SHA256: {
                 if (attr_length != HMAC_SHA256_SIZE)
-                        return false;
+                       return -1;
 
                 MessageIntegrity* integ = new MessageIntegrity(32);
                 memcpy(integ->sha.sha256, &buffer[dx], 32);
@@ -464,8 +471,64 @@ namespace stun {
     return ret;
   }
 
+   
+   
+   
+   
+   
+   
+    static int stun_read_value_mapped_address(const void *data, size_t size, addr_record_t *mapped,  const uint8_t *mask) {
+	size_t len = sizeof(struct stun_value_mapped_address);
+	if (size < len) {
+		STrace << "STUN mapped address value too short, size=" <<  size;
+		return -1;
+	}
+	const struct stun_value_mapped_address *value = (const struct stun_value_mapped_address *) data;
+	stun_address_family_t family = (stun_address_family_t)value->family;
+	switch (family) {
+	case STUN_ADDRESS_FAMILY_IPV4: {
+		len += 4;
+		if (size < len) {
+			STrace << "IPv4 mapped address value too short, size=" <<  size;
+			return -1;
+		}
+		LTrace("Reading IPv4 address");
+		mapped->len = sizeof(struct sockaddr_in);
+		struct sockaddr_in *sin = (struct sockaddr_in *)&mapped->addr;
+		sin->sin_family = AF_INET;
+		sin->sin_port = value->port ^ *((uint16_t *)mask);
+		uint8_t *bytes = (uint8_t *)&sin->sin_addr;
+		for (int i = 0; i < 4; ++i)
+			bytes[i] = value->address[i] ^ mask[i];
+		break;
+	}
+	case STUN_ADDRESS_FAMILY_IPV6: {
+		len += 16;
+		if (size < len) {
+			STrace << "IPv6 mapped address value too short, size=" <<  size;
+			return -1;
+		}
+		LTrace("Reading IPv6 address");
+		mapped->len = sizeof(struct sockaddr_in6);
+		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&mapped->addr;
+		sin6->sin6_family = AF_INET6;
+		sin6->sin6_port = value->port ^ *((uint16_t *)mask);
+		uint8_t *bytes = (uint8_t *)&sin6->sin6_addr;
+		for (int i = 0; i < 16; ++i)
+			bytes[i] = value->address[i] ^ mask[i];
+		break;
+	}
+	default: {
+		STrace << "Unknown STUN address family 0x%X" <<  (unsigned int)family;
+		len = size;
+		break;
+	}
+	}
+	return (int)len;
+    }
+   
   /* See http://tools.ietf.org/html/rfc5389#section-15.2 */
-  XorMappedAddress* Reader::readXorMappedAddress( Message* msg) {
+  XorMappedAddress* Reader::readXorMappedAddress( Message* msg , int len) {
 
     if (bytesLeft() < 8) {
       LError("Error: cannot read a XorMappedAddress as the buffer is too small in stun::Reader");
@@ -476,96 +539,101 @@ namespace stun {
   
     //uint8_t cookie[] = { 0x42, 0xA4, 0x12, 0x21 }; 
       uint8_t mask[16];
-    const uint32_t magic = htonl(STUN_MAGIC);
-    memcpy(mask, (const uint8_t*)&magic, 4);
+   // const uint32_t magic = htonl(STUN_MAGIC);
+    //memcpy(mask, (const uint8_t*)&magic, 4);
+    *((uint32_t *)mask) = htonl(STUN_MAGIC);
     memcpy(mask + 4, msg->transaction_id, 12);
+    
+    
+    if (stun_read_value_mapped_address(getArray(len), len, &msg->mapped, mask) < 0)
+    return nullptr;
     
     //uint8_t* port_ptr = (uint8_t*) &addr->port;
    
 
     /* skip the first byte */
-    skip(1); 
-
-    /* read family: 0x01 = IP4, 0x02 = IP6 */
-    addr->family = readU8();
-    if (addr->family != STUN_IP4 && addr->family != STUN_IP6) {
-      LError("Error: invalid family for the xor mapped address in stun::Reader");
-      delete addr;
-      return NULL;
-    }
-
-    /* read the port. */
-    addr->port = *((uint16_t *)getArray(2)) ^ *((uint16_t *)mask);
-   // port_ptr[0] = port_ptr[0] ^ cookie[2];
-   // port_ptr[1] = port_ptr[1] ^ cookie[3];
-
-    /* read the address part. */
-    if (addr->family == STUN_IP4) {
-        
-        //unsigned char bytes[4];
-        //unsigned char ip_addr[16];
-        //memcpy(bytes, getArray(4), 4 );
-        
-        unsigned char *tmp =  getArray(4);
-
-     // uint32_t ip = 0;
-      //uint8_t* bytes = (uint8_t*) &ip;
-      
-     // ip = readU32();
-
-//      ip_ptr[0] = ip_ptr[0] ^ cookie[0];
-//      ip_ptr[1] = ip_ptr[1] ^ cookie[1];
-//      ip_ptr[2] = ip_ptr[2] ^ cookie[2];
-//      ip_ptr[3] = ip_ptr[3] ^ cookie[3];
-      
-     // struct sockaddr_in sa;
-      
-
-      
-        addr->sin.sin_family = AF_INET;
-	addr->sin.sin_port =  addr->port;
-        uint8_t *bytes = (uint8_t *)&addr->sin.sin_addr;
-        
-                
-        for (int i = 0; i < 4; ++i)
-            bytes[i] = tmp[i] ^ mask[i];
-
-        inet_ntop(AF_INET, &addr->sin.sin_addr,(char *) addr->address, INET_ADDRSTRLEN);
-        addr->port = htons(addr->sin.sin_port);
-
-        //sprintf((char*)ip_addr, "%u.%u.%u.%u", bytes[0], bytes[1], bytes[2], bytes[3]);
-       // std::copy(ip_addr, ip_addr + 16, std::back_inserter(addr->address));
-
-    }
-    else if (addr->family == STUN_IP6) {
-      
-        unsigned char *tmp =  getArray(16);   
-        addr->sin6.sin6_family = AF_INET6;
-        addr->sin6.sin6_port =  addr->port;
-        uint8_t *bytes = (uint8_t *)&addr->sin6.sin6_addr;
-
-        for (int i = 0; i < 16; ++i)
-           bytes[i] = tmp[i] ^ mask[i];
-
-        inet_ntop(AF_INET6, &addr->sin6.sin6_addr,(char *) addr->address, INET6_ADDRSTRLEN);
-        
-        addr->port = htons(addr->sin6.sin6_port);
-         
-      //   struct sockaddr_in6 sa6;
-	//char astring[INET6_ADDRSTRLEN];
-
-	// IPv6 string to sockaddr_in6.
-	//inet_pton(AF_INET6, "2001:db8:63b3:1::3490", &(sa6.sin6_addr));
-
-	// sockaddr_in6 to IPv6 string.
-	//inet_ntop(AF_INET6, &(sa6.sin6_addr), astring, INET6_ADDRSTRLEN);
-
-    }
-    else {
-      printf("Warning: we shouldn't arrive here in stun::Reader.\n");
-      delete addr;
-      return NULL;
-    }
+//    skip(1); 
+//
+//    /* read family: 0x01 = IP4, 0x02 = IP6 */
+//    addr->family = readU8();
+//    if (addr->family != STUN_IP4 && addr->family != STUN_IP6) {
+//      LError("Error: invalid family for the xor mapped address in stun::Reader");
+//      delete addr;
+//      return NULL;
+//    }
+//
+//    /* read the port. */
+//    addr->port = *((uint16_t *)getArray(2)) ^ *((uint16_t *)mask);
+//   // port_ptr[0] = port_ptr[0] ^ cookie[2];
+//   // port_ptr[1] = port_ptr[1] ^ cookie[3];
+//
+//    /* read the address part. */
+//    if (addr->family == STUN_IP4) {
+//        
+//        //unsigned char bytes[4];
+//        //unsigned char ip_addr[16];
+//        //memcpy(bytes, getArray(4), 4 );
+//        
+//        unsigned char *tmp =  getArray(4);
+//
+//     // uint32_t ip = 0;
+//      //uint8_t* bytes = (uint8_t*) &ip;
+//      
+//     // ip = readU32();
+//
+////      ip_ptr[0] = ip_ptr[0] ^ cookie[0];
+////      ip_ptr[1] = ip_ptr[1] ^ cookie[1];
+////      ip_ptr[2] = ip_ptr[2] ^ cookie[2];
+////      ip_ptr[3] = ip_ptr[3] ^ cookie[3];
+//      
+//     // struct sockaddr_in sa;
+//      
+//
+//      
+//        addr->sin.sin_family = AF_INET;
+//	addr->sin.sin_port =  addr->port;
+//        uint8_t *bytes = (uint8_t *)&addr->sin.sin_addr;
+//        
+//                
+//        for (int i = 0; i < 4; ++i)
+//            bytes[i] = tmp[i] ^ mask[i];
+//
+//        inet_ntop(AF_INET, &addr->sin.sin_addr,(char *) addr->address, INET_ADDRSTRLEN);
+//        addr->port = htons(addr->sin.sin_port);
+//
+//        //sprintf((char*)ip_addr, "%u.%u.%u.%u", bytes[0], bytes[1], bytes[2], bytes[3]);
+//       // std::copy(ip_addr, ip_addr + 16, std::back_inserter(addr->address));
+//
+//    }
+//    else if (addr->family == STUN_IP6) {
+//      
+//        unsigned char *tmp =  getArray(16);   
+//        addr->sin6.sin6_family = AF_INET6;
+//        addr->sin6.sin6_port =  addr->port;
+//        uint8_t *bytes = (uint8_t *)&addr->sin6.sin6_addr;
+//
+//        for (int i = 0; i < 16; ++i)
+//           bytes[i] = tmp[i] ^ mask[i];
+//
+//        inet_ntop(AF_INET6, &addr->sin6.sin6_addr,(char *) addr->address, INET6_ADDRSTRLEN);
+//        
+//        addr->port = htons(addr->sin6.sin6_port);
+//         
+//      //   struct sockaddr_in6 sa6;
+//	//char astring[INET6_ADDRSTRLEN];
+//
+//	// IPv6 string to sockaddr_in6.
+//	//inet_pton(AF_INET6, "2001:db8:63b3:1::3490", &(sa6.sin6_addr));
+//
+//	// sockaddr_in6 to IPv6 string.
+//	//inet_ntop(AF_INET6, &(sa6.sin6_addr), astring, INET6_ADDRSTRLEN);
+//
+//    }
+//    else {
+//      printf("Warning: we shouldn't arrive here in stun::Reader.\n");
+//      delete addr;
+//      return NULL;
+//    }
 
     return addr;
   }

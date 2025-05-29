@@ -3,9 +3,12 @@
 
 #include <stdint.h>
 #include <string>
+#include <sys/socket.h>
 
-#define STUN_IP4 0x01
-#define STUN_IP6 0x02
+typedef enum stun_address_family {
+  STUN_ADDRESS_FAMILY_IPV4 = 0x01,
+  STUN_ADDRESS_FAMILY_IPV6 = 0x02,
+} stun_address_family_t;
 
 namespace stun {
 
@@ -23,7 +26,20 @@ struct stun_value_error_code {
 	uint16_t reserved;
 	uint8_t code_class; // lower 3 bits only, higher bits are reserved
 	uint8_t code_number;
-	uint8_t reason[];
+	//uint8_t reason[];
+};
+
+
+typedef struct addr_record {
+	struct sockaddr_storage addr;
+	socklen_t len;
+} addr_record_t;
+
+struct stun_value_mapped_address {
+	uint8_t padding;
+	uint8_t family;
+	uint16_t port;
+	uint8_t address[];
 };
 
 #define STUN_ERROR_INTERNAL_VALIDATION_FAILED 599

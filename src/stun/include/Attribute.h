@@ -53,12 +53,18 @@ namespace stun {
   class XorMappedAddress : public Attribute {
   public:
     XorMappedAddress();
-    XorMappedAddress(const char * addr, uint16_t p, uint8_t fam = STUN_IP4);
-    uint8_t family;
-    uint16_t port;
-    char address[47];  /* IP address in string notation: 192.168.0.1 */
-    struct sockaddr_in sin;
-    struct sockaddr_in6 sin6;
+    XorMappedAddress(const char * ip, uint16_t p, stun_address_family_t family = STUN_ADDRESS_FAMILY_IPV4);
+      
+    void addressToString( char *buf,  uint16_t &port);
+  
+   // stun_address_family_t family;
+    //uint16_t port;
+    //char address[47];  /* IP address in string notation: 192.168.0.1 */
+    //struct sockaddr_in sin;
+    //struct sockaddr_in6 sin6;
+    
+    addr_record_t mapped;
+
   };
 
   /* --------------------------------------------------------------------- */
@@ -93,9 +99,21 @@ namespace stun {
        UseCandidate():Attribute(STUN_ATTR_USE_CANDIDATE)
        {
        }
-     
-  };
+   };
     
+  
+  
+  /*-----------------------------------------------------------------------*/
+  
+   class ErrorIce : public Attribute {
+    public:
+        ErrorIce(unsigned int );
+        const char * errorNumber(unsigned int error_code);      
+        stun_value_error_code error;
+     
+    };
+  
+ 
   /* --------------------------------------------------------------------- */
 
   class Priority : public Attribute {

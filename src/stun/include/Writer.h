@@ -27,7 +27,9 @@ namespace stun {
     void writeMessage(Message* msg, std::string messageIntegrityPassword);   /* When you call this, we assume that the message contains a MessageIntegrity attribute. We calculate the hmac-sha and rewrite our internal buffer. This also checks for a Fingerprint attribute; and computers + writes this crc32-value. */
 
   private:
-    void writeAttribute(Attribute* attr);
+    void writeErrorCode(ErrorIce* p);  
+    void writeUseCandidate(Attribute* p);
+    void writeAttribute(Attribute* attr , Message* msg);
     void writeUsername(Username* u);
     void writeSoftware(Software* s);
     void writePriority(Priority* p);
@@ -35,7 +37,7 @@ namespace stun {
     void writeIceControlling(IceControlling* ic);
     void writeMessageIntegrity(MessageIntegrity* integ);
     void writeFingerprint(Fingerprint* fp);
-    void writeXorMappedAddress(XorMappedAddress* xma);
+    void writeXorMappedAddress(XorMappedAddress* xma, Message* msg);
     void writeU8(uint8_t v);
     void writeU16(uint16_t v);
     void writeU32(uint32_t v);

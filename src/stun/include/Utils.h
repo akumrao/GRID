@@ -21,6 +21,7 @@ struct stun_attr {
 	uint8_t value[];
 };
 
+#define STUN_MAGIC 0x2112A442
 
   /* 
      Compute the hmac-sha1 over message.

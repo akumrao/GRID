@@ -45,6 +45,8 @@
 #include <Reader.h>
 #include <Writer.h>
 
+#include "base/logger.h"
+
 #define USE_WEBRTC 1
 #if USE_WEBRTC
 #  define PASSWD "Q9wQj99nsQzldVI5ZuGXbEWRK5RhRXdC"
@@ -57,8 +59,12 @@ static void create_stun_message();  /* creates a stun message for which we know 
 
 static void create_stun_message_juice();
 
+using namespace base;
 
 int main() {
+    
+    
+    Logger::instance().add(new ConsoleChannel("debug", Level::Trace));
 
   printf("\n\ntest_stun_message_integrity\n\n");
 #if 0
@@ -105,7 +111,7 @@ int main() {
   reader.process((uint8_t*)respv4, sizeof(respv4) - 1, &msg); /* we do -1 to exclude the string terminating nul char. */
   }
   
-#endif
+
   
   for( int i =0 ; i< 56; ++i)
   {
@@ -164,7 +170,7 @@ int main() {
     
   }
 //#endif
-  
+  #endif
   create_stun_message();
     
   create_stun_message_juice();
@@ -229,7 +235,7 @@ static void create_stun_message() {
   stun::Message response(stun::STUN_BINDING_RESPONSE);
   response.setTransactionID();
   response.addAttribute(new stun::XorMappedAddress("192.168.0.19", 55164));
-  response.addAttribute(new stun::MessageIntegrity(20));
+ // response.addAttribute(new stun::MessageIntegrity(20));
   response.addAttribute(new stun::Fingerprint());
   
   stun::Writer writer;

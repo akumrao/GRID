@@ -4,6 +4,8 @@
 #include <stdio.h>
 #include <string>
 #include <sstream>
+#include <cstring>
+
 
 namespace stun {
 
@@ -76,7 +78,7 @@ namespace stun {
 
       prev_length = buffer.size();
       
-      writeAttribute(msg->attributes[i]);
+      writeAttribute(msg->attributes[i], msg);
 
       msg->attributes[i]->offset = prev_length;
       msg->attributes[i]->length = (buffer.size() - prev_length) - 4; /* the -4 are the message-type and message-length bytes. */
@@ -102,7 +104,7 @@ namespace stun {
     rewriteU16(2, message_len);
   }
 
-  void Writer::writeAttribute(Attribute* attr) {
+  void Writer::writeAttribute(Attribute* attr , Message* msg) {
 
     switch (attr->type) {
       case STUN_ATTR_USERNAME: { 
@@ -141,9 +143,21 @@ namespace stun {
       }
 
       case STUN_ATTR_XOR_MAPPED_ADDRESS: {
-        writeXorMappedAddress(static_cast<XorMappedAddress*>(attr));
+        writeXorMappedAddress(static_cast<XorMappedAddress*>(attr), msg);
         break;
       }
+      
+      case STUN_ATTR_ERR_CODE: {
+        writeErrorCode(static_cast<ErrorIce*>(attr));
+        break;
+      }
+       
+      
+       case STUN_ATTR_USE_CANDIDATE: {
+        writeUseCandidate(static_cast<Attribute*>(attr));
+        break;
+      }
+      
 
       default: {
         printf("stun::Writer - error: unhandled attribute in stun::Writer::writeAttribute(): %s\n", attribute_type_to_string(attr->type).c_str());
@@ -151,6 +165,22 @@ namespace stun {
       }
     }
   }
+  
+ 
+ void Writer::writeErrorCode(ErrorIce* p) {
+    writeU16(p->type);
+    writeU16(4);       /* length */
+    writeU16(0);
+    writeU8( p->error.code_class);
+    writeU8( p->error.code_number);
+  }
+    
+   
+ void Writer::writeUseCandidate(Attribute* p) {
+    writeU16(p->type);
+    writeU16(4);       /* length */
+  }
+    
 
   void Writer::writePriority(Priority* p) {
     writeU16(p->type);
@@ -194,40 +224,119 @@ namespace stun {
     writeU32(fp->crc);
   }
 
-  void Writer::writeXorMappedAddress(XorMappedAddress* xma) {
+  
+  int stun_write_value_mapped_address(void *buf, size_t size, const struct sockaddr *addr,
+                                    socklen_t addrlen, const uint8_t *mask) {
+	if (size < sizeof(struct stun_value_mapped_address))
+		return -1;
 
-    /* write the header */
+	struct stun_value_mapped_address *value =   (stun_value_mapped_address*)buf;
+	value->padding = 0;
+	switch (addr->sa_family) {
+	case AF_INET: {
+		value->family = STUN_ADDRESS_FAMILY_IPV4;
+		if (size < sizeof(struct stun_value_mapped_address) + 4)
+			return -1;
+		if (addrlen < (socklen_t)sizeof(struct sockaddr_in))
+			return -1;
+		//printf("Writing IPv4 address");
+		const struct sockaddr_in *sin = (const struct sockaddr_in *)addr;
+		value->port = sin->sin_port ^ *((uint16_t *)mask);
+		const uint8_t *bytes = (const uint8_t *)&sin->sin_addr;
+		for (int i = 0; i < 4; ++i)
+			value->address[i] = bytes[i] ^ mask[i];
+		return sizeof(struct stun_value_mapped_address) + 4;
+	}
+	case AF_INET6: {
+		value->family = STUN_ADDRESS_FAMILY_IPV6;
+		if (size < sizeof(struct stun_value_mapped_address) + 16)
+			return -1;
+		if (addrlen < (socklen_t)sizeof(struct sockaddr_in6))
+			return -1;
+		//printf("Writing IPv6 address");
+		const struct sockaddr_in6 *sin6 = (const struct sockaddr_in6 *)addr;
+		value->port = sin6->sin6_port ^ *((uint16_t *)mask);
+		const uint8_t *bytes = (const uint8_t *)&sin6->sin6_addr;
+		for (int i = 0; i < 16; ++i)
+			value->address[i] = bytes[i] ^ mask[i];
+		return sizeof(struct stun_value_mapped_address) + 16;
+	}
+	default: {
+		printf("Unknown address family %u", (unsigned int)addr->sa_family);
+		return -1;
+	}
+	}
+}
+  
+ void Writer::writeXorMappedAddress(XorMappedAddress* xma, Message* msg) {
+  
+      
     writeU16(xma->type);
-    writeU16(8);
-    writeU8(0x00);
-    writeU8(xma->family);
 
-    /* calculate the xor mapped port and ip */
-    uint32_t ip;
-    uint32_t ip_copy;
-    uint8_t* ip_ptr = (uint8_t*) &ip;
-    uint8_t* ip_copy_ptr = (uint8_t*) &ip_copy;
-    uint16_t port = xma->port;
-    uint8_t* port_ptr = (uint8_t*)&port;
-    uint8_t cookie[] = { 0x42, 0xA4, 0x12, 0x21 }; 
-    
-    /* xor the port */
-    port_ptr[0] = port_ptr[0] ^ cookie[2];
-    port_ptr[1] = port_ptr[1] ^ cookie[3];
- 
-    /* convert the address string into a uint32_t */
-    inet_pton(AF_INET, xma->address, ip_copy_ptr);
-    
-    /* xor the ip */
-    ip_ptr[0] = ip_copy_ptr[3] ^ cookie[0];
-    ip_ptr[1] = ip_copy_ptr[2] ^ cookie[1];
-    ip_ptr[2] = ip_copy_ptr[1] ^ cookie[2];
-    ip_ptr[3] = ip_copy_ptr[0] ^ cookie[3];
+    switch (xma->mapped.addr.ss_family) 
+    {
+        case AF_INET:
+        {
+            /* write the header */
 
-    writeU16(port);
-    writeU32(ip);
+            writeU16(8);
+//            writeU8(0x00);
+//            writeU8(xma->family);
+//
+//            /* calculate the xor mapped port and ip */
+//            uint32_t ip;
+//            uint32_t ip_copy;
+//            uint8_t* ip_ptr = (uint8_t*) & ip;
+//            uint8_t* ip_copy_ptr = (uint8_t*) & ip_copy;
+//            uint16_t port = xma->port;
+//            uint8_t* port_ptr = (uint8_t*) & port;
+//            uint8_t cookie[] = {0x42, 0xA4, 0x12, 0x21};
+//
+//            /* xor the port */
+//            port_ptr[0] = port_ptr[0] ^ cookie[2];
+//            port_ptr[1] = port_ptr[1] ^ cookie[3];
+//
+//            /* convert the address string into a uint32_t */
+//            inet_pton(AF_INET, xma->address, ip_copy_ptr);
+//
+//            /* xor the ip */
+//            ip_ptr[0] = ip_copy_ptr[3] ^ cookie[0];
+//            ip_ptr[1] = ip_copy_ptr[2] ^ cookie[1];
+//            ip_ptr[2] = ip_copy_ptr[1] ^ cookie[2];
+//            ip_ptr[3] = ip_copy_ptr[0] ^ cookie[3];
+//
+//            writeU16(port);
+//            writeU32(ip);
+            break;
+        }
+
+        case AF_INET6:
+        {
+
+            writeU16(20);
+
+            break;
+        }
+        
+    };
+
     
-    exit(0); // TBD for IPV6
+
+    uint8_t value[32];
+    uint8_t mask[16];
+    *((uint32_t *) mask) = htonl(STUN_MAGIC);
+    memcpy(mask + 4, msg->transaction_id, 12);
+
+
+    int value_len = stun_write_value_mapped_address(
+            value, 32, (const struct sockaddr *) &msg->mapped.addr, msg->mapped.len, mask);
+    if (value_len > 0) {
+
+
+        writeBytes(value, value_len);
+    }
+    
+
     
   }
 

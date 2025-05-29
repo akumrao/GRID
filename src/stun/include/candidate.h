@@ -5,8 +5,9 @@
 
 #include "common.h"
 #include <string>
+#include <Types.h>
 
-#include <sys/socket.h>
+using namespace stun;
 
 namespace rtc {
 
@@ -24,10 +25,6 @@ namespace rtc {
 #define ICE_CANDIDATE_PREF_SERVER_REFLEXIVE 100
 #define ICE_CANDIDATE_PREF_RELAYED 0
 
-typedef struct addr_record {
-	struct sockaddr_storage addr;
-	socklen_t len;
-} addr_record_t;
 
 
  

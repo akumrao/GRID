@@ -19,7 +19,7 @@
 #ifndef STUN_READER_H
 #define STUN_READER_H
 
-#define STUN_MAGIC 0x2112A442
+
 
 #include <stdint.h>
 #include <vector>
@@ -43,7 +43,7 @@ namespace stun {
     uint64_t readU64();                                         /* read an uint64_t from the buffer, expecting the buffer to hold Big Endian data and moving the dx member. */
     StringValue readString(uint16_t len);                       /* read a StringValue from the current buffer */
     unsigned char * getArray(uint16_t len); 
-    XorMappedAddress* readXorMappedAddress( Message* msg);                   /* reads a XorMappedAddress */
+    XorMappedAddress* readXorMappedAddress( Message* msg, int len);                   /* reads a XorMappedAddress */
     void skip(uint32_t nbytes);                                 /* skip the next nbytes. */    
     uint32_t bytesLeft();                                       /* returns the number of bytes that still need to be parsed, this is not the same as the size of the buffer! */
     uint8_t* ptr();                                             /* returns a pointer to the current read index of the buffer. */

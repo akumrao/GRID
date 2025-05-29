@@ -75,7 +75,7 @@ namespace stun {
                     std::memcpy(&candidate.resolved.addr , &interface_a.address.address4, sizeof(interface_a.address.address4));
                     candidate.resolved.len = sizeof(interface_a.address.address4);
                             
-                    ice_create_host_candidate(buf, port, AF_INET, &candidate);        
+                    ice_create_host_candidate(&candidate);        
                     
                     SInfo << "IPv4 address: " <<  buf;
                 } else if (interface_a.address.address4.sin_family == AF_INET6) {
@@ -85,7 +85,7 @@ namespace stun {
                     std::memcpy(&candidate.resolved.addr , &interface_a.address.address6, sizeof(interface_a.address.address6));
                     candidate.resolved.len = sizeof(interface_a.address.address6);
                     
-                    ice_create_host_candidate(buf, port, AF_INET6, &candidate);
+                    ice_create_host_candidate( &candidate);
                     
                     SInfo << "IPv6 address: " <<  buf;
                 }
@@ -98,11 +98,11 @@ namespace stun {
 
     }
 
-    int Agent::ice_create_host_candidate( char *ip,  uint16_t port, int family, Candidate *candidate ) {
+    int Agent::ice_create_host_candidate( Candidate *candidate ) {
 
    
         
-        if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  ip, port, family, candidate)) {
+        if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  candidate)) {
             printf("Failed to create host candidate");
         }
         
@@ -110,7 +110,7 @@ namespace stun {
     }
     
     
-    int Agent::ice_create_local_reflexive_candidate( char *ip,  uint16_t port, int family, Candidate *candidate) {
+    int Agent::ice_create_local_reflexive_candidate( Candidate *candidate) {
 
        
         if (candidate->mType !=  Candidate::Type::ServerReflexive && candidate->mType  !=  Candidate::Type::PeerReflexive) {
@@ -119,7 +119,7 @@ namespace stun {
 	}
         
         
-        if (ice_find_candidate_from_addr(&localdesp, &candidate->resolved, family == AF_INET6 ? Candidate::Type::Unknown : candidate->mType )) {
+        if (ice_find_candidate_from_addr(&localdesp, &candidate->resolved, candidate->resolved.addr.ss_family == AF_INET6 ? Candidate::Type::Unknown : candidate->mType )) {
                   LTrace("A local candidate exists for the mapped address");
                   return 0;
         }
@@ -131,26 +131,22 @@ namespace stun {
 	}
         
 
-        if (ice_create_local_candidate(1, localdesp.desc.candidates_count,  ip, port, family, candidate)) {
+        if (ice_create_local_candidate(1, localdesp.desc.candidates_count, candidate)) {
             printf("Failed to create host candidate");
         }
         
         ice_add_candidate( candidate, &localdesp   );
     }
 
-    int Agent::ice_create_local_candidate( int component, int index, char *ip,  uint16_t port, int family,  Candidate *candidate) {
+    int Agent::ice_create_local_candidate( int component, int index,  Candidate *candidate) {
       //  memset(candidate, 0, sizeof (*candidate));
 
         candidate->mComponent = component;
         //candidate->resolved = *record;
         candidate->mFoundation =  "-";
 
-        candidate->mPriority  = ice_compute_priority(candidate->mType, family, candidate->mComponent, index);
+        candidate->mPriority  = ice_compute_priority(candidate->mType, candidate->resolved.addr.ss_family, candidate->mComponent, index);
         
-        candidate->mAddress =  ip;
-        candidate->mPort=  port;
-        
-        candidate->mFamily = family;
         
 //        if (getnameinfo((struct sockaddr *) &record->addr, record->len, candidate->hostname, 256,
 //                candidate->service, 32, NI_NUMERICHOST | NI_NUMERICSERV | NI_DGRAM)) {
@@ -215,22 +211,22 @@ namespace stun {
             candidate.mType = Candidate::Type::PeerReflexive;
             candidate.resolved =  *record;
             
-            char buf[512];
-            uint16_t port;
+//            char buf[512];
+//            uint16_t port;
+//            
+//            if(record->addr.ss_family == AF_INET6)
+//            {
+//                uv_ip6_name((sockaddr_in6* )&record->addr, buf, sizeof (buf));
+//		port = ntohs( ((sockaddr_in6 *)&record->addr)->sin6_port);
+//                                
+//            }
+//            else if(record->addr.ss_family == AF_INET )
+//            {
+//                 uv_ip4_name((sockaddr_in*)&record->addr, buf, sizeof (buf));
+//                 port =  ntohs( ((sockaddr_in *)&record->addr)->sin_port); 
+//            }
             
-            if(record->addr.ss_family == AF_INET6)
-            {
-                uv_ip6_name((sockaddr_in6* )&record->addr, buf, sizeof (buf));
-		port = ntohs( ((sockaddr_in6 *)&record->addr)->sin6_port);
-                                
-            }
-            else if(record->addr.ss_family == AF_INET )
-            {
-                 uv_ip4_name((sockaddr_in*)&record->addr, buf, sizeof (buf));
-                 port =  ntohs( ((sockaddr_in *)&record->addr)->sin_port); 
-            }
-            
-            if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  buf,  0, -record->addr.ss_family,  &candidate)) {
+            if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  &candidate)) {
                     LError("Failed to create reflexive candidate");
                     return -1;
             }
@@ -904,6 +900,43 @@ static bool addr_is_equal(const struct sockaddr *a, const struct sockaddr *b, bo
 	return true;
 }
 
+const char *stun_get_error_reason(unsigned int code) {
+	switch (code) {
+	case 0:
+		return "";
+	case 300:
+		return "Try Alternate";
+	case 400:
+		return "Bad Request";
+	case 401:
+		return "Unauthenticated";
+	case 403:
+		return "Forbidden";
+	case 420:
+		return "Unknown Attribute";
+	case 437:
+		return "Allocation Mismatch";
+	case 438:
+		return "Stale Nonce";
+	case 440:
+		return "Address Family not Supported";
+	case 441:
+		return "Wrong credentials";
+	case 442:
+		return "Unsupported Transport Protocol";
+	case 443:
+		return "Peer Address Family Mismatch";
+	case 486:
+		return "Allocation Quota Reached";
+	case 500:
+		return "Server Error";
+	case 508:
+		return "Insufficient Capacity";
+	default:
+		return "Error";
+	}
+}
+
 Candidate *Agent::ice_find_candidate_from_addr(Description *description,  const addr_record_t *record,  Candidate::Type type)
 {
 	
@@ -1163,18 +1196,18 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 
                         if(candidate.resolved.addr.ss_family == AF_INET6)
                         {
-                            uv_ip6_name((sockaddr_in6* )&candidate.resolved, buf, sizeof (buf));
-                            port = ntohs( ((sockaddr_in6 *)&candidate.resolved)->sin6_port);
+                            uv_ip6_name((sockaddr_in6* )&candidate.resolved.addr, buf, sizeof (buf));
+                            port = ntohs( ((sockaddr_in6 *)&candidate.resolved.addr)->sin6_port);
 
                         }
                         else if(candidate.resolved.addr.ss_family == AF_INET )
                         {
-                             uv_ip4_name((sockaddr_in*)&candidate.resolved, buf, sizeof (buf));
-                             port =  ntohs( ((sockaddr_in *)&candidate.resolved)->sin_port); 
+                             uv_ip4_name((sockaddr_in*)&candidate.resolved.addr, buf, sizeof (buf));
+                             port =  ntohs( ((sockaddr_in *)&candidate.resolved.addr)->sin_port); 
                         }
             
                         
-			if (ice_create_local_reflexive_candidate(buf, port,candidate.resolved.addr.ss_family  , &candidate)) {
+			if (ice_create_local_reflexive_candidate( &candidate)) {
 				LWarn("Failed to add local peer reflexive candidate from STUN mapped address");
 			}
 		}
@@ -1493,6 +1526,21 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 //
 //		return -1;
 //	}
+        
+        
+        if(response.error_code)
+        {
+            response.addAttribute(new stun::ErrorIce(response.error_code));
+        }
+        
+        if (response.msg_class == STUN_CLASS_REQUEST ||
+	    (response.msg_class == STUN_CLASS_RESP_ERROR &&
+	     (response.error_code == 401 || response.error_code == 438) // Unauthenticated or Stale Nonce
+	     )) {
+		// TBD
+            
+            SError << " TBD not yet implemented";
+	}
         
         stun::Writer writer;
         writer.writeMessage(&response, password );
