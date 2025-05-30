@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <string>
 #include <vector>
+#include <Types.h>
 
 namespace stun {
   
@@ -59,6 +60,9 @@ struct stun_attr {
    void random_str64(char *buf, size_t size);
    
    void sha256(const std::string& str , std::string& key) ;
+   
+   
+   void addressToString( char *buf,  uint16_t &port,  addr_record_t &mapped);
    
 } /* namespace stun */
 

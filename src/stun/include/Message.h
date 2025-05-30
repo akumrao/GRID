@@ -129,7 +129,7 @@ typedef struct stun_credentials {
     uint64_t ice_controlling{0};
     uint64_t ice_controlled{0};
     
-    addr_record_t mapped;
+    const addr_record_t *mapped;
             
   };
 

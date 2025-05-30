@@ -329,7 +329,7 @@ namespace stun {
 
 
     int value_len = stun_write_value_mapped_address(
-            value, 32, (const struct sockaddr *) &msg->mapped.addr, msg->mapped.len, mask);
+            value, 32, (const struct sockaddr *) &xma->mapped.addr, xma->mapped.len, mask);
     if (value_len > 0) {
 
 

@@ -1,9 +1,6 @@
 #include <string.h>
 #include <Attribute.h>
 
-#include <uv.h>
-
-
 namespace stun {
 
   /* --------------------------------------------------------------------- */
@@ -24,24 +21,6 @@ namespace stun {
   }
 
   
-  void XorMappedAddress::addressToString( char *buf,  uint16_t &port)
-  {
-
-        if(mapped.addr.ss_family == AF_INET6)
-        {
-            uv_ip6_name((sockaddr_in6* )&mapped.addr, buf, sizeof (buf));
-            port = ntohs( ((sockaddr_in6 *)&mapped.addr)->sin6_port);
-
-        }
-        else if(mapped.addr.ss_family  == AF_INET )
-        {
-             uv_ip4_name((sockaddr_in*)&mapped.addr, buf, sizeof (buf));
-             port =  ntohs( ((sockaddr_in *)&mapped.addr)->sin_port); 
-        }
-                        
-
-}
-
 
   XorMappedAddress::XorMappedAddress(const char * ip , uint16_t port, stun_address_family_t fam)
     :Attribute(STUN_ATTR_XOR_MAPPED_ADDRESS)

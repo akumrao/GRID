@@ -7,6 +7,7 @@
 
 #include <base/logger.h>
 
+
 using namespace base;
 
 namespace stun {
@@ -147,13 +148,14 @@ namespace stun {
           
           
           if (address) {
+              
+            msg->mapped = &address->mapped;
             
-             char buf[512];  uint16_t port;
-             
-            address->addressToString(buf, port);
-                      
+            char buf[40];  uint16_t port;
+            addressToString(buf, port, address->mapped);
+            
             attr = (Attribute*) address;
-            STrace << "stun::Reader - verbose: address: "<<  buf  << " port: " << port;
+           
           }
           break;
         }
@@ -477,7 +479,7 @@ namespace stun {
    
    
    
-    static int stun_read_value_mapped_address(const void *data, size_t size, addr_record_t *mapped,  const uint8_t *mask) {
+    static int stun_read_value_mapped_address(const void *data, size_t size,  addr_record_t *mapped,  const uint8_t *mask) {
 	size_t len = sizeof(struct stun_value_mapped_address);
 	if (size < len) {
 		STrace << "STUN mapped address value too short, size=" <<  size;
@@ -545,7 +547,7 @@ namespace stun {
     memcpy(mask + 4, msg->transaction_id, 12);
     
     
-    if (stun_read_value_mapped_address(getArray(len), len, &msg->mapped, mask) < 0)
+    if (stun_read_value_mapped_address(getArray(len), len, ( addr_record_t *) &addr->mapped, mask) < 0)
     return nullptr;
     
     //uint8_t* port_ptr = (uint8_t*) &addr->port;

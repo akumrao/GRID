@@ -55,9 +55,10 @@
 #endif
 
 static void on_stun_message(stun::Message* msg, void* user);
-static void create_stun_message();  /* creates a stun message for which we know the result */
+static void create_stun_message1();
+static void create_stun_message2();  /* creates a stun message for which we know the result */
 
-static void create_stun_message_juice();
+
 
 using namespace base;
 
@@ -171,9 +172,9 @@ int main() {
   }
 //#endif
   #endif
-  create_stun_message();
+  //create_stun_message1();
     
-  create_stun_message_juice();
+  create_stun_message2();
 
   return 0;
 }
@@ -227,42 +228,13 @@ static void on_stun_message(stun::Message* msg, void* user) {
   }
 }
 
-static void create_stun_message() {
+
+
+
+
+static void create_stun_message1() {
   
-  printf("creating new message.\n");
-
-  /* write */
-  stun::Message response(stun::STUN_BINDING_RESPONSE);
-  response.setTransactionID();
-  response.addAttribute(new stun::XorMappedAddress("192.168.0.19", 55164));
- // response.addAttribute(new stun::MessageIntegrity(20));
-  response.addAttribute(new stun::Fingerprint());
-  
-  stun::Writer writer;
-  writer.writeMessage(&response, "75C96DDDFC38D194FEDF75986CF962A2D56F3B65F1F7");
-
-  printf("---------------\n");
-  for (size_t i = 0; i < writer.buffer.size(); ++i) {
-    if (i == 0 || i % 4 == 0) {
-      printf("\n");
-    }
-    printf("%02X ", writer.buffer[i]);
-  }
-  printf("\n---------------\n");
-
-  /* and read it again. */
-  stun::Message msg;
-  stun::Reader reader;
-  reader.process(&writer.buffer[0], writer.buffer.size(), &msg);
-  
-}
-
-
-
-
-static void create_stun_message_juice() {
-  
-  printf("creating Juice stun message.\n");
+  printf("create_stun_message1.\n");
 
   /* write */
   stun::Message response(stun::STUN_BINDING_REQUEST);
@@ -287,7 +259,38 @@ static void create_stun_message_juice() {
   stun::Message msg;
   stun::Reader reader;
   reader.process(&writer.buffer[0], writer.buffer.size(), &msg);
-  
 
+  
+}
+
+
+
+static void create_stun_message2() {
+  
+  printf("creating new message2.\n");
+
+  /* write */
+  stun::Message response(stun::STUN_BINDING_RESPONSE);
+  response.setTransactionID();
+  response.addAttribute(new stun::XorMappedAddress("192.168.0.19", 55164));
+ // response.addAttribute(new stun::MessageIntegrity(20));
+  response.addAttribute(new stun::Fingerprint());
+  
+  stun::Writer writer;
+  writer.writeMessage(&response, "75C96DDDFC38D194FEDF75986CF962A2D56F3B65F1F7");
+
+  printf("---------------\n");
+  for (size_t i = 0; i < writer.buffer.size(); ++i) {
+    if (i == 0 || i % 4 == 0) {
+      printf("\n");
+    }
+    printf("%02X ", writer.buffer[i]);
+  }
+  printf("\n---------------\n");
+
+  /* and read it again. */
+  stun::Message msg;
+  stun::Reader reader;
+  reader.process(&writer.buffer[0], writer.buffer.size(), &msg);
   
 }

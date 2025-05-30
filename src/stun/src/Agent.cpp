@@ -1173,7 +1173,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 			agent_arm_keepalive( entry);
 		}
 
-		if (msg->mapped.len && !relayed) {
+		if (msg->mapped->len && !relayed) {
 			LTrace("Response has mapped address");
 
 //			if (_DEBUG && entry->type != AGENT_STUN_ENTRY_TYPE_CHECK) {
@@ -1189,7 +1189,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
                         
                         Candidate candidate;
                         candidate.mType = type;
-                        candidate.resolved = msg->mapped;
+                        candidate.resolved = *msg->mapped;
                         
                         char buf[512];
                         uint16_t port;
@@ -1238,8 +1238,8 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 				pair->state = ICE_CANDIDATE_PAIR_STATE_SUCCEEDED;
 			}
 
-			if (!pair->local && msg->mapped.len)
-				pair->local = ice_find_candidate_from_addr(&localdesp, &msg->mapped, Candidate::Type::Unknown);
+			if (!pair->local && msg->mapped->len)
+				pair->local = ice_find_candidate_from_addr(&localdesp, msg->mapped, Candidate::Type::Unknown);
 
 			// Update consent timestamp
 			pair->consent_expiry = current_timestamp() + CONSENT_TIMEOUT;
@@ -1479,7 +1479,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 			password = localdesp.desc.ice_pwd;
 			response.error_code = error_code;
 			if (mapped)
-				response.mapped = *mapped;
+				response.mapped = mapped;
 
 			break;
 		}
