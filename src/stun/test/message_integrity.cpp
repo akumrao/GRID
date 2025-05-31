@@ -56,8 +56,8 @@
 
 static void on_stun_message(stun::Message* msg, void* user);
 static void create_stun_message1();
-static void create_stun_message2();  /* creates a stun message for which we know the result */
-
+static void create_stun_message2(); 
+static void create_stun_message3(); 
 
 
 using namespace base;
@@ -174,8 +174,10 @@ int main() {
   #endif
   //create_stun_message1();
     
-  create_stun_message2();
+  //create_stun_message2();
 
+  create_stun_message3();
+  
   return 0;
 }
 
@@ -240,6 +242,7 @@ static void create_stun_message1() {
   stun::Message response(stun::STUN_BINDING_REQUEST);
   response.setTransactionID();
   response.addAttribute(new stun::Software("libjuice"));
+  ///response.addAttribute(new stun::MessageIntegrity(20));
   response.addAttribute(new stun::Fingerprint());
   
   
@@ -259,6 +262,11 @@ static void create_stun_message1() {
   stun::Message msg;
   stun::Reader reader;
   reader.process(&writer.buffer[0], writer.buffer.size(), &msg);
+  
+  if( !reader.computeFingerprint( &msg ))
+  {
+       SWarn << "STUN computeFingerprint check failed, password";
+  }
 
   
 }
@@ -273,6 +281,45 @@ static void create_stun_message2() {
   stun::Message response(stun::STUN_BINDING_RESPONSE);
   response.setTransactionID();
   response.addAttribute(new stun::XorMappedAddress("192.168.0.19", 55164));
+  response.addAttribute(new stun::MessageIntegrity(20));
+  response.addAttribute(new stun::Fingerprint());
+  
+  stun::Writer writer;
+  writer.writeMessage(&response, "75C96DDDFC38D194FEDF75986CF962A2D56F3B65F1F7");
+
+  printf("---------------\n");
+  for (size_t i = 0; i < writer.buffer.size(); ++i) {
+    if (i == 0 || i % 4 == 0) {
+      printf("\n");
+    }
+    printf("%02X ", writer.buffer[i]);
+  }
+  printf("\n---------------\n");
+
+  /* and read it again. */
+  stun::Message msg;
+  stun::Reader reader;
+  reader.process(&writer.buffer[0], writer.buffer.size(), &msg);
+  
+
+    bool ret = reader.computeMessageIntegrity(&msg, "75C96DDDFC38D194FEDF75986CF962A2D56F3B65F1F7");  
+    if(!ret)
+    {
+        SWarn << "STUN integrity check failed, password";
+    }
+  
+}
+
+
+
+static void create_stun_message3() {
+  
+  printf("creating new message2.\n");
+
+  /* write */
+  stun::Message response(stun::STUN_BINDING_RESPONSE);
+  response.setTransactionID();
+  response.addAttribute(new stun::XorMappedAddress("fe80::3cb4:1014:d913:87b9", 55164));
  // response.addAttribute(new stun::MessageIntegrity(20));
   response.addAttribute(new stun::Fingerprint());
   
@@ -292,5 +339,12 @@ static void create_stun_message2() {
   stun::Message msg;
   stun::Reader reader;
   reader.process(&writer.buffer[0], writer.buffer.size(), &msg);
+  
+
+    bool ret = reader.computeFingerprint(&msg);  
+    if(!ret)
+    {
+        SWarn << "STUN Fingerprin check failed, password";
+    }
   
 }

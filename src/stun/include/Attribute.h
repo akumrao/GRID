@@ -53,7 +53,7 @@ namespace stun {
   class XorMappedAddress : public Attribute {
   public:
     XorMappedAddress();
-    XorMappedAddress(const char * ip, uint16_t p, stun_address_family_t family = STUN_ADDRESS_FAMILY_IPV4);
+    XorMappedAddress(const char * ip, uint16_t p);
       
     void addressToString( char *buf,  uint16_t &port);
   

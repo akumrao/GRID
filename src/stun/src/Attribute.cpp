@@ -22,14 +22,17 @@ namespace stun {
 
   
 
-  XorMappedAddress::XorMappedAddress(const char * ip , uint16_t port, stun_address_family_t fam)
+  XorMappedAddress::XorMappedAddress(const char * ip , uint16_t port)
     :Attribute(STUN_ATTR_XOR_MAPPED_ADDRESS)
   {
 
     char ipstr[INET6_ADDRSTRLEN];
     socklen_t addrlen;
+    
+    
+    stun_address_family_t family =  strlen(ip) > 17 ? STUN_ADDRESS_FAMILY_IPV6: STUN_ADDRESS_FAMILY_IPV4;
 
-    if(fam == STUN_ADDRESS_FAMILY_IPV4) 
+    if(family == STUN_ADDRESS_FAMILY_IPV4) 
     {
         struct sockaddr_in *addr4 = (struct sockaddr_in *)&mapped.addr;
         addr4->sin_family = AF_INET;
@@ -38,7 +41,7 @@ namespace stun {
         mapped.len = sizeof(struct sockaddr_in);
     }
     
-    else if(fam == STUN_ADDRESS_FAMILY_IPV6) 
+    else if(family == STUN_ADDRESS_FAMILY_IPV6) 
      {
     // Example IPv6 address
         struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)&mapped.addr;

@@ -277,7 +277,14 @@ bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz
 			size_t prev_length = stun_update_header_length(begin, tmp_length);
 			uint8_t hmac[20];
                         
+                        if( *output == '\0')
+                        {
+                            stun::compute_hmac_sha(begin, pos - begin, key, sz, output);
+                            return true;
+                        }
+                        else
                         stun::compute_hmac_sha(begin, pos - begin, key, sz, hmac);
+                        
                         
 			//hmac_sha1(begin, pos - begin, key, key_len, hmac);
 			stun_update_header_length(begin, prev_length);

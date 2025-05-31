@@ -680,7 +680,7 @@ size_t generate_hmac_key(Message* msg, std::string &password, std::string &key)
 //        if (key_len >= MAX_HMAC_KEY_LEN)
 //            key_len = MAX_HMAC_KEY_LEN - 1;
         key = password;
-        return key.length();
+        return 20;
     }
 }
   
@@ -712,8 +712,10 @@ bool Reader::computeMessageIntegrity(Message* msg, std::string password) {
       LError("Error: cannot compute fingerprint because there is not fingerprint attribute");
       return false;
     }
-
-    return compute_fingerprint(buffer, finger->crc);
+     uint32_t crc = 0;
+     compute_fingerprint(buffer, crc);
+     
+     return crc == finger->crc;
   }
 
   /* --------------------------------------------------------------------- */

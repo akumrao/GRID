@@ -42,7 +42,9 @@ namespace stun {
     Fingerprint* fp = NULL;
     uint32_t crc = 0;
     if (msg->find(STUN_ATTR_FINGERPRINT, &fp)) {
-      if (compute_fingerprint(buffer, crc)) {
+      if (compute_fingerprint(buffer, crc)) 
+      {
+        printf("stun::Writer - verbose: Fingerprint: %x\n",crc);
         rewriteU32(fp->offset + 4, crc);
       }
       else {
