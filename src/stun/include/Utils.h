@@ -64,6 +64,8 @@ struct stun_attr {
    
    void addressToString( char *buf,  uint16_t &port,  addr_record_t &mapped);
    
+   int const_time_memcmp(unsigned char *a, unsigned char *b, size_t len);
+   
 } /* namespace stun */
 
 #endif

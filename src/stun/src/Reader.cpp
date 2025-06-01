@@ -701,7 +701,22 @@ bool Reader::computeMessageIntegrity(Message* msg, std::string password) {
       return false;
     }
 
-    return compute_message_integrity(buffer, key, keylen, keylen == 20 ? integ->sha.sha1: integ->sha.sha256);
+    uint8_t output[keylen]; 
+            
+
+    if  (!compute_message_integrity(buffer, key, keylen, output ))
+    {
+        return false;
+    }
+    
+   
+    if (const_time_memcmp( (keylen == 20 ? integ->sha.sha1: integ->sha.sha256) , output, keylen) != 0) {
+            SError << "STUN message integrity SHA1 check failed";
+            return false;
+    }
+
+    
+    return true;
   }
 
 

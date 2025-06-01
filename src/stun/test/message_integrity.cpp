@@ -174,9 +174,9 @@ int main() {
   #endif
   //create_stun_message1();
     
-  //create_stun_message2();
+  create_stun_message2();
 
-  create_stun_message3();
+ // create_stun_message3();
   
   return 0;
 }

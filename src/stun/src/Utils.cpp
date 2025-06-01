@@ -154,7 +154,7 @@ bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz
     
   }
 
-  int const_time_memcmp(unsigned char *a, unsigned char *b, size_t len) {
+int const_time_memcmp(unsigned char *a, unsigned char *b, size_t len) {
 	const unsigned char *ca = a;
 	const unsigned char *cb = b;
 	unsigned char x = 0;
@@ -275,25 +275,20 @@ bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz
 
 			size_t tmp_length = pos - attr_begin + sizeof(struct stun_attr) + 20;
 			size_t prev_length = stun_update_header_length(begin, tmp_length);
-			uint8_t hmac[20];
+			//uint8_t hmac[20];
                         
-                        if( *output == '\0')
-                        {
-                            stun::compute_hmac_sha(begin, pos - begin, key, sz, output);
-                            return true;
-                        }
-                        else
-                        stun::compute_hmac_sha(begin, pos - begin, key, sz, hmac);
+
+                         stun::compute_hmac_sha(begin, pos - begin, key, sz, output);
                         
                         
 			//hmac_sha1(begin, pos - begin, key, key_len, hmac);
 			stun_update_header_length(begin, prev_length);
 
 			//const uint8_t *expected_hmac = attr->value;
-			if (const_time_memcmp(hmac, output, 20) != 0) {
-				printf("STUN message integrity SHA1 check failed \n");
-				return false;
-			}
+//			if (const_time_memcmp(hmac, output, 20) != 0) {
+//				printf("STUN message integrity SHA1 check failed \n");
+//				return false;
+//			}
 
 			success = true;
 			break;
@@ -304,16 +299,16 @@ bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz
 
 			size_t tmp_length = pos - attr_begin + sizeof(struct stun_attr) + 32;
 			size_t prev_length = stun_update_header_length(begin, tmp_length);
-			uint8_t hmac[32];
+			//uint8_t hmac[32];
 			//hmac_sha256(begin, pos - begin, key, key_len, hmac);
-                        stun::compute_hmac_sha(begin, pos - begin, key, sz, hmac);
+                        stun::compute_hmac_sha(begin, pos - begin, key, sz, output);
 			stun_update_header_length(begin, prev_length);
 
 			
-			if (const_time_memcmp(hmac, output, 32) != 0) {
-				printf("STUN message integrity SHA256 check failed \n");
-				return false;
-			}
+//			if (const_time_memcmp(hmac, output, 32) != 0) {
+//				printf("STUN message integrity SHA256 check failed \n");
+//				return false;
+//			}
 
 			success = true;
 			break;
