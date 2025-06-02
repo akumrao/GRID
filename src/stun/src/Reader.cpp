@@ -131,7 +131,7 @@ namespace stun {
           
                   
           attr = (Attribute*) username;
-          printf("stun::Reader - verbose: username:%s \n", username->value.buffer.data());
+          STrace << "stun::Reader - verbose: username: " <<  username->value.buffer.data();
           break;
         }
 
@@ -139,7 +139,7 @@ namespace stun {
           Software* software = new Software();
           software->value = readString(attr_length);
           attr = (Attribute*) software;
-          printf("stun::Reader - verbose: software %s \n", software->value.buffer.data());
+          STrace<< " stun::Reader - verbose: software %s " <<  software->value.buffer.data();
           break;
         }
 
@@ -165,7 +165,7 @@ namespace stun {
           Priority* prio = new Priority();
           prio->value = readU32();
           attr = (Attribute*) prio;
-          printf("stun::Reader - verbose: priority: %x\n", prio->value);
+          STrace << "stun::Reader - verbose: priority: " <<  prio->value;
           break;
         } 
 
@@ -194,7 +194,7 @@ namespace stun {
         case STUN_ATTR_ICE_CONTROLLED: {
           IceControlled* ic = new IceControlled();
           ic->tie_breaker = readU64();
-          printf("stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLED:  %lx\n", ic->tie_breaker);
+          STrace << "stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLED:  " <<  ic->tie_breaker;
           attr = (Attribute*) ic;
           msg->ice_controlled = ic->tie_breaker;
           break;
@@ -203,7 +203,7 @@ namespace stun {
         case STUN_ATTR_ICE_CONTROLLING: {
           IceControlling* ic = new IceControlling();
           ic->tie_breaker = readU64();
-          printf("stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLING: %lx\n", ic->tie_breaker);
+          STrace <<  "stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLING:" <<   ic->tie_breaker;
           attr = (Attribute*) ic;
           msg->ice_controlling = ic->tie_breaker;
           break;
@@ -216,13 +216,18 @@ namespace stun {
                 return -1;
             }
 		
-            stun_value_error_code error;
-            memcpy( &error, getArray(attr_length),attr_length );
-            msg->error_code = (error.code_class & 0x07) * 100 + error.code_number;
+            stun_value_error_code *error = (stun_value_error_code *)getArray(attr_length);
+            msg->error_code = (error->code_class & 0x07) * 100 + error->code_number;
 
             if (msg->error_code == 401 || msg->error_code == 438) { // Unauthenticated or Stale Nonce
                 SDebug << "Got STUN error code " << msg->error_code;
             }
+            
+            ErrorIce* err = new ErrorIce(msg->error_code);
+             
+            attr = (Attribute*) err;
+             
+            SInfo <<  " Error code "  <<  msg->error_code  <<  " reason " << err->errorNumber(msg->error_code); 
           break;
         }
         

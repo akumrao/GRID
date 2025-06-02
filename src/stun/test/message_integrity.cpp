@@ -281,6 +281,20 @@ static void create_stun_message2() {
   stun::Message response(stun::STUN_BINDING_RESPONSE);
   response.setTransactionID();
   response.addAttribute(new stun::XorMappedAddress("192.168.0.19", 55164));
+  
+  response.addAttribute(new stun::Username("avind"));
+  
+   response.addAttribute(new stun::UseCandidate());
+//  
+   response.addAttribute(new stun::Priority(50));
+    
+   response.addAttribute(new stun::ErrorIce(300));
+//  
+  response.addAttribute(new stun::IceControlled(1));
+  response.addAttribute(new stun::IceControlling(2));
+     
+  
+  
   response.addAttribute(new stun::MessageIntegrity(20));
   response.addAttribute(new stun::Fingerprint());
   

@@ -80,6 +80,12 @@ namespace stun {
   class IceControlled : public Attribute {
   public:
     IceControlled();
+    
+    IceControlled(uint64_t tie_breaker):tie_breaker(tie_breaker),Attribute(STUN_ATTR_ICE_CONTROLLED)
+    {
+        
+    }
+    
     uint64_t tie_breaker;
   };
 
@@ -88,6 +94,10 @@ namespace stun {
   class IceControlling : public Attribute {
   public:
     IceControlling();
+    IceControlling(uint64_t tie_breaker):tie_breaker(tie_breaker),Attribute(STUN_ATTR_ICE_CONTROLLING)
+    {
+        
+    }
     uint64_t tie_breaker;
   };
 
@@ -119,7 +129,10 @@ namespace stun {
   class Priority : public Attribute {
   public:
     Priority();
-    uint32_t value;
+    Priority(uint32_t value): Attribute(STUN_ATTR_PRIORITY), value(value)
+    {
+    }
+    uint32_t value; 
   };
 
   /* --------------------------------------------------------------------- */
