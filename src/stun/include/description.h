@@ -42,7 +42,7 @@ typedef struct ice_description {
 	bool ice_lite{false};
 	//ice_candidate_t candidates[ICE_MAX_CANDIDATES_COUNT];
         std::vector<Candidate> candidates;
-	int candidates_count{0};
+	//int candidates_count{0};
 	bool finished{false};
 } ice_description_t;
 

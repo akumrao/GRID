@@ -102,7 +102,7 @@ namespace stun {
 
    
         
-        if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  candidate)) {
+        if (ice_create_local_candidate( 1, localdesp.desc.candidates.size(),  candidate)) {
             printf("Failed to create host candidate");
         }
         
@@ -131,7 +131,7 @@ namespace stun {
 	}
         
 
-        if (ice_create_local_candidate(1, localdesp.desc.candidates_count, candidate)) {
+        if (ice_create_local_candidate(1, localdesp.desc.candidates.size(), candidate)) {
             printf("Failed to create host candidate");
         }
         
@@ -226,7 +226,7 @@ namespace stun {
 //                 port =  ntohs( ((sockaddr_in *)&record->addr)->sin_port); 
 //            }
             
-            if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  &candidate)) {
+            if (ice_create_local_candidate( 1, localdesp.desc.candidates.size(),  &candidate)) {
                     LError("Failed to create reflexive candidate");
                     return -1;
             }
@@ -269,7 +269,7 @@ namespace stun {
 //	if (candidate->cand.type == ICE_CANDIDATE_TYPE_UNKNOWN)
 //		return -1;
 
-	if (description->desc.candidates_count  >= ICE_MAX_CANDIDATES_COUNT) {
+	if (description->desc.candidates.size()  >= ICE_MAX_CANDIDATES_COUNT) {
 	        SError << "Description already has the maximum number of candidates";
 		return -1;
 	}
@@ -277,14 +277,14 @@ namespace stun {
         candidate->mMid = localMid;
 
 	if (candidate->mFoundation == "-")
-		candidate->mFoundation = std::to_string(description->desc.candidates_count + 1);
+		candidate->mFoundation = std::to_string(description->desc.candidates.size() + 1);
 
 
 	//ice_candidate_t *pos = description->candidates + description->localCanSdp.candidates_count;
 	//*pos = *candidate;
         description->desc.candidates.push_back(*candidate);
         
-	++description->desc.candidates_count;
+	//++description->desc.candidates.size();
 	
         
         char buffer[4096];
@@ -303,15 +303,15 @@ namespace stun {
     void Agent::agent_update_ordered_pairs() 
     {
 	LTrace("Updating ordered candidate pairs");
-	for (int i = 0; i < candidate_pairs_count; ++i) {
-		ice_candidate_pair_t **begin = ordered_pairs;
+	for (int i = 0; i < m_candidate_pairs_count; ++i) {
+		ice_candidate_pair_t **begin = m_ordered_pairs;
 		ice_candidate_pair_t **end = begin + i;
 		ice_candidate_pair_t **prev = end;
-		uint64_t priority = candidate_pairs[i].priority;
+		uint64_t priority = m_candidate_pairs[i].priority;
 		while (--prev >= begin && (*prev)->priority < priority)
 			*(prev + 1) = *prev;
 
-		*(prev + 1) = candidate_pairs + i;
+		*(prev + 1) = m_candidate_pairs + i;
 	}
     }
 
@@ -380,7 +380,7 @@ namespace stun {
 
     {
             int count = 0;
-            for (int i = 0; i < description->candidates_count; ++i) {
+            for (int i = 0; i < description->candidates.size(); ++i) {
                     const Candidate *candidate = &description->candidates [i];
                     if (candidate->mType  == type)
                             ++count;
@@ -393,13 +393,13 @@ namespace stun {
     int  Agent::agent_add_candidate_pair( Candidate *local, // local may be NULL
                              Candidate *remote) {
 	ice_candidate_pair_t pair;
-	bool is_controlling = mode == AGENT_MODE_CONTROLLING;
+	bool is_controlling = m_mode == AGENT_MODE_CONTROLLING;
 	if (ice_create_candidate_pair(local, remote, is_controlling, &pair)) {
 		LError("Failed to create candidate pair");
 		return -1;
 	}
 
-	if (candidate_pairs_count >= MAX_CANDIDATE_PAIRS_COUNT) {
+	if (m_candidate_pairs_count >= MAX_CANDIDATE_PAIRS_COUNT) {
 		LWarn("Session already has the maximum number of candidate pairs");
 		return -1;
 	}
@@ -407,13 +407,13 @@ namespace stun {
 	//LTrace("Adding new candidate pair, priority=%" PRIu64, pair.priority);
 
 	// Add pair
-	ice_candidate_pair_t *pos = candidate_pairs + candidate_pairs_count;
+	ice_candidate_pair_t *pos = m_candidate_pairs + m_candidate_pairs_count;
 	*pos = pair;
-	++candidate_pairs_count;
+	++m_candidate_pairs_count;
 
 	agent_update_ordered_pairs();
 
-	if (entries_count == MAX_STUN_ENTRIES_COUNT) {
+	if (m_entries_count == MAX_STUN_ENTRIES_COUNT) {
 		LWarn("No free STUN entry left for candidate pair checking");
 		return -1;
 	}
@@ -434,8 +434,8 @@ namespace stun {
 //		}
 //	}
 
-	STrace << "Registering STUN entry  " <<   entries_count << " for candidate pair checking";
-	agent_stun_entry_t *entry = m_entries + entries_count;
+	STrace << "Registering STUN entry  " <<   m_entries_count << " for candidate pair checking";
+	agent_stun_entry_t *entry = m_entries + m_entries_count;
 	entry->type = AGENT_STUN_ENTRY_TYPE_CHECK;
 	entry->state = AGENT_STUN_ENTRY_STATE_IDLE;
 	entry->mode = AGENT_MODE_UNKNOWN;
@@ -444,14 +444,14 @@ namespace stun {
 	//entry->relay_entry = relay_entry;
 	random_bytes(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
 	entry->transaction_id_expired = false;
-	++entries_count;
+	++m_entries_count;
 //
 //	if (remote->mType  == Candidate::Type::Host)
 //		agent_translate_host_candidate_entry( entry);
 
-	if (mode == AGENT_MODE_CONTROLLING) {
-		for (int i = 0; i < candidate_pairs_count; ++i) {
-			ice_candidate_pair_t *ordered_pair = ordered_pairs[i];
+	if (m_mode == AGENT_MODE_CONTROLLING) {
+		for (int i = 0; i < m_candidate_pairs_count; ++i) {
+			ice_candidate_pair_t *ordered_pair = m_ordered_pairs[i];
 			if (ordered_pair == pos) {
 				LTrace("Candidate pair has priority");
 				break;
@@ -466,7 +466,7 @@ namespace stun {
 //
 //	// There is only one component, therefore we can unfreeze if no pair is nominated
 	if (*remotedesp.desc.ice_ufrag != '\0' &&
-	    (!selected_pair || !selected_pair->nominated)) {
+	    (!m_selected_pair || !m_selected_pair->nominated)) {
 		LTrace("Unfreezing the new candidate pair");
 		agent_unfreeze_candidate_pair( pos);
 	}
@@ -481,7 +481,7 @@ namespace stun {
             if (pair->state != ICE_CANDIDATE_PAIR_STATE_FROZEN)
                     return 0;
 
-            for (int i = 0; i < entries_count; ++i) {
+            for (int i = 0; i < m_entries_count; ++i) {
                     agent_stun_entry_t *entry = m_entries + i;
                     if (pair == pair) {
                             pair->state = ICE_CANDIDATE_PAIR_STATE_PENDING;
@@ -514,7 +514,7 @@ namespace stun {
 
             // Find a time slot
             agent_stun_entry_t *other = m_entries;
-            while (other != m_entries + entries_count) {
+            while (other != m_entries + m_entries_count) {
                     if (other != entry) {
                             int64_t other_transmission = other->next_transmission;
                             int64_t timediff = entry->next_transmission - other_transmission;
@@ -586,7 +586,7 @@ namespace stun {
     {
 	STrace << "Received datagram, size "<<  len;
 
-	if(state == JUICE_STATE_DISCONNECTED || state == JUICE_STATE_GATHERING)
+	if(m_state == JUICE_STATE_DISCONNECTED || m_state == JUICE_STATE_GATHERING)
 		return 0;
 
 	if (is_stun_datagram(buf, len)) {
@@ -964,7 +964,7 @@ Candidate *Agent::ice_find_candidate_from_addr(Description *description,  const 
 
 agent_stun_entry_t *Agent::agent_find_entry_from_transaction_id( const uint8_t *transaction_id) 
 {
-	for (int i = 0; i < entries_count; ++i) {
+	for (int i = 0; i < m_entries_count; ++i) {
 		agent_stun_entry_t *entry = m_entries + i;
 		if (memcmp(transaction_id, entry->transaction_id, STUN_TRANSACTION_ID_SIZE) == 0) {
 			STrace << "STUN entry " << i  << " matching incoming transaction ID ";
@@ -1029,8 +1029,8 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 	} else {
 		// Try to match pairs by priority first
 		ice_candidate_pair_t *matching_pair = NULL;
-		for (int i = 0; i < candidate_pairs_count; ++i) {
-			ice_candidate_pair_t *pair = ordered_pairs[i];
+		for (int i = 0; i < m_candidate_pairs_count; ++i) {
+			ice_candidate_pair_t *pair = m_ordered_pairs[i];
 			if (!pair_is_relayed(pair) &&
 			    addr_record_is_equal(&pair->remote->resolved, record, true)) {
 				matching_pair = pair;
@@ -1040,7 +1040,7 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 
 		if (matching_pair) {
 			// Just find the corresponding entry
-			for (int i = 0; i < entries_count; ++i) {
+			for (int i = 0; i < m_entries_count; ++i) {
 				agent_stun_entry_t *entry = m_entries + i;
 				if (entry->pair == matching_pair) {
 					SDebug << "STUN entry " << i  << " pair matching incoming address";
@@ -1050,7 +1050,7 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 		}
 
 		// Try to match entries directly
-		for (int i = 0; i < entries_count; ++i) {
+		for (int i = 0; i < m_entries_count; ++i) {
 			agent_stun_entry_t *entry = m_entries + i;
 			if (!entry_is_relayed(entry) && addr_record_is_equal(&entry->record, record, true)) {
 				SDebug << "STUN entry " << i << "  matching incoming address";
@@ -1087,14 +1087,14 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 		//  ERROR-CODE attribute with a value of 487 (Role Conflict) but retains its role.
 		//  * If the agent's tiebreaker value is less than the contents of the ICE-CONTROLLING
 		//  attribute, the agent switches to the controlled role.
-		if (mode == AGENT_MODE_CONTROLLING && msg->ice_controlling) {
+		if (m_mode == AGENT_MODE_CONTROLLING && msg->ice_controlling) {
 			LWarn("ICE role conflict (both controlling)");
 			if (ice_tiebreaker >= msg->ice_controlling) {
 				LDebug("Asking remote peer to switch roles");
 				agent_send_stun_binding( entry, STUN_CLASS_RESP_ERROR, 487,  msg->transaction_id, NULL);
 			} else {
 				LDebug("Switching to controlled role");
-				mode = AGENT_MODE_CONTROLLED;
+				m_mode = AGENT_MODE_CONTROLLED;
 				agent_update_candidate_pairs();
 			}
 			break;
@@ -1106,11 +1106,11 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 		//  * If the agent's tiebreaker value is less than the contents of the ICE-CONTROLLED
 		//  attribute, the agent generates a Binding error response and includes an ERROR-CODE
 		//  attribute with a value of 487 (Role Conflict) but retains its role.
-		if (mode == AGENT_MODE_CONTROLLED && msg->ice_controlled) {
+		if (m_mode == AGENT_MODE_CONTROLLED && msg->ice_controlled) {
 			LWarn("ICE role conflict (both controlled)");
 			if (ice_tiebreaker >= msg->ice_controlling) {
 				LDebug("Switching to controlling role");
-				mode = AGENT_MODE_CONTROLLING;
+				m_mode = AGENT_MODE_CONTROLLING;
 				agent_update_candidate_pairs();
 			} else {
 				LDebug("Asking remote peer to switch roles");
@@ -1167,7 +1167,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 			entry->next_transmission = 0;
 		}
 
-		if (!selected_pair || !selected_pair->nominated) {
+		if (!m_selected_pair || !m_selected_pair->nominated) {
 			// We want to send keepalives now
 			entry->state = AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE;
 			agent_arm_keepalive( entry);
@@ -1249,11 +1249,11 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 			// generates a valid pair, the agent sets the nominated flag of the pair to true.
 			if (pair->nomination_requested) {
 				LDebug("Got a nominated pair (%s)",
-				           mode == AGENT_MODE_CONTROLLING ? "controlling" : "controlled");
+				           m_mode == AGENT_MODE_CONTROLLING ? "controlling" : "controlled");
 				pair->nominated = true;
 			}
 		} else if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER) {
-                    //agent_update_gathering_done();
+                    agent_update_gathering_done();
                     SInfo << "agent_update_gathering_done()";    
 		}       
 		break;
@@ -1268,7 +1268,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 
 		if (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK) {
 			if (msg->error_code == 487) {
-				if (entry->mode == mode) {
+				if (entry->mode == m_mode) {
 					// RFC 8445 7.2.5.1. Role Conflict:
 					// If the Binding request generates a 487 (Role Conflict) error response, and if
 					// the ICE agent included an ICE-CONTROLLED attribute in the request, the agent
@@ -1280,7 +1280,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 					LDebug("Switching roles to %s as requested",
 					           entry->mode == AGENT_MODE_CONTROLLING ? "controlled"
 					                                                 : "controlling");
-					mode = entry->mode == AGENT_MODE_CONTROLLING ? AGENT_MODE_CONTROLLED
+					m_mode = entry->mode == AGENT_MODE_CONTROLLING ? AGENT_MODE_CONTROLLED
 					                                                    : AGENT_MODE_CONTROLLING;
 					random_bytes(&ice_tiebreaker, sizeof(ice_tiebreaker));
 					agent_update_candidate_pairs(); // expires transaction IDs
@@ -1290,7 +1290,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 						agent_arm_transmission( entry, 0);
 					}
 				} else {
-					SDebug << "Already switched roles to %s as requested" << (mode == AGENT_MODE_CONTROLLING ? "controlling" : "controlled");
+					SDebug << "Already switched roles to %s as requested" << (m_mode == AGENT_MODE_CONTROLLING ? "controlling" : "controlled");
 				}
 			} else {
 				// 7.2.5.2.4. Unrecoverable STUN Response:
@@ -1305,7 +1305,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 		} else if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER) {
 			LInfo("STUN server binding failed (unrecoverable error)");
 			entry->state = AGENT_STUN_ENTRY_STATE_FAILED;
-			//agent_update_gathering_done();
+			agent_update_gathering_done();
                         SInfo << "agent_update_gathering_done()";    
 		}
 		break;
@@ -1325,15 +1325,15 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 
 void Agent::agent_update_candidate_pairs()
 {
-	bool is_controlling = mode == AGENT_MODE_CONTROLLING;
-	for (int i = 0; i < candidate_pairs_count; ++i) {
-		ice_candidate_pair_t *pair = candidate_pairs + i;
+	bool is_controlling = m_mode == AGENT_MODE_CONTROLLING;
+	for (int i = 0; i < m_candidate_pairs_count; ++i) {
+		ice_candidate_pair_t *pair = m_candidate_pairs + i;
 		ice_update_candidate_pair(pair, is_controlling);
 	}
 	agent_update_ordered_pairs();
 
 	// Expire all transaction IDs for checks
-	for (int i = 0; i < entries_count; ++i) {
+	for (int i = 0; i < m_entries_count; ++i) {
 		agent_stun_entry_t *entry = m_entries + i;
 		if (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK) {
 			entry->transaction_id_expired = true;
@@ -1429,7 +1429,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 			snprintf(response.credentials.username, STUN_MAX_USERNAME_LEN, "%s:%s",remotedesp.desc.ice_ufrag, localdesp.desc.ice_ufrag);
 			password = remotedesp.desc.ice_pwd;
                         
-                        if(mode == AGENT_MODE_CONTROLLING)
+                        if(m_mode == AGENT_MODE_CONTROLLING)
                         {
                             response.ice_controlling = ice_tiebreaker;
                             IceControlling *iceControlling = new stun::IceControlling();
@@ -1437,7 +1437,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
                             response.addAttribute(iceControlling);   
                             
                         }
-                        else if(mode == AGENT_MODE_CONTROLLED)
+                        else if(m_mode == AGENT_MODE_CONTROLLED)
                         {
                             response.ice_controlled = ice_tiebreaker;
                             IceControlled *ice_controlled = new stun::IceControlled();
@@ -1465,13 +1465,13 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 			// Once the controlling agent has picked a valid pair for nomination, it repeats the
 			// connectivity check that produced this valid pair [...], this time with the
 			// USE-CANDIDATE attribute.
-			bool use_candidate = mode == AGENT_MODE_CONTROLLING && entry->pair &&
+			bool use_candidate = m_mode == AGENT_MODE_CONTROLLING && entry->pair &&
 			                    entry->pair->nomination_requested && !entry->pair->nominated;
                         
                         if(use_candidate)
                         response.addAttribute(new stun::UseCandidate);
 
-			entry->mode = mode; // save current mode in case of conflict
+			entry->mode = m_mode; // save current mode in case of conflict
 			break;
 		}
 		case STUN_CLASS_RESP_SUCCESS:
@@ -1547,5 +1547,413 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
         
 	return 0;
 }
+
+
+void Agent::agent_update_gathering_done()
+{
+    gathering_done = true;
+    agent_update_pac_timer();
+    SInfo << "agent_update_gathering_done()";
+}
+
+
+void Agent::agent_change_state( juice_state_t state)
+{
+    SInfo << "agent_change_state " << state;
+}
+
+
+int Agent::agent_bookkeeping( int64_t *next_timestamp) 
+{
+	LTrace("Bookkeeping...");
+
+	int64_t now = current_timestamp();
+	*next_timestamp = now + 6000000;
+
+	if (m_state == JUICE_STATE_DISCONNECTED || m_state == JUICE_STATE_GATHERING)
+		return 0;
+
+	for (int i = 0; i < m_entries_count; ++i) {
+		agent_stun_entry_t *entry = m_entries + i;
+
+		// STUN requests transmission or retransmission
+		if (entry->state == AGENT_STUN_ENTRY_STATE_PENDING) {
+			if (entry->next_transmission > now)
+				continue;
+
+			if (entry->retransmissions >= 0) {
+//				if (LDebug_ENABLED) {
+//					char record_str[ADDR_MAX_STRING_LEN];
+//					addr_record_to_string(&entry->record, record_str, ADDR_MAX_STRING_LEN);
+//					LDebug("STUN entry %d: Sending request to %s (%d retransmission%s left)", i,
+//					           record_str, entry->retransmissions,
+//					           entry->retransmissions >= 2 ? "s" : "");
+//				}
+				if (entry->transaction_id_expired) {
+                                        random_bytes(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
+					entry->transaction_id_expired = false;
+				}
+				int ret;
+				switch (entry->type) {
+				case AGENT_STUN_ENTRY_TYPE_RELAY:
+					//ret = agent_send_turn_allocate_request(entry, STUN_METHOD_ALLOCATE);
+					break;
+
+				default:
+					ret = agent_send_stun_binding( entry, STUN_CLASS_REQUEST, 0, NULL, NULL);
+					break;
+				}
+
+				if (ret >= 0) {
+					--entry->retransmissions;
+					if (entry->retransmissions < 0) {
+						entry->next_transmission = now + LAST_STUN_RETRANSMISSION_TIMEOUT;
+					} else {
+						entry->next_transmission = now + entry->retransmission_timeout;
+						entry->retransmission_timeout *= 2;
+					}
+					continue;
+				}
+			}
+
+			// Failure sending or end of retransmissions
+			SDebug << "STUN entry " <<  i << " Failed" ;
+			entry->state = AGENT_STUN_ENTRY_STATE_FAILED;
+			entry->next_transmission = 0;
+
+			switch (entry->type) {
+			case AGENT_STUN_ENTRY_TYPE_RELAY:
+				LTrace("TURN allocation failed");
+				agent_update_gathering_done();
+				break;
+
+			case AGENT_STUN_ENTRY_TYPE_SERVER:
+				LTrace("STUN server binding failed");
+				agent_update_gathering_done();
+				break;
+
+			default:
+				if (entry->pair) {
+					LTrace("Candidate pair check failed");
+					entry->pair->state = ICE_CANDIDATE_PAIR_STATE_FAILED;
+				}
+				break;
+			}
+		}
+		// STUN keepalives
+		else if (entry->state == AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE) {
+#if JUICE_DISABLE_CONSENT_FRESHNESS
+			// No expiration
+#else
+			// Consent freshness expiration
+			if (entry->pair && entry->pair->consent_expiry <= now) {
+				SInfo << "STUN entry " << i << " Consent expired for candidate pair";
+				entry->pair->state = ICE_CANDIDATE_PAIR_STATE_FAILED;
+				entry->state = AGENT_STUN_ENTRY_STATE_FAILED;
+				entry->next_transmission = 0;
+				continue;
+			}
+#endif
+
+			if (entry->next_transmission > now)
+				continue;
+
+			SDebug << "STUN entry " << i << " Sending keepalive";
+
+                        random_bytes(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
+			entry->transaction_id_expired = false;
+
+			int ret;
+			switch (entry->type) {
+			case AGENT_STUN_ENTRY_TYPE_RELAY:
+				// RFC 8445 5.1.1.4. Keeping Candidates Alive:
+				// Refreshes for allocations are done using the Refresh transaction, as described in
+				// [RFC5766]
+				//ret = agent_send_turn_allocate_request( entry, STUN_METHOD_REFRESH);
+				break;
+			case AGENT_STUN_ENTRY_TYPE_SERVER:
+				// RFC 8445 5.1.1.4. Keeping Candidates Alive:
+				// For server-reflexive candidates learned through a Binding request, the bindings
+				// MUST be kept alive by additional Binding requests to the server.
+				ret = agent_send_stun_binding( entry, STUN_CLASS_REQUEST, 0, NULL, NULL);
+				break;
+			default:
+#if JUICE_DISABLE_CONSENT_FRESHNESS
+				// RFC 8445 11. Keepalives:
+				// All endpoints MUST send keepalives for each data session. [...] STUN keepalives
+				// MUST be used when an ICE agent is a full ICE implementation and is communicating
+				// with a peer that supports ICE (lite or full). [...] When STUN is being used for
+				// keepalives, a STUN Binding Indication is used [RFC5389].
+				ret = agent_send_stun_binding(agent, entry, STUN_CLASS_INDICATION, 0, NULL, NULL);
+#else
+				// RFC 7675 4. Design Considerations:
+				// STUN binding requests sent for consent freshness also serve the keepalive purpose
+				// (i.e., to keep NAT bindings alive). Because of that, dedicated keepalives (e.g.,
+				// STUN Binding Indications) are not sent on candidate pairs where consent requests
+				// are sent, in accordance with Section 20.2.3 of [RFC5245].
+				ret = agent_send_stun_binding( entry, STUN_CLASS_REQUEST, 0, NULL, NULL);
+#endif
+				break;
+			}
+
+			if (ret < 0) {
+				SWarn << "Sending keepalive failed";
+				agent_arm_transmission( entry, STUN_KEEPALIVE_PERIOD);
+				continue;
+			}
+
+			agent_arm_keepalive(entry);
+
+		} else {
+			// Entry does not transmit, unset next transmission
+			entry->next_transmission = 0;
+		}
+	}
+
+	int pending_count = 0;
+	ice_candidate_pair_t *nominated_pair = NULL;
+	ice_candidate_pair_t *selected_pair = NULL;
+	for (int i = 0; i < m_candidate_pairs_count; ++i) {
+		ice_candidate_pair_t *pair = m_ordered_pairs[i];
+		if (pair->nominated) {
+			// RFC 8445 8.1.1. Nominating Pairs:
+			// If more than one candidate pair is nominated by the controlling agent, and if the
+			// controlled agent accepts multiple nominations requests, the agents MUST produce the
+			// selected pairs and use the pairs with the highest priority.
+			if (!nominated_pair) {
+				nominated_pair = pair;
+				selected_pair = pair;
+			}
+		} else if (pair->state == ICE_CANDIDATE_PAIR_STATE_SUCCEEDED) {
+			if (!selected_pair)
+				selected_pair = pair;
+		} else if (pair->state == ICE_CANDIDATE_PAIR_STATE_PENDING) {
+			if (m_mode == AGENT_MODE_CONTROLLING && selected_pair) {
+				// A higher-priority pair will be used, we can stop checking.
+				// Entries will be synchronized after the current loop.
+				LTrace("Cancelling check for lower-priority pair");
+				pair->state = ICE_CANDIDATE_PAIR_STATE_FROZEN;
+			} else {
+				++pending_count;
+			}
+		}
+	}
+
+	if (m_mode == AGENT_MODE_CONTROLLING && nominated_pair) {
+		// RFC 8445 8.1.1. Nominating Pairs:
+		// Once the controlling agent has successfully nominated a candidate pair, the agent MUST
+		// NOT nominate another pair for same component of the data stream within the ICE session.
+		for (int i = 0; i < m_candidate_pairs_count; ++i) {
+			ice_candidate_pair_t *pair = m_ordered_pairs[i];
+			if (pair != nominated_pair && pair->state == ICE_CANDIDATE_PAIR_STATE_PENDING) {
+				// Entries will be synchronized after the current loop.
+				LTrace("Cancelling check for non-nominated pair");
+				pair->state = ICE_CANDIDATE_PAIR_STATE_FROZEN;
+			}
+		}
+		pending_count = 0;
+	}
+
+	// Cancel entries of frozen pairs
+	for (int i = 0; i < m_entries_count; ++i) {
+		agent_stun_entry_t *entry = m_entries + i;
+		if (entry->pair && entry->pair->state == ICE_CANDIDATE_PAIR_STATE_FROZEN &&
+		    entry->state != AGENT_STUN_ENTRY_STATE_IDLE &&
+		    entry->state != AGENT_STUN_ENTRY_STATE_CANCELLED) {
+			SDebug << "STUN entry " <<  i << " Cancelled";
+			entry->state = AGENT_STUN_ENTRY_STATE_CANCELLED;
+			entry->next_transmission = 0;
+		}
+	}
+
+	if (nominated_pair && nominated_pair->state == ICE_CANDIDATE_PAIR_STATE_FAILED) {
+		LWarn("Lost connectivity");
+		//agent_change_state(JUICE_STATE_FAILED);
+		//atomic_store(&selected_entry, NULL); // disallow sending
+		return 0;
+	}
+
+	if (selected_pair) {
+		// Change selected entry if this is a new selected pair
+		if (m_selected_pair != selected_pair) {
+			LDebug(selected_pair->nominated ? "New selected and nominated pair"
+			                                    : "New selected pair");
+			m_selected_pair = selected_pair;
+
+			// Start nomination timer if controlling
+			if (m_mode == AGENT_MODE_CONTROLLING)
+				nomination_timestamp = now + 2000;
+
+			for (int i = 0; i < m_entries_count; ++i) {
+				agent_stun_entry_t *entry = m_entries + i;
+				if (entry->pair == selected_pair) {
+					//atomic_store(&agent->selected_entry, entry);
+					break;
+				}
+			}
+		}
+
+		if (nominated_pair) {
+			// Completed
+			// Do not allow direct transition from connecting to completed
+			if (m_state == JUICE_STATE_CONNECTING)
+				agent_change_state(JUICE_STATE_CONNECTED);
+
+			agent_change_state(JUICE_STATE_COMPLETED);
+
+			agent_stun_entry_t *nominated_entry = NULL;
+			agent_stun_entry_t *relay_entry = NULL;
+			for (int i = 0; i < m_entries_count; ++i) {
+				agent_stun_entry_t *entry = m_entries + i;
+				if (entry->pair && entry->pair == nominated_pair) {
+					nominated_entry = entry;
+					//relay_entry = nominated_entry->relay_entry;
+					break;
+				}
+			}
+
+			// Enable keepalive for the entry of the nominated pair
+			if (nominated_entry &&
+			    nominated_entry->state != AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE) {
+				nominated_entry->state = AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE;
+				agent_arm_keepalive( nominated_entry);
+			}
+
+			// If the entry of the nominated candidate is relayed locally, we need also to
+			// refresh the corresponding TURN session regularly
+			if (relay_entry && relay_entry->state != AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE) {
+				relay_entry->state = AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE;
+				agent_arm_keepalive(relay_entry);
+			}
+
+			// Disable keepalives for other entries
+			for (int i = 0; i < m_entries_count; ++i) {
+				agent_stun_entry_t *entry = m_entries + i;
+				if (entry != nominated_entry && entry != relay_entry &&
+				    entry->state == AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE)
+					entry->state = AGENT_STUN_ENTRY_STATE_SUCCEEDED;
+			}
+
+		} else {
+			// Connected
+			agent_change_state(JUICE_STATE_CONNECTED);
+
+			if (m_mode == AGENT_MODE_CONTROLLING && !selected_pair->nomination_requested) {
+				if (pending_count == 0 ||
+				    (nomination_timestamp && now >= nomination_timestamp)) {
+					// Nominate selected
+					LDebug("Requesting pair nomination (controlling)");
+					selected_pair->nomination_requested = true;
+					for (int i = 0; i < m_entries_count; ++i) {
+						agent_stun_entry_t *entry = m_entries + i;
+						if (entry->pair && entry->pair == selected_pair) {
+							entry->state =
+							    AGENT_STUN_ENTRY_STATE_PENDING;      // we don't want keepalives
+							entry->transaction_id_expired = true;	 // this is a new request
+							agent_arm_transmission( entry, 0); // transmit now
+							break;
+						}
+					}
+				} else if (nomination_timestamp &&
+				           *next_timestamp > nomination_timestamp) {
+					*next_timestamp = nomination_timestamp;
+				}
+			}
+		}
+
+	} else if (pending_count == 0 && pac_timestamp) {
+		// RFC 8863: While the timer is still running, the ICE agent MUST NOT update a checklist
+		// state from Running to Failed, even if there are no pairs left in the checklist to check.
+		if (now >= pac_timestamp) {
+			LInfo("Connectivity timer expired");
+			agent_change_state(JUICE_STATE_FAILED);
+			//atomic_store(&selected_entry, NULL); // disallow sending
+			return 0;
+		} else if (*next_timestamp > pac_timestamp) {
+			*next_timestamp = pac_timestamp;
+		}
+	}
+
+	for (int i = 0; i < m_entries_count; ++i) {
+		agent_stun_entry_t *entry = m_entries + i;
+		if (entry->next_transmission && *next_timestamp > entry->next_transmission)
+			*next_timestamp = entry->next_transmission;
+
+#if JUICE_DISABLE_CONSENT_FRESHNESS
+		// No expiration
+#else
+		if (entry->state == AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE && entry->pair &&
+		    *next_timestamp > entry->pair->consent_expiry)
+			*next_timestamp = selected_pair->consent_expiry;
+#endif
+	}
+
+	return 0;
+}
+
+
+#define ICE_PAC_TIMEOUT 39500 // msecs
+/* perform connectivity check*/
+void  Agent::agent_update_pac_timer() {
+	if (pac_timestamp)
+		return;
+
+	// RFC 8863: The ICE agent will start its timer once it believes ICE connectivity checks are
+	// starting. This occurs when the agent has sent the values needed to perform connectivity
+	// checks (e.g., the Username Fragment and Password [...]) and has received some indication that
+	// the remote side is ready to start connectivity checks, typically via receipt of the values
+	// mentioned above.
+	if (*remotedesp.desc.ice_ufrag != '\0' && gathering_done) {
+		LInfo("Connectivity timer started");
+		pac_timestamp = current_timestamp() + ICE_PAC_TIMEOUT;
+	}
+}
+
+
+
+
+
+
+int  Agent::agent_set_remote_description() {
+	
+	LTrace("agent_set_remote_description");
+
+
+	agent_update_pac_timer();
+
+	if (remotedesp.desc.ice_lite && m_mode != AGENT_MODE_CONTROLLING) {
+		// RFC 8445 6.1.1. Determining Role:
+		// The full agent MUST take the controlling role, and the lite agent MUST take the
+		// controlled role.
+		LDebug("Remote ICE agent is lite, assuming controlling mode");
+		m_mode = AGENT_MODE_CONTROLLING;
+	} else if (m_mode == AGENT_MODE_UNKNOWN) {
+		LDebug("Assuming controlled mode");
+		m_mode = AGENT_MODE_CONTROLLED;
+	}
+
+	// There is only one component, therefore we can unfreeze already existing pairs now
+	SDebug << "Unfreezing %d existing candidate pairs " <<  (int)m_candidate_pairs_count;
+        
+	for (int i = 0; i < m_candidate_pairs_count; ++i) {
+		agent_unfreeze_candidate_pair(m_candidate_pairs + i);
+	}
+	LDebug("Adding %d candidates from remote description", (int)remotedesp.desc.candidates.size());
+	for (int i = 0; i < remotedesp.desc.candidates.size(); ++i) {
+		Candidate *remote = &remotedesp.desc.candidates[ i];
+		if (agent_add_candidate_pairs_for_remote( remote))
+			LWarn("Failed to add candidate pair");
+	}
+
+	
+
+}
+
+
+
+
+
+
+
 
 } /* namespace stun */

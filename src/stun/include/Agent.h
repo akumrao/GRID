@@ -17,6 +17,7 @@ using namespace base;
 using namespace stun;
 
 #define MIN_STUN_RETRANSMISSION_TIMEOUT 500 // msecs
+#define LAST_STUN_RETRANSMISSION_TIMEOUT (MIN_STUN_RETRANSMISSION_TIMEOUT * 16)
 #define MAX_STUN_CHECK_RETRANSMISSION_COUNT 6  // exponential backoff, total 39500ms
 #define MAX_STUN_SERVER_RETRANSMISSION_COUNT 5 // total 23500ms
 
@@ -171,10 +172,10 @@ typedef struct agent_stun_entry {
   //  ice_description_t local;
    // ice_description_t remote;
 
-    ice_candidate_pair_t candidate_pairs[MAX_CANDIDATE_PAIRS_COUNT];
-    ice_candidate_pair_t *ordered_pairs[MAX_CANDIDATE_PAIRS_COUNT];
-    ice_candidate_pair_t *selected_pair;
-    int candidate_pairs_count;
+    ice_candidate_pair_t m_candidate_pairs[MAX_CANDIDATE_PAIRS_COUNT];
+    ice_candidate_pair_t *m_ordered_pairs[MAX_CANDIDATE_PAIRS_COUNT];
+    ice_candidate_pair_t *m_selected_pair;
+    int m_candidate_pairs_count;
 
     
     
@@ -200,8 +201,8 @@ typedef struct agent_stun_entry {
     int agent_unfreeze_candidate_pair( ice_candidate_pair_t *pair);
     
     
-    agent_mode_t mode{AGENT_MODE_UNKNOWN};
-    int entries_count;
+    agent_mode_t m_mode{AGENT_MODE_UNKNOWN};
+    int m_entries_count;
     
 
     agent_stun_entry_t m_entries[MAX_STUN_ENTRIES_COUNT];
@@ -209,7 +210,7 @@ typedef struct agent_stun_entry {
     std::string localMid;
 
     
-    juice_state_t state;
+    juice_state_t m_state;
     
     Timer _timer{ nullptr};
      
@@ -232,11 +233,23 @@ typedef struct agent_stun_entry {
     
     void agent_arm_keepalive(agent_stun_entry_t *entry);
     
+    int agent_bookkeeping( int64_t *next_timestamp);
+    
+    void agent_update_gathering_done();
+    
+    void agent_change_state( juice_state_t state);
+    
+    void  agent_update_pac_timer();
+    
+    int  agent_set_remote_description();
+    
     agent_stun_entry_t m_selected_entry;
     
     uint64_t ice_tiebreaker;  // random number
         
-    
+    int64_t nomination_timestamp;
+    int64_t pac_timestamp; 
+    bool  gathering_done{false};
   };
 
 } /* namespace stun */
