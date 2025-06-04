@@ -166,7 +166,7 @@ void PeerConnection::processLocalDescription(Description *description) {
 		std::lock_guard<std::recursive_mutex> lock(mLocalDescriptionMutex);
 
 		std::vector<Candidate> existingCandidates;
-		if (mLocalDescription.desc.candidates_count) {
+		if (mLocalDescription.desc.candidates.size()) {
 			existingCandidates = mLocalDescription.extractCandidates();
 			//mCurrentLocalDescription.emplace(std::move(*mLocalDescription));
 		}

@@ -145,7 +145,7 @@ int IceTransport::ice_generate_sdp(Description *description,  char *buffer, size
 	// Round 0: description
 	// Round i with i>0 and i<count+1: candidate i-1
 	// Round count + 1: end-of-candidates and ice-options lines
-	for (int i = 0; i < description->desc.candidates_count + 2; ++i) {
+	for (int i = 0; i < description->desc.candidates.size() + 2; ++i) {
 		int ret;
 		if (i == 0) {
 			ret = snprintf(begin, end - begin, "a=ice-ufrag:%s\r\na=ice-pwd:%s\r\n",
@@ -153,7 +153,7 @@ int IceTransport::ice_generate_sdp(Description *description,  char *buffer, size
 			if (description->desc.ice_lite)
 				ret = snprintf(begin, end - begin, "a=ice-lite\r\n");
 
-		} else if (i < description->desc.candidates_count + 1) {
+		} else if (i < description->desc.candidates.size() + 1) {
 			const Candidate *candidate = &description->desc.candidates[i - 1];
 			if (candidate->mType == Candidate::Type::Unknown ||
 			    candidate->mType == Candidate::Type::PeerReflexive)
@@ -204,7 +204,7 @@ Description *IceTransport::getLocalDescription(Description::Type type)  {
         random_str64(localDes.desc.ice_ufrag, 4 + 1);
         random_str64(localDes.desc.ice_pwd, 22 + 1);
         localDes.desc.ice_lite = false;
-        localDes.desc.candidates_count = 0;
+        //localDes.desc.candidates_count = 0;
         localDes.desc.finished = false;
         SInfo << "Created local description: ufrag= "<<  localDes.desc.ice_ufrag  <<  " pwd "  <<   localDes.desc.ice_pwd;
         
@@ -262,9 +262,9 @@ void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> addi
 	mMid = std::move(mid);
          agent.localMid = mMid;
         
-        if (agent.mode == AGENT_MODE_UNKNOWN) {
+        if (agent.m_mode == AGENT_MODE_UNKNOWN) {
 
-		agent.mode = AGENT_MODE_CONTROLLING;
+		agent.m_mode = AGENT_MODE_CONTROLLING;
 	}
          
         static int inc = 7000;
