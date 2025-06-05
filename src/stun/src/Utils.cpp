@@ -415,7 +415,9 @@ void sha256(const std::string& str , std::string& key) {
     printf("\n");
     return  ;
 }
-
+//          char buf[40];  uint16_t port;
+//            addressToString(buf, port, address->mapped);
+//            
 
   void addressToString( char *buf,  uint16_t &port,  addr_record_t &mapped)
   {

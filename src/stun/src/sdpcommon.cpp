@@ -1,6 +1,5 @@
 
 #include "sdpcommon.h"
-
 #include "base/logger.h"
 #include <Agent.h>
 
@@ -52,7 +51,7 @@ namespace rtc {
         int ret = ice_type_suffix(candidate, &type, &suffix );
         
 	return snprintf(buffer, size, "a=candidate:%s %u UDP %u %s %u typ %s%s%s",    candidate->mFoundation.c_str(), candidate->mComponent, candidate->mPriority, 
-	                candidate->mAddress.c_str() , candidate->mPort, type, suffix ? " " : "",
+	                candidate->mAddress , candidate->mPort, type, suffix ? " " : "",
 	                suffix ? suffix : "");
     }
 

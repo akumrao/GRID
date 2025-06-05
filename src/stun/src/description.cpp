@@ -177,7 +177,7 @@ void Description::readSdp(const string &sdp, Type type, Role role)
 	}
 }
 
-Description::Description()
+Description::Description():mCandidates(desc.candidates)
 {
 }
 
@@ -319,7 +319,7 @@ string Description::generateSdp(const string& eol) const {
 	auto cand = defaultCandidate();
 	const string addr =  cand.isResolved()
 	                        ? (string(cand.family() == AF_INET6 ? "IP6" : "IP4") +
-	                           " " + cand.address())
+	                           " " +(string)cand.address() )
 	                        : "IP4 0.0.0.0";
 	const uint16_t port =   cand.isResolved() ? cand.port() : 9; // Port 9 is the discard protocol
 

@@ -44,6 +44,25 @@ namespace base {
             void* clsPtr{nullptr}; 
 
         };
+        
+        
+        struct GetNameInfoReq {
+
+            virtual void cbNameResolve(  const char* hostname, const char* service,  void* ptr) {
+               // LTrace("GetAddrInfoReq::cbDnsResolve");
+            }
+
+            static void on_resolved(uv_getaddrinfo_t* handle, int status, struct addrinfo* res) ;
+
+            void resolveName(sockaddr_storage &addrStorage,  uv_loop_t * loop, void* ptr=nullptr) ;
+
+            uv_getnameinfo_t *req;
+            
+            void* clsPtr{nullptr}; 
+
+        };
+        
+        
 
     } // namespace net
 } // base

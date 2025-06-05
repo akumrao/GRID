@@ -51,12 +51,12 @@ public:
 	Candidate(string candidate, string mid);
 
 	void hintMid(string mid);
-	void changeAddress(string addr);
-	void changeAddress(string addr, uint16_t port);
-	void changeAddress(string addr, string service);
+//	void changeAddress(string addr);
+//	void changeAddress(string addr, uint16_t port);
+//	void changeAddress(string addr, string service);
 
-	enum class ResolveMode { Simple, Lookup };
-	bool resolve(ResolveMode mode = ResolveMode::Simple);
+//	enum class ResolveMode { Simple, Lookup };
+//	bool resolve(ResolveMode mode = ResolveMode::Simple);
 
 	Type type() const;
 	TransportType transportType() const;
@@ -70,7 +70,7 @@ public:
 
 	bool isResolved() const;
 	int family() const;
-	string address() const;
+	char * address() ;
 	uint16_t port() const;
 private:
 	void parse(string candidate);
@@ -87,7 +87,7 @@ public:
 
 	// Extracted on resolution
 	int mFamily{-1};
-	string mAddress;
+	char mAddress[50];
 	uint16_t mPort;
         
         addr_record_t resolved;

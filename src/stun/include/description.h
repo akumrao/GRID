@@ -325,7 +325,7 @@ private:
 	shared_ptr<Application> mApplication;
 
 	// Candidates
-	std::vector<Candidate> mCandidates;
+	std::vector<Candidate> &mCandidates;
 	bool mEnded = false;
         
 public:

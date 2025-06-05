@@ -88,7 +88,37 @@ namespace base {
                 assert(r == 0);
 
             }
-        
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+            
+            void getnameinfo_cb(uv_getnameinfo_t* handle, int status, const char* hostname, const char* service) 
+            {
+                       
+                GetNameInfoReq *obj = (GetNameInfoReq*) handle->data;
+               
+                if (status < 0 ) {
+                    LError(  "getnameinfo callback error ", uv_err_name(status));
+                    delete handle;
+                    //obj->cbDnsResolve(nullptr, "",0);
+                    return;
+                }
+                    STrace << "Reolved Hostname:" <<  hostname;
+                    STrace << "Resolved Service:" <<  service;
+                    obj->cbNameResolve(hostname, service, obj->clsPtr);
+                delete handle;
+            }
+                
+              void GetNameInfoReq::resolveName(sockaddr_storage &addrStorage,  uv_loop_t * loop, void* ptr) 
+              {
+                req = new uv_getnameinfo_t; 
+                this->clsPtr =ptr;
+                req->data = this;
+                int r;
+
+                r = uv_getnameinfo(loop, req, getnameinfo_cb, (const struct sockaddr*)&addrStorage, 0); 
+                assert(r == 0);
+
+            }
+            
         
            
 

@@ -127,72 +127,72 @@ void Candidate::hintMid(string mid) {
 	if (!mMid.length())
 		mMid = std::move(mid);
 }
+//
+//void Candidate::changeAddress(string addr) { changeAddress(std::move(addr), mService); }
+//
+//void Candidate::changeAddress(string addr, uint16_t port) {
+//	changeAddress(std::move(addr), std::to_string(port));
+//}
+//
+//void Candidate::changeAddress(string addr, string service) {
+//	mNode = std::move(addr);
+//	mService = std::move(service);
+//
+//	mFamily = -1;
+//	//mAddress.clear();
+//	mPort = 0;
+//
+//	if (!resolve(ResolveMode::Simple))
+//		throw std::invalid_argument("Invalid candidate address \"" + addr + ":" + service + "\"");
+//}
 
-void Candidate::changeAddress(string addr) { changeAddress(std::move(addr), mService); }
-
-void Candidate::changeAddress(string addr, uint16_t port) {
-	changeAddress(std::move(addr), std::to_string(port));
-}
-
-void Candidate::changeAddress(string addr, string service) {
-	mNode = std::move(addr);
-	mService = std::move(service);
-
-	mFamily = -1;
-	mAddress.clear();
-	mPort = 0;
-
-	if (!resolve(ResolveMode::Simple))
-		throw std::invalid_argument("Invalid candidate address \"" + addr + ":" + service + "\"");
-}
-
-bool Candidate::resolve(ResolveMode mode) {
-	STrace << "Resolving candidate (mode="
-	             << (mode == ResolveMode::Simple ? "simple" : "lookup") << "): " << mNode << ' '
-	             << mService;
-
-	// Try to resolve the node and service
-	struct addrinfo hints = {};
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_flags = AI_ADDRCONFIG;
-	if (mTransportType == TransportType::Udp) {
-		hints.ai_socktype = SOCK_DGRAM;
-		hints.ai_protocol = IPPROTO_UDP;
-	} else if (mTransportType != TransportType::Unknown) {
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_protocol = IPPROTO_TCP;
-	}
-
-	if (mode == ResolveMode::Simple)
-		hints.ai_flags |= AI_NUMERICHOST;
-
-	struct addrinfo *result = nullptr;
-	if (getaddrinfo(mNode.c_str(), mService.c_str(), &hints, &result) == 0) {
-		for (auto p = result; p; p = p->ai_next) {
-			if (p->ai_family == AF_INET || p->ai_family == AF_INET6) {
-				char nodebuffer[48];
-				char servbuffer[6];
-				if (getnameinfo(p->ai_addr, socklen_t(p->ai_addrlen), nodebuffer,
-				                48, servbuffer, 6,
-				                NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
-					try {
-						mPort = uint16_t(std::stoul(servbuffer));
-					} catch (...) {
-						return false;
-					}
-					mAddress = nodebuffer;
-					mFamily = p->ai_family ;
-					STrace << "Resolved candidate: " << mAddress << ' ' << mPort;
-					break;
-				}
-			}
-		}
-
-		freeaddrinfo(result);
-	}
-
-	return mFamily != -1;
-}
+//bool Candidate::resolve(ResolveMode mode) {
+//	STrace << "Resolving candidate (mode="
+//	             << (mode == ResolveMode::Simple ? "simple" : "lookup") << "): " << mNode << ' '
+//	             << mService;
+//
+//	// Try to resolve the node and service
+//	struct addrinfo hints = {};
+//	hints.ai_family = AF_UNSPEC;
+//	hints.ai_flags = AI_ADDRCONFIG;
+//	if (mTransportType == TransportType::Udp) {
+//		hints.ai_socktype = SOCK_DGRAM;
+//		hints.ai_protocol = IPPROTO_UDP;
+//	} else if (mTransportType != TransportType::Unknown) {
+//		hints.ai_socktype = SOCK_STREAM;
+//		hints.ai_protocol = IPPROTO_TCP;
+//	}
+//
+//	if (mode == ResolveMode::Simple)
+//		hints.ai_flags |= AI_NUMERICHOST;
+//
+//	struct addrinfo *result = nullptr;
+//	if (getaddrinfo(mNode.c_str(), mService.c_str(), &hints, &result) == 0) {
+//		for (auto p = result; p; p = p->ai_next) {
+//			if (p->ai_family == AF_INET || p->ai_family == AF_INET6) {
+//				char nodebuffer[48];
+//				char servbuffer[6];
+//				if (getnameinfo(p->ai_addr, socklen_t(p->ai_addrlen), nodebuffer,
+//				                48, servbuffer, 6,
+//				                NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
+//					try {
+//						mPort = uint16_t(std::stoul(servbuffer));
+//					} catch (...) {
+//						return false;
+//					}
+//					mAddress = nodebuffer;
+//					mFamily = p->ai_family ;
+//					STrace << "Resolved candidate: " << mAddress << ' ' << mPort;
+//					break;
+//				}
+//			}
+//		}
+//
+//		freeaddrinfo(result);
+//	}
+//
+//	return mFamily != -1;
+//}
 
 Candidate::Type Candidate::type() const { return mType; }
 
@@ -250,8 +250,8 @@ bool Candidate::isResolved() const { return mFamily != -1; }
 
 int Candidate::family() const { return mFamily; }
 
-string Candidate::address() const {
-	return isResolved() ? mAddress : "";
+char* Candidate::address()  {
+	return isResolved() ? mAddress : nullptr;
 }
 
 uint16_t Candidate::port() const {
