@@ -246,7 +246,7 @@ bool Candidate::operator!=(const Candidate &other) const {
 	return mFoundation != other.mFoundation;
 }
 
-bool Candidate::isResolved() const { return mFamily != -1; }
+bool Candidate::isResolved() const { return bResolved; }
 
 int Candidate::family() const { return mFamily; }
 

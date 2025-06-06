@@ -8,12 +8,13 @@
 #include "configuration.h"
 #include "description.h"
 //#include "peerconnection.h"
-#include <Connection.h>
 #include <Agent.h>
 #include <atomic>
 #include <chrono>
 #include <mutex>
 #include <thread>
+
+using namespace stun;
 
 namespace rtc {
 	
@@ -71,7 +72,7 @@ private:
         
         void cbNameResolve(  const char* hostname, const char* service,  void* ptr);
 
-        void StartAgent( std::string &stunip, uint16_t &stunport);
+
 
 	Description::Role mRole;
 	string mMid;
@@ -86,9 +87,9 @@ private:
         Description &localDes;
         Description &remoteDes;
          
-        testUdpServer *socket{nullptr};
         
-         Agent agent;
+        
+        Agent agent;
 };
 
 } // namespace rtc::impl

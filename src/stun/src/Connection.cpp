@@ -1,5 +1,5 @@
 #include <Connection.h>
-
+#include <Agent.h>
 #include <string.h>
 
 
@@ -11,7 +11,7 @@ namespace rtc
 
 
 
-testUdpServer::testUdpServer(std::string IP, int port,   Agent &agent ) :IP(IP), port(port), agent(agent) {
+testUdpServer::testUdpServer(std::string IP, int port,   Agent *agent ) :IP(IP), port(port), agent(agent) {
     
     int x = 0;
 
@@ -61,7 +61,7 @@ void testUdpServer::OnUdpSocketPacketReceived(UdpServer* socket, const char* dat
         candidate.resolved.len = sizeof(struct sockaddr);
                     
 
-        agent.ice_create_local_reflexive_candidate( &candidate );
+        agent->ice_create_local_reflexive_candidate( &candidate );
        
         // printf("final family: %u, address:%s, port: %d\n", result->family,  result->address, result->port);
         //SInfo << "family " << result->family << " address " <<  result->address << " port " << result->port   ;
@@ -144,7 +144,7 @@ void Transport::cbNameResolve(  const char* hostname, const char* service,  void
 
 
  
-void Transport::resolveNames(Candidate *cand )
+void Transport::resolveNames( Candidate *cand )
 {
    // SInfo << "resolveName " <<  icesv.hostname << ":" << icesv.port;
 

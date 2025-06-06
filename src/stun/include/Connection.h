@@ -20,33 +20,38 @@
 #include "base/time.h"
 #include "net/dns.h"
 
-#include <Agent.h>
+
 
 #include "net/TcpServer.h"
 
 #include "base/time.h"
 #include "net/netInterface.h"
 #include "configuration.h"
-#include <Agent.h>
+
 
 #include <Reader.h>
 #include <Writer.h>
 
 using std::endl;
-using namespace base;
-using namespace net;
+//using namespace base;
+//using namespace net;
 using namespace stun;
 //using namespace base::test;
+
+namespace stun {
+    class Agent;
+}
 
 namespace rtc {
     
 
+    
 class testUdpServer: public UdpServer::Listener {
 public:
     
 
 
-    testUdpServer(std::string IP, int port, Agent &agent);
+    testUdpServer(std::string IP, int port, Agent *agent);
 
     void start() {
         udpServer = new UdpServer( this, IP, port);
@@ -73,7 +78,7 @@ public:
     std::string IP;
     int port;
 
-    Agent &agent;
+    Agent *agent;
 };
 
 
@@ -165,7 +170,7 @@ public:
         void resolveStunServer();
         void cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr) override;
         void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
-        void resolveNames(Candidate *certificate );
+        void resolveNames( Candidate *certificate );
         Configuration &mConfig;
      
  };

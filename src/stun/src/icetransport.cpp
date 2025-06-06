@@ -250,11 +250,16 @@ void IceTransport::setRemoteDescription(const Description *description) {
 }
 
 bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
+    
+    
+    
+        resolveNames((Candidate *)candidate);
+    
 	// Don't try to pass unresolved candidates for more safety
-	if (!candidate->isResolved())
-		return false;
+	//if (!candidate->isResolved())
+		//return false;
 
-        agent.ice_add_remote_candidate(   candidate  );
+        //agent.ice_add_remote_candidate(   candidate  );
 	//return juice_add_remote_candidate(mAgent.get(), string(candidate).c_str()) >= 0;
 }
 
@@ -267,13 +272,12 @@ void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> addi
 		agent.m_mode = AGENT_MODE_CONTROLLING;
 	}
          
-        static int inc = 7000;
+        
        
         
-        socket = new testUdpServer("0.0.0.0", ++inc , agent );
-        socket->start();
+    
 
-        agent.getInterfaces(inc);
+        agent.getInterfaces();
         
 
 
@@ -400,7 +404,7 @@ void IceTransport::cbDnsResolve(addrinfo* res, std::string ip, int port,  void* 
     IceServer *icesv = (IceServer *)ptr;
     icesv->ip = ip;
     
-   StartAgent( icesv->ip,  icesv->port);
+   //StartAgent( icesv->ip,  icesv->port);
 }
 
 void IceTransport::cbNameResolve( const char* hostname, const char* service,  void* ptr)
@@ -408,47 +412,15 @@ void IceTransport::cbNameResolve( const char* hostname, const char* service,  vo
     
     SInfo <<  "On Candidate resolved" <<  hostname << ":" << service  ;
     Candidate *cand = (Candidate *)ptr;
+    
+    
+    cand->bResolved = true;
+    
+    agent.ice_add_remote_candidate(   cand  );
+     
 }    
 
-void IceTransport::StartAgent( std::string &stunip, uint16_t &stunport)
-{
-    
 
-        /* write */
-    stun::Message response(stun::STUN_BINDING_REQUEST);
-    response.setTransactionID();
-    response.addAttribute(new stun::Software("libjuice"));
-    response.addAttribute(new stun::Fingerprint());
-
-
-    stun::Writer writer;
-    writer.writeMessage(&response, "");
-
-    printf("---------------\n");
-    for (size_t i = 0; i < writer.buffer.size(); ++i) {
-        if (i == 0 || i % 4 == 0) {
-            printf("\n");
-        }
-        printf("%02X ", writer.buffer[i]);
-    }
-    printf("\n---------------\n");
-
-
-    socket->send(&writer.buffer[0], writer.buffer.size(), stunip, stunport);
-
-//
-
-    //    tesTcpServer tsvsocket;
-    //    tsvsocket.start("0.0.0.0", 6000);
-    //    
-    //    
-    //    tesTcpClient socket;
-    //    socket.start(STUN_SERVER_IP , STUN_SERVER_PORT);
-    //    
-    //    socket.sendit( &writer.buffer[0], writer.buffer.size());    
-
-    
-}
 
 
 

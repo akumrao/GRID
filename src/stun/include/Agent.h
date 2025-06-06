@@ -10,7 +10,7 @@
 #include "description.h"
 #include "base/Timer.h"
 #include <Message.h>
-
+#include <Connection.h>
 
 using namespace rtc;
 using namespace base;
@@ -135,7 +135,7 @@ typedef struct agent_stun_entry {
          
     Agent(Description &localdesp, Description &remotedesp, candidate_callback candidateCallback);
     ~Agent();
-    bool getInterfaces( int port);
+    bool getInterfaces( );
 
            
   public:
@@ -230,6 +230,10 @@ typedef struct agent_stun_entry {
     
     int agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_class, unsigned int error_code, const uint8_t *transaction_id, const addr_record_t *mapped);
 
+    void StartAgent( std::string &stunip, uint16_t &stunport);
+    
+    testUdpServer *socket{nullptr};
+        
     
     void agent_arm_keepalive(agent_stun_entry_t *entry);
     

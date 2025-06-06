@@ -19,6 +19,14 @@ using namespace base;
 namespace stun {
 
     
+    
+void thread_function() {
+    std::thread::id thread_id = std::this_thread::get_id();
+    std::cout << "Thread ID: " << thread_id << std::endl;
+}
+
+    
+    
     int64_t current_timestamp() {
 #ifdef _WIN32
 	return (timestamp_t)GetTickCount();
@@ -46,7 +54,13 @@ namespace stun {
 
     }
 
-    bool Agent::getInterfaces( int port) {
+    bool Agent::getInterfaces( ) {
+        
+        
+        static int inc = 7000;
+        socket = new testUdpServer("0.0.0.0", ++inc , this );
+        socket->start();
+        
 
         char buf[512];
         uv_interface_address_t *info;
@@ -1952,7 +1966,45 @@ int  Agent::agent_set_remote_description() {
 
 
 
+void Agent::StartAgent( std::string &stunip, uint16_t &stunport)
+{
+    
 
+        /* write */
+    stun::Message response(stun::STUN_BINDING_REQUEST);
+    response.setTransactionID();
+    response.addAttribute(new stun::Software("libjuice"));
+    response.addAttribute(new stun::Fingerprint());
+
+
+    stun::Writer writer;
+    writer.writeMessage(&response, "");
+
+    printf("---------------\n");
+    for (size_t i = 0; i < writer.buffer.size(); ++i) {
+        if (i == 0 || i % 4 == 0) {
+            printf("\n");
+        }
+        printf("%02X ", writer.buffer[i]);
+    }
+    printf("\n---------------\n");
+
+
+    socket->send(&writer.buffer[0], writer.buffer.size(), stunip, stunport);
+
+//
+
+    //    tesTcpServer tsvsocket;
+    //    tsvsocket.start("0.0.0.0", 6000);
+    //    
+    //    
+    //    tesTcpClient socket;
+    //    socket.start(STUN_SERVER_IP , STUN_SERVER_PORT);
+    //    
+    //    socket.sendit( &writer.buffer[0], writer.buffer.size());    
+
+    
+}
 
 
 

@@ -88,6 +88,8 @@ public:
 	string mTail;
 
 	string mMid;
+        
+        bool bResolved{false};
 
 	// Extracted on resolution
 	int mFamily{-1};
