@@ -30,10 +30,7 @@ struct stun_value_error_code {
 };
 
 
-typedef struct addr_record {
-	struct sockaddr_storage addr;
-	socklen_t len;
-} addr_record_t;
+
 
 struct stun_value_mapped_address {
 	uint8_t padding;

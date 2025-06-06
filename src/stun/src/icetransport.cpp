@@ -403,6 +403,13 @@ void IceTransport::cbDnsResolve(addrinfo* res, std::string ip, int port,  void* 
    StartAgent( icesv->ip,  icesv->port);
 }
 
+void IceTransport::cbNameResolve( const char* hostname, const char* service,  void* ptr)
+{
+    
+    SInfo <<  "On Candidate resolved" <<  hostname << ":" << service  ;
+    Candidate *cand = (Candidate *)ptr;
+}    
+
 void IceTransport::StartAgent( std::string &stunip, uint16_t &stunport)
 {
     

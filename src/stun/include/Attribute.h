@@ -6,6 +6,10 @@
 #include <vector>
 #include <Types.h>
 #include <arpa/inet.h>
+#include "net/IP.h"
+using namespace base::net;
+
+
 namespace stun {
 
   /* --------------------------------------------------------------------- */

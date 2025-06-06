@@ -406,7 +406,7 @@ void PeerConnection::addRemoteCandidate(Candidate candidate) {
 
 void PeerConnection::processRemoteCandidate(Candidate candidate) {
 	//auto iceTransport = std::atomic_load(&mIceTransport);
-	{
+
 		// Set as remote candidate
 	//	std::lock_guard lock(mRemoteDescriptionMutex);
 //		if (!mRemoteDescription)
@@ -421,18 +421,18 @@ void PeerConnection::processRemoteCandidate(Candidate candidate) {
 //			return; // already in description, ignore
 
 //		candidate.resolve(Candidate::ResolveMode::Simple);
-		mRemoteDescription.addCandidate(candidate);
-	}
+		Candidate  *cand  = mRemoteDescription.addCandidate(candidate);
+	
 
 	//if (candidate.isResolved()) 
-        {
-		iceTransport->addRemoteCandidate(&candidate);
-	} 
+       // {
+		iceTransport->addRemoteCandidate(cand);
+	//} 
         //else 
-        {
+       // {
 		// We might need a lookup, do it asynchronously
 	
-	}
+	//}
 }
 
 //void PeerConnection::setMediaHandler(shared_ptr<MediaHandler> handler) {

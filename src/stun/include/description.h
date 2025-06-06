@@ -87,7 +87,7 @@ public:
 	//std::vector<Candidate> mcandidates() const;
 	std::vector<Candidate> extractCandidates();
 	bool hasCandidate(const Candidate &candidate) const;
-	void addCandidate(Candidate candidate);
+	Candidate* addCandidate(Candidate candidate);
 	void addCandidates(std::vector<Candidate> candidates);
         
         //std::vector<Candidate> candidates();

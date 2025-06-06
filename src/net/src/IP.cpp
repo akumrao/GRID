@@ -208,6 +208,47 @@ namespace base
                 return PF_UNSPEC;
             }
         }
+        
+        //          char buf[40];  uint16_t port;
+        //            addressToString(address->mapped, buf, port) ;
+        //     
+        void IP::AddressToString( addr_record_t &mapped,  char *ip,  uint16_t &port)
+        {
+
+              if(mapped.addr.ss_family == AF_INET6)
+              {
+                  uv_ip6_name((sockaddr_in6* )&mapped.addr, ip, 39);
+                  port = ntohs( ((sockaddr_in6 *)&mapped.addr)->sin6_port);
+
+              }
+              else if(mapped.addr.ss_family  == AF_INET )
+              {
+                   uv_ip4_name((sockaddr_in*)&mapped.addr, ip, 16);
+                   port =  ntohs( ((sockaddr_in *)&mapped.addr)->sin_port); 
+              }
+
+              STrace << "stun::Reader - verbose: address: "<<  ip  << " port: " << port;
+        }
+        
+        
+        
+        
+        
+        
+        void IP::StringToAddress(const char *ip,  uint16_t port, addr_record_t *mapped)
+        {
+
+            if (IP::GetFamily(ip) == AF_INET6) {
+          
+                ASSERT(0 == uv_ip6_addr(ip, port, (struct sockaddr_in6 *)&mapped->addr));
+                mapped->len = sizeof(struct sockaddr_in6);
+            }
+            else {
+                ASSERT(0 == uv_ip4_addr(ip, port, (struct sockaddr_in *)&mapped->addr));
+                  mapped->len = sizeof(struct sockaddr_in);
+            }
+            
+        }
 
 
     } // namespace net

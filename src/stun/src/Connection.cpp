@@ -125,8 +125,7 @@ void Transport::resolveStunServer( )
     }
    
 }
- 
- 
+
 void Transport::cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr)
 {
     
@@ -136,5 +135,25 @@ void Transport::cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr
      SInfo <<  "IceServer" <<  ip << ":" << port  ;
 }
 
-
+void Transport::cbNameResolve(  const char* hostname, const char* service,  void* ptr)
+{
+     SInfo <<  "resoved " <<  hostname << ":" << service  ;
 }
+
+
+
+
+ 
+void Transport::resolveNames(Candidate *cand )
+{
+   // SInfo << "resolveName " <<  icesv.hostname << ":" << icesv.port;
+
+   resolveName(cand->resolved.addr,   Application::uvGetLoop(),  cand) ;
+}
+ 
+
+}//end namespace
+
+    
+
+

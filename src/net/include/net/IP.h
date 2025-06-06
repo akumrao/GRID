@@ -33,6 +33,10 @@ namespace base
 
     namespace net
     {
+        typedef struct addr_record {
+            struct sockaddr_storage addr;
+            socklen_t len;
+        } addr_record_t;
 
         class IP
         {
@@ -42,7 +46,8 @@ namespace base
 	    static void NormalizeIp(std::string& ip);
 	    static bool CompareAddresses(const struct sockaddr* addr1, const struct sockaddr* addr2);
 	    static struct sockaddr_storage CopyAddress(const struct sockaddr* addr);
-	  
+            static void AddressToString( addr_record_t &mapped,  char *buf,  uint16_t &port);
+            static void StringToAddress( const char *ip,  uint16_t port, addr_record_t *mapped);
         };
 
 

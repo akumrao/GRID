@@ -155,7 +155,7 @@ public:
 
 
 
- class Transport: public GetAddrInfoReq
+ class Transport: public GetAddrInfoReq, GetNameInfoReq
  {
  public:
         Transport( Configuration &Config): mConfig(Config)
@@ -164,7 +164,8 @@ public:
         }
         void resolveStunServer();
         void cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr) override;
-        
+        void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
+        void resolveNames(Candidate *certificate );
         Configuration &mConfig;
      
  };

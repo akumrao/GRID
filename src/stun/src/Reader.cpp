@@ -152,7 +152,7 @@ namespace stun {
             msg->mapped = &address->mapped;
             
             char buf[40];  uint16_t port;
-            addressToString(buf, port, address->mapped);
+            IP::AddressToString(address->mapped, buf, port);
             
             attr = (Attribute*) address;
            

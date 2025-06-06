@@ -415,27 +415,9 @@ void sha256(const std::string& str , std::string& key) {
     printf("\n");
     return  ;
 }
-//          char buf[40];  uint16_t port;
-//            addressToString(buf, port, address->mapped);
-//            
+       
 
-  void addressToString( char *buf,  uint16_t &port,  addr_record_t &mapped)
-  {
 
-    if(mapped.addr.ss_family == AF_INET6)
-    {
-        uv_ip6_name((sockaddr_in6* )&mapped.addr, buf, 39);
-        port = ntohs( ((sockaddr_in6 *)&mapped.addr)->sin6_port);
-
-    }
-    else if(mapped.addr.ss_family  == AF_INET )
-    {
-         uv_ip4_name((sockaddr_in*)&mapped.addr, buf, 16);
-         port =  ntohs( ((sockaddr_in *)&mapped.addr)->sin_port); 
-    }
-                        
-    STrace << "stun::Reader - verbose: address: "<<  buf  << " port: " << port;
-}
 
 
 } /* namespace stun */

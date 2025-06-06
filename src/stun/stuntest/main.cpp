@@ -184,6 +184,11 @@ int main()
 //    socket.send(&writer.buffer[0], writer.buffer.size(), STUN_SERVER_IP, STUN_SERVER_PORT);
 
 
+//    Transport transport(config1);
+//    const char *ip = "174.125.250.129";
+//    Candidate cand;
+//    IP::StringToAddress( ip, 19302 , &cand.resolved);
+//    
 
     //    tesTcpServer tsvsocket;
     //    tsvsocket.start("0.0.0.0", 6000);

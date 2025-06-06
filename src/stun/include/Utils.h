@@ -62,8 +62,6 @@ struct stun_attr {
    void sha256(const std::string& str , std::string& key) ;
    
    
-   void addressToString( char *buf,  uint16_t &port,  addr_record_t &mapped);
-   
    int const_time_memcmp(unsigned char *a, unsigned char *b, size_t len);
    
 } /* namespace stun */

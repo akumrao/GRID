@@ -68,6 +68,8 @@ private:
 
         
         void cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr) ;
+        
+        void cbNameResolve(  const char* hostname, const char* service,  void* ptr);
 
         void StartAgent( std::string &stunip, uint16_t &stunport);
 

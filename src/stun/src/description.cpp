@@ -260,11 +260,17 @@ bool Description::hasCandidate(const Candidate &candidate) const {
 	return std::find(mCandidates.begin(), mCandidates.end(), candidate) != mCandidates.end();
 }
 
-void Description::addCandidate(Candidate candidate) {
+Candidate* Description::addCandidate(Candidate candidate) {
 	candidate.hintMid(bundleMid());
 
+        Candidate *ret = nullptr; 
 	if (!hasCandidate(candidate))
-		mCandidates.emplace_back(candidate);
+	{
+
+            mCandidates.emplace_back(candidate);
+            ret= &mCandidates[mCandidates.size() -1];
+        }
+        return ret;
 }
 
 void Description::addCandidates(std::vector<Candidate> candidates) {

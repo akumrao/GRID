@@ -6,6 +6,10 @@
 #include "common.h"
 #include <string>
 #include <Types.h>
+#include "net/IP.h"
+
+using namespace base::net;
+
 
 using namespace stun;
 
