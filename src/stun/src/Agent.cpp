@@ -39,13 +39,14 @@ void thread_function() {
 }
     /* --------------------------------------------------------------------- */
 
+    static int agentCount = 0;
     Agent::Agent( Description &localdesp, Description &remotedesp,  candidate_callback candidateCallback):localdesp(localdesp), remotedesp(remotedesp), mCandidateCallback(candidateCallback)
     {
 
         random_bytes(&ice_tiebreaker, sizeof(ice_tiebreaker));
         _timer.cb_timeout = std::bind(&Agent::onTimer, this);
         _timer.Start(200,200);
-       
+        agentNo = ++agentCount;
     }
 
     Agent::~Agent() {
@@ -57,19 +58,19 @@ void thread_function() {
     bool Agent::getInterfaces( ) {
         
         
-        static int inc = 7000;
-        socket = new testUdpServer("0.0.0.0", ++inc , this );
+        static int port = 7000;
+        socket = new testUdpServer("0.0.0.0", ++port , this );
         socket->start();
         
 
-        char buf[512];
+        //char buf[512];
         uv_interface_address_t *info;
         int count, i;
 
         uv_interface_addresses(&info, &count);
         i = count;
 
-        SInfo << "Number of interfaces: " <<  count;
+        STrace << "AgentNo " << agentNo <<  " Number of interfaces: " <<  count;
         while (i--) {
             uv_interface_address_t interface_a = info[i];
         
@@ -80,29 +81,27 @@ void thread_function() {
         
             if(!interface_a.is_internal)
             {
-                  SInfo << "Name: " <<  interface_a.name;
-                  
+                STrace  << "AgentNo " << agentNo <<  " Name: " <<  interface_a.name;
                 if (interface_a.address.address4.sin_family == AF_INET) {
-                    uv_ip4_name(&interface_a.address.address4, buf, sizeof (buf));
-                   
-                    
-                    std::memcpy(&candidate.resolved.addr , &interface_a.address.address4, sizeof(interface_a.address.address4));
-                    candidate.resolved.len = sizeof(interface_a.address.address4);
-                            
-                    ice_create_host_candidate(&candidate);        
-                    
-                    SInfo << "IPv4 address: " <<  buf;
+                   // uv_ip4_name(&interface_a.address.address4, buf, sizeof (buf));
+                   // std::memcpy(&candidate.resolved.addr , &interface_a.address.address4, sizeof(interface_a.address.address4));
+                    interface_a.address.address4.sin_port =  htons(port);
+                    IP::CopyAddress((const struct sockaddr* )&interface_a.address.address4,  candidate.resolved);
                 } else if (interface_a.address.address4.sin_family == AF_INET6) {
-                    uv_ip6_name(&interface_a.address.address6, buf, sizeof (buf));
-                    
-                    
-                    std::memcpy(&candidate.resolved.addr , &interface_a.address.address6, sizeof(interface_a.address.address6));
-                    candidate.resolved.len = sizeof(interface_a.address.address6);
-                    
-                    ice_create_host_candidate( &candidate);
-                    
-                    SInfo << "IPv6 address: " <<  buf;
+                    //uv_ip6_name(&interface_a.address.address6, buf, sizeof (buf));
+                   // std::memcpy(&candidate.resolved.addr , &interface_a.address.address6, sizeof(interface_a.address.address6));
+                    //candidate.resolved.len = sizeof(interface_a.address.address6);
+                    interface_a.address.address6.sin6_port =  htons(port);
+                    IP::CopyAddress((const struct sockaddr*) &interface_a.address.address6,  candidate.resolved);
                 }
+                 
+                char ip[40];  uint16_t port;
+                 
+                IP::AddressToString( candidate.resolved,  ip,  port);
+                   
+                ice_create_host_candidate(&candidate);   
+                
+                SInfo << "AgentNo " << agentNo <<  " getInterfaces " << "  " << ip  << ":" <<  port;
             }
 
         }
@@ -218,7 +217,7 @@ void thread_function() {
         {
             
             if (ice_find_candidate_from_addr(&remotedesp, record, Candidate::Type::Unknown)) {
-                    LTrace("A remote candidate exists for the remote address");
+                    STrace << "AgentNo " << agentNo << " A remote candidate exists for the remote address";
                     return 0;
             }
             Candidate candidate;
@@ -253,7 +252,7 @@ void thread_function() {
                     return -1;
             }
 
-            SDebug << "Obtained a new remote reflexive candidate, priority=" << (unsigned long)priority;
+            SDebug << "AgentNo " << agentNo << " Obtained a new remote reflexive candidate, priority=" << (unsigned long)priority;
 
             Candidate *remote = &remotedesp.desc.candidates[remotedesp.desc.candidates.size() -1];
             remote->mPriority = priority;
@@ -264,7 +263,7 @@ void thread_function() {
     int Agent::ice_add_remote_candidate(const Candidate *candidate)
     {
         
-        ice_add_candidate( (Candidate *)candidate, &remotedesp  );
+        //ice_add_candidate( (Candidate *)candidate, &remotedesp  );
         
         
         if (agent_add_candidate_pairs_for_remote((Candidate *)candidate)) {
@@ -301,11 +300,11 @@ void thread_function() {
 	//++description->desc.candidates.size();
 	
         
-        char buffer[4096];
+       // char buffer[4096];
         
-        ice_generate_candidate_sdp(candidate, buffer, 4096);
+        //ice_generate_candidate_sdp(candidate, buffer, 4096);
         
-        SInfo << buffer;
+        SInfo<< "AgentNo " << agentNo << " local ice_add_candidate  " << candidate;
         
         mCandidateCallback(*candidate);
         
@@ -448,7 +447,7 @@ void thread_function() {
 //		}
 //	}
 
-	STrace << "Registering STUN entry  " <<   m_entries_count << " for candidate pair checking";
+	STrace << "AgentNo " << agentNo <<  " Registering STUN entry  " <<   m_entries_count << " for candidate pair checking";
 	agent_stun_entry_t *entry = m_entries + m_entries_count;
 	entry->type = AGENT_STUN_ENTRY_TYPE_CHECK;
 	entry->state = AGENT_STUN_ENTRY_STATE_IDLE;
@@ -467,12 +466,12 @@ void thread_function() {
 		for (int i = 0; i < m_candidate_pairs_count; ++i) {
 			ice_candidate_pair_t *ordered_pair = m_ordered_pairs[i];
 			if (ordered_pair == pos) {
-				LTrace("Candidate pair has priority");
+				STrace << "AgentNo " << agentNo << " Candidate pair has priority";
 				break;
 			}
 			if (ordered_pair->state == ICE_CANDIDATE_PAIR_STATE_SUCCEEDED) {
 				// We found a succeeded pair with higher priority, ignore this one
-				LTrace("Candidate pair doesn't have priority, keeping it frozen");
+				STrace << "AgentNo " << agentNo << " Candidate pair doesn't have priority, keeping it frozen";
 				return 0;
 			}
 		}
@@ -481,7 +480,7 @@ void thread_function() {
 //	// There is only one component, therefore we can unfreeze if no pair is nominated
 	if (*remotedesp.desc.ice_ufrag != '\0' &&
 	    (!m_selected_pair || !m_selected_pair->nominated)) {
-		LTrace("Unfreezing the new candidate pair");
+		STrace << "AgentNo " << agentNo << " Unfreezing the new candidate pair";
 		agent_unfreeze_candidate_pair( pos);
 	}
 
@@ -505,7 +504,7 @@ void thread_function() {
                     }
             }
 
-            LWarn("Unable to unfreeze the pair: no matching entry");
+            SWarn << "AgentNo " << agentNo << "Unable to unfreeze the pair: no matching entry";
             return -1;
     }
 
@@ -559,23 +558,23 @@ void thread_function() {
 
     
     
-    bool is_stun_datagram(const void *data, size_t size) {
+    bool Agent::is_stun_datagram(const void *data, size_t size) {
 	// RFC 8489: The most significant 2 bits of every STUN message MUST be zeroes. This can be used
 	// to differentiate STUN packets from other protocols when STUN is multiplexed with other
 	// protocols on the same port.
 	if (!size || *((uint8_t *)data) & 0xC0) {
-		LTrace("Not a STUN message: first 2 bits are not zeroes");
+		STrace << "AgentNo " << agentNo << " Not a STUN message: first 2 bits are not zeroes";
 		return false;
 	}
 
 	if (size < sizeof(struct stun_header)) {
-		STrace << "Not a STUN message: message too short, size=" <<  size;
+		STrace << "AgentNo " << agentNo << " Not a STUN message: message too short, size=" <<  size;
 		return false;
 	}
 
 	const struct stun_header *header = (const struct stun_header *) data;
 	if (ntohl(header->magic) != STUN_MAGIC) {
-		LTrace("Not a STUN message: magic number invalid");
+		STrace << "AgentNo " << agentNo << " Not a STUN message: magic number invalid";
 		return false;
 	}
 
@@ -585,11 +584,11 @@ void thread_function() {
 	// from packets of other protocols.
 	const size_t length = ntohs(header->length);
 	if (length & 0x03) {
-		STrace << "Not a STUN message: invalid length " << length << " not multiple of 4";
+		STrace << "AgentNo " << agentNo << " Not a STUN message: invalid length " << length << " not multiple of 4";
 		return false;
 	}
 	if (size != sizeof(struct stun_header) + length) {
-		STrace << "Not a STUN message: invalid length "<< length << " while expecting "<<         size - sizeof(struct stun_header);
+		STrace << "AgentNo " << agentNo << " Not a STUN message: invalid length "<< length << " while expecting "<<  size - sizeof(struct stun_header);
 		return false;
 	}
 
@@ -598,7 +597,7 @@ void thread_function() {
     
     int Agent::onStunMessage( char *buf, size_t len, const addr_record_t *src,  const addr_record_t *relayed)
     {
-	STrace << "Received datagram, size "<<  len;
+	STrace << "AgentNo " << agentNo << " Received datagram, size "<<  len;
 
 	if(m_state == JUICE_STATE_DISCONNECTED || m_state == JUICE_STATE_GATHERING)
 		return 0;
@@ -621,7 +620,7 @@ void thread_function() {
                 stun::Reader reader;
                 if( !reader.process((uint8_t*) buf, len, &msg))
                 {
-                    LError("STUN message reading failed");
+                    SError << "AgentNo " << agentNo << " STUN message reading failed";
 		    return -1;
                 }
   
@@ -690,14 +689,14 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
             Priority *result;
             if( !msg->find(&result ))
             {
-                SError << " Priority attribute is not in stun message";
+                SError  << "AgentNo " << agentNo << "  Priority attribute is not in stun message";
                 exit(0);
             }
             
   
             
             if (agent_add_remote_peer_reflexive_candidate( result->value, src)) {
-                    LWarn("Failed to add remote peer reflexive candidate from STUN message");
+                    SWarn << "AgentNo " << agentNo << " Failed to add remote peer reflexive candidate from STUN message";
             }
     }
 
@@ -706,18 +705,18 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
             LTrace("STUN message is a response, looking for transaction ID");
             entry = agent_find_entry_from_transaction_id(msg->transaction_id);
             if (!entry) {
-                    LDebug("No STUN entry matching transaction ID, ignoring");
+                    SError << "AgentNo " << agentNo << " No STUN entry matching transaction ID, ignoring";
                     return -1;
             }
     } else {
             LTrace("STUN message is a request or indication, looking for remote address");
             entry = agent_find_entry_from_record( src, relayed);
             if (entry) {
-                    LTrace("Found STUN entry matching remote address");
+                   STrace << "AgentNo " << agentNo << " Found STUN entry matching remote address";
             } else {
                     // This may happen normally, for instance when there is no space left for reflexive
                     // candidates
-                    LDebug("No STUN entry matching remote address, ignoring");
+                    SDebug << "AgentNo " << agentNo << " No STUN entry matching remote address, ignoring";
                     return 0;
             }
     }
@@ -727,7 +726,7 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
             // Message was verified earlier, no need to re-verify
             if (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK && !msg->hasAttribute(stun::STUN_ATTR_MESSAGE_INTEGRITY ) &&
                 (msg->msg_class == STUN_CLASS_REQUEST || msg->msg_class == STUN_CLASS_RESP_SUCCESS)) {
-                    LWarn("Missing integrity in STUN Binding message from remote peer, ignoring");
+                    SWarn << "AgentNo " << agentNo << " Missing integrity in STUN Binding message from remote peer, ignoring";
                     return -1;
             }
            return agent_process_stun_binding( msg, entry, src, relayed);
@@ -735,7 +734,7 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
     case STUN_METHOD_ALLOCATE:
     case STUN_METHOD_REFRESH:
             if (agent_verify_credentials( entry, buf, size, msg)) {
-                    LWarn("Ignoring TURN Allocate message with invalid credentials (Is server authentication disabled?)");
+                    SWarn << "AgentNo " << agentNo << " Ignoring TURN Allocate message with invalid credentials (Is server authentication disabled?";
                     return -1;
             }
            // return agent_process_turn_allocate(agent, msg, entry);
@@ -744,11 +743,11 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
 
     case STUN_METHOD_CREATE_PERMISSION:
             if (agent_verify_credentials( entry, buf, size, msg)) {
-                    LWarn("Ignoring TURN CreatePermission message with invalid credentials");
+                    SWarn << "AgentNo " << agentNo << " Ignoring TURN CreatePermission message with invalid credentials";
                     return -1;
             }
            // return agent_process_turn_create_permission(agent, msg, entry);
-            SError << "Turn Relay agent not supported " ;
+            SError << "AgentNo " << agentNo << " Turn Relay agent not supported " ;
             exit(0);
 
     case STUN_METHOD_CHANNEL_BIND:
@@ -757,15 +756,15 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
                     return -1;
             }
            // return agent_process_turn_channel_bind(agent, msg, entry);
-            SError << "Turn Relay agent not supported " ;
+            SError << "AgentNo " << agentNo << " Turn Relay agent not supported " ;
             exit(0);
     case STUN_METHOD_DATA:
             //return agent_process_turn_data(agent, msg, entry);
-            SError << "Turn Relay agent not supported " ;
+            SError << "AgentNo " << agentNo << " Turn Relay agent not supported " ;
             exit(0);
 
     default:
-            SWarn << "Unknown STUN method 0x%X, ignoring " <<  msg->msg_method;
+            SWarn << "AgentNo " << agentNo << " Unknown STUN method 0x%X, ignoring " <<  msg->msg_method;
             return -1;
     }
 }
@@ -1268,16 +1267,16 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 			}
 		} else if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER) {
                     agent_update_gathering_done();
-                    SInfo << "agent_update_gathering_done()";    
+                    SInfo << "AgentNo " << agentNo << "agent_update_gathering_done()";    
 		}       
 		break;
 	}
 	case STUN_CLASS_RESP_ERROR: {
 		if (msg->error_code != STUN_ERROR_INTERNAL_VALIDATION_FAILED) {
 			if (msg->error_code == 487)
-				SDebug << "Got STUN Binding error response, code= " <<    (unsigned int)msg->error_code;
+				SDebug << "AgentNo " << agentNo << "Got STUN Binding error response, code= " <<    (unsigned int)msg->error_code;
 			else
-				SWarn << "Got STUN Binding error response, code= " <<    (unsigned int)msg->error_code;
+				SWarn  << "AgentNo " << agentNo << "Got STUN Binding error response, code= " <<    (unsigned int)msg->error_code;
 		}
 
 		if (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK) {
@@ -1320,7 +1319,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 			LInfo("STUN server binding failed (unrecoverable error)");
 			entry->state = AGENT_STUN_ENTRY_STATE_FAILED;
 			agent_update_gathering_done();
-                        SInfo << "agent_update_gathering_done()";    
+                        SInfo  << "AgentNo " << agentNo << "agent_update_gathering_done()";    
 		}
 		break;
 	}
@@ -1567,13 +1566,13 @@ void Agent::agent_update_gathering_done()
 {
     gathering_done = true;
     agent_update_pac_timer();
-    SInfo << "agent_update_gathering_done()";
+    SInfo  << "AgentNo " << agentNo << "agent_update_gathering_done()";
 }
 
 
 void Agent::agent_change_state( juice_state_t state)
 {
-    SInfo << "agent_change_state " << state;
+    SInfo  << "AgentNo " << agentNo << "agent_change_state " << state;
 }
 
 
@@ -1631,7 +1630,7 @@ int Agent::agent_bookkeeping( int64_t *next_timestamp)
 			}
 
 			// Failure sending or end of retransmissions
-			SDebug << "STUN entry " <<  i << " Failed" ;
+			SDebug  << "AgentNo " << agentNo << "STUN entry " <<  i << " Failed" ;
 			entry->state = AGENT_STUN_ENTRY_STATE_FAILED;
 			entry->next_transmission = 0;
 
@@ -1661,7 +1660,7 @@ int Agent::agent_bookkeeping( int64_t *next_timestamp)
 #else
 			// Consent freshness expiration
 			if (entry->pair && entry->pair->consent_expiry <= now) {
-				SInfo << "STUN entry " << i << " Consent expired for candidate pair";
+				SInfo  << "AgentNo " << agentNo << "STUN entry " << i << " Consent expired for candidate pair";
 				entry->pair->state = ICE_CANDIDATE_PAIR_STATE_FAILED;
 				entry->state = AGENT_STUN_ENTRY_STATE_FAILED;
 				entry->next_transmission = 0;
@@ -1672,7 +1671,7 @@ int Agent::agent_bookkeeping( int64_t *next_timestamp)
 			if (entry->next_transmission > now)
 				continue;
 
-			SDebug << "STUN entry " << i << " Sending keepalive";
+			SDebug  << "AgentNo " << agentNo << "STUN entry " << i << " Sending keepalive";
 
                         random_bytes(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
 			entry->transaction_id_expired = false;
@@ -1711,7 +1710,7 @@ int Agent::agent_bookkeeping( int64_t *next_timestamp)
 			}
 
 			if (ret < 0) {
-				SWarn << "Sending keepalive failed";
+				SWarn  << "AgentNo " << agentNo << "Sending keepalive failed";
 				agent_arm_transmission( entry, STUN_KEEPALIVE_PERIOD);
 				continue;
 			}
@@ -1774,7 +1773,7 @@ int Agent::agent_bookkeeping( int64_t *next_timestamp)
 		if (entry->pair && entry->pair->state == ICE_CANDIDATE_PAIR_STATE_FROZEN &&
 		    entry->state != AGENT_STUN_ENTRY_STATE_IDLE &&
 		    entry->state != AGENT_STUN_ENTRY_STATE_CANCELLED) {
-			SDebug << "STUN entry " <<  i << " Cancelled";
+			SDebug  << "AgentNo " << agentNo << "STUN entry " <<  i << " Cancelled";
 			entry->state = AGENT_STUN_ENTRY_STATE_CANCELLED;
 			entry->next_transmission = 0;
 		}
@@ -1947,7 +1946,7 @@ int  Agent::agent_set_remote_description() {
 	}
 
 	// There is only one component, therefore we can unfreeze already existing pairs now
-	SDebug << "Unfreezing %d existing candidate pairs " <<  (int)m_candidate_pairs_count;
+	SDebug  << "AgentNo " << agentNo << "Unfreezing %d existing candidate pairs " <<  (int)m_candidate_pairs_count;
         
 	for (int i = 0; i < m_candidate_pairs_count; ++i) {
 		agent_unfreeze_candidate_pair(m_candidate_pairs + i);

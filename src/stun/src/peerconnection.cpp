@@ -199,7 +199,7 @@ string PeerConnection::localBundleMid() {
 
 
 void PeerConnection::setLocalDescription(Description::Type type) {
-	STrace << "Setting local description, type=" << Description::typeToString(type);
+	STrace << "AgentNo " << iceTransport->agent.agentNo << "SetLocalDescription, type=" << Description::typeToString(type);
 
 	SignalingState signalingState = mSignalingState.load();
 	if (type == Description::Type::Rollback) {
@@ -398,7 +398,7 @@ void PeerConnection::setRemoteDescription(Description description) {
 }
 
 void PeerConnection::addRemoteCandidate(Candidate candidate) {
-	STrace << "Adding remote candidate: " << string(candidate);
+	SInfo << "AgentNo " << iceTransport->agent.agentNo << " Adding remote candidate: " << string(candidate);
 	processRemoteCandidate(candidate);
 }
 
@@ -425,9 +425,13 @@ void PeerConnection::processRemoteCandidate(Candidate candidate) {
 	
 
 	//if (candidate.isResolved()) 
-       // {
+            if(cand)
 		iceTransport->addRemoteCandidate(cand);
-	//} 
+            else
+            {
+                SError << " exit 0";
+                exit(0);
+            }
         //else 
        // {
 		// We might need a lookup, do it asynchronously
@@ -536,7 +540,7 @@ void PeerConnection::processLocalCandidate(Candidate candidate)
 		return;
 	}
 
-	STrace << "Issuing local candidate: " << candidate;
+	SInfo << "AgentNo " << iceTransport->agent.agentNo << " Issuing local candidate: " << candidate;
 
 	//candidate.resolve(Candidate::ResolveMode::Simple);
 	mLocalDescription.addCandidate(candidate);

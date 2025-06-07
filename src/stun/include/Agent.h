@@ -132,7 +132,8 @@ typedef struct agent_stun_entry {
     using candidate_callback = std::function<void(const Candidate candidate)>;
     //	using gathering_state_callback = std::function<void(GatheringState state)>;
       
-         
+    Agent() = delete;
+    
     Agent(Description &localdesp, Description &remotedesp, candidate_callback candidateCallback);
     ~Agent();
     bool getInterfaces( );
@@ -254,6 +255,10 @@ typedef struct agent_stun_entry {
     int64_t nomination_timestamp;
     int64_t pac_timestamp; 
     bool  gathering_done{false};
+    int agentNo;
+  private:
+    bool is_stun_datagram(const void *data, size_t size);
+
   };
 
 } /* namespace stun */

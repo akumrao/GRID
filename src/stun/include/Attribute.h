@@ -59,7 +59,6 @@ namespace stun {
     XorMappedAddress();
     XorMappedAddress(const char * ip, uint16_t p);
       
-    void addressToString( char *buf,  uint16_t &port);
   
    // stun_address_family_t family;
     //uint16_t port;

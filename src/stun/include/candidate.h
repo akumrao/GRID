@@ -74,7 +74,7 @@ public:
 
 	bool isResolved() const;
 	int family() const;
-	char * address() ;
+	string address() ;
 	uint16_t port() const;
 private:
 	void parse(string candidate);
@@ -86,17 +86,14 @@ public:
 	TransportType mTransportType;
 	string mNode, mService;
 	string mTail;
-
-	string mMid;
+        string mMid;
         
-        bool bResolved{false};
 
 	// Extracted on resolution
-	int mFamily{-1};
-	char mAddress[50];
-	uint16_t mPort;
-        
-        addr_record_t resolved;
+	//int mFamily{-1};
+	//char mAddress[50];
+	//uint16_t mPort;
+        mutable addr_record_t resolved{0};
 
   //  ice_candidate_t cand;
         

@@ -26,12 +26,13 @@ namespace stun {
     :Attribute(STUN_ATTR_XOR_MAPPED_ADDRESS)
   {
 
-    char ipstr[INET6_ADDRSTRLEN];
-    socklen_t addrlen;
+   // char ipstr[INET6_ADDRSTRLEN];
+    //socklen_t addrlen;
     
     
     stun_address_family_t family =  strlen(ip) > 17 ? STUN_ADDRESS_FAMILY_IPV6: STUN_ADDRESS_FAMILY_IPV4;
 
+   /*
     if(family == STUN_ADDRESS_FAMILY_IPV4) 
     {
         struct sockaddr_in *addr4 = (struct sockaddr_in *)&mapped.addr;
@@ -51,6 +52,9 @@ namespace stun {
         mapped.len = sizeof(struct sockaddr_in6);
         
     }
+    */
+
+    IP::StringToAddress(ip, port,  mapped );
   
   }
 

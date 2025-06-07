@@ -2,22 +2,12 @@
 
 #include "candidate.h"
 
-
 #include <algorithm>
 #include <array>
 #include <cctype>
 #include <sstream>
 #include <unordered_map>
 #include "sdpcommon.h"
-#ifdef _WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#else
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#endif
-
 #include <sys/types.h>
 
 #include "base/logger.h"
@@ -51,7 +41,7 @@ namespace rtc {
 Candidate::Candidate()
     : mFoundation("none"), mComponent(0), mPriority(0), 
       mTransportString("UDP"), mType(Type::Unknown), mTransportType(TransportType::Unknown),
-      mNode("0.0.0.0"), mService("9"), mFamily(-1), mPort(0) {}
+      mNode("0.0.0.0"), mService("9")  {}
 
 Candidate::Candidate(string candidate) : Candidate() {
 	if (!candidate.empty())
@@ -206,7 +196,12 @@ string Candidate::candidate() const {
 	oss << "candidate:";
 	oss << mFoundation << sp << mComponent << sp << mTransportString << sp << mPriority << sp;
 	if (isResolved())
-		oss << mAddress << sp << mPort;
+        {
+
+            char ip[40];  uint16_t port;
+            base::net::IP::AddressToString(resolved, ip, port);
+	    oss << ip << sp << port;
+        }
 	else
 		oss << mNode << sp << mService;
 
@@ -246,16 +241,33 @@ bool Candidate::operator!=(const Candidate &other) const {
 	return mFoundation != other.mFoundation;
 }
 
-bool Candidate::isResolved() const { return bResolved; }
+bool Candidate::isResolved() const {
+    return resolved.len ;
+}
 
-int Candidate::family() const { return mFamily; }
+int Candidate::family() const { return resolved.addr.ss_family; }
 
-char* Candidate::address()  {
-	return isResolved() ? mAddress : nullptr;
+string Candidate::address()  {
+    
+    if(isResolved())
+    {
+        char ip[40];  uint16_t port;
+        base::net::IP::AddressToString(resolved, ip, port);
+        return ip;
+    }
+    else
+        return "";
 }
 
 uint16_t Candidate::port() const {
-	return isResolved() ? mPort : 0;
+    if(isResolved())
+    {
+        char ip[40];  uint16_t port;
+        base::net::IP::AddressToString(resolved, ip, port);
+        return port;
+    }
+    else
+        return 0;
 }
 
 std::ostream &operator<<(std::ostream &out, const Candidate &candidate) {

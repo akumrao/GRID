@@ -12,16 +12,6 @@
 #include "base/logger.h"
 
 
-#ifdef _WIN32
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#else
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#endif
-
 #include <sys/types.h>
 
 using namespace base;
@@ -34,13 +24,13 @@ namespace rtc {
 
 const int MAX_TURN_SERVERS_COUNT = 2;
 
-void IceTransport::Init() {
-	// Dummy
-}
-
-void IceTransport::Cleanup() {
-	// Dummy
-}
+//void IceTransport::Init() {
+//	// Dummy
+//}
+//
+//void IceTransport::Cleanup() {
+//	// Dummy
+//}
 
 IceTransport::IceTransport( Configuration &config,  Description &localdescription,  Description &remoteDes, candidate_callback candidateCallback,
                            state_callback stateChangeCallback,
@@ -52,7 +42,7 @@ IceTransport::IceTransport( Configuration &config,  Description &localdescriptio
       Transport(config)  
       {
 
-	SDebug << "Initializing ICE transport (libjuice)";
+	SDebug << "Initializing ICE transport";
 
 
 
@@ -132,7 +122,7 @@ void IceTransport::addIceServer(IceServer server) {
 
 
 
-
+/*
 int IceTransport::ice_generate_sdp(Description *description,  char *buffer, size_t size)
 {
 	if (!*description->desc.ice_ufrag || !*description->desc.ice_pwd)
@@ -180,7 +170,7 @@ int IceTransport::ice_generate_sdp(Description *description,  char *buffer, size
 	}
 	return len;
 }
-
+*/
 
 
 
@@ -200,24 +190,28 @@ Description *IceTransport::getLocalDescription(Description::Type type)  {
     //    Candidate candidate
     //    mCandidateCallback(candidate);
         
-        char sdp[4096];
+       // char sdp[4096];
         random_str64(localDes.desc.ice_ufrag, 4 + 1);
         random_str64(localDes.desc.ice_pwd, 22 + 1);
         localDes.desc.ice_lite = false;
         //localDes.desc.candidates_count = 0;
         localDes.desc.finished = false;
-        SInfo << "Created local description: ufrag= "<<  localDes.desc.ice_ufrag  <<  " pwd "  <<   localDes.desc.ice_pwd;
+        SInfo <<  "AgentNo " << agent.agentNo <<  localDes.desc.ice_ufrag  <<  " pwd "  <<   localDes.desc.ice_pwd;
         
+        std::string sdp = localDes.generateSdp("\r\n");
+        
+        /*
         if (ice_generate_sdp(&localDes, sdp, 4096) < 0)
         {
             throw std::runtime_error("Failed to generate local SDP");
         }
+        */ 
 
 	// RFC 5763: The endpoint that is the offerer MUST use the setup attribute value of
 	// setup:actpass.
 	// See https://www.rfc-editor.org/rfc/rfc5763.html#section-5
         
-        localDes.readSdp( string(sdp), type, type == Description::Type::Offer ? Description::Role::ActPass : mRole);
+        localDes.readSdp( sdp, type, type == Description::Type::Offer ? Description::Role::ActPass : mRole);
 	localDes.addIceOption("trickle");
         
         
@@ -252,8 +246,12 @@ void IceTransport::setRemoteDescription(const Description *description) {
 bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
     
     
-    
-        resolveNames((Candidate *)candidate);
+        if (candidate->isResolved())
+           resolveNames((Candidate *)candidate);
+        else
+        {
+            
+        }
     
 	// Don't try to pass unresolved candidates for more safety
 	//if (!candidate->isResolved())
@@ -272,10 +270,6 @@ void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> addi
 		agent.m_mode = AGENT_MODE_CONTROLLING;
 	}
          
-        
-       
-        
-    
 
         agent.getInterfaces();
         
@@ -398,8 +392,9 @@ void IceTransport::GatheringDoneCallback(juice_agent_t *, void *user_ptr) {
 
 void IceTransport::cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr)
 {
- 
-    SInfo <<  "IceServer" <<  ip << ":" << port  ;
+    SInfo <<   "AgentNo " << agent.agentNo << " On Candidate Address resolved " << ip << ":" << port  ;
+    
+   // SInfo <<  "IceServer" <<  ip << ":" << port  ;
    
     IceServer *icesv = (IceServer *)ptr;
     icesv->ip = ip;
@@ -409,12 +404,14 @@ void IceTransport::cbDnsResolve(addrinfo* res, std::string ip, int port,  void* 
 
 void IceTransport::cbNameResolve( const char* hostname, const char* service,  void* ptr)
 {
+     Candidate *cand = (Candidate *)ptr;
+     
+    STrace << "AgentNo " << agent.agentNo << " On Candidate Name resolved " <<  hostname << ":" << service  ;
     
-    SInfo <<  "On Candidate resolved" <<  hostname << ":" << service  ;
-    Candidate *cand = (Candidate *)ptr;
+    SInfo << "AgentNo " << agent.agentNo << " About to pair remote candidate: " << cand->address() << ":" << cand->port()  ;
     
-    
-    cand->bResolved = true;
+       
+   // cand->bResolved = true;
     
     agent.ice_add_remote_candidate(   cand  );
      

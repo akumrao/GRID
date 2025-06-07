@@ -43,17 +43,17 @@ namespace rtc {
     }
 
     
-    int ice_generate_candidate_sdp(const Candidate *candidate, char *buffer, size_t size) {
-	
-        char *type = NULL;
-	char *suffix = NULL;
-        
-        int ret = ice_type_suffix(candidate, &type, &suffix );
-        
-	return snprintf(buffer, size, "a=candidate:%s %u UDP %u %s %u typ %s%s%s",    candidate->mFoundation.c_str(), candidate->mComponent, candidate->mPriority, 
-	                candidate->mAddress , candidate->mPort, type, suffix ? " " : "",
-	                suffix ? suffix : "");
-    }
+//    int ice_generate_candidate_sdp(const Candidate *candidate, char *buffer, size_t size) {
+//	
+//        char *type = NULL;
+//	char *suffix = NULL;
+//        
+//        int ret = ice_type_suffix(candidate, &type, &suffix );
+//        
+//	return snprintf(buffer, size, "a=candidate:%s %u UDP %u %s %u typ %s%s%s",    candidate->mFoundation.c_str(), candidate->mComponent, candidate->mPriority, 
+//	                candidate->mAddress , candidate->mPort, type, suffix ? " " : "",
+//	                suffix ? suffix : "");
+//    }
 
 
 

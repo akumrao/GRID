@@ -46,8 +46,9 @@ namespace base
 	    static void NormalizeIp(std::string& ip);
 	    static bool CompareAddresses(const struct sockaddr* addr1, const struct sockaddr* addr2);
 	    static struct sockaddr_storage CopyAddress(const struct sockaddr* addr);
+            static void CopyAddress(const struct sockaddr* addr, addr_record_t &mapped);
             static void AddressToString( addr_record_t &mapped,  char *buf,  uint16_t &port);
-            static void StringToAddress( const char *ip,  uint16_t port, addr_record_t *mapped);
+            static void StringToAddress( const char *ip,  uint16_t port, addr_record_t &mapped);
         };
 
 

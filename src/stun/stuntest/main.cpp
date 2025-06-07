@@ -131,6 +131,73 @@ int main()
     // STUN server example (use your own server in production)
 
 
+    
+    
+    pc2.onStateChange([](PeerConnection::State state) {
+        std::cout << "State 2: " << state << endl; });
+
+    pc2.onIceStateChange(
+            [](PeerConnection::IceState state) {
+                std::cout << "ICE state2: " << state << endl; });
+
+    pc2.onGatheringStateChange([&pc1 ](PeerConnection::GatheringState state) {
+        std::cout << "Gathering state 2: " << state << endl;
+        if (state == PeerConnection::GatheringState::Complete) {
+            auto sdp = pc1.localDescription();
+                    std::cout << "Description 2: " << sdp << endl;
+                    // pc2.setRemoteDescription(string(sdp));
+        }
+    });
+    
+    
+    pc2.onLocalDescription([&pc2 ](rtc::Description description) 
+    {
+        std::string tmp = description.typeString();
+     
+        std::string tmp2 = std::string(description);
+        
+        SInfo << tmp;
+        
+         SInfo << tmp2;
+
+		json message = {
+                                {"type", description.typeString()},
+		                {"description",}};
+            // pc2.setRemoteDescription(description);
+           // pc->setLocalDescription( Description::Type::Answer);
+//                
+//                  SInfo << message.dump();
+       // SInfo << "send:"  << description.typeString() <<  " des "<<  std::string(description);
+     //  pc->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
+       // sendSdp( std::string(description), description.typeString());
+        // Make the answer
+//		if (auto ws = wws.lock())
+//			ws->send(message.dump());
+    });
+
+    pc2.onLocalCandidate([&pc1 ](rtc::Candidate candidate) {
+            json message = {
+                            {"type", "candidate"},
+                            {"candidate", std::string(candidate)},
+                            {"mid", candidate.mid()}};            
+            SInfo << message.dump();
+
+     //   sendCandidate( candidate.mid(), 1,  std::string(candidate)  );
+//            if (auto ws = wws.lock())
+//                    ws->send(message.dump());
+           pc1.addRemoteCandidate(candidate ) ;
+                
+     
+    });
+
+    pc2.onSignalingStateChange([](PeerConnection::SignalingState state) {
+        std::cout << "Signaling state 1: " << state << endl;
+    });
+
+
+    pc2.setLocalDescription();
+    
+
 
     printf("\n\ntest_ice\n\n");
 

@@ -22,8 +22,8 @@ namespace rtc {
         
 class IceTransport : public Transport {
 public:
-	static void Init();
-	static void Cleanup();
+//	static void Init();
+//	static void Cleanup();
 
         enum class State { Disconnected, Connecting, Connected, Completed, Failed };
         using state_callback = std::function<void(State state)>;
@@ -51,6 +51,8 @@ public:
 
 
 	bool getSelectedCandidatePair(Candidate *local, Candidate *remote);
+        
+        Agent agent;
 
 private:
 
@@ -65,7 +67,7 @@ private:
 	void addIceServer(IceServer server);
         
         
-        int ice_generate_sdp(Description *description,  char *buffer, size_t size);
+        //int ice_generate_sdp(Description *description,  char *buffer, size_t size);
 
         
         void cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr) ;
@@ -87,9 +89,6 @@ private:
         Description &localDes;
         Description &remoteDes;
          
-        
-        
-        Agent agent;
 };
 
 } // namespace rtc::impl
