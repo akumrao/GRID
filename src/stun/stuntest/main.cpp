@@ -57,7 +57,8 @@ int main()
 
     Configuration config2;
     // TURN server example (use your own server in production)
-    config2.iceServers.emplace_back("turn:openrelayproject:openrelayproject@openrelay.metered.ca:80");
+    //config2.iceServers.emplace_back("turn:openrelayproject:openrelayproject@openrelay.metered.ca:80");
+    config2.iceServers.emplace_back("stun:stun.l.google.com:19302");
 
     PeerConnection pc1(config1);
     

@@ -180,7 +180,7 @@ namespace stun {
    
  void Writer::writeUseCandidate(Attribute* p) {
     writeU16(p->type);
-    //writeU16(0);       /* length */
+    writeU16(0);       /* length */
   }
     
 

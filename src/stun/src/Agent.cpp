@@ -1458,6 +1458,9 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 			snprintf(response.credentials.username, STUN_MAX_USERNAME_LEN, "%s:%s",remotedesp.desc.ice_ufrag, localdesp.desc.ice_ufrag);
 			password = remotedesp.desc.ice_pwd;
                         
+                        Username *iceUser = new stun::Username(response.credentials.username);
+                        response.addAttribute(iceUser);   
+                        
                         if(m_mode == AGENT_MODE_CONTROLLING)
                         {
                             response.ice_controlling = ice_tiebreaker;
@@ -1571,8 +1574,32 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
             SError << " TBD not yet implemented";
 	}
         
+        
+        response.addAttribute(new stun::Software("libjuice"));
+        response.addAttribute(new stun::Fingerprint());
+
+
         stun::Writer writer;
-        writer.writeMessage(&response, password );
+        writer.writeMessage(&response, (password ? password: ""));
+
+        printf("---------------\n");
+        for (size_t i = 0; i < writer.buffer.size(); ++i) {
+            if (i == 0 || i % 4 == 0) {
+                printf("\n");
+            }
+            printf("%02X ", writer.buffer[i]);
+        }
+        printf("\n---------------\n");
+        
+        
+        /* and read it again. */
+        stun::Message msg;
+  
+        stun::Reader reader;
+
+        reader.process((uint8_t*)&writer.buffer[0],writer.buffer.size(), &msg); /* we do -1 to exclude the string terminating nul char. */
+    
+
         
 	return 0;
 }
@@ -1588,7 +1615,7 @@ void Agent::agent_update_gathering_done()
 		agent_stun_entry_t *entry = m_entries + i;
 		if (entry->type != AGENT_STUN_ENTRY_TYPE_CHECK &&
 		    entry->state == AGENT_STUN_ENTRY_STATE_PENDING) {
-			STrace<< "AgentNo " << agentNo << " STUN server or relay entry %d is still pending" <<  i;
+			STrace<< "AgentNo " << agentNo << " STUN server or relay entry "<< i << " is still pending" ;
 			return;
 		}
 	}
@@ -1609,7 +1636,7 @@ void Agent::agent_update_gathering_done()
 void Agent::agent_change_state( juice_state_t state)
 {
     m_state = state;
-    SInfo  << "AgentNo " << agentNo << "agent_change_state " << state;
+    SInfo  << "AgentNo " << agentNo << " agent_change_state " << state;
 }
 
 
@@ -2035,7 +2062,7 @@ int Agent::agent_resolve_servers( addrinfo* start)
             
             char ip[40];  uint16_t port;
             IP::AddressToString(entry->record, ip, port) ;
-            SInfo << "AgentNo " << agentNo <<  ip << ":" <<port;
+            SInfo << "AgentNo " << agentNo << " add " << ip << ":" <<port;
 
             agent_arm_transmission( entry, STUN_PACING_TIME * i++);
     }

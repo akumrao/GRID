@@ -196,7 +196,7 @@ Description *IceTransport::getLocalDescription(Description::Type type)  {
         localDes.desc.ice_lite = false;
         //localDes.desc.candidates_count = 0;
         localDes.desc.finished = false;
-        SInfo <<  "AgentNo " << agent.agentNo <<  localDes.desc.ice_ufrag  <<  " pwd "  <<   localDes.desc.ice_pwd;
+        SInfo <<  "AgentNo " << agent.agentNo << " ice_ufrag " << localDes.desc.ice_ufrag  <<  " pwd "  <<   localDes.desc.ice_pwd;
         
         std::string sdp = localDes.generateSdp("\r\n");
         

@@ -37,8 +37,8 @@ struct CertificateFingerprint {
 
 
 typedef struct ice_description {
-	char ice_ufrag[256 + 1]; // 4 to 256 characters
-	char ice_pwd[256 + 1];   // 22 to 256 characters
+	char ice_ufrag[256 + 1]={'\0'}; // 4 to 256 characters
+	char ice_pwd[256 + 1]={'\0'};   // 22 to 256 characters
 	bool ice_lite{false};
 	//ice_candidate_t candidates[ICE_MAX_CANDIDATES_COUNT];
         std::vector<Candidate> candidates;
@@ -316,7 +316,7 @@ private:
 	string mUsername;
 	string mSessionId;
 	std::vector<string> mIceOptions;
-	string mIceUfrag, mIcePwd;
+	//string mIceUfrag, mIcePwd;
 	CertificateFingerprint mFingerprint;
 	std::vector<string> mAttributes; // other attributes
 

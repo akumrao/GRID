@@ -140,14 +140,14 @@ void Description::readSdp(const string &sdp, Type type, Role role)
 				// RFC 8839: The "ice-pwd" and "ice-ufrag" attributes can appear at either the
 				// session-level or media-level. When present in both, the value in the media-level
 				// takes precedence.
-				if (mIceUfrag.length() == 0 || index == 0) // media-level for first media overrides session-level
-					mIceUfrag = pr.second;
+				if (*desc.ice_ufrag == '\0' || index == 0) // media-level for first media overrides session-level
+				   strcpy(desc.ice_ufrag, pr.second.c_str());
 			} else if (pr.first == "ice-pwd") {
 				// RFC 8839: The "ice-pwd" and "ice-ufrag" attributes can appear at either the
 				// session-level or media-level. When present in both, the value in the media-level
 				// takes precedence.
-				if (mIcePwd.length() == 0 || index == 0) // media-level for first media overrides session-level
-					mIcePwd = pr.second;
+				if (*desc.ice_pwd == '\0' || index == 0) // media-level for first media overrides session-level
+					strcpy(desc.ice_pwd , pr.second.c_str());
 			} else if (pr.first == "ice-options") {
 				// RFC 8839: The "ice-options" attribute is a session-level and media-level
 				// attribute.
@@ -197,11 +197,11 @@ string Description::bundleMid() const {
 	return "0";
 }
 
-string Description::iceUfrag() const { return mIceUfrag; }
+string Description::iceUfrag() const { return desc.ice_ufrag ; }
 
 std::vector<string> Description::iceOptions() const { return mIceOptions; }
 
-string Description::icePwd() const { return mIcePwd; }
+string Description::icePwd() const { return desc.ice_pwd; }
 
 CertificateFingerprint Description::fingerprint() const { return mFingerprint; }
 
@@ -337,10 +337,10 @@ string Description::generateSdp(const string& eol) const {
 		// RFC 8829: Attributes that SDP permits to be at either the session level or the media level
 		// SHOULD generally be at the media level even if they are identical.
 		sdp << "a=setup:" << mRole << eol;
-		if (mIceUfrag.size())
-			sdp << "a=ice-ufrag:" << mIceUfrag << eol;
-		if (mIcePwd.size())
-			sdp << "a=ice-pwd:" << mIcePwd << eol;
+		if (*desc.ice_ufrag != '\0' )
+			sdp << "a=ice-ufrag:" << desc.ice_ufrag << eol;
+		if (*desc.ice_pwd != '\0' )
+			sdp << "a=ice-pwd:" << desc.ice_pwd << eol;
 
 		if (!entry->isRemoved() && std::exchange(first, false)) {
 			// Candidates
@@ -385,10 +385,10 @@ string Description::generateApplicationSdp(const string& eol) const {
 
 	// Media-level attributes
 	sdp << "a=setup:" << mRole << eol;
-	if (mIceUfrag.length())
-		sdp << "a=ice-ufrag:" << mIceUfrag << eol;
-	if (mIcePwd.length())
-		sdp << "a=ice-pwd:" << mIcePwd << eol;
+	if (*desc.ice_ufrag != '\0')
+		sdp << "a=ice-ufrag:" << desc.ice_ufrag  << eol;
+	if (*desc.ice_pwd != '\0')
+		sdp << "a=ice-pwd:" << desc.ice_pwd << eol;
 	if (mFingerprint.value.size())
 		sdp << "a=fingerprint:"
 		    << CertificateFingerprint::AlgorithmIdentifier(mFingerprint.algorithm) << " "

@@ -153,7 +153,7 @@ void PeerConnection::processLocalDescription(Description *description) {
 	description->setFingerprint(mCertificate->fingerprint());
         
        
-        std::cout << "Issuing local description: " << description->generateSdp("\r\n") << std::endl << std::flush;
+        //std::cout << "Issuing local description: " << description->generateSdp("\r\n") << std::endl << std::flush;
         
 
 	STrace << "Issuing local description: " << description->generateSdp("\r\n");
@@ -199,7 +199,7 @@ string PeerConnection::localBundleMid() {
 
 
 void PeerConnection::setLocalDescription(Description::Type type) {
-	STrace << "AgentNo " << iceTransport->agent.agentNo << "SetLocalDescription, type=" << Description::typeToString(type);
+	STrace << "AgentNo " << iceTransport->agent.agentNo << " SetLocalDescription, type=" << Description::typeToString(type);
 
 	SignalingState signalingState = mSignalingState.load();
 	if (type == Description::Type::Rollback) {

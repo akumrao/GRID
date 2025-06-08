@@ -124,7 +124,7 @@ typedef struct stun_credentials {
     uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
     std::vector<Attribute*> attributes;
     
-    unsigned int error_code;
+    unsigned int error_code{0};
     
     uint64_t ice_controlling{0};
     uint64_t ice_controlled{0};
