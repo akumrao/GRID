@@ -126,13 +126,43 @@ void Transport::resolveStunServer( )
    
 }
 
-void Transport::cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr)
+void Transport::cbDnsResolve(addrinfo* start,   void* ptr)
 {
     
     IceServer *icesv = (IceServer *)ptr;
-    icesv->ip = ip;
+   // icesv->ip = ip;
 
-     SInfo <<  "IceServer" <<  ip << ":" << port  ;
+    // SInfo <<  "IceServer" <<  ip << ":" << port  ;
+    
+                    char addr[40] = {'\0'};
+                int port =0; 
+
+                struct addrinfo*  res = start;
+                
+                for (;res != NULL; res = res->ai_next) 
+                { 
+                    
+                    if (res->ai_family == AF_INET) {
+                        // ipv4
+                        //char c[17] = { '\0' };
+                        
+                        sockaddr_in* tmp  =   (sockaddr_in*) res->ai_addr;
+                        port= htons(tmp->sin_port);
+                        uv_ip4_name(tmp, addr, 16);
+                        
+        
+                        
+                    } else if (res->ai_family == AF_INET6) {
+                        // ipv6
+                        //char c[40] = { '\0' };
+                        sockaddr_in6* tmp  =   (sockaddr_in6*) res->ai_addr;
+                        port= htons(tmp->sin6_port);
+                        uv_ip6_name(tmp, addr, 39);
+                    }
+                    LTrace("address ",  addr);
+                    // uv_tcp_connect(connect_req, socket, (const struct sockaddr*) res->ai_addr, on_connect);
+
+                }
 }
 
 void Transport::cbNameResolve(  const char* hostname, const char* service,  void* ptr)

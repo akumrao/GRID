@@ -4,6 +4,7 @@
 #include <uv.h>
 #include "base/logger.h"
 #include <Utils.h>
+#include <algorithm>
 
 #include "sdpcommon.h"
 
@@ -20,12 +21,15 @@ namespace stun {
 
     
     
-void thread_function() {
-    std::thread::id thread_id = std::this_thread::get_id();
-    std::cout << "Thread ID: " << thread_id << std::endl;
-}
+//void thread_function() {
+//    std::thread::id thread_id = std::this_thread::get_id();
+//    std::cout << "Thread ID: " << thread_id << std::endl;
+//}
 
     
+    bool comp(Candidate a, Candidate b) {
+        return a.priority() > b.priority();
+    }
     
     int64_t current_timestamp() {
 #ifdef _WIN32
@@ -62,6 +66,8 @@ void thread_function() {
         socket = new testUdpServer("0.0.0.0", ++port , this );
         socket->start();
         
+        
+        agent_change_state(JUICE_STATE_GATHERING);
 
         //char buf[512];
         uv_interface_address_t *info;
@@ -107,6 +113,11 @@ void thread_function() {
         }
 
         uv_free_interface_addresses(info, count);
+        
+        std::sort(localdesp.desc.candidates.begin(), localdesp.desc.candidates.end(), comp);
+        
+        agent_change_state(JUICE_STATE_CONNECTED);
+                
         return 0;
 
     }
@@ -544,6 +555,11 @@ void thread_function() {
     
     void Agent::onTimer()
     {
+        int64_t next_timestamp;
+        
+        int ret =  agent_bookkeeping( &next_timestamp) ;
+        
+        
 //        if (expired())
 //            // Attempt to re-allocate
 //            sendAllocate();
@@ -553,7 +569,7 @@ void thread_function() {
 //
 //        _observer.onTimer(*this);
         
-        int x = 1;
+
     }
 
     
@@ -1402,7 +1418,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 
 	if ((msg_class == STUN_CLASS_RESP_SUCCESS || msg_class == STUN_CLASS_RESP_ERROR) &&
 	    !transaction_id) {
-		LError("No transaction ID specified for STUN response");
+		SError << "AgentNo " << agentNo << " No transaction ID specified for STUN response";
 		return -1;
 	}
         
@@ -1436,7 +1452,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 		switch (msg_class) {
 		case STUN_CLASS_REQUEST: {
 			if (*remotedesp.desc.ice_ufrag == '\0' || *remotedesp.desc.ice_pwd == '\0') {
-				LDebug("Missing remote ICE credentials, dropping STUN binding request");
+				SError << "AgentNo " << agentNo << " Missing remote ICE credentials, dropping STUN binding request";
 				return 0;
 			}
 			snprintf(response.credentials.username, STUN_MAX_USERNAME_LEN, "%s:%s",remotedesp.desc.ice_ufrag, localdesp.desc.ice_ufrag);
@@ -1564,14 +1580,35 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 
 void Agent::agent_update_gathering_done()
 {
-    gathering_done = true;
-    agent_update_pac_timer();
-    SInfo  << "AgentNo " << agentNo << "agent_update_gathering_done()";
+    
+    //STrace <<  "Updating gathering status";
+     SInfo  << "AgentNo " << agentNo << " agent_update_gathering_done()";
+     
+	for (int i = 0; i < m_entries_count; ++i) {
+		agent_stun_entry_t *entry = m_entries + i;
+		if (entry->type != AGENT_STUN_ENTRY_TYPE_CHECK &&
+		    entry->state == AGENT_STUN_ENTRY_STATE_PENDING) {
+			STrace<< "AgentNo " << agentNo << " STUN server or relay entry %d is still pending" <<  i;
+			return;
+		}
+	}
+	if (!m_gathering_done) {
+		 SInfo  << "AgentNo " << agentNo << " Candidate gathering done";
+		localdesp.desc.finished = true;
+		m_gathering_done = true;
+
+		agent_update_pac_timer();
+                // callback
+		//if (agent->config.cb_gathering_done)
+			//agent->config.cb_gathering_done(agent, agent->config.user_ptr);
+	}
+    
 }
 
 
 void Agent::agent_change_state( juice_state_t state)
 {
+    m_state = state;
     SInfo  << "AgentNo " << agentNo << "agent_change_state " << state;
 }
 
@@ -1781,7 +1818,7 @@ int Agent::agent_bookkeeping( int64_t *next_timestamp)
 
 	if (nominated_pair && nominated_pair->state == ICE_CANDIDATE_PAIR_STATE_FAILED) {
 		LWarn("Lost connectivity");
-		//agent_change_state(JUICE_STATE_FAILED);
+		 agent_change_state(JUICE_STATE_FAILED);
 		//atomic_store(&selected_entry, NULL); // disallow sending
 		return 0;
 	}
@@ -1916,7 +1953,7 @@ void  Agent::agent_update_pac_timer() {
 	// checks (e.g., the Username Fragment and Password [...]) and has received some indication that
 	// the remote side is ready to start connectivity checks, typically via receipt of the values
 	// mentioned above.
-	if (*remotedesp.desc.ice_ufrag != '\0' && gathering_done) {
+	if (*remotedesp.desc.ice_ufrag != '\0' && m_gathering_done) {
 		LInfo("Connectivity timer started");
 		pac_timestamp = current_timestamp() + ICE_PAC_TIMEOUT;
 	}
@@ -1962,6 +1999,51 @@ int  Agent::agent_set_remote_description() {
 
 }
 
+
+
+int Agent::agent_resolve_servers( addrinfo* start)
+{
+    
+    
+//	// TURN server resolution
+//	  if (config.turn_servers_count > 0) 
+//          {
+//		............
+//	}
+
+
+    addrinfo* res = start ;
+    int i = 0 ;
+    for (;res != NULL; res = res->ai_next) 
+    { 
+
+            STrace << "AgentNo " << agentNo <<  " Registering STUN server request  " <<   m_entries_count ;
+
+            agent_stun_entry_t *entry = m_entries + m_entries_count;
+            entry->type = AGENT_STUN_ENTRY_TYPE_SERVER;
+            entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
+            entry->pair = NULL;
+
+            //entry->record = records[i];
+
+            IP::CopyAddress( res->ai_addr, entry->record);
+
+            random_bytes(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
+            entry->transaction_id_expired = false;
+            ++m_entries_count;
+            
+            
+            char ip[40];  uint16_t port;
+            IP::AddressToString(entry->record, ip, port) ;
+            SInfo << "AgentNo " << agentNo <<  ip << ":" <<port;
+
+            agent_arm_transmission( entry, STUN_PACING_TIME * i++);
+    }
+		
+    agent_update_gathering_done();
+	
+    return 0;
+}
 
 
 

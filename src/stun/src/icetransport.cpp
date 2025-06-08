@@ -390,16 +390,19 @@ void IceTransport::GatheringDoneCallback(juice_agent_t *, void *user_ptr) {
 
 
 
-void IceTransport::cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr)
+void IceTransport::cbDnsResolve(addrinfo* res,  void* ptr)
 {
-    SInfo <<   "AgentNo " << agent.agentNo << " On Candidate Address resolved " << ip << ":" << port  ;
+    SInfo <<   "AgentNo " << agent.agentNo << " On Candidate Address resolved ";
     
    // SInfo <<  "IceServer" <<  ip << ":" << port  ;
    
-    IceServer *icesv = (IceServer *)ptr;
-    icesv->ip = ip;
+   // IceServer *icesv = (IceServer *)ptr;
+   // icesv->ip = ip;
     
    //StartAgent( icesv->ip,  icesv->port);
+    
+   agent.agent_resolve_servers(res );
+   
 }
 
 void IceTransport::cbNameResolve( const char* hostname, const char* service,  void* ptr)

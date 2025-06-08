@@ -201,7 +201,7 @@ typedef struct agent_stun_entry {
     
     int agent_unfreeze_candidate_pair( ice_candidate_pair_t *pair);
     
-    
+    juice_state_t m_state{JUICE_STATE_DISCONNECTED};
     agent_mode_t m_mode{AGENT_MODE_UNKNOWN};
     int m_entries_count;
     
@@ -210,9 +210,6 @@ typedef struct agent_stun_entry {
     
     std::string localMid;
 
-    
-    juice_state_t m_state;
-    
     Timer _timer{ nullptr};
      
     void onTimer();
@@ -248,13 +245,15 @@ typedef struct agent_stun_entry {
     
     int  agent_set_remote_description();
     
+    int agent_resolve_servers( addrinfo* res);
+    
     agent_stun_entry_t m_selected_entry;
     
     uint64_t ice_tiebreaker;  // random number
         
     int64_t nomination_timestamp;
     int64_t pac_timestamp; 
-    bool  gathering_done{false};
+    bool  m_gathering_done{false};
     int agentNo;
   private:
     bool is_stun_datagram(const void *data, size_t size);
