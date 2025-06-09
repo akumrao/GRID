@@ -235,7 +235,7 @@ typedef struct agent_stun_entry {
     
     void agent_arm_keepalive(agent_stun_entry_t *entry);
     
-    int agent_bookkeeping( int64_t *next_timestamp);
+    int agent_bookkeeping( int64_t &now);
     
     void agent_update_gathering_done();
     
@@ -247,7 +247,7 @@ typedef struct agent_stun_entry {
     
     int agent_resolve_servers( addrinfo* res);
     
-    agent_stun_entry_t m_selected_entry;
+    agent_stun_entry_t *m_selected_entry{nullptr};
     
     uint64_t ice_tiebreaker;  // random number
         
@@ -257,6 +257,8 @@ typedef struct agent_stun_entry {
     int agentNo;
   private:
     bool is_stun_datagram(const void *data, size_t size);
+    
+    int64_t m_next_timestamp {0};
 
   };
 

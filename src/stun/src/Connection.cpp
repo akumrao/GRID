@@ -17,9 +17,9 @@ testUdpServer::testUdpServer(std::string IP, int port,   Agent *agent ) :IP(IP),
 
 }
 
-void testUdpServer::send( uint8_t* data, uint32_t nbytes, std::string ip, int port )
+void testUdpServer::send( uint8_t* data, uint32_t nbytes, addr_record_t &record )
 {
-     udpServer->send( (char*) data, nbytes , ip , port);
+     udpServer->send( (char*) data, nbytes , (const struct sockaddr*)&record.addr);
 }
       
 void testUdpServer::OnUdpSocketPacketReceived(UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr) {

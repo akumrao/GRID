@@ -31,7 +31,7 @@ namespace stun {
         return a.priority() > b.priority();
     }
     
-    int64_t current_timestamp() {
+    int64_t current_timestamp() { // millisecond time
 #ifdef _WIN32
 	return (timestamp_t)GetTickCount();
 #else // POSIX
@@ -51,6 +51,8 @@ namespace stun {
         _timer.cb_timeout = std::bind(&Agent::onTimer, this);
         _timer.Start(200,200);
         agentNo = ++agentCount;
+         m_next_timestamp = current_timestamp();
+       
     }
 
     Agent::~Agent() {
@@ -555,9 +557,11 @@ namespace stun {
     
     void Agent::onTimer()
     {
-        int64_t next_timestamp;
         
-        int ret =  agent_bookkeeping( &next_timestamp) ;
+        int64_t cur =  current_timestamp();
+                
+        if( m_next_timestamp <=  cur )
+        int ret =  agent_bookkeeping( cur) ;
         
         
 //        if (expired())
@@ -695,24 +699,24 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
    //msg->hasAttribute(stun::STUN_ATTR_USE_CANDIDATE)
     
     if (msg->msg_method  == STUN_METHOD_BINDING && msg->hasAttribute(stun::STUN_ATTR_MESSAGE_INTEGRITY )) {
-            LTrace("STUN message is from the remote peer");
+            STrace << "AgentNo " << agentNo << " On STUN message is from the remote peer";
             // Verify the message now
             if (agent_verify_stun_binding( buf, size, msg)) {
-                    LWarn("STUN message verification failed");
+                    SWarn << "AgentNo " << agentNo << " On STUN message verification failed";
                     return -1;
             }
             
             Priority *result;
             if( !msg->find(&result ))
             {
-                SError  << "AgentNo " << agentNo << "  Priority attribute is not in stun message";
+                SError  << "AgentNo " << agentNo << " On Stun Message. Priority attribute is not in stun message";
                 exit(0);
             }
             
   
             
             if (agent_add_remote_peer_reflexive_candidate( result->value, src)) {
-                    SWarn << "AgentNo " << agentNo << " Failed to add remote peer reflexive candidate from STUN message";
+                    SWarn << "AgentNo " << agentNo << " On Stun Message. Failed to add remote peer reflexive candidate from STUN message";
             }
     }
 
@@ -721,18 +725,18 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
             LTrace("STUN message is a response, looking for transaction ID");
             entry = agent_find_entry_from_transaction_id(msg->transaction_id);
             if (!entry) {
-                    SError << "AgentNo " << agentNo << " No STUN entry matching transaction ID, ignoring";
+                    SError << "AgentNo " << agentNo << " On Stun Message. No STUN entry matching transaction ID, ignoring";
                     return -1;
             }
     } else {
             LTrace("STUN message is a request or indication, looking for remote address");
             entry = agent_find_entry_from_record( src, relayed);
             if (entry) {
-                   STrace << "AgentNo " << agentNo << " Found STUN entry matching remote address";
+                   STrace << "AgentNo " << agentNo << " On Stun Message. Found STUN entry matching remote address";
             } else {
                     // This may happen normally, for instance when there is no space left for reflexive
                     // candidates
-                    SDebug << "AgentNo " << agentNo << " No STUN entry matching remote address, ignoring";
+                    SDebug << "AgentNo " << agentNo << " On Stun Message.  No STUN entry matching remote address, ignoring";
                     return 0;
             }
     }
@@ -742,7 +746,7 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
             // Message was verified earlier, no need to re-verify
             if (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK && !msg->hasAttribute(stun::STUN_ATTR_MESSAGE_INTEGRITY ) &&
                 (msg->msg_class == STUN_CLASS_REQUEST || msg->msg_class == STUN_CLASS_RESP_SUCCESS)) {
-                    SWarn << "AgentNo " << agentNo << " Missing integrity in STUN Binding message from remote peer, ignoring";
+                    SWarn << "AgentNo " << agentNo << " On Stun Message. Missing integrity in STUN Binding message from remote peer, ignoring";
                     return -1;
             }
            return agent_process_stun_binding( msg, entry, src, relayed);
@@ -750,7 +754,7 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
     case STUN_METHOD_ALLOCATE:
     case STUN_METHOD_REFRESH:
             if (agent_verify_credentials( entry, buf, size, msg)) {
-                    SWarn << "AgentNo " << agentNo << " Ignoring TURN Allocate message with invalid credentials (Is server authentication disabled?";
+                    SWarn << "AgentNo " << agentNo << " On Stun Message. Ignoring TURN Allocate message with invalid credentials (Is server authentication disabled?";
                     return -1;
             }
            // return agent_process_turn_allocate(agent, msg, entry);
@@ -759,7 +763,7 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
 
     case STUN_METHOD_CREATE_PERMISSION:
             if (agent_verify_credentials( entry, buf, size, msg)) {
-                    SWarn << "AgentNo " << agentNo << " Ignoring TURN CreatePermission message with invalid credentials";
+                    SWarn << "AgentNo " << agentNo << " On Stun Message. Ignoring TURN CreatePermission message with invalid credentials";
                     return -1;
             }
            // return agent_process_turn_create_permission(agent, msg, entry);
@@ -780,7 +784,7 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
             exit(0);
 
     default:
-            SWarn << "AgentNo " << agentNo << " Unknown STUN method 0x%X, ignoring " <<  msg->msg_method;
+            SWarn << "AgentNo " << agentNo << " On Stun Message. Unknown STUN method 0x%X, ignoring " <<  msg->msg_method;
             return -1;
     }
 }
@@ -1025,7 +1029,7 @@ static bool addr_record_is_equal(const addr_record_t *a, const addr_record_t *b,
 
 agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *record, const addr_record_t *relayed) 
 {
-	agent_stun_entry_t *selected_entry = &m_selected_entry;
+	agent_stun_entry_t *selected_entry = m_selected_entry;
 
 	if (selected_entry && selected_entry->pair && selected_entry->pair->nominated) {
 		// As an optimization, try to match the nominated entry first
@@ -1037,12 +1041,12 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 //				return selected_entry;
 			}
 		} else {
-//			if (!entry_is_relayed(selected_entry) &&
-//			    addr_record_is_equal(&selected_entry->record, record, true)) {
-//				LDebug("STUN selected entry matching incoming address");
-//				return selected_entry;
-//			}
-//		}
+			if (!entry_is_relayed(selected_entry) &&
+			    addr_record_is_equal(&selected_entry->record, record, true)) {
+				SDebug << "AgentNo " << agentNo <<   " STUN selected entry matching incoming address" ;
+				return selected_entry;
+			}
+		
 	}
 
 	if (relayed) {
@@ -1072,7 +1076,7 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 			for (int i = 0; i < m_entries_count; ++i) {
 				agent_stun_entry_t *entry = m_entries + i;
 				if (entry->pair == matching_pair) {
-					SDebug << "STUN entry " << i  << " pair matching incoming address";
+					SDebug << "AgentNo " << agentNo << " STUN entry " << i  << " pair matching incoming address";
 					return entry;
 				}
 			}
@@ -1082,7 +1086,7 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 		for (int i = 0; i < m_entries_count; ++i) {
 			agent_stun_entry_t *entry = m_entries + i;
 			if (!entry_is_relayed(entry) && addr_record_is_equal(&entry->record, record, true)) {
-				SDebug << "STUN entry " << i << "  matching incoming address";
+				SDebug << "AgentNo " << agentNo << " STUN entry " << i << "  matching incoming address";
 				return entry;
 			}
 		}
@@ -1592,13 +1596,23 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
         printf("\n---------------\n");
         
         
+        char ip[40];  uint16_t port;
+        IP::AddressToString(entry->record, ip, port) ;
+        
+        
+        SInfo <<  "AgentNo " << agentNo << " send stun request to " << ip << ":" << port; 
+             
+
+        
         /* and read it again. */
         stun::Message msg;
   
         stun::Reader reader;
 
         reader.process((uint8_t*)&writer.buffer[0],writer.buffer.size(), &msg); /* we do -1 to exclude the string terminating nul char. */
-    
+            
+        socket->send(&writer.buffer[0], writer.buffer.size(), entry->record);
+            
 
         
 	return 0;
@@ -1640,16 +1654,16 @@ void Agent::agent_change_state( juice_state_t state)
 }
 
 
-int Agent::agent_bookkeeping( int64_t *next_timestamp) 
+int Agent::agent_bookkeeping( int64_t &now) 
 {
-	LTrace("Bookkeeping...");
 
-	int64_t now = current_timestamp();
-	*next_timestamp = now + 6000000;
+	m_next_timestamp = now + (int64_t)60000;
 
 	if (m_state == JUICE_STATE_DISCONNECTED || m_state == JUICE_STATE_GATHERING)
 		return 0;
 
+        STrace  << "AgentNo " << agentNo << " Bookkeeping..." ; 
+        
 	for (int i = 0; i < m_entries_count; ++i) {
 		agent_stun_entry_t *entry = m_entries + i;
 
@@ -1808,7 +1822,7 @@ int Agent::agent_bookkeeping( int64_t *next_timestamp)
 			if (m_mode == AGENT_MODE_CONTROLLING && selected_pair) {
 				// A higher-priority pair will be used, we can stop checking.
 				// Entries will be synchronized after the current loop.
-				LTrace("Cancelling check for lower-priority pair");
+				STrace << "AgentNo " << agentNo << " Cancelling check for lower-priority pair";
 				pair->state = ICE_CANDIDATE_PAIR_STATE_FROZEN;
 			} else {
 				++pending_count;
@@ -1824,7 +1838,7 @@ int Agent::agent_bookkeeping( int64_t *next_timestamp)
 			ice_candidate_pair_t *pair = m_ordered_pairs[i];
 			if (pair != nominated_pair && pair->state == ICE_CANDIDATE_PAIR_STATE_PENDING) {
 				// Entries will be synchronized after the current loop.
-				LTrace("Cancelling check for non-nominated pair");
+				STrace << "AgentNo " << agentNo << " Cancelling check for non-nominated pair";
 				pair->state = ICE_CANDIDATE_PAIR_STATE_FROZEN;
 			}
 		}
@@ -1844,9 +1858,10 @@ int Agent::agent_bookkeeping( int64_t *next_timestamp)
 	}
 
 	if (nominated_pair && nominated_pair->state == ICE_CANDIDATE_PAIR_STATE_FAILED) {
-		LWarn("Lost connectivity");
+		SWarn << "AgentNo " << agentNo << " Lost connectivity";
 		 agent_change_state(JUICE_STATE_FAILED);
 		//atomic_store(&selected_entry, NULL); // disallow sending
+                 m_selected_entry = NULL;
 		return 0;
 	}
 
@@ -1865,6 +1880,7 @@ int Agent::agent_bookkeeping( int64_t *next_timestamp)
 				agent_stun_entry_t *entry = m_entries + i;
 				if (entry->pair == selected_pair) {
 					//atomic_store(&agent->selected_entry, entry);
+                                        m_selected_entry =  entry; 
 					break;
 				}
 			}
@@ -1919,7 +1935,7 @@ int Agent::agent_bookkeeping( int64_t *next_timestamp)
 				if (pending_count == 0 ||
 				    (nomination_timestamp && now >= nomination_timestamp)) {
 					// Nominate selected
-					LDebug("Requesting pair nomination (controlling)");
+					SDebug << "AgentNo " << agentNo << " Requesting pair nomination (controlling)";
 					selected_pair->nomination_requested = true;
 					for (int i = 0; i < m_entries_count; ++i) {
 						agent_stun_entry_t *entry = m_entries + i;
@@ -1932,8 +1948,8 @@ int Agent::agent_bookkeeping( int64_t *next_timestamp)
 						}
 					}
 				} else if (nomination_timestamp &&
-				           *next_timestamp > nomination_timestamp) {
-					*next_timestamp = nomination_timestamp;
+				           m_next_timestamp > nomination_timestamp) {
+					m_next_timestamp = nomination_timestamp;
 				}
 			}
 		}
@@ -1942,28 +1958,31 @@ int Agent::agent_bookkeeping( int64_t *next_timestamp)
 		// RFC 8863: While the timer is still running, the ICE agent MUST NOT update a checklist
 		// state from Running to Failed, even if there are no pairs left in the checklist to check.
 		if (now >= pac_timestamp) {
-			LInfo("Connectivity timer expired");
+			SWarn  << "AgentNo " << agentNo << " Connectivity timer expired";
 			agent_change_state(JUICE_STATE_FAILED);
 			//atomic_store(&selected_entry, NULL); // disallow sending
+                        m_selected_entry =  NULL;
 			return 0;
-		} else if (*next_timestamp > pac_timestamp) {
-			*next_timestamp = pac_timestamp;
+		} else if (m_next_timestamp > pac_timestamp) {
+			m_next_timestamp = pac_timestamp;
 		}
 	}
 
 	for (int i = 0; i < m_entries_count; ++i) {
 		agent_stun_entry_t *entry = m_entries + i;
-		if (entry->next_transmission && *next_timestamp > entry->next_transmission)
-			*next_timestamp = entry->next_transmission;
+		if (entry->next_transmission && m_next_timestamp > entry->next_transmission)
+			m_next_timestamp = entry->next_transmission;
 
 #if JUICE_DISABLE_CONSENT_FRESHNESS
 		// No expiration
 #else
 		if (entry->state == AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE && entry->pair &&
-		    *next_timestamp > entry->pair->consent_expiry)
-			*next_timestamp = selected_pair->consent_expiry;
+		    m_next_timestamp > entry->pair->consent_expiry)
+			m_next_timestamp = selected_pair->consent_expiry;
 #endif
 	}
+        
+         SInfo  << "AgentNo " << agentNo << " Bookkeeping end";
 
 	return 0;
 }
@@ -2098,7 +2117,7 @@ void Agent::StartAgent( std::string &stunip, uint16_t &stunport)
     printf("\n---------------\n");
 
 
-    socket->send(&writer.buffer[0], writer.buffer.size(), stunip, stunport);
+   // socket->send(&writer.buffer[0], writer.buffer.size(), stunip, stunport);
 
 //
 
