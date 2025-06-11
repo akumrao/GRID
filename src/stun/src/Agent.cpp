@@ -49,7 +49,7 @@ namespace stun {
 
         random_bytes(&ice_tiebreaker, sizeof(ice_tiebreaker));
         _timer.cb_timeout = std::bind(&Agent::onTimer, this);
-        _timer.Start(200,200);
+        _timer.Start(20,20);
         agentNo = ++agentCount;
          m_next_timestamp = current_timestamp();
        
@@ -82,7 +82,6 @@ namespace stun {
         while (i--) {
             uv_interface_address_t interface_a = info[i];
         
-            //SInfo << "Internal? %s\n", interface_a.is_internal ? "Yes" : "No");
 
             Candidate candidate;
             candidate.mType = Candidate::Type::Host;
@@ -138,6 +137,7 @@ namespace stun {
     
     int Agent::ice_create_local_reflexive_candidate( Candidate *candidate) {
 
+        SInfo <<  "AgentNo " << agentNo << " ice_create_local_reflexive_candidate";
        
         if (candidate->mType !=  Candidate::Type::ServerReflexive && candidate->mType  !=  Candidate::Type::PeerReflexive) {
 		LError("Invalid type for local reflexive candidate");
@@ -317,7 +317,7 @@ namespace stun {
         
         //ice_generate_candidate_sdp(candidate, buffer, 4096);
         
-        SInfo<< "AgentNo " << agentNo << " local ice_add_candidate  " << candidate;
+        SInfo<< "AgentNo " << agentNo << " local ice_add_candidate  " << string(*candidate);
         
         mCandidateCallback(*candidate);
         
@@ -623,22 +623,10 @@ namespace stun {
 		return 0;
 
 	if (is_stun_datagram(buf, len)) {
-//		if (LDebug_ENABLED) {
-//			char src_str[ADDR_MAX_STRING_LEN];
-//			addr_record_to_string(src, src_str, ADDR_MAX_STRING_LEN);
-//			if (relayed) {
-//				char relayed_str[ADDR_MAX_STRING_LEN];
-//				addr_record_to_string(relayed, relayed_str, ADDR_MAX_STRING_LEN);
-//				LDebug("Received STUN datagram from %s relayed via %s", src_str, relayed_str);
-//			} else {
-//				LDebug("Received STUN datagram from %s", src_str);
-//			}
-//		}
-
                 
                 stun::Message msg;
                 stun::Reader reader;
-                if( !reader.process((uint8_t*) buf, len, &msg))
+                if( reader.process((uint8_t*) buf, len, &msg))
                 {
                     SError << "AgentNo " << agentNo << " STUN message reading failed";
 		    return -1;
@@ -648,18 +636,8 @@ namespace stun {
 		return agent_dispatch_stun( buf, len, &msg, src, relayed);
 	}
 
-//	if (LDebug_ENABLED) {
-//		char src_str[ADDR_MAX_STRING_LEN];
-//		addr_record_to_string(src, src_str, ADDR_MAX_STRING_LEN);
-//		if (relayed) {
-//			char relayed_str[ADDR_MAX_STRING_LEN];
-//			addr_record_to_string(relayed, relayed_str, ADDR_MAX_STRING_LEN);
-//			LDebug("Received non-STUN datagram from %s relayed via %s", src_str, relayed_str);
-//		} else {
-//			LDebug("Received non-STUN datagram from %s", src_str);
-//		}
-//	}
-        
+
+        // For Turn
         /*
 	agent_stun_entry_t *entry = agent_find_entry_from_record(agent, src, relayed);
 	if (!entry) {
@@ -740,6 +718,10 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
                     return 0;
             }
     }
+    
+    char ip[40];  uint16_t port;
+    IP::AddressToString(entry->record, ip, port); 
+    STrace << "On Message AgentNo " << agentNo  <<    " type server[1]/relay[2] " <<   entry->type  <<   " mode controlled[1]/controlling[2] " <<  entry->mode  << " state PENDING[0]/CANCELLED[1]/FAILED[2]SUCCEEDED[3]KEEPALIVE[4]IDLE[5] " <<  entry->state << " add " << ip << port;
 
     switch (msg->msg_method) {
     case STUN_METHOD_BINDING:
@@ -1189,8 +1171,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 		break;
 	}
 	case STUN_CLASS_RESP_SUCCESS: {
-		LDebug("Received STUN Binding success response from %s",
-		           entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer" : "server");
+		SDebug<< "Received STUN Binding success response from " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer" : "server");
 
 		if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER)
 			LInfo("STUN server binding successful");
@@ -1208,12 +1189,6 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 
 		if (msg->mapped->len && !relayed) {
 			LTrace("Response has mapped address");
-
-//			if (_DEBUG && entry->type != AGENT_STUN_ENTRY_TYPE_CHECK) {
-//				char mapped_str[ADDR_MAX_STRING_LEN];
-//				addr_record_to_string(&msg->mapped, mapped_str, ADDR_MAX_STRING_LEN);
-//				LInfo("Got STUN mapped address %s from server", mapped_str);
-//			}
 
 			Candidate::Type type = (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK)
 			                                ? Candidate::Type::PeerReflexive
@@ -1281,8 +1256,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 			// [...] once the check is sent and if it generates a successful response, and
 			// generates a valid pair, the agent sets the nominated flag of the pair to true.
 			if (pair->nomination_requested) {
-				LDebug("Got a nominated pair (%s)",
-				           m_mode == AGENT_MODE_CONTROLLING ? "controlling" : "controlled");
+				SDebug  << "Got a nominated pair " <<  (m_mode == AGENT_MODE_CONTROLLING ? "controlling" : "controlled");
 				pair->nominated = true;
 			}
 		} else if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER) {
@@ -1309,10 +1283,8 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 					// attribute in the request, the agent MUST switch to the controlled role. Once
 					// the agent has switched its role, the agent MUST [...] set the candidate pair
 					// state to Waiting [and] change the tiebreaker value.
-					LWarn("ICE role conflict");
-					LDebug("Switching roles to %s as requested",
-					           entry->mode == AGENT_MODE_CONTROLLING ? "controlled"
-					                                                 : "controlling");
+					SWarn <<  "AgentNo " << agentNo <<  " ICE role conflict";
+					SDebug<< "AgentNo " << agentNo << " Switching roles to as requested " <<  (entry->mode == AGENT_MODE_CONTROLLING ? "controlled" : "controlling" );
 					m_mode = entry->mode == AGENT_MODE_CONTROLLING ? AGENT_MODE_CONTROLLED
 					                                                    : AGENT_MODE_CONTROLLING;
 					random_bytes(&ice_tiebreaker, sizeof(ice_tiebreaker));
@@ -1323,7 +1295,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 						agent_arm_transmission( entry, 0);
 					}
 				} else {
-					SDebug << "Already switched roles to %s as requested" << (m_mode == AGENT_MODE_CONTROLLING ? "controlling" : "controlled");
+					SDebug << "AgentNo " <<  " Already switched roles to as requested" << (m_mode == AGENT_MODE_CONTROLLING ? "controlling" : "controlled");
 				}
 			} else {
 				// 7.2.5.2.4. Unrecoverable STUN Response:
@@ -1336,7 +1308,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 					entry->pair->state = ICE_CANDIDATE_PAIR_STATE_FAILED;
 			}
 		} else if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER) {
-			LInfo("STUN server binding failed (unrecoverable error)");
+			SError<< "AgentNo " <<  " STUN server binding failed (unrecoverable error)";
 			entry->state = AGENT_STUN_ENTRY_STATE_FAILED;
 			agent_update_gathering_done();
                         SInfo  << "AgentNo " << agentNo << "agent_update_gathering_done()";    
@@ -1667,19 +1639,17 @@ int Agent::agent_bookkeeping( int64_t &now)
 	for (int i = 0; i < m_entries_count; ++i) {
 		agent_stun_entry_t *entry = m_entries + i;
 
+                char ip[40];  uint16_t port;
+                IP::AddressToString(entry->record, ip, port); 
+                    
+                STrace << "AgentNo " << agentNo  << " ent " << i <<    " type server[1]/relay[2] " <<   entry->type  <<   " mode controlled[1]/controlling[2] " <<  entry->mode  << " state PENDING[0]/CANCELLED[1]/FAILED[2]SUCCEEDED[3]KEEPALIVE[4]IDLE[5] " <<  entry->state << " add " << ip << port;
 		// STUN requests transmission or retransmission
 		if (entry->state == AGENT_STUN_ENTRY_STATE_PENDING) {
 			if (entry->next_transmission > now)
 				continue;
 
 			if (entry->retransmissions >= 0) {
-//				if (LDebug_ENABLED) {
-//					char record_str[ADDR_MAX_STRING_LEN];
-//					addr_record_to_string(&entry->record, record_str, ADDR_MAX_STRING_LEN);
-//					LDebug("STUN entry %d: Sending request to %s (%d retransmission%s left)", i,
-//					           record_str, entry->retransmissions,
-//					           entry->retransmissions >= 2 ? "s" : "");
-//				}
+
 				if (entry->transaction_id_expired) {
                                         random_bytes(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
 					entry->transaction_id_expired = false;
@@ -1719,13 +1689,13 @@ int Agent::agent_bookkeeping( int64_t &now)
 				break;
 
 			case AGENT_STUN_ENTRY_TYPE_SERVER:
-				LTrace("STUN server binding failed");
+				STrace << "AgentNo " << agentNo  << " STUN server binding failed";
 				agent_update_gathering_done();
 				break;
 
 			default:
 				if (entry->pair) {
-					LTrace("Candidate pair check failed");
+					SWarn << "AgentNo " << agentNo  <<" Candidate pair check failed";
 					entry->pair->state = ICE_CANDIDATE_PAIR_STATE_FAILED;
 				}
 				break;
@@ -2084,9 +2054,11 @@ int Agent::agent_resolve_servers( addrinfo* start)
             SInfo << "AgentNo " << agentNo << " add " << ip << ":" <<port;
 
             agent_arm_transmission( entry, STUN_PACING_TIME * i++);
+            onTimer();
+            break; // Arvind remote it later
     }
 		
-    agent_update_gathering_done();
+    //agent_update_gathering_done();
 	
     return 0;
 }

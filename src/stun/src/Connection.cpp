@@ -4,7 +4,7 @@
 
 
 using namespace stun;
-
+using namespace base::net;
 
 namespace rtc
 {
@@ -34,57 +34,65 @@ void testUdpServer::OnUdpSocketPacketReceived(UdpServer* socket, const char* dat
 
   //  on_udp_data(data ,len );
 
-    std::cout  <<  " ip " << peerIp << ":" << peerPort   << std::endl << std::flush;
+    STrace  <<  " OnUdpSocketPacketReceived ip " << peerIp << ":" << peerPort ;
+    
+    addr_record_t src;
+    
+    IP::CopyAddress(remoteAddr, src );
+    
+    agent->onStunMessage((char *)data, len,  &src, nullptr );
     
     
-    stun::Message msg;
-    stun::Reader stun;
-    int r = stun.process((uint8_t*)data, len, &msg);
-
-    if (r == 0) 
-    {
-      /* valid stun message */
-     // msg.computeMessageIntegrity(PASSWORD);
-
-        
-        //Agent agent( locadesp);
-        
-        
-        XorMappedAddress* result;
-                
-        msg.find( &result );
-        
-        Candidate candidate;
-        candidate.mType = Candidate::Type::ServerReflexive;
-        
-        std::memcpy(&candidate.resolved.addr , remoteAddr, sizeof(struct sockaddr));
-        candidate.resolved.len = sizeof(struct sockaddr);
-                    
-
-        agent->ice_create_local_reflexive_candidate( &candidate );
-       
-        // printf("final family: %u, address:%s, port: %d\n", result->family,  result->address, result->port);
-        //SInfo << "family " << result->family << " address " <<  result->address << " port " << result->port   ;
-        
-        
-       // socket = new testUdpServer("0.0.0.0", ++inc , localDes );
-       // socket->start();
+    return ;
     
-        
-    }
-    else if (r == 1) {
-      /* other data, e.g. DTLS ClientHello or SRTP data */   
-     // if (dtls_parser_ptr) {
-        //dtls_parser_ptr->process(data, nbytes);
-     // }
-    }
-    else {
-      printf("Error: unhandled stun::Reader::process() result.\n");
-      exit(1);
-    }
-  
-  
-    shutdown();
+//    stun::Message msg;
+//    stun::Reader stun;
+//    int r = stun.process((uint8_t*)data, len, &msg);
+//
+//    if (r == 0) 
+//    {
+//      /* valid stun message */
+//     // msg.computeMessageIntegrity(PASSWORD);
+//
+//        
+//        //Agent agent( locadesp);
+//        
+//        
+//        XorMappedAddress* result;
+//                
+//        msg.find( &result );
+//        
+//        Candidate candidate;
+//        candidate.mType = Candidate::Type::ServerReflexive;
+//        
+//        std::memcpy(&candidate.resolved.addr , remoteAddr, sizeof(struct sockaddr));
+//        candidate.resolved.len = sizeof(struct sockaddr);
+//                    
+//
+//        agent->ice_create_local_reflexive_candidate( &candidate );
+//       
+//        // printf("final family: %u, address:%s, port: %d\n", result->family,  result->address, result->port);
+//        //SInfo << "family " << result->family << " address " <<  result->address << " port " << result->port   ;
+//        
+//        
+//       // socket = new testUdpServer("0.0.0.0", ++inc , localDes );
+//       // socket->start();
+//    
+//        
+//    }
+//    else if (r == 1) {
+//      /* other data, e.g. DTLS ClientHello or SRTP data */   
+//     // if (dtls_parser_ptr) {
+//        //dtls_parser_ptr->process(data, nbytes);
+//     // }
+//    }
+//    else {
+//      printf("Error: unhandled stun::Reader::process() result.\n");
+//      exit(1);
+//    }
+//  
+//  
+//    shutdown();
 
 }    
     
