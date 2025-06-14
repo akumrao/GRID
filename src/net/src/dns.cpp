@@ -55,7 +55,7 @@ namespace base {
 //                    obj->cbDnsResolve(res, addr, port, obj->clsPtr);
 //                }
                 
-                obj->cbDnsResolve(start,  obj->clsPtr);
+                obj->cbDnsResolve(start);
                 
                 uv_freeaddrinfo(start);
                 
@@ -66,7 +66,7 @@ namespace base {
             void GetAddrInfoReq::resolve(const std::string& host, int port, uv_loop_t * loop, void* ptr) {
 
                 req = new uv_getaddrinfo_t; 
-                this->clsPtr =ptr;
+                //this->clsPtr =ptr;
                 req->data = this;
                 int r;
 
@@ -91,31 +91,40 @@ namespace base {
             }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             
-            void getnameinfo_cb(uv_getnameinfo_t* handle, int status, const char* hostname, const char* service) 
+            void  GetNameInfoReq::getnameinfo_cb1(uv_getnameinfo_t* handle, int status, const char* hostname, const char* service) 
             {
-                       
-                GetNameInfoReq *obj = (GetNameInfoReq*) handle->data;
+                  stTmp *tmp       =(stTmp * )handle->data;
+                 
+                GetNameInfoReq *obj = (GetNameInfoReq*) tmp->clsPtr;
                
                 if (status < 0 ) {
                     LError(  "getnameinfo callback error ", uv_err_name(status));
+                    delete tmp;
                     delete handle;
                     //obj->cbDnsResolve(nullptr, "",0);
                     return;
                 }
-                    STrace << "Reolved Hostname:" <<  hostname;
+                    STrace << "Reolved Hostname:" <<  hostname << " dir " << tmp->data;
                     STrace << "Resolved Service:" <<  service;
-                    obj->cbNameResolve(hostname, service, obj->clsPtr);
-                delete handle;
+                    obj->cbNameResolve(hostname, service, tmp->data);
+                
+                    delete tmp;
+                    
+                    delete handle;
             }
                 
               void GetNameInfoReq::resolveName(sockaddr_storage &addrStorage,  uv_loop_t * loop, void* ptr) 
               {
                 req = new uv_getnameinfo_t; 
-                this->clsPtr =ptr;
-                req->data = this;
+                
+                stTmp *tmp = new stTmp;
+                tmp->clsPtr = this ;
+                tmp->data = ptr;
+                
+                req->data = tmp;
                 int r;
 
-                r = uv_getnameinfo(loop, req, getnameinfo_cb, (const struct sockaddr*)&addrStorage, 0); 
+                r = uv_getnameinfo(loop, req, getnameinfo_cb1, (const struct sockaddr*)&addrStorage, 0); 
                 assert(r == 0);
 
             }

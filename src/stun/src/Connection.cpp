@@ -134,10 +134,10 @@ void Transport::resolveStunServer( )
    
 }
 
-void Transport::cbDnsResolve(addrinfo* start,   void* ptr)
+void Transport::cbDnsResolve(addrinfo* start)
 {
     
-    IceServer *icesv = (IceServer *)ptr;
+    //IceServer *icesv = (IceServer *)ptr;
    // icesv->ip = ip;
 
     // SInfo <<  "IceServer" <<  ip << ":" << port  ;

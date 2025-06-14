@@ -70,7 +70,7 @@ private:
         //int ice_generate_sdp(Description *description,  char *buffer, size_t size);
 
         
-        void cbDnsResolve(addrinfo* res,  void* ptr) ;
+        void cbDnsResolve(addrinfo* res) ;
         
         void cbNameResolve(  const char* hostname, const char* service,  void* ptr);
 

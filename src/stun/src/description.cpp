@@ -67,6 +67,15 @@ namespace rtc {
 
 namespace utils = impl::utils;
 
+
+Description::Description(const string &sdp, string typeString)
+{
+     readSdp(sdp, !typeString.empty() ? stringToType(typeString) : Type::Unspec,
+                  Role::ActPass);
+    
+    
+}
+
 void Description::readSdp(const string &sdp, Type type, Role role)
 {
     
@@ -94,7 +103,7 @@ void Description::readSdp(const string &sdp, Type type, Role role)
 
 		} else if (match_prefix(line, "a=")) { // Attribute line
 			string attr = line.substr(2);
-			std::pair<const string&, const string&> pr = parse_pair(attr);
+			std::pair<const string, const string> pr = parse_pair(attr);
 
 			if (pr.first == "setup") {
 				if (pr.second == "active")
@@ -177,7 +186,7 @@ void Description::readSdp(const string &sdp, Type type, Role role)
 	}
 }
 
-Description::Description():mCandidates(desc.candidates)
+Description::Description()
 {
 }
 
@@ -248,16 +257,16 @@ void Description::Entry::removeAttribute(const string &attr) {
 }
 
 //std::vector<Candidate> Description::candidates() const { return mCandidates; }
-
+//
 std::vector<Candidate> Description::extractCandidates() {
 	std::vector<Candidate> result;
-	std::swap(mCandidates, result);
+	//std::swap(mCandidates, result);
 	mEnded = false;
 	return result;
 }
 
 bool Description::hasCandidate(const Candidate &candidate) const {
-	return std::find(mCandidates.begin(), mCandidates.end(), candidate) != mCandidates.end();
+	return std::find(desc.candidates , desc.candidates + desc.candidates_count, candidate) !=    desc.candidates + desc.candidates_count;
 }
 
 Candidate* Description::addCandidate(Candidate candidate) {
@@ -267,9 +276,26 @@ Candidate* Description::addCandidate(Candidate candidate) {
 	if (!hasCandidate(candidate))
 	{
 
-            mCandidates.emplace_back(candidate);
-            ret= &mCandidates[mCandidates.size() -1];
+            desc.candidates[desc.candidates_count] = candidate;
+            ++desc.candidates_count;
+            ret= desc.candidates + desc.candidates_count -1 ;
+            
         }
+        else
+        {
+            int x = 1;
+        }
+        
+/*        
+        
+        for (int i = 0; i < desc.candidates_count; ++i) 
+        {
+            Candidate *cand = desc.candidates + i;
+            STrace << "interate " <<  string(*cand) << " " <<  cand ;
+        }
+
+ 
+*/        
         return ret;
 }
 
@@ -344,8 +370,8 @@ string Description::generateSdp(const string& eol) const {
 
 		if (!entry->isRemoved() && std::exchange(first, false)) {
 			// Candidates
-			for (const auto &candidate : mCandidates)
-				sdp << string(candidate) << eol;
+			    for (int i = 0; i < desc.candidates_count; ++i) 
+  				sdp << string(desc.candidates[i]) << eol;
 
 			if (mEnded)
 				sdp << "a=end-of-candidates" << eol;
@@ -395,8 +421,8 @@ string Description::generateApplicationSdp(const string& eol) const {
 		    << mFingerprint.value << eol;
 
 	// Candidates
-	for (const auto &candidate : mCandidates)
-		sdp << string(candidate) << eol;
+	for (int i = 0; i < desc.candidates_count; ++i) 
+		sdp << string(desc.candidates[i]) << eol;
 
 	if (mEnded)
 		sdp << "a=end-of-candidates" << eol;
@@ -407,7 +433,9 @@ string Description::generateApplicationSdp(const string& eol) const {
 Candidate Description::defaultCandidate() const {
 	// Return the first host candidate with highest priority, favoring IPv4
 	Candidate result;
-	for (const auto &c : mCandidates) {
+	for (int i = 0; i < desc.candidates_count; ++i) // for (const auto &c : mCandidates) 
+        {
+            Candidate c = desc.candidates[i];
 		if (c.type() == Candidate::Type::Host) {
 			if (
 			    (result.family() == AF_INET6 &&

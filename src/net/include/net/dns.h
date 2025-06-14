@@ -35,7 +35,7 @@ namespace base {
 //            }
             
             
-            virtual void cbDnsResolve(addrinfo* res,  void* ptr) {
+            virtual void cbDnsResolve(addrinfo* res) {
                // LTrace("GetAddrInfoReq::cbDnsResolve");
             }
 
@@ -46,24 +46,28 @@ namespace base {
 
             uv_getaddrinfo_t *req;
             
-            void* clsPtr{nullptr}; 
+             //void* clsPtr{nullptr}; 
 
         };
         
         
         struct GetNameInfoReq {
 
-            virtual void cbNameResolve(  const char* hostname, const char* service,  void* ptr) {
+            virtual void cbNameResolve(  const char* hostname, const char* service,  void* data) {
                // LTrace("GetAddrInfoReq::cbDnsResolve");
             }
 
-            static void on_resolved(uv_getaddrinfo_t* handle, int status, struct addrinfo* res) ;
+            static void getnameinfo_cb1(uv_getnameinfo_t* handle, int status, const char* hostname, const char* service); 
 
             void resolveName(sockaddr_storage &addrStorage,  uv_loop_t * loop, void* ptr=nullptr) ;
 
-            uv_getnameinfo_t *req;
+            uv_getnameinfo_t *req{nullptr};
             
-            void* clsPtr{nullptr}; 
+            struct stTmp
+            {
+                void* clsPtr{nullptr}; 
+                void* data{nullptr}; 
+            };
 
         };
         

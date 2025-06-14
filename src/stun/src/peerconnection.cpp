@@ -159,21 +159,21 @@ void PeerConnection::processLocalDescription(Description *description) {
 	STrace << "Issuing local description: " << description->generateSdp("\r\n");
 
 
-	//updateTrackSsrcCache(description);
+	//updateTrackSsrcCache(description); TBD
 
-	{
-		// Set as local description
-		std::lock_guard<std::recursive_mutex> lock(mLocalDescriptionMutex);
-
-		std::vector<Candidate> existingCandidates;
-		if (mLocalDescription.desc.candidates.size()) {
-			existingCandidates = mLocalDescription.extractCandidates();
-			//mCurrentLocalDescription.emplace(std::move(*mLocalDescription));
-		}
-
-		//mLocalDescription.emplace(description);
-		mLocalDescription.addCandidates(std::move(existingCandidates));
-	}
+//	{
+//		// Set as local description
+//		std::lock_guard<std::recursive_mutex> lock(mLocalDescriptionMutex);
+//
+//		std::vector<Candidate> existingCandidates;
+//		if (mLocalDescription.desc.candidates.size()) {
+//			existingCandidates = mLocalDescription.extractCandidates();
+//			//mCurrentLocalDescription.emplace(std::move(*mLocalDescription));
+//		}
+//
+//		//mLocalDescription.emplace(description);
+//		mLocalDescription.addCandidates(std::move(existingCandidates));
+//	}
 
 //	mProcessor.enqueue(&PeerConnection::trigger<Description>, shared_from_this(),
 //	                   &localDescriptionCallback, std::move(description));
@@ -299,7 +299,11 @@ bool PeerConnection::changeSignalingState(SignalingState newState) {
 
 void PeerConnection::setRemoteDescription(Description description) {
 	SDebug << "Setting remote description: " << string(description);
-
+        mRemoteDescription = std::move(description);
+        iceTransport->agent.agent_set_remote_description();
+                
+        return ;
+        
 	if (description.type() == Description::Type::Rollback) {
 		// This is mostly useless because we accept any offer
 		STrace << "Rolling back pending remote description";

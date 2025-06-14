@@ -40,9 +40,15 @@ typedef struct ice_description {
 	char ice_ufrag[256 + 1]={'\0'}; // 4 to 256 characters
 	char ice_pwd[256 + 1]={'\0'};   // 22 to 256 characters
 	bool ice_lite{false};
-	//ice_candidate_t candidates[ICE_MAX_CANDIDATES_COUNT];
-        std::vector<Candidate> candidates;
-	//int candidates_count{0};
+	Candidate candidates[ICE_MAX_CANDIDATES_COUNT];
+      //  std::vector<Candidate> candidates; always give wrong results
+        
+        // std::vector stores its elements in a dynamically allocated array on the heap. This means the memory is not fixed at compile time and can grow or shrink as needed.
+        //When you add elements to a std::vector using methods like push_back or emplace_back, the vector might need to allocate a larger block of memory if its current capacity is insufficien
+        
+       // std::array is a container that encapsulates fixed-size arrays. It is part of the C++ Standard Library and provides a safer and more convenient alternative to C-style arrays
+        
+	int candidates_count{0};
 	bool finished{false};
 } ice_description_t;
 
@@ -63,7 +69,7 @@ public:
         
         
         Description();
-	//Description(const string &sdp, string typeString);
+	Description(const string &sdp, string typeString);
 
 	Type type() const;
 	string typeString() const;
@@ -324,8 +330,6 @@ private:
 	std::vector<shared_ptr<Entry>> mEntries;
 	shared_ptr<Application> mApplication;
 
-	// Candidates
-	std::vector<Candidate> &mCandidates;
 	bool mEnded = false;
         
 public:

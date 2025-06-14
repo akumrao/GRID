@@ -168,7 +168,7 @@ public:
             
         }
         void resolveStunServer();
-        void cbDnsResolve(addrinfo* res, void* ptr) override;
+        void cbDnsResolve(addrinfo* res) override;
         void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
         void resolveNames( Candidate *certificate );
         Configuration &mConfig;

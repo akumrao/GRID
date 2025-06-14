@@ -246,7 +246,9 @@ void IceTransport::setRemoteDescription(const Description *description) {
 bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
     
     
-        if (candidate->isResolved())
+        SInfo<< "AgentNo " << agent.agentNo << " local ice_add_candidate  " << string(*candidate) <<  "  " <<   candidate;
+     
+        if (candidate->isResolved())  // TBD
            resolveNames((Candidate *)candidate);
         else
         {
@@ -390,7 +392,7 @@ void IceTransport::GatheringDoneCallback(juice_agent_t *, void *user_ptr) {
 
 
 
-void IceTransport::cbDnsResolve(addrinfo* res,  void* ptr)
+void IceTransport::cbDnsResolve(addrinfo* res)
 {
     SInfo <<   "AgentNo " << agent.agentNo << " On Candidate Address resolved ";
     
@@ -407,9 +409,17 @@ void IceTransport::cbDnsResolve(addrinfo* res,  void* ptr)
 
 void IceTransport::cbNameResolve( const char* hostname, const char* service,  void* ptr)
 {
+   /* 
+    for (int i = 0; i < remoteDes.desc.candidates_count; ++i) {
+    
+        Candidate *cand = (Candidate *)&remoteDes.desc.candidates[i];
+        STrace << "AgentNo " << agent.agentNo << " iternate " <<  hostname << ":" << service <<  " "  << string(*cand) << " " <<  cand ;
+    
+    }
+    */
      Candidate *cand = (Candidate *)ptr;
      
-    STrace << "AgentNo " << agent.agentNo << " On Candidate Name resolved " <<  hostname << ":" << service  ;
+    STrace << "AgentNo " << agent.agentNo << " On Candidate Name resolved " <<  hostname << ":" << service <<  " "  << string(*cand) << " " <<  cand ;
     
     SInfo << "AgentNo " << agent.agentNo << " About to pair remote candidate: " << cand->address() << ":" << cand->port()  ;
     

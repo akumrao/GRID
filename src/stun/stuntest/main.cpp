@@ -84,27 +84,24 @@ int main()
     
     pc1.onLocalDescription([&pc2 ](rtc::Description description) 
     {
-        std::string tmp = description.typeString();
+        std::string type = description.typeString();
      
-        std::string tmp2 = std::string(description);
+        std::string tmp = std::string(description);
         
+        SInfo << type;
         SInfo << tmp;
         
-         SInfo << tmp2;
 
-		json message = {
-                                {"type", description.typeString()},
-		                {"description",}};
-            // pc2.setRemoteDescription(description);
+
+		//json message = {
+                     //           {"type", description.typeString()},
+		              //  {"description",}};
+
+        auto desc = Description(tmp, "answer");
+
+         pc2.setRemoteDescription(desc);
            // pc->setLocalDescription( Description::Type::Answer);
-//                
-//                  SInfo << message.dump();
-       // SInfo << "send:"  << description.typeString() <<  " des "<<  std::string(description);
-     //  pc->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
-       // sendSdp( std::string(description), description.typeString());
-        // Make the answer
-//		if (auto ws = wws.lock())
-//			ws->send(message.dump());
+
     });
 
     pc1.onLocalCandidate([&pc2 ](rtc::Candidate candidate) {
@@ -151,20 +148,21 @@ int main()
     });
     
     
-    pc2.onLocalDescription([&pc2 ](rtc::Description description) 
+    pc2.onLocalDescription([&pc1 ](rtc::Description description) 
     {
-        std::string tmp = description.typeString();
+        std::string type = description.typeString();
      
-        std::string tmp2 = std::string(description);
+        std::string tmp = std::string(description);
         
+        SInfo << type;
         SInfo << tmp;
-        
-         SInfo << tmp2;
+		//json message = {
+                     //           {"type", description.typeString()},
+		              //  {"description",}};
 
-		json message = {
-                                {"type", description.typeString()},
-		                {"description",}};
-            // pc2.setRemoteDescription(description);
+        auto desc = Description(tmp, "answer");
+
+         pc1.setRemoteDescription(desc);
            // pc->setLocalDescription( Description::Type::Answer);
 //                
 //                  SInfo << message.dump();

@@ -49,8 +49,8 @@ namespace stun {
 
         random_bytes(&ice_tiebreaker, sizeof(ice_tiebreaker));
         _timer.cb_timeout = std::bind(&Agent::onTimer, this);
-        _timer.Start(20,20);
-        agentNo = ++agentCount;
+        //_timer.Start(20,20);
+         agentNo = ++agentCount;
          m_next_timestamp = current_timestamp();
        
     }
@@ -105,17 +105,19 @@ namespace stun {
                 char ip[40];  uint16_t port;
                  
                 IP::AddressToString( candidate.resolved,  ip,  port);
-                   
-                ice_create_host_candidate(&candidate);   
                 
                 SInfo << "AgentNo " << agentNo <<  " getInterfaces " << "  " << ip  << ":" <<  port;
+                 
+                ice_create_host_candidate(&candidate);   
+                
+               
             }
 
         }
 
         uv_free_interface_addresses(info, count);
         
-        std::sort(localdesp.desc.candidates.begin(), localdesp.desc.candidates.end(), comp);
+        std::sort(localdesp.desc.candidates,localdesp.desc.candidates +localdesp.desc.candidates_count , comp);
         
         agent_change_state(JUICE_STATE_CONNECTED);
                 
@@ -127,7 +129,7 @@ namespace stun {
 
    
         
-        if (ice_create_local_candidate( 1, localdesp.desc.candidates.size(),  candidate)) {
+        if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  candidate)) {
             printf("Failed to create host candidate");
         }
         
@@ -157,7 +159,7 @@ namespace stun {
 	}
         
 
-        if (ice_create_local_candidate(1, localdesp.desc.candidates.size(), candidate)) {
+        if (ice_create_local_candidate(1, localdesp.desc.candidates_count, candidate)) {
             printf("Failed to create host candidate");
         }
         
@@ -252,7 +254,7 @@ namespace stun {
 //                 port =  ntohs( ((sockaddr_in *)&record->addr)->sin_port); 
 //            }
             
-            if (ice_create_local_candidate( 1, localdesp.desc.candidates.size(),  &candidate)) {
+            if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  &candidate)) {
                     LError("Failed to create reflexive candidate");
                     return -1;
             }
@@ -267,7 +269,7 @@ namespace stun {
 
             SDebug << "AgentNo " << agentNo << " Obtained a new remote reflexive candidate, priority=" << (unsigned long)priority;
 
-            Candidate *remote = &remotedesp.desc.candidates[remotedesp.desc.candidates.size() -1];
+            Candidate *remote = &remotedesp.desc.candidates[remotedesp.desc.candidates_count -1];
             remote->mPriority = priority;
 
             return agent_add_candidate_pairs_for_remote( remote);
@@ -284,6 +286,8 @@ namespace stun {
 		return -2;
 	}
         
+         m_next_timestamp = 0; onTimer();
+        
     } 
     
     
@@ -295,7 +299,7 @@ namespace stun {
 //	if (candidate->cand.type == ICE_CANDIDATE_TYPE_UNKNOWN)
 //		return -1;
 
-	if (description->desc.candidates.size()  >= ICE_MAX_CANDIDATES_COUNT) {
+	if (description->desc.candidates_count  >= ICE_MAX_CANDIDATES_COUNT) {
 	        SError << "Description already has the maximum number of candidates";
 		return -1;
 	}
@@ -303,15 +307,18 @@ namespace stun {
         candidate->mMid = localMid;
 
 	if (candidate->mFoundation == "-")
-		candidate->mFoundation = std::to_string(description->desc.candidates.size() + 1);
+		candidate->mFoundation = std::to_string(description->desc.candidates_count + 1);
 
 
 	//ice_candidate_t *pos = description->candidates + description->localCanSdp.candidates_count;
 	//*pos = *candidate;
-        description->desc.candidates.push_back(*candidate);
+        description->desc.candidates[description->desc.candidates_count] = *candidate;
         
+        ++description->desc.candidates_count;
+                
 	//++description->desc.candidates.size();
 	
+        candidate = description->desc.candidates + description->desc.candidates_count -1;
         
        // char buffer[4096];
         
@@ -406,7 +413,7 @@ namespace stun {
 
     {
             int count = 0;
-            for (int i = 0; i < description->candidates.size(); ++i) {
+            for (int i = 0; i < description->candidates_count; ++i) {
                     const Candidate *candidate = &description->candidates [i];
                     if (candidate->mType  == type)
                             ++count;
@@ -509,10 +516,16 @@ namespace stun {
 
             for (int i = 0; i < m_entries_count; ++i) {
                     agent_stun_entry_t *entry = m_entries + i;
-                    if (pair == pair) {
+                    if (entry->pair == pair) {
+                            
+                            char ip[40];  uint16_t port;
+                            IP::AddressToString(entry->record, ip, port); 
+    
                             pair->state = ICE_CANDIDATE_PAIR_STATE_PENDING;
                             entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
                             agent_arm_transmission( entry, 0); // transmit now
+                            STrace << "AgentNo " << agentNo  << " ent " << i <<    " type server[1]/relay[2] " <<   entry->type  <<   " mode controlled[1]/controlling[2] " <<  entry->mode  << " state PENDING[0]/CANCELLED[1]/FAILED[2]SUCCEEDED[3]KEEPALIVE[4]IDLE[5] " <<  entry->state << " add " << ip << ":" << port;
+
                             return 0;
                     }
             }
@@ -554,7 +567,7 @@ namespace stun {
             }
     }
     
-    
+    /* please set m_next_timestamp before calling agent_bookkeeping, if it is not the timer*/
     void Agent::onTimer()
     {
         
@@ -633,7 +646,9 @@ namespace stun {
                 }
   
   
-		return agent_dispatch_stun( buf, len, &msg, src, relayed);
+		agent_dispatch_stun( buf, len, &msg, src, relayed);
+                
+                m_next_timestamp = 0; onTimer();
 	}
 
 
@@ -714,7 +729,7 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
             } else {
                     // This may happen normally, for instance when there is no space left for reflexive
                     // candidates
-                    SDebug << "AgentNo " << agentNo << " On Stun Message.  No STUN entry matching remote address, ignoring";
+                    SError << "AgentNo " << agentNo << " On Stun Message.  No STUN entry matching remote address, ignoring";
                     return 0;
             }
     }
@@ -956,7 +971,7 @@ Candidate *Agent::ice_find_candidate_from_addr(Description *description,  const 
 {
 	
      
-    for( int i =0; i < description->desc.candidates.size(); ++i)
+    for( int i =0; i < description->desc.candidates_count; ++i)
     {
     
         Candidate *cur = & description->desc.candidates[i];
@@ -1022,14 +1037,15 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 //				LDebug("STUN selected entry matching incoming relayed address");
 //				return selected_entry;
 			}
-		} else {
+		 else {
 			if (!entry_is_relayed(selected_entry) &&
 			    addr_record_is_equal(&selected_entry->record, record, true)) {
 				SDebug << "AgentNo " << agentNo <<   " STUN selected entry matching incoming address" ;
 				return selected_entry;
 			}
 		
-	}
+                    }
+        }
 
 	if (relayed) {
 //		for (int i = 0; i < agent->entries_count; ++i) {
@@ -1365,7 +1381,7 @@ void Agent::agent_arm_keepalive(agent_stun_entry_t *entry)
 	int64_t period;
 	switch (entry->type) {
 	case AGENT_STUN_ENTRY_TYPE_RELAY:
-		period = localdesp.desc.candidates.size()  > 0 ? TURN_REFRESH_PERIOD : STUN_KEEPALIVE_PERIOD;
+		period = localdesp.desc.candidates_count  > 0 ? TURN_REFRESH_PERIOD : STUN_KEEPALIVE_PERIOD;
 		break;
 	case AGENT_STUN_ENTRY_TYPE_SERVER:
 		period = STUN_KEEPALIVE_PERIOD;
@@ -1460,7 +1476,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 			// candidate type preference of peer-reflexive candidates.
 			int family = entry->record.addr.ss_family;
 			int index = entry->pair && entry->pair->local
-			                ? (int)(entry->pair->local - &localdesp.desc.candidates[0] )    //arvind
+			                ? (int)(entry->pair->local - localdesp.desc.candidates )    //arvind
 			                : 0;
                         
                         Priority *priority = new stun::Priority();
@@ -1642,7 +1658,7 @@ int Agent::agent_bookkeeping( int64_t &now)
                 char ip[40];  uint16_t port;
                 IP::AddressToString(entry->record, ip, port); 
                     
-                STrace << "AgentNo " << agentNo  << " ent " << i <<    " type server[1]/relay[2] " <<   entry->type  <<   " mode controlled[1]/controlling[2] " <<  entry->mode  << " state PENDING[0]/CANCELLED[1]/FAILED[2]SUCCEEDED[3]KEEPALIVE[4]IDLE[5] " <<  entry->state << " add " << ip << port;
+                STrace << "AgentNo " << agentNo  << " ent " << i <<    " type server[1]/relay[2] " <<   entry->type  <<   " mode controlled[1]/controlling[2] " <<  entry->mode  << " state PENDING[0]/CANCELLED[1]/FAILED[2]SUCCEEDED[3]KEEPALIVE[4]IDLE[5] " <<  entry->state << " add " << ip << ":" << port;
 		// STUN requests transmission or retransmission
 		if (entry->state == AGENT_STUN_ENTRY_STATE_PENDING) {
 			if (entry->next_transmission > now)
@@ -1984,7 +2000,8 @@ int  Agent::agent_set_remote_description() {
 	
 	LTrace("agent_set_remote_description");
 
-
+         std::sort(remotedesp.desc.candidates,remotedesp.desc.candidates +remotedesp.desc.candidates_count , comp);
+          
 	agent_update_pac_timer();
 
 	if (remotedesp.desc.ice_lite && m_mode != AGENT_MODE_CONTROLLING) {
@@ -2004,8 +2021,8 @@ int  Agent::agent_set_remote_description() {
 	for (int i = 0; i < m_candidate_pairs_count; ++i) {
 		agent_unfreeze_candidate_pair(m_candidate_pairs + i);
 	}
-	LDebug("Adding %d candidates from remote description", (int)remotedesp.desc.candidates.size());
-	for (int i = 0; i < remotedesp.desc.candidates.size(); ++i) {
+	LDebug("Adding %d candidates from remote description", (int)remotedesp.desc.candidates_count);
+	for (int i = 0; i < remotedesp.desc.candidates_count; ++i) {
 		Candidate *remote = &remotedesp.desc.candidates[ i];
 		if (agent_add_candidate_pairs_for_remote( remote))
 			LWarn("Failed to add candidate pair");
@@ -2033,29 +2050,32 @@ int Agent::agent_resolve_servers( addrinfo* start)
     for (;res != NULL; res = res->ai_next) 
     { 
 
-            STrace << "AgentNo " << agentNo <<  " Registering STUN server request  " <<   m_entries_count ;
+        STrace << "AgentNo " << agentNo <<  " Registering STUN server request  " <<   m_entries_count ;
 
-            agent_stun_entry_t *entry = m_entries + m_entries_count;
-            entry->type = AGENT_STUN_ENTRY_TYPE_SERVER;
-            entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
-            entry->pair = NULL;
+        agent_stun_entry_t *entry = m_entries + m_entries_count;
+        entry->type = AGENT_STUN_ENTRY_TYPE_SERVER;
+        entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
+        entry->pair = NULL;
 
-            //entry->record = records[i];
+        //entry->record = records[i];
 
-            IP::CopyAddress( res->ai_addr, entry->record);
+        IP::CopyAddress( res->ai_addr, entry->record);
 
-            random_bytes(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
-            entry->transaction_id_expired = false;
-            ++m_entries_count;
+        random_bytes(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
+        entry->transaction_id_expired = false;
+        ++m_entries_count;
+
+
+        char ip[40];  uint16_t port;
+        IP::AddressToString(entry->record, ip, port) ;
+        SInfo << "AgentNo " << agentNo << " add " << ip << ":" <<port;
+
+        agent_arm_transmission( entry, STUN_PACING_TIME * i++);
+
+        m_next_timestamp = 0; onTimer();
+
             
-            
-            char ip[40];  uint16_t port;
-            IP::AddressToString(entry->record, ip, port) ;
-            SInfo << "AgentNo " << agentNo << " add " << ip << ":" <<port;
-
-            agent_arm_transmission( entry, STUN_PACING_TIME * i++);
-            onTimer();
-            break; // Arvind remote it later
+        break; // Arvind remote it later
     }
 		
     //agent_update_gathering_done();
