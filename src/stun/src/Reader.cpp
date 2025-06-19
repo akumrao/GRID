@@ -711,8 +711,9 @@ bool Reader::computeMessageIntegrity(Message* msg, std::string password) {
     uint8_t output[keylen]; 
             
 
-    if  (!compute_message_integrity(buffer, key, keylen, output ))
+    if  (!compute_message_integrity(buffer.data(), buffer.size(), key, keylen, output ))
     {
+        SError << "STUN message integrity SHA1 check failed";
         return false;
     }
     

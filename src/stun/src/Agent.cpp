@@ -5,7 +5,6 @@
 #include "base/logger.h"
 #include <Utils.h>
 #include <algorithm>
-
 #include "sdpcommon.h"
 
 
@@ -628,7 +627,7 @@ namespace stun {
 	return true;
 }
     
-    int Agent::onStunMessage( char *buf, size_t len, const addr_record_t *src,  const addr_record_t *relayed)
+    int Agent::onStunMessage( unsigned char *buf, size_t len, const addr_record_t *src,  const addr_record_t *relayed)
     {
 	STrace << "AgentNo " << agentNo << " Received datagram, size "<<  len;
 
@@ -686,7 +685,7 @@ namespace stun {
     
     
     
-int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  const addr_record_t *src, const addr_record_t *relayed)
+int Agent::agent_dispatch_stun( unsigned char *buf, size_t size, stun::Message  *msg,  const addr_record_t *src, const addr_record_t *relayed)
 {
     
    //msg->hasAttribute(stun::STUN_ATTR_USE_CANDIDATE)
@@ -793,7 +792,7 @@ int Agent::agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  co
 
 
 
-int Agent::agent_verify_stun_binding( char *buf, size_t size, stun::Message *msg)
+int Agent::agent_verify_stun_binding( unsigned char *buf, size_t size, stun::Message *msg)
 {
 	if (msg->msg_method != STUN_METHOD_BINDING)
 		return -1;
@@ -845,18 +844,48 @@ int Agent::agent_verify_stun_binding( char *buf, size_t size, stun::Message *msg
 //	}
 //        
         
-        stun::Message rmsg;
-        stun::Reader reader;
-        int r = reader.process((uint8_t*) buf, size , &rmsg);  // // TBD:  No need to reparse the buffer// Use compute_message_integrity function directly
-        if( r == 0)
+        if(password)
         {
-            bool ret = reader.computeMessageIntegrity(&rmsg, password);  
+ 
+            MessageIntegrity* integ = NULL;
+            std::string pass = password;
+            
+            std::string key;
+            int keylen = stun::generate_hmac_key( msg,  pass, key );
+
+            if (!key.size()) { 
+              LError("Error: cannot compute message integrity in stun::Message because the key is empty");
+              return false;
+            }
+
+            if (!msg->attributes.size() || !msg->find(&integ)) {
+              LError("Error: cannot compute the message integrity in stun::Message because the message doesn't contain a MessageIntegrity attribute.");
+              return false;
+            }
+            
+            
+            bool ret =  compute_message_verify(buf, size,  key, keylen,  integ->sha.sha1 );
             if(!ret)
             {
-               SWarn << "STUN integrity check failed, password= " <<  password;
-		return -1;
+                SWarn << "STUN integrity check failed, password= " <<  password;
+                return -1;
             }
+
         }
+        
+        
+//        stun::Message rmsg;
+//        stun::Reader reader;
+//        int r = reader.process((uint8_t*) buf, size , &rmsg);  // // TBD:  No need to reparse the buffer// Use compute_message_integrity function directly
+//        if( r == 0)
+//        {
+//            bool ret = reader.computeMessageIntegrity(&rmsg, password);  
+//            if(!ret)
+//            {
+//               SWarn << "STUN integrity check failed, password= " <<  password;
+//		return -1;
+//            }
+//        }
         
         
 	return 0;
@@ -865,7 +894,7 @@ int Agent::agent_verify_stun_binding( char *buf, size_t size, stun::Message *msg
 
 
 
-int Agent::agent_verify_credentials( const agent_stun_entry_t *entry, char *buf,   size_t size, stun::Message *msg)
+int Agent::agent_verify_credentials( const agent_stun_entry_t *entry, unsigned char *buf,   size_t size, stun::Message *msg)
 {
 	// RFC 8489: If the response is an error response with an error code of 400 (Bad Request) and
 	// does not contain either the MESSAGE-INTEGRITY or MESSAGE-INTEGRITY-SHA256 attribute, then the
@@ -1568,8 +1597,16 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
         
         
         response.addAttribute(new stun::Software("libjuice"));
+     
+        
+        if(password)
+        {
+            SInfo << " MessageIntegrity(20) " << " with password " << password;
+            
+           response.addAttribute(new stun::MessageIntegrity(20));
+        }
+        
         response.addAttribute(new stun::Fingerprint());
-
 
         stun::Writer writer;
         writer.writeMessage(&response, (password ? password: ""));
@@ -1592,13 +1629,22 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
              
 
         
-        /* and read it again. */
+       /* and read it again. */
         stun::Message msg;
   
         stun::Reader reader;
 
-        reader.process((uint8_t*)&writer.buffer[0],writer.buffer.size(), &msg); /* we do -1 to exclude the string terminating nul char. */
-            
+        reader.process((uint8_t*)&writer.buffer[0],writer.buffer.size(), &msg); 
+        
+        if(password)
+        {
+            bool ret = reader.computeMessageIntegrity(&msg, password);  
+            if(!ret)
+            {
+                SWarn << "STUN integrity check failed, password";
+            }
+        }
+        
         socket->send(&writer.buffer[0], writer.buffer.size(), entry->record);
             
 

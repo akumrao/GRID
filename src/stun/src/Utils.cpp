@@ -178,7 +178,25 @@ int const_time_memcmp(unsigned char *a, unsigned char *b, size_t len) {
 	return previous;
 }
   
-  bool compute_message_integrity(std::vector<uint8_t>& buffer, std::string key, int sz,  uint8_t* output) {
+  
+bool compute_message_verify(unsigned char *buf, size_t size, std::string key, int keylen,  uint8_t *integSha )
+{
+  
+    uint8_t output[keylen]; 
+    if  (!compute_message_integrity(buf, size, key, keylen, output ))
+    {
+        return false;
+    }
+   
+    if (const_time_memcmp( integSha , output, keylen) != 0) {
+            SError << "STUN message integrity SHA1 check failed";
+            return false;
+    }
+    
+      return true;
+}
+
+bool compute_message_integrity(unsigned char *buf, size_t size, std::string key, int sz,  uint8_t* output) {
 
 //    uint16_t dx = sz;
 //    uint16_t offset = 0;
@@ -250,21 +268,21 @@ int const_time_memcmp(unsigned char *a, unsigned char *b, size_t len) {
       
       
 
-	const struct stun_header *header = (const struct stun_header *)buffer.data();
+	const struct stun_header *header = (const struct stun_header *)buf;
 	const size_t length = ntohs(header->length);
-	if (buffer.size() < sizeof(struct stun_header) + length)
+	if (size < sizeof(struct stun_header) + length)
 		return false;
 
 
 	bool success = false;
-	uint8_t *begin = buffer.data();
+	uint8_t *begin = (uint8_t *)buf;
 	const uint8_t *attr_begin = begin + sizeof(struct stun_header);
 	const uint8_t *end = attr_begin + length;
 	const uint8_t *pos = attr_begin;
 	while (pos < end) {
 		const struct stun_attr *attr = (const struct stun_attr *)pos;
 		size_t attr_length = ntohs(attr->length);
-		if (buffer.size() < sizeof(struct stun_attr) + attr_length)
+		if (size < sizeof(struct stun_attr) + attr_length)
 			return false;
 
 		uint16_t type = (uint16_t)ntohs(attr->type);
@@ -324,7 +342,7 @@ int const_time_memcmp(unsigned char *a, unsigned char *b, size_t len) {
 	if (!success)
 		return false;
 
-	printf( "STUN message integrity check succeeded \n");
+	///printf( "STUN message integrity check succeeded \n");
 	return true;
 }  
       

@@ -40,7 +40,7 @@ void testUdpServer::OnUdpSocketPacketReceived(UdpServer* socket, const char* dat
     
     IP::CopyAddress(remoteAddr, src );
     
-    agent->onStunMessage((char *)data, len,  &src, nullptr );
+    agent->onStunMessage((unsigned char *)data, len,  &src, nullptr );
     
     
     return ;

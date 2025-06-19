@@ -215,10 +215,10 @@ typedef struct agent_stun_entry {
     void onTimer();
     
     /// ON return messages 
-    int onStunMessage( char *buf, size_t len, const addr_record_t *src,  const addr_record_t *relayed);
-    int agent_dispatch_stun( char *buf, size_t size, stun::Message  *msg,  const addr_record_t *src, const addr_record_t *relayed);
-    int agent_verify_stun_binding( char *buf, size_t size, stun::Message *msg);
-    int agent_verify_credentials( const agent_stun_entry_t *entry, char *buf,   size_t size, stun::Message *msg);
+    int onStunMessage( unsigned char *buf, size_t len, const addr_record_t *src,  const addr_record_t *relayed);
+    int agent_dispatch_stun( unsigned char *buf, size_t size, stun::Message  *msg,  const addr_record_t *src, const addr_record_t *relayed);
+    int agent_verify_stun_binding(unsigned char *buf, size_t size, stun::Message *msg);
+    int agent_verify_credentials( const agent_stun_entry_t *entry, unsigned char *buf,   size_t size, stun::Message *msg);
     
     Candidate* ice_find_candidate_from_addr(Description *description,  const addr_record_t *record,  Candidate::Type type);
     agent_stun_entry_t* agent_find_entry_from_transaction_id( const uint8_t *transaction_id) ;

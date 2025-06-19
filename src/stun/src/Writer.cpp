@@ -28,7 +28,7 @@ namespace stun {
     MessageIntegrity* mit = NULL;
     uint8_t sha1[20] = { 0 };
     if (msg->find(STUN_ATTR_MESSAGE_INTEGRITY, &mit)) {
-      if (compute_message_integrity(buffer, messageIntegrityPassword, 20, sha1)) {
+      if (compute_message_integrity(buffer.data(),buffer.size(), messageIntegrityPassword, 20, sha1)) {
         for(size_t i = 0; i < 20; ++i) {
           buffer[mit->offset + 4 + i] = sha1[i];
         }

@@ -30,6 +30,8 @@
 
 namespace stun {
 
+  size_t generate_hmac_key(Message* msg, std::string &password, std::string &key);
+    
   class Reader {
 
   public:

@@ -34,6 +34,9 @@ struct stun_attr {
    */
   bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz, uint8_t* output);
 
+  
+  bool compute_message_verify(unsigned char *buf, size_t size, std::string key, int keylen,  uint8_t *integSha );
+  
   /* 
      Compute the Message-Integrity of a stun message. 
      This will not change the given buffer.
@@ -42,7 +45,7 @@ struct stun_attr {
      std::string key:              key to use for hmac 
      uint8_t* output:              will be filled with the correct hmac-sha1 of that represents the integrity message value. 
   */
-  bool compute_message_integrity(std::vector<uint8_t>& buffer, std::string key, int sz, uint8_t* output);
+  bool compute_message_integrity(unsigned char *buf, size_t size, std::string key, int sz, uint8_t* output);
 
   /* 
      Compute the fingerprint value for the stun message.
