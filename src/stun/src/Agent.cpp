@@ -698,16 +698,16 @@ int Agent::agent_dispatch_stun( unsigned char *buf, size_t size, stun::Message  
                     return -1;
             }
             
-            Priority *result;
+            Priority *result = nullptr;
             if( !msg->find(&result ))
             {
                 SError  << "AgentNo " << agentNo << " On Stun Message. Priority attribute is not in stun message";
-                exit(0);
+                //exit(0);
             }
             
   
             
-            if (agent_add_remote_peer_reflexive_candidate( result->value, src)) {
+            if (agent_add_remote_peer_reflexive_candidate( result ? result->value:0 , src)) {
                     SWarn << "AgentNo " << agentNo << " On Stun Message. Failed to add remote peer reflexive candidate from STUN message";
             }
     }
@@ -1445,22 +1445,22 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
         
         
                 /* write */
-        stun::Message response(msg_class,STUN_METHOD_BINDING );
+        stun::Message msg(msg_class,STUN_METHOD_BINDING );
         
-//        response.addAttribute(new stun::XorMappedAddress("192.168.0.19", 55164));
-//        response.addAttribute(new stun::MessageIntegrity(20));
-//        response.addAttribute(new stun::Fingerprint());
+//        msg.addAttribute(new stun::XorMappedAddress("192.168.0.19", 55164));
+//        msg.addAttribute(new stun::MessageIntegrity(20));
+//        msg.addAttribute(new stun::Fingerprint());
 //
 //  stun::Writer writer;
-//  writer.writeMessage(&response, "75C96DDDFC38D194FEDF75986CF962A2D56F3B65F1F7");
+//  writer.writeMessage(&msg, "75C96DDDFC38D194FEDF75986CF962A2D56F3B65F1F7");
 //  
 
 	if (transaction_id)
-		response.setTransactionID((uint8_t*)transaction_id);
+		msg.setTransactionID((uint8_t*)transaction_id);
 	else if (msg_class == STUN_CLASS_INDICATION)
-		response.setTransactionID();
+		msg.setTransactionID();
 	else
-		response.setTransactionID(entry->transaction_id);
+		msg.setTransactionID(entry->transaction_id);
 
 	const char *password = NULL;
 	if (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK) {
@@ -1476,26 +1476,26 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 				SError << "AgentNo " << agentNo << " Missing remote ICE credentials, dropping STUN binding request";
 				return 0;
 			}
-			snprintf(response.credentials.username, STUN_MAX_USERNAME_LEN, "%s:%s",remotedesp.desc.ice_ufrag, localdesp.desc.ice_ufrag);
+			snprintf(msg.credentials.username, STUN_MAX_USERNAME_LEN, "%s:%s",remotedesp.desc.ice_ufrag, localdesp.desc.ice_ufrag);
 			password = remotedesp.desc.ice_pwd;
                         
-                        Username *iceUser = new stun::Username(response.credentials.username);
-                        response.addAttribute(iceUser);   
+                        Username *iceUser = new stun::Username(msg.credentials.username);
+                        msg.addAttribute(iceUser);   
                         
                         if(m_mode == AGENT_MODE_CONTROLLING)
                         {
-                            response.ice_controlling = ice_tiebreaker;
+                            msg.ice_controlling = ice_tiebreaker;
                             IceControlling *iceControlling = new stun::IceControlling();
                             iceControlling->tie_breaker =ice_tiebreaker; 
-                            response.addAttribute(iceControlling);   
+                            msg.addAttribute(iceControlling);   
                             
                         }
                         else if(m_mode == AGENT_MODE_CONTROLLED)
                         {
-                            response.ice_controlled = ice_tiebreaker;
+                            msg.ice_controlled = ice_tiebreaker;
                             IceControlled *ice_controlled = new stun::IceControlled();
                             ice_controlled->tie_breaker =ice_tiebreaker; 
-                            response.addAttribute(ice_controlled);   
+                            msg.addAttribute(ice_controlled);   
                         }
 
 
@@ -1512,7 +1512,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
                         
 			priority->value  =   ice_compute_priority( Candidate::Type::PeerReflexive, family, 1, index);
                         
-                        response.addAttribute(priority);
+                        msg.addAttribute(priority);
 
 			// RFC 8445 8.1.1. Nominating Pairs:
 			// Once the controlling agent has picked a valid pair for nomination, it repeats the
@@ -1522,7 +1522,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 			                    entry->pair->nomination_requested && !entry->pair->nominated;
                         
                         if(use_candidate)
-                        response.addAttribute(new stun::UseCandidate);
+                        msg.addAttribute(new stun::UseCandidate);
 
 			entry->mode = m_mode; // save current mode in case of conflict
 			break;
@@ -1530,9 +1530,9 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 		case STUN_CLASS_RESP_SUCCESS:
 		case STUN_CLASS_RESP_ERROR: {
 			password = localdesp.desc.ice_pwd;
-			response.error_code = error_code;
+			msg.error_code = error_code;
 			if (mapped)
-				response.mapped = mapped;
+				msg.mapped = mapped;
 
 			break;
 		}
@@ -1581,14 +1581,21 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 //	}
         
         
-        if(response.error_code)
+        if(msg.error_code)
         {
-            response.addAttribute(new stun::ErrorIce(response.error_code));
+            msg.addAttribute(new stun::ErrorIce(msg.error_code));
         }
         
-        if (response.msg_class == STUN_CLASS_REQUEST ||
-	    (response.msg_class == STUN_CLASS_RESP_ERROR &&
-	     (response.error_code == 401 || response.error_code == 438) // Unauthenticated or Stale Nonce
+        if(msg.mapped)
+        {
+            XorMappedAddress *tmp = new stun::XorMappedAddress();
+            tmp->mapped = *msg.mapped;
+            msg.addAttribute( tmp); 
+        }
+        
+        if (msg.msg_class == STUN_CLASS_REQUEST ||
+	    (msg.msg_class == STUN_CLASS_RESP_ERROR &&
+	     (msg.error_code == 401 || msg.error_code == 438) // Unauthenticated or Stale Nonce
 	     )) {
 		// TBD
             
@@ -1596,20 +1603,20 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 	}
         
         
-        response.addAttribute(new stun::Software("libjuice"));
+        msg.addAttribute(new stun::Software("libjuice"));
      
         
         if(password)
         {
             SInfo << " MessageIntegrity(20) " << " with password " << password;
             
-           response.addAttribute(new stun::MessageIntegrity(20));
+           msg.addAttribute(new stun::MessageIntegrity(20));
         }
         
-        response.addAttribute(new stun::Fingerprint());
+        msg.addAttribute(new stun::Fingerprint());
 
         stun::Writer writer;
-        writer.writeMessage(&response, (password ? password: ""));
+        writer.writeMessage(&msg, (password ? password: ""));
 
         printf("---------------\n");
         for (size_t i = 0; i < writer.buffer.size(); ++i) {
@@ -1630,20 +1637,23 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 
         
        /* and read it again. */
-        stun::Message msg;
+        
+        /*
+        stun::Message msgTmp;
   
         stun::Reader reader;
 
-        reader.process((uint8_t*)&writer.buffer[0],writer.buffer.size(), &msg); 
+        reader.process((uint8_t*)&writer.buffer[0],writer.buffer.size(), &msgTmp); 
         
         if(password)
         {
-            bool ret = reader.computeMessageIntegrity(&msg, password);  
+            bool ret = reader.computeMessageIntegrity(&msgTmp, password);  
             if(!ret)
             {
                 SWarn << "STUN integrity check failed, password";
             }
         }
+        */ 
         
         socket->send(&writer.buffer[0], writer.buffer.size(), entry->record);
             
@@ -2136,14 +2146,14 @@ void Agent::StartAgent( std::string &stunip, uint16_t &stunport)
     
 
         /* write */
-    stun::Message response(stun::STUN_BINDING_REQUEST);
-    response.setTransactionID();
-    response.addAttribute(new stun::Software("libjuice"));
-    response.addAttribute(new stun::Fingerprint());
+    stun::Message msg(stun::STUN_BINDING_REQUEST);
+    msg.setTransactionID();
+    msg.addAttribute(new stun::Software("libjuice"));
+    msg.addAttribute(new stun::Fingerprint());
 
 
     stun::Writer writer;
-    writer.writeMessage(&response, "");
+    writer.writeMessage(&msg, "");
 
     printf("---------------\n");
     for (size_t i = 0; i < writer.buffer.size(); ++i) {
