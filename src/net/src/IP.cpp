@@ -21,6 +21,45 @@ namespace base
 	
 
 	/* Inline static methods. */
+    
+        
+        
+         bool IP::addr_is_equal(const struct sockaddr *a, const struct sockaddr *b, bool compare_ports)
+         {
+                if (a->sa_family != b->sa_family)
+                        return false;
+
+                switch (a->sa_family) {
+                case AF_INET: {
+                        const struct sockaddr_in *ain = (const struct sockaddr_in *)a;
+                        const struct sockaddr_in *bin = (const struct sockaddr_in *)b;
+                        if (memcmp(&ain->sin_addr, &bin->sin_addr, 4) != 0)
+                                return false;
+                        if (compare_ports && ain->sin_port != bin->sin_port)
+                                return false;
+                        break;
+                }
+                case AF_INET6: {
+                        const struct sockaddr_in6 *ain6 = (const struct sockaddr_in6 *)a;
+                        const struct sockaddr_in6 *bin6 = (const struct sockaddr_in6 *)b;
+                        if (memcmp(&ain6->sin6_addr, &bin6->sin6_addr, 16) != 0)
+                                return false;
+                        if (compare_ports && ain6->sin6_port != bin6->sin6_port)
+                                return false;
+                        break;
+                }
+                default:
+                        return false;
+                }
+
+                return true;
+        }
+         
+        bool IP::addr_record_is_equal(const addr_record_t *a, const addr_record_t *b, bool compare_ports) 
+        {
+            return addr_is_equal((const struct sockaddr *)&a->addr, (const struct sockaddr *)&b->addr,
+	                     compare_ports);
+        } 
 
 	
 	bool IP::CompareAddresses(const struct sockaddr* addr1, const struct sockaddr* addr2)

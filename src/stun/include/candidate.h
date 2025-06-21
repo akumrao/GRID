@@ -61,6 +61,7 @@ public:
 
 //	enum class ResolveMode { Simple, Lookup };
 //	bool resolve(ResolveMode mode = ResolveMode::Simple);
+        void resolve();
 
 	Type type() const;
 	TransportType transportType() const;

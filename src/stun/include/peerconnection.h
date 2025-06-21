@@ -47,6 +47,9 @@ struct RTC_CPP_EXPORT LocalDescriptionInit {
 
 class RTC_CPP_EXPORT PeerConnection final : public std::enable_shared_from_this<PeerConnection> {
 public:
+    
+        using recv_callback = std::function<void(unsigned char * data , size_t size )>;
+     
 	enum class State : int {
 		New = RTC_NEW,
 		Connecting = RTC_CONNECTING,
@@ -66,11 +69,16 @@ public:
 		Closed = RTC_ICE_CLOSED
 	};
 
-	enum class GatheringState : int {
-		New = RTC_GATHERING_NEW,
-		InProgress = RTC_GATHERING_INPROGRESS,
-		Complete = RTC_GATHERING_COMPLETE
-	};
+	
+	
+//	enum class GatheringState : int {
+//		New = RTC_GATHERING_NEW,
+//		InProgress = RTC_GATHERING_INPROGRESS,
+//		Complete = RTC_GATHERING_COMPLETE
+//	};
+
+	
+
 
 	enum class SignalingState : int {
 		Stable = RTC_SIGNALING_STABLE,
@@ -101,6 +109,9 @@ public:
 	string remoteAddress() const;
 	uint16_t maxDataChannelId() const;
 	bool getSelectedCandidatePair(Candidate *local, Candidate *remote);
+        
+        bool recv(unsigned char * data , size_t size);
+        int send(unsigned char * data , size_t size);
 
 	void setLocalDescription(Description::Type type = Description::Type::Unspec);
 
@@ -131,8 +142,9 @@ public:
 	void onLocalCandidate(std::function<void(Candidate candidate)> callback);
 	void onStateChange(std::function<void(State state)> callback);
 	void onIceStateChange(std::function<void(IceState state)> callback);
-	void onGatheringStateChange(std::function<void(GatheringState state)> callback);
+	void onGatheringStateChange(std::function<void(juice_state_t state)> callback);
 	void onSignalingStateChange(std::function<void(SignalingState state)> callback);
+        void onRecv(recv_callback callback);
 
 	void resetCallbacks();
 	CertificateFingerprint remoteFingerprint();
@@ -158,7 +170,10 @@ public:
 
         std::atomic<State> mState{State::New};
         std::atomic<IceState> mIceState{IceState::New};
-	std::atomic<GatheringState> mGatheringState{GatheringState::New};
+	//std::atomic<GatheringState> mGatheringState{GatheringState::New};
+        
+        juice_state_t mGatheringState{JUICE_STATE_DISCONNECTED};
+                
 	std::atomic<SignalingState> mSignalingState{SignalingState::Stable};
 	std::atomic<bool> mNegotiationNeeded{false};
         
@@ -168,9 +183,10 @@ public:
 	std::function<void(Description)> mLocalDescriptionCallback;
 	std::function<void(Candidate)> mLocalCandidateCallback;
 	std::function<void(State)> mStateChangeCallback;
-	std::function<void(GatheringState )> mGatheringStateChangeCallback;
+	std::function<void(juice_state_t )> mGatheringStateChangeCallback;
 	std::function<void(SignalingState)> mSignalingStateChangeCallback;
 	//std::function<void<std::shared_ptr<Track>> mTrackCallback;
+        recv_callback mRecvChangeCallback;
         
         
         
@@ -183,7 +199,7 @@ public:
 
         void iceState(IceTransport::State state);
 
-        void iceGathering(IceTransport::GatheringState state);
+        void iceGathering(juice_state_t state);
         
         IceTransport *iceTransport{nullptr};
                
@@ -196,7 +212,7 @@ public:
 
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, PeerConnection::State state);
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, PeerConnection::IceState state);
-RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, PeerConnection::GatheringState state);
+RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, juice_state_t state);
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, PeerConnection::SignalingState state);
 
 } // namespace rtc

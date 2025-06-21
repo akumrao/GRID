@@ -234,7 +234,12 @@ Candidate::operator string() const {
 }
 
 bool Candidate::operator==(const Candidate &other) const {
-	return (mFoundation == other.mFoundation && mService == other.mService && mNode == other.mNode);
+    
+    if(isResolved() && other.isResolved() )
+	return (mFoundation == other.mFoundation &&  IP::addr_record_is_equal( &resolved,  &other.resolved,  true) );
+    else
+    return (mFoundation == other.mFoundation && mService == other.mService && mNode == other.mNode);
+    
 }
 
 bool Candidate::operator!=(const Candidate &other) const {
@@ -243,6 +248,11 @@ bool Candidate::operator!=(const Candidate &other) const {
 
 bool Candidate::isResolved() const {
     return resolved.len ;
+}
+
+void Candidate::resolve()
+{
+    IP::StringToAddress(mNode.c_str(), std::stoi( mService), resolved);
 }
 
 int Candidate::family() const { return resolved.addr.ss_family; }

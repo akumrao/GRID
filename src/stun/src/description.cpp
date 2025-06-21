@@ -269,12 +269,44 @@ bool Description::hasCandidate(const Candidate &candidate) const {
 	return std::find(desc.candidates , desc.candidates + desc.candidates_count, candidate) !=    desc.candidates + desc.candidates_count;
 }
 
-Candidate* Description::addCandidate(Candidate candidate) {
-	candidate.hintMid(bundleMid());
+Candidate *Description::ice_find_candidate_from_addr( const addr_record_t *record,  Candidate::Type type)
+{
+     
+    for( int i =0; i < desc.candidates_count; ++i)
+    {
+    
+        Candidate *cur = & desc.candidates[i];
+    
+    
+	//Candidate *end = cur + description->candidates_count;
+	//while (cur != end) 
+        //{
+        if ((type == Candidate::Type::Unknown || cur->mType == type) &&
+            IP::addr_is_equal((struct sockaddr *)&record->addr, (struct sockaddr *)&cur->resolved.addr,
+                          true))
+                return cur;
+		//++cur;
+	//}
+    }
+	return NULL;
+}
+
+Candidate* Description::addCandidate(Candidate candidate ) {
+	
+    
+        if (!candidate.isResolved()) 
+        {
+            candidate.resolve();
+        }
+
+        candidate.hintMid(bundleMid());
 
         Candidate *ret = nullptr; 
-	if (!hasCandidate(candidate))
-	{
+        
+	//if ((!matchRecord && !hasCandidate(candidate))  || (matchRecord &&  (ice_find_candidate_from_addr( &candidate.resolved, Candidate::Type::Unknown) == nullptr  )))
+	
+        if (!hasCandidate(candidate))
+        {
 
             desc.candidates[desc.candidates_count] = candidate;
             ++desc.candidates_count;

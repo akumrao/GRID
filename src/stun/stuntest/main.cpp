@@ -72,11 +72,22 @@ int main()
             [](PeerConnection::IceState state) {
                 std::cout << "ICE state 1: " << state << endl; });
 
-    pc1.onGatheringStateChange([&pc1 ](PeerConnection::GatheringState state) {
+    pc1.onGatheringStateChange([&pc1 ](juice_state_t state) {
         std::cout << "Gathering state 1: " << state << endl;
-        if (state == PeerConnection::GatheringState::Complete) {
-            auto sdp = pc1.localDescription();
-                    std::cout << "Description 1: " << sdp << endl;
+        if (state == JUICE_STATE_CONNECTED) {
+            
+            Candidate local; Candidate remote;
+            pc1.getSelectedCandidatePair( &local, &remote);
+            
+            SInfo << "getSelectedCandidatePair1 local " <<  local << " remote "  << remote;
+ 
+            std::string msg = "PC1 Hello world";
+            
+            pc1.send( (unsigned char *)msg.data(),  msg.size()+1);
+            
+            
+           // auto sdp = pc1.localDescription();
+                    //std::cout << "Description 1: " << sdp << endl;
                     // pc2.setRemoteDescription(string(sdp));
         }
     });
@@ -122,6 +133,11 @@ int main()
     pc1.onSignalingStateChange([](PeerConnection::SignalingState state) {
         std::cout << "Signaling state 1: " << state << endl;
     });
+    
+    
+    pc1.onRecv([](unsigned char * data , size_t size) {
+        std::cout << "onRecv state 1: " << data << endl;
+    });
 
 
     pc1.setLocalDescription();
@@ -138,12 +154,26 @@ int main()
             [](PeerConnection::IceState state) {
                 std::cout << "ICE state2: " << state << endl; });
 
-    pc2.onGatheringStateChange([&pc1 ](PeerConnection::GatheringState state) {
+    pc2.onGatheringStateChange([&pc2 ](juice_state_t state) {
         std::cout << "Gathering state 2: " << state << endl;
-        if (state == PeerConnection::GatheringState::Complete) {
-            auto sdp = pc1.localDescription();
-                    std::cout << "Description 2: " << sdp << endl;
+        if (state == JUICE_STATE_CONNECTED) {
+          //  auto sdp = pc1.localDescription();
+                    //std::cout << "Description 2: " << sdp << endl;
                     // pc2.setRemoteDescription(string(sdp));
+            
+         
+            Candidate local; Candidate remote;
+            pc2.getSelectedCandidatePair( &local, &remote);
+            
+            SInfo << "getSelectedCandidatePair2 local " <<  local << " remote "  << remote;
+            
+             
+            std::string msg = "PC2 Hello world";
+            
+            pc2.send( (unsigned char *)msg.data(),  msg.size()+1);
+            
+            
+            
         }
     });
     
@@ -193,6 +223,10 @@ int main()
         std::cout << "Signaling state 1: " << state << endl;
     });
 
+    
+    pc2.onRecv([](unsigned char * data , size_t size) {
+        std::cout << "onRecv state 1: " << data << endl;
+    });
 
     pc2.setLocalDescription();
     

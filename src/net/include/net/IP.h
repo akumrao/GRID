@@ -49,6 +49,8 @@ namespace base
             static void CopyAddress(const struct sockaddr* addr, addr_record_t &mapped);
             static void AddressToString( addr_record_t &mapped,  char *buf,  uint16_t &port);
             static void StringToAddress( const char *ip,  uint16_t port, addr_record_t &mapped);
+            static bool addr_is_equal(const struct sockaddr *a, const struct sockaddr *b, bool compare_ports);
+            static bool addr_record_is_equal(const addr_record_t *a, const addr_record_t *b, bool compare_ports);
         };
 
 

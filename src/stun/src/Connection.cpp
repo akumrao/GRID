@@ -17,9 +17,9 @@ testUdpServer::testUdpServer(std::string IP, int port,   Agent *agent ) :IP(IP),
 
 }
 
-void testUdpServer::send( uint8_t* data, uint32_t nbytes, addr_record_t &record )
+int testUdpServer::agent_direct_send( uint8_t* data, uint32_t nbytes, addr_record_t &record )
 {
-     udpServer->send( (char*) data, nbytes , (const struct sockaddr*)&record.addr);
+    return udpServer->send( (char*) data, nbytes , (const struct sockaddr*)&record.addr);
 }
       
 void testUdpServer::OnUdpSocketPacketReceived(UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr) {
@@ -184,8 +184,8 @@ void Transport::cbNameResolve(  const char* hostname, const char* service,  void
  
 void Transport::resolveNames( Candidate *cand )
 {
-   // SInfo << "resolveName " <<  icesv.hostname << ":" << icesv.port;
-
+   // SInfo << "resolveName " <<  icesv.hostname << ":" << icesv.port << " addd " << cand;
+    
    resolveName(cand->resolved.addr,   Application::uvGetLoop(),  cand) ;
 }
  
