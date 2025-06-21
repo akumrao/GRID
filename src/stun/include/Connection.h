@@ -67,7 +67,7 @@ public:
     }
     
 
-    void send( uint8_t* data, uint32_t nbytes, addr_record_t &record );
+    int  agent_direct_send( uint8_t* data, uint32_t nbytes, addr_record_t &record );
       
     void OnUdpSocketPacketReceived(UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr); 
 

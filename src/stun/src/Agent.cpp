@@ -43,7 +43,7 @@ namespace stun {
     /* --------------------------------------------------------------------- */
 
     static int agentCount = 0;
-    Agent::Agent( Description &localdesp, Description &remotedesp,  candidate_callback candidateCallback):localdesp(localdesp), remotedesp(remotedesp), mCandidateCallback(candidateCallback)
+    Agent::Agent( Description &localdesp, Description &remotedesp,  candidate_callback candidateCallback,  gathering_state_callback stateCallback, recv_callback recvcallback ):localdesp(localdesp), remotedesp(remotedesp), mCandidateCallback(candidateCallback), mstateCallback(stateCallback), mrecvcallback(recvcallback)
     {
 
         random_bytes(&ice_tiebreaker, sizeof(ice_tiebreaker));
@@ -118,7 +118,7 @@ namespace stun {
         
         std::sort(localdesp.desc.candidates,localdesp.desc.candidates +localdesp.desc.candidates_count , comp);
         
-        agent_change_state(JUICE_STATE_CONNECTED);
+        agent_change_state(JUICE_STATE_CONNECTING);
                 
         return 0;
 
@@ -127,6 +127,12 @@ namespace stun {
     int Agent::ice_create_host_candidate( Candidate *candidate ) {
 
    
+        if (localdesp.ice_find_candidate_from_addr( &candidate->resolved, candidate->resolved.addr.ss_family == AF_INET6 ? Candidate::Type::Unknown : candidate->mType )) {
+              LTrace("A local candidate exists for the mapped address");
+                          LTrace("A local candidate exists for the mapped address");
+                  return -1;
+        }
+        
         
         if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  candidate)) {
             printf("Failed to create host candidate");
@@ -146,7 +152,7 @@ namespace stun {
 	}
         
         
-        if (ice_find_candidate_from_addr(&localdesp, &candidate->resolved, candidate->resolved.addr.ss_family == AF_INET6 ? Candidate::Type::Unknown : candidate->mType )) {
+        if (localdesp.ice_find_candidate_from_addr( &candidate->resolved, candidate->resolved.addr.ss_family == AF_INET6 ? Candidate::Type::Unknown : candidate->mType )) {
                   LTrace("A local candidate exists for the mapped address");
                   return 0;
         }
@@ -230,7 +236,7 @@ namespace stun {
         int  Agent::agent_add_remote_peer_reflexive_candidate( uint32_t priority, const addr_record_t *record)
         {
             
-            if (ice_find_candidate_from_addr(&remotedesp, record, Candidate::Type::Unknown)) {
+            if (remotedesp.ice_find_candidate_from_addr( record, Candidate::Type::Unknown)) {
                     STrace << "AgentNo " << agentNo << " A remote candidate exists for the remote address";
                     return 0;
             }
@@ -293,7 +299,14 @@ namespace stun {
     int Agent::ice_add_candidate( Candidate *candidate, Description *description) 
     {
         
-       
+        
+       /* not required since already check happening in parent funtiions
+         if(description->hasCandidate(*candidate ))
+        {
+            SError << "Description already has the simillar candidates";
+            return -1;
+        }
+        */
         
 //	if (candidate->cand.type == ICE_CANDIDATE_TYPE_UNKNOWN)
 //		return -1;
@@ -477,6 +490,12 @@ namespace stun {
 	random_bytes(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
 	entry->transaction_id_expired = false;
 	++m_entries_count;
+   /*     
+        char ip[40];  uint16_t port;
+        IP::AddressToString(entry->record, ip, port); 
+        
+        STrace << "AgentNo " << agentNo <<  " Registering STUN entry  " <<   m_entries_count << " for candidate pair checking " << ip << " port " <<  port;
+  */     
 //
 //	if (remote->mType  == Candidate::Type::Host)
 //		agent_translate_host_candidate_entry( entry);
@@ -648,28 +667,31 @@ namespace stun {
 		agent_dispatch_stun( buf, len, &msg, src, relayed);
                 
                 m_next_timestamp = 0; onTimer();
+                
+                return 0; 
 	}
 
 
-        // For Turn
-        /*
-	agent_stun_entry_t *entry = agent_find_entry_from_record(agent, src, relayed);
+     
+
+	agent_stun_entry_t *entry = agent_find_entry_from_record( src, relayed);
 	if (!entry) {
 		LWarn("Received a datagram from unknown address, ignoring");
 		return -1;
 	}
 	switch (entry->type) {
+        //   // For Turn    
 	case AGENT_STUN_ENTRY_TYPE_RELAY:
-		if (is_channel_data(buf, len)) {
-			LDebug("Received ChannelData datagram");
-			return agent_process_channel_data(agent, entry, buf, len);
-		}
+//		if (is_channel_data(buf, len)) {
+//			LDebug("Received ChannelData datagram");
+//			return agent_process_channel_data(agent, entry, buf, len);
+//		}
 		break;
 
 	case AGENT_STUN_ENTRY_TYPE_CHECK:
-		LDebug("Received application datagram");
-		if (agent->config.cb_recv)
-			agent->config.cb_recv(agent, buf, len, agent->config.user_ptr);
+		//LDebug("Received application datagram");
+		if (mrecvcallback)
+			mrecvcallback(buf, len);
 		return 0;
 
 	default:
@@ -678,8 +700,7 @@ namespace stun {
 
 	LWarn("Received unexpected non-STUN datagram, ignoring");
 	return -1;
-        
-        */
+  
 }
 
     
@@ -929,35 +950,6 @@ int Agent::agent_verify_credentials( const agent_stun_entry_t *entry, unsigned c
 }
 
 
-static bool addr_is_equal(const struct sockaddr *a, const struct sockaddr *b, bool compare_ports) {
-	if (a->sa_family != b->sa_family)
-		return false;
-
-	switch (a->sa_family) {
-	case AF_INET: {
-		const struct sockaddr_in *ain = (const struct sockaddr_in *)a;
-		const struct sockaddr_in *bin = (const struct sockaddr_in *)b;
-		if (memcmp(&ain->sin_addr, &bin->sin_addr, 4) != 0)
-			return false;
-		if (compare_ports && ain->sin_port != bin->sin_port)
-			return false;
-		break;
-	}
-	case AF_INET6: {
-		const struct sockaddr_in6 *ain6 = (const struct sockaddr_in6 *)a;
-		const struct sockaddr_in6 *bin6 = (const struct sockaddr_in6 *)b;
-		if (memcmp(&ain6->sin6_addr, &bin6->sin6_addr, 16) != 0)
-			return false;
-		if (compare_ports && ain6->sin6_port != bin6->sin6_port)
-			return false;
-		break;
-	}
-	default:
-		return false;
-	}
-
-	return true;
-}
 
 const char *stun_get_error_reason(unsigned int code) {
 	switch (code) {
@@ -996,28 +988,7 @@ const char *stun_get_error_reason(unsigned int code) {
 	}
 }
 
-Candidate *Agent::ice_find_candidate_from_addr(Description *description,  const addr_record_t *record,  Candidate::Type type)
-{
-	
-     
-    for( int i =0; i < description->desc.candidates_count; ++i)
-    {
-    
-        Candidate *cur = & description->desc.candidates[i];
-    
-    
-	//Candidate *end = cur + description->candidates_count;
-	//while (cur != end) 
-        //{
-		if ((type == Candidate::Type::Unknown || cur->mType == type) &&
-		    addr_is_equal((struct sockaddr *)&record->addr, (struct sockaddr *)&cur->resolved.addr,
-		                  true))
-			return cur;
-		//++cur;
-	//}
-    }
-	return NULL;
-}
+
 
 
 
@@ -1048,10 +1019,7 @@ static inline bool entry_is_relayed(const agent_stun_entry_t *entry) {
 	return entry->pair && pair_is_relayed(entry->pair);
 }
 
-static bool addr_record_is_equal(const addr_record_t *a, const addr_record_t *b, bool compare_ports) {
-	return addr_is_equal((const struct sockaddr *)&a->addr, (const struct sockaddr *)&b->addr,
-	                     compare_ports);
-}
+
 
 agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *record, const addr_record_t *relayed) 
 {
@@ -1068,7 +1036,7 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 			}
 		 else {
 			if (!entry_is_relayed(selected_entry) &&
-			    addr_record_is_equal(&selected_entry->record, record, true)) {
+			    IP::addr_record_is_equal(&selected_entry->record, record, true)) {
 				SDebug << "AgentNo " << agentNo <<   " STUN selected entry matching incoming address" ;
 				return selected_entry;
 			}
@@ -1092,7 +1060,7 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 		for (int i = 0; i < m_candidate_pairs_count; ++i) {
 			ice_candidate_pair_t *pair = m_ordered_pairs[i];
 			if (!pair_is_relayed(pair) &&
-			    addr_record_is_equal(&pair->remote->resolved, record, true)) {
+			    IP::addr_record_is_equal(&pair->remote->resolved, record, true)) {
 				matching_pair = pair;
 				break;
 			}
@@ -1112,7 +1080,7 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 		// Try to match entries directly
 		for (int i = 0; i < m_entries_count; ++i) {
 			agent_stun_entry_t *entry = m_entries + i;
-			if (!entry_is_relayed(entry) && addr_record_is_equal(&entry->record, record, true)) {
+			if (!entry_is_relayed(entry) && IP::addr_record_is_equal(&entry->record, record, true)) {
 				SDebug << "AgentNo " << agentNo << " STUN entry " << i << "  matching incoming address";
 				return entry;
 			}
@@ -1276,7 +1244,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 			// The ICE agent MUST check that the source and destination transport addresses in the
 			// Binding request and response are symmetric. [...] If the addresses are not symmetric,
 			// the agent MUST set the candidate pair state to Failed.
-			if (!addr_record_is_equal(src, &entry->record, true)) {
+			if (!IP::addr_record_is_equal(src, &entry->record, true)) {
 				LDebug(
 				    "Candidate pair check failed (non-symmetric source address in response)");
 				entry->state = AGENT_STUN_ENTRY_STATE_FAILED;
@@ -1292,7 +1260,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 			}
 
 			if (!pair->local && msg->mapped->len)
-				pair->local = ice_find_candidate_from_addr(&localdesp, msg->mapped, Candidate::Type::Unknown);
+				pair->local = localdesp.ice_find_candidate_from_addr( msg->mapped, Candidate::Type::Unknown);
 
 			// Update consent timestamp
 			pair->consent_expiry = current_timestamp() + CONSENT_TIMEOUT;
@@ -1655,7 +1623,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
         }
         */ 
         
-        socket->send(&writer.buffer[0], writer.buffer.size(), entry->record);
+        socket->agent_direct_send(&writer.buffer[0], writer.buffer.size(), entry->record);
             
 
         
@@ -1694,7 +1662,9 @@ void Agent::agent_update_gathering_done()
 void Agent::agent_change_state( juice_state_t state)
 {
     m_state = state;
-    SInfo  << "AgentNo " << agentNo << " agent_change_state " << state;
+    STrace  << "AgentNo " << agentNo << " agent_change_state " << state;
+    
+    mstateCallback(state);
 }
 
 
@@ -2180,6 +2150,58 @@ void Agent::StartAgent( std::string &stunip, uint16_t &stunport)
 
     
 }
+
+
+int Agent::agent_get_selected_candidate_pair( Candidate *local, Candidate *remote) 
+{
+
+	ice_candidate_pair_t *pair = m_selected_pair;
+	if (!pair) {
+		
+		return -1;
+	}
+
+	if (local)
+		*local = pair->local ? *pair->local : localdesp.desc.candidates[0];
+	if (remote)
+		*remote = *pair->remote;
+
+
+	return 0;
+}
+
+
+
+
+
+int Agent::agent_send( uint8_t* data, uint32_t nbytes, int ds) 
+{
+    // Try not to lock in the send path
+    agent_stun_entry_t *selected_entry = m_selected_entry;
+    if (!selected_entry) {
+        SError <<  "AgentNo " << agentNo << " Send while ICE is not connected ";
+        return -1;
+    }
+
+//    if (m_selected_entry->relay_entry) {
+//        // The datagram should be sent through the relay, use a channel to minimize overhead
+//        conn_lock(agent); // We have to lock
+//        int ret = agent_channel_send(agent, selected_entry->relay_entry, &selected_entry->record,
+//                                     data, size, ds);
+//        conn_unlock(agent);
+//        return ret;
+//    }
+
+     return socket->agent_direct_send(data, nbytes, selected_entry->record);
+      
+    //return agent_direct_send(agent, &selected_entry->record, data, size, ds);
+}
+
+
+
+
+
+
 
 
 

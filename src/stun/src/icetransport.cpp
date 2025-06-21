@@ -34,11 +34,11 @@ const int MAX_TURN_SERVERS_COUNT = 2;
 
 IceTransport::IceTransport( Configuration &config,  Description &localdescription,  Description &remoteDes, candidate_callback candidateCallback,
                            state_callback stateChangeCallback,
-                           gathering_state_callback gatheringStateChangeCallback): localDes(localdescription), remoteDes(remoteDes), agent( localdescription, remoteDes, candidateCallback),
+                           gathering_state_callback gatheringStateChangeCallback,  recv_callback recvcallback ): localDes(localdescription), remoteDes(remoteDes), agent( localdescription, remoteDes, candidateCallback, gatheringStateChangeCallback, recvcallback),
     
-      mMid("0"), mGatheringState(GatheringState::New),
+      mMid("0"),
       mCandidateCallback(candidateCallback),
-      mGatheringStateChangeCallback(std::move(gatheringStateChangeCallback)),
+      mGatheringStateChangeCallback(gatheringStateChangeCallback),
       Transport(config)  
       {
 
@@ -246,14 +246,11 @@ void IceTransport::setRemoteDescription(const Description *description) {
 bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
     
     
-        SInfo<< "AgentNo " << agent.agentNo << " local ice_add_candidate  " << string(*candidate) <<  "  " <<   candidate;
+        SInfo<< "AgentNo " << agent.agentNo << " addRemoteCandidate  " << string(*candidate) <<  "  " <<   candidate;
      
-        if (candidate->isResolved())  // TBD
+      
+        if(  candidate->mType != rtc::Candidate::Type::PeerReflexive )
            resolveNames((Candidate *)candidate);
-        else
-        {
-            
-        }
     
 	// Don't try to pass unresolved candidates for more safety
 	//if (!candidate->isResolved())
@@ -286,7 +283,7 @@ void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> addi
 		addIceServer(server);
 
 	// Change state now as candidates calls can be synchronous
-	changeGatheringState(GatheringState::InProgress);
+	//changeGatheringState(GatheringState::InProgress);
 
 //	if (juice_gather_candidates(mAgent.get()) < 0) {
 //		throw std::runtime_error("Failed to gather local ICE candidates");
@@ -296,21 +293,16 @@ void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> addi
 
 
 bool IceTransport::getSelectedCandidatePair(Candidate *local, Candidate *remote) {
-	char sdpLocal[256];
-	char sdpRemote[256];
-//	if (juice_get_selected_candidates(mAgent.get(), sdpLocal, 256,
-//	                                  sdpRemote, 256) == 0) {
-//		if (local) {
-//			*local = Candidate(sdpLocal, mMid);
-//			local->resolve(Candidate::ResolveMode::Simple);
-//		}
-//		if (remote) {
-//			*remote = Candidate(sdpRemote, mMid);
-//			remote->resolve(Candidate::ResolveMode::Simple);
-//		}
-//		return true;
-//	}
-	return false;
+	
+    if(!agent.agent_get_selected_candidate_pair(local, remote))
+    {
+        return true;    
+    }
+    
+            //kausal 9721238934
+
+    return false;
+
 }
 
 //bool IceTransport::send(message_ptr message) {
@@ -329,10 +321,10 @@ bool IceTransport::getSelectedCandidatePair(Candidate *local, Candidate *remote)
 //	                           message->size(), ds) >= 0;
 //}
 
-void IceTransport::changeGatheringState(GatheringState state) {
-	if (mGatheringState.exchange(state) != state)
-		mGatheringStateChangeCallback(mGatheringState);
-}
+//void IceTransport::changeGatheringState(GatheringState state) {
+//	if (mGatheringState.exchange(state) != state)
+//		mGatheringStateChangeCallback(mGatheringState);
+//}
 
 void IceTransport::processStateChange(unsigned int state)
 {
@@ -359,7 +351,7 @@ void IceTransport::processCandidate(const string &candidate) {
 	mCandidateCallback(Candidate(candidate, mMid));
 }
 
-void IceTransport::processGatheringDone() { changeGatheringState(GatheringState::Complete); }
+//void IceTransport::processGatheringDone() { changeGatheringState(GatheringState::Complete); }
 /*
 void IceTransport::StateChangeCallback(juice_agent_t *, juice_state_t state, void *user_ptr) {
 	auto iceTransport = static_cast<rtc::impl::IceTransport *>(user_ptr);

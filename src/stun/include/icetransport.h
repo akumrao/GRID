@@ -28,18 +28,19 @@ public:
         enum class State { Disconnected, Connecting, Connected, Completed, Failed };
         using state_callback = std::function<void(State state)>;
 
-	enum class GatheringState { New = 0, InProgress = 1, Complete = 2 };
+	//enum class GatheringState { New = 0, InProgress = 1, Complete = 2 };
 
 	using candidate_callback = std::function<void(const Candidate candidate)>;
-	using gathering_state_callback = std::function<void(GatheringState state)>;
+	using gathering_state_callback = std::function<void(juice_state_t state)>;
+        using recv_callback = std::function<void(unsigned char * data , size_t size )>;
 
 	IceTransport( Configuration &config, Description &localDesc, Description & remoteDesc,  candidate_callback candidateCallback,
 	             state_callback stateChangeCallback,
-	             gathering_state_callback gatheringStateChangeCallback);
+	             gathering_state_callback gatheringStateChangeCallback, recv_callback recvcallback );
 	~IceTransport();
 
 	Description::Role role() const;
-	GatheringState gatheringState() const;
+	//GatheringState gatheringState() const;
 
         Description *getLocalDescription(Description::Type type);
         
@@ -57,7 +58,7 @@ public:
 private:
 
 
-	void changeGatheringState(GatheringState state);
+	//void changeGatheringState(GatheringState state);
 
 	void processStateChange(unsigned int state);
 	void processCandidate(const string &candidate);
@@ -79,7 +80,7 @@ private:
 	Description::Role mRole;
 	string mMid;
 	std::chrono::milliseconds mTrickleTimeout;
-	std::atomic<GatheringState> mGatheringState;
+	//std::atomic<GatheringState> mGatheringState;
 
 	candidate_callback mCandidateCallback;
 	gathering_state_callback mGatheringStateChangeCallback;

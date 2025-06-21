@@ -124,7 +124,7 @@ namespace base {
                 req->data = tmp;
                 int r;
 
-                r = uv_getnameinfo(loop, req, getnameinfo_cb1, (const struct sockaddr*)&addrStorage, 0); 
+                r = uv_getnameinfo(loop, req, getnameinfo_cb1, (const struct sockaddr*)&addrStorage,  NI_NUMERICHOST | NI_NUMERICSERV | NI_DGRAM); 
                 assert(r == 0);
 
             }

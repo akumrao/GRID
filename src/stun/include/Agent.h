@@ -130,11 +130,12 @@ typedef struct agent_stun_entry {
   public:
       
     using candidate_callback = std::function<void(const Candidate candidate)>;
-    //	using gathering_state_callback = std::function<void(GatheringState state)>;
+    using gathering_state_callback = std::function<void(juice_state_t state)>;
+    using recv_callback = std::function<void(unsigned char * data , size_t size )>;
       
     Agent() = delete;
     
-    Agent(Description &localdesp, Description &remotedesp, candidate_callback candidateCallback);
+    Agent(Description &localdesp, Description &remotedesp, candidate_callback candidateCallback, gathering_state_callback stateCallback , recv_callback recvcallback );
     ~Agent();
     bool getInterfaces( );
 
@@ -161,15 +162,14 @@ typedef struct agent_stun_entry {
     //Remote candidate
     int ice_add_remote_candidate(const Candidate *candidate);
     int  agent_add_remote_peer_reflexive_candidate( uint32_t priority, const addr_record_t *record); // peer-reflex only
-
-
-
     int ice_add_candidate( Candidate *candidate, Description *description);
         
         
    candidate_callback mCandidateCallback;
-   
+   gathering_state_callback mstateCallback;
 
+   recv_callback mrecvcallback;
+            
   //  ice_description_t local;
    // ice_description_t remote;
 
@@ -220,7 +220,7 @@ typedef struct agent_stun_entry {
     int agent_verify_stun_binding(unsigned char *buf, size_t size, stun::Message *msg);
     int agent_verify_credentials( const agent_stun_entry_t *entry, unsigned char *buf,   size_t size, stun::Message *msg);
     
-    Candidate* ice_find_candidate_from_addr(Description *description,  const addr_record_t *record,  Candidate::Type type);
+ 
     agent_stun_entry_t* agent_find_entry_from_transaction_id( const uint8_t *transaction_id) ;
     agent_stun_entry_t* agent_find_entry_from_record( const addr_record_t *record, const addr_record_t *relayed); 
     
@@ -229,6 +229,10 @@ typedef struct agent_stun_entry {
     int agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_class, unsigned int error_code, const uint8_t *transaction_id, const addr_record_t *mapped);
 
     void StartAgent( std::string &stunip, uint16_t &stunport);
+    
+    int agent_get_selected_candidate_pair( Candidate *local, Candidate *remote);
+    
+    int agent_send(  uint8_t* data, uint32_t nbytes, int ds);
     
     testUdpServer *socket{nullptr};
         

@@ -278,7 +278,8 @@ void PeerConnection::setLocalDescription(Description::Type type) {
 
 	changeSignalingState(newSignalingState);
 
-        if (mGatheringState == GatheringState::New) {
+        if (mGatheringState == JUICE_STATE_DISCONNECTED) 
+        {
 		iceTransport->gatherLocalCandidates(localBundleMid());
 	}
 }
@@ -419,16 +420,13 @@ void PeerConnection::processRemoteCandidate(Candidate candidate) {
 //		if (!iceTransport)
 //			throw std::logic_error("Got a remote candidate without ICE transport");
 //
-//		candidate.hintMid(mRemoteDescription->bundleMid());
-//
-//		if (mRemoteDescription->hasCandidate(candidate))
-//			return; // already in description, ignore
+		// candidate.hintMid(mRemoteDescription.bundleMid()); done inside addcandidate
+                //if (mRemoteDescription.hasCandidate(candidate))    done  insideadd candidte
+		//	return; // already in description, ignore 
+
 
 //		candidate.resolve(Candidate::ResolveMode::Simple);
-		Candidate  *cand  = mRemoteDescription.addCandidate(candidate);
-	
-
-	//if (candidate.isResolved()) 
+	    Candidate  *cand  = mRemoteDescription.addCandidate(candidate);
             if(cand)
 		iceTransport->addRemoteCandidate(cand);
             else
@@ -491,8 +489,12 @@ void PeerConnection::onStateChange(std::function<void(State state)> callback) {
 	mStateChangeCallback = callback;
 }
 
-void PeerConnection::onGatheringStateChange(std::function<void(GatheringState state)> callback) {
+void PeerConnection::onGatheringStateChange(std::function<void(juice_state_t state)> callback) {
 	mGatheringStateChangeCallback = callback;
+}
+
+void PeerConnection::onRecv(recv_callback callback) {
+	mRecvChangeCallback = callback;
 }
 
 void PeerConnection::onSignalingStateChange(std::function<void(SignalingState state)> callback) {
@@ -547,11 +549,14 @@ void PeerConnection::processLocalCandidate(Candidate candidate)
 	SInfo << "AgentNo " << iceTransport->agent.agentNo << " Issuing local candidate: " << candidate;
 
 	//candidate.resolve(Candidate::ResolveMode::Simple);
-	mLocalDescription.addCandidate(candidate);
+	// mLocalDescription.addCandidate(candidate, false);
+         
+        {
         
-        if(mLocalCandidateCallback)
-        mLocalCandidateCallback(candidate);
+            if(mLocalCandidateCallback)
+            mLocalCandidateCallback(candidate);
 
+        }
 	//mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),
 	//				   &localCandidateCallback, std::move(candidate));
 }
@@ -576,20 +581,29 @@ void PeerConnection::iceState(IceTransport::State state) {
             break;
     };
 }
-void PeerConnection::iceGathering(IceTransport::GatheringState state) {
+void PeerConnection::iceGathering(juice_state_t state) {
+    
+    
+    mGatheringState =  state;
+    
+    
+    if(mGatheringStateChangeCallback)
+    mGatheringStateChangeCallback(state);
+            
 
-    switch (state) {
-        case IceTransport::GatheringState::InProgress:
-            //changeGatheringState(GatheringState::InProgress);
-            break;
-        case IceTransport::GatheringState::Complete:
-           /// endLocalCandidates();
-            //changeGatheringState(GatheringState::Complete);
-            break;
-        default:
-            // Ignore
-            break;
-    }
+
+//    switch (state) {
+//        case IceTransport::GatheringState::InProgress:
+//            //changeGatheringState(GatheringState::InProgress);
+//            break;
+//        case IceTransport::GatheringState::Complete:
+//           /// endLocalCandidates();
+//            //changeGatheringState(GatheringState::Complete);
+//            break;
+//        default:
+//            // Ignore
+//            break;
+//    }
 }
 
 IceTransport* PeerConnection::initIceTransport() 
@@ -605,7 +619,7 @@ IceTransport* PeerConnection::initIceTransport()
 		    mConfig, mLocalDescription , mRemoteDescription,
                      std::bind(&PeerConnection::processLocalCandidate, this, _1),    
 		    std::bind(&PeerConnection::iceState, this, _1),
-		    std::bind(&PeerConnection::iceGathering, this, _1)) ;
+		    std::bind(&PeerConnection::iceGathering, this, _1), std::bind(&PeerConnection::recv, this, _1, _2)   ) ;
 
 //		std::atomic_store(&mIceTransport, transport);
 //		if (mState == State::Closed) {
@@ -676,6 +690,22 @@ IceTransport* PeerConnection::initIceTransport()
 //	return impl()->remoteFingerprint();
 //}
 
+bool PeerConnection::getSelectedCandidatePair(Candidate *local, Candidate *remote)
+{
+    return iceTransport->getSelectedCandidatePair(local, remote);
+}
+
+
+bool PeerConnection::recv(unsigned char * data , size_t size)
+{
+     mRecvChangeCallback( data, size );
+}
+
+int PeerConnection::send(unsigned char * data , size_t size)
+{
+    return iceTransport->agent.agent_send(data, size,0);
+}
+
 std::ostream &operator<<(std::ostream &out, PeerConnection::State state) {
 	using State = PeerConnection::State;
 	const char *str;
@@ -737,19 +767,31 @@ std::ostream &operator<<(std::ostream &out, PeerConnection::IceState state) {
 	return out << str;
 }
 
-std::ostream &operator<<(std::ostream &out, PeerConnection::GatheringState state) {
-	using GatheringState = PeerConnection::GatheringState;
+std::ostream &operator<<(std::ostream &out, juice_state_t state) {
+	//using GatheringState = PeerConnection::GatheringState;
 	const char *str;
 	switch (state) {
-	case GatheringState::New:
-		str = "new";
+	case JUICE_STATE_DISCONNECTED:
+		str = "disconnecte";
 		break;
-	case GatheringState::InProgress:
-		str = "in-progress";
+	case JUICE_STATE_GATHERING:
+		str = "gathering";
 		break;
-	case GatheringState::Complete:
+	case JUICE_STATE_CONNECTING:
+		str = "connecting";
+		break;
+                
+        case JUICE_STATE_CONNECTED:
+                str = "connected";
+                 break;
+                
+        case JUICE_STATE_COMPLETED:
 		str = "complete";
-		break;
+		break;  
+                
+         case JUICE_STATE_FAILED:
+		str = "failed";
+		break;          
 	default:
 		str = "unknown";
 		break;
