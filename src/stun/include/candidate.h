@@ -70,8 +70,8 @@ public:
 	string mid() const;
 	operator string() const;
 
-	bool operator==(const Candidate &other) const;
-	bool operator!=(const Candidate &other) const;
+//	bool operator==(const Candidate &other) const;
+//	bool operator!=(const Candidate &other) const;
 
 	bool isResolved() const;
 	int family() const;

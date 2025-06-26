@@ -208,7 +208,7 @@ typedef struct agent_stun_entry {
 
     agent_stun_entry_t m_entries[MAX_STUN_ENTRIES_COUNT];
     
-    std::string localMid;
+    std::string localMid{0};
 
     Timer _timer{ nullptr};
      
@@ -253,10 +253,10 @@ typedef struct agent_stun_entry {
     
     agent_stun_entry_t *m_selected_entry{nullptr};
     
-    uint64_t ice_tiebreaker;  // random number
+    uint64_t ice_tiebreaker{0};  // random number
         
-    int64_t nomination_timestamp;
-    int64_t pac_timestamp; 
+    int64_t nomination_timestamp{0};
+    int64_t pac_timestamp{0}; 
     bool  m_gathering_done{false};
     int agentNo;
   private:

@@ -265,8 +265,31 @@ std::vector<Candidate> Description::extractCandidates() {
 	return result;
 }
 
-bool Description::hasCandidate(const Candidate &candidate) const {
-	return std::find(desc.candidates , desc.candidates + desc.candidates_count, candidate) !=    desc.candidates + desc.candidates_count;
+bool Description::hasCandidate(const Candidate &cand) const {
+
+   //return std::find(desc.candidates , desc.candidates + desc.candidates_count, cand) !=    desc.candidates + desc.candidates_count;
+    
+         
+        for( int i = 0 ; i < desc.candidates_count ; ++i)
+        {
+            Candidate *other = (Candidate *)&desc.candidates[i];
+            
+            if(cand.isResolved() && other->isResolved() )
+            {
+                if (((cand.mFoundation == other->mFoundation || cand.mType == rtc::Candidate::Type::PeerReflexive) &&  IP::addr_record_is_equal( &cand.resolved,  &other->resolved,  true)) )
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                SError << " This is not allowed state , exiting stun";
+                exit(0);
+            }
+            
+        }
+        
+        return false;
 }
 
 Candidate *Description::ice_find_candidate_from_addr( const addr_record_t *record,  Candidate::Type type)

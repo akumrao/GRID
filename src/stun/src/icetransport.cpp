@@ -249,8 +249,7 @@ bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
         SInfo<< "AgentNo " << agent.agentNo << " addRemoteCandidate  " << string(*candidate) <<  "  " <<   candidate;
      
       
-        if(  candidate->mType != rtc::Candidate::Type::PeerReflexive )
-           resolveNames((Candidate *)candidate);
+        resolveNames((Candidate *)candidate);
     
 	// Don't try to pass unresolved candidates for more safety
 	//if (!candidate->isResolved())

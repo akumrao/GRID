@@ -126,7 +126,7 @@ bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz
 
     HMAC_CTX_free(ctx);
 
-#if 1
+#if PRINTDEBUG
     printf("stun::compute_hmac_sha1 - verbose: computing hash over %u bytes, using key `%s`:\n", nbytes, key.c_str());
     printf("-----------------------------------\n\t0: ");
     int nl = 0, lines = 0;
@@ -142,7 +142,7 @@ bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz
     printf("\n-----------------------------------\n");
 #endif
 
-#if 1
+#if PRINTDEBUG
     printf("stun::compute_hmac_sha1 - verbose: computed hash: ");
     for(unsigned int i = 0; i < len; ++i) {
       printf("%02X ", output[i]);

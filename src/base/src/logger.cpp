@@ -18,7 +18,7 @@
 #include "base/util.h"
 
 #include <time.h>
-//#include <sys/time.h>
+#include <sys/time.h>
 
 #include <assert.h>
 #include <iterator>
@@ -298,6 +298,19 @@ namespace base {
 #ifdef base_ENABLE_LOGGING
         if (!_timeFormat.empty()) {
             ost << time::print(time::toLocal(stream.ts), _timeFormat.c_str());
+            
+            
+            struct timeval mediaTime;
+            memset(&mediaTime, 0, sizeof (mediaTime));
+            gettimeofday(&mediaTime, 0);
+            //time_t mediaTimeMs = (mediaTime.tv_sec)*1000 + (mediaTime.tv_usec) / 1000;
+            int msec = mediaTime.tv_usec / 1000;
+            
+            char strmsec[15];
+            sprintf(strmsec, ".%03d ", msec); 
+            
+            ost << strmsec;
+             
             ost << " [" << getStringFromLevel(stream.level) << "] ";
 
             if (!stream.realm.empty()) { // || !stream.address.empty()

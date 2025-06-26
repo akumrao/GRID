@@ -19,7 +19,7 @@ namespace stun {
    */
   void Writer::writeMessage(Message* msg, std::string messageIntegrityPassword) {
 
-    printf("stun::Writer - verbose: creating stun message with integrity password: `%s`\n", messageIntegrityPassword.c_str());
+    PrintDebug("stun::Writer - verbose: creating stun message with integrity password: `%s`\n", messageIntegrityPassword.c_str());
 
     /* first write all the attributes. */
     writeMessage(msg);
@@ -34,7 +34,7 @@ namespace stun {
         }
       }
       else {
-        printf("stun::Writer - warning: couldn't write the message integrity value in stun::Writer.\n");
+        PrintDebug("stun::Writer - warning: couldn't write the message integrity value in stun::Writer.\n");
       }
     }
     
@@ -44,11 +44,11 @@ namespace stun {
     if (msg->find(STUN_ATTR_FINGERPRINT, &fp)) {
       if (compute_fingerprint(buffer, crc)) 
       {
-        printf("stun::Writer - verbose: Fingerprint: %x\n",crc);
+        PrintDebug("stun::Writer - verbose: Fingerprint: %x\n",crc);
         rewriteU32(fp->offset + 4, crc);
       }
       else {
-        printf("stun::Writer - warning: couldn't write the message fingerprint in stun::Writer.\n");
+        PrintDebug("stun::Writer - warning: couldn't write the message fingerprint in stun::Writer.\n");
       }
     }
   }
@@ -97,7 +97,7 @@ namespace stun {
 
     /* rewrite the message size header element; is the size w/o the header. */
     if (buffer.size() > UINT16_MAX) {
-      printf("stun::Writer - warning: message size is too large.\n");
+      PrintDebug("stun::Writer - warning: message size is too large.\n");
       return;
     }
 
@@ -162,7 +162,7 @@ namespace stun {
       
 
       default: {
-        printf("stun::Writer - error: unhandled attribute in stun::Writer::writeAttribute(): %s\n", attribute_type_to_string(attr->type).c_str());
+        PrintDebug("stun::Writer - error: unhandled attribute in stun::Writer::writeAttribute(): %s\n", attribute_type_to_string(attr->type).c_str());
         break;
       }
     }
@@ -241,7 +241,7 @@ namespace stun {
 			return -1;
 		if (addrlen < (socklen_t)sizeof(struct sockaddr_in))
 			return -1;
-		//printf("Writing IPv4 address");
+		//PrintDebug("Writing IPv4 address");
 		const struct sockaddr_in *sin = (const struct sockaddr_in *)addr;
 		value->port = sin->sin_port ^ *((uint16_t *)mask);
 		const uint8_t *bytes = (const uint8_t *)&sin->sin_addr;
@@ -255,7 +255,7 @@ namespace stun {
 			return -1;
 		if (addrlen < (socklen_t)sizeof(struct sockaddr_in6))
 			return -1;
-		//printf("Writing IPv6 address");
+		//PrintDebug("Writing IPv6 address");
 		const struct sockaddr_in6 *sin6 = (const struct sockaddr_in6 *)addr;
 		value->port = sin6->sin6_port ^ *((uint16_t *)mask);
 		const uint8_t *bytes = (const uint8_t *)&sin6->sin6_addr;
@@ -264,7 +264,7 @@ namespace stun {
 		return sizeof(struct stun_value_mapped_address) + 16;
 	}
 	default: {
-		printf("Unknown address family %u", (unsigned int)addr->sa_family);
+		PrintDebug("Unknown address family %u", (unsigned int)addr->sa_family);
 		return -1;
 	}
 	}
@@ -383,7 +383,7 @@ namespace stun {
   void Writer::rewriteU16(size_t dx, uint16_t v) {
 
     if ( (dx + 2) > buffer.size()) {
-      printf("stun::Writer - warning: trying to rewriteU16, but our buffer is too small to contain a u16.\n");
+      PrintDebug("stun::Writer - warning: trying to rewriteU16, but our buffer is too small to contain a u16.\n");
       return;
     }
 
@@ -394,7 +394,7 @@ namespace stun {
 
   void Writer::rewriteU32(size_t dx, uint32_t v) {
     if ( (dx + 4) > buffer.size()) {
-      printf("stun::Writer - warning: trying to rewrite U32 in stun::Writer::rewriteU32() but index is out of bounds.\n");
+      PrintDebug("stun::Writer - warning: trying to rewrite U32 in stun::Writer::rewriteU32() but index is out of bounds.\n");
       return;
     }
 

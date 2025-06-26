@@ -6,6 +6,18 @@
 #include <vector>
 #include <Types.h>
 
+
+//#define PRINTDEBUG 1
+
+#if PRINTDEBUG
+#define PrintDebug printf
+#else
+
+#define PrintDebug 
+
+#endif 
+
+
 namespace stun {
   
     struct stun_header {
