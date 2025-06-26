@@ -71,18 +71,23 @@ namespace stun {
 //  msg->transaction[1] = readU32();
 //  msg->transaction[2] = readU32();
 
-    //printf("stun::Reade msg len %d, transactionids %x, %x, %x \n ", msg->length,  msg->transaction[0],  msg->transaction[1],  msg->transaction[2] );
+    //PrintDebug("stun::Reade msg len %d, transactionids %x, %x, %x \n ", msg->length,  msg->transaction[0],  msg->transaction[1],  msg->transaction[2] );
 
-    printf("stun::Reade msg  transactionids: ");
+    #if PRINTDEBUG
+
+    PrintDebug("stun::Reade msg  transactionids: ");
        for (int k = 0; k < STUN_TRANSACTION_ID_SIZE; ++k) {
-         printf("%02X ", msg->transaction_id[k]);
+         PrintDebug("%02X ", msg->transaction_id[k]);
     }
-    printf("\n");
+    PrintDebug("\n");
+    
+    #endif
+    
           
     /* validate */
     if (!stun_validate_cookie(msg->cookie)) {
       SWarn << "stun::Reader - warning: invalid STUN cookie, number of bytes: "  << nbytes;
-      printf("stun::Reader - warning: invalid cookie data: %02X %02X %02X %02X\n", data[0], data[1], data[2], data[3]);
+      PrintDebug("stun::Reader - warning: invalid cookie data: %02X %02X %02X %02X\n", data[0], data[1], data[2], data[3]);
       buffer.clear();
       dx = 0;
       return 1;
@@ -96,7 +101,7 @@ namespace stun {
     uint32_t prev_dx;
     
     if(bytesLeft() != msg->length)
-    printf("stun::Read Error msg len %d, bytesLeft %d \n ", msg->length,bytesLeft());
+    PrintDebug("stun::Read Error msg len %d, bytesLeft %d \n ", msg->length,bytesLeft());
     
     while (bytesLeft() >= 4) {
       
@@ -106,7 +111,7 @@ namespace stun {
       attr_type = readU16();
       attr_length = readU16();
 
-      printf("stun::Reader - received message type: %s, Type: %s, Length: %d, bytes left: %u, current index: %ld\n", 
+      PrintDebug("stun::Reader - received message type: %s, Type: %s, Length: %d, bytes left: %u, current index: %ld\n", 
              message_type_to_string(msg->type).c_str(),
              attribute_type_to_string(attr_type).c_str(), 
              attr_length, 
@@ -174,11 +179,17 @@ namespace stun {
         case STUN_ATTR_MESSAGE_INTEGRITY: {     
           MessageIntegrity* integ = new MessageIntegrity(20);
           memcpy(integ->sha.sha1, &buffer[dx], 20);
-          printf("stun::Reader - received Message-Integrity: ");
+          
+          #if PRINTDEBUG
+
+          PrintDebug("stun::Reader - received Message-Integrity: ");
           for (int k = 0; k < 20; ++k) {
-            printf("%02X ", integ->sha.sha1[k]);
+            PrintDebug("%02X ", integ->sha.sha1[k]);
           }
-          printf("\n");
+          PrintDebug("\n");
+          
+          #endif
+          
           attr = (Attribute*) integ;
           skip(20);
           break;
@@ -188,7 +199,7 @@ namespace stun {
           /* CRC32-bit, see http://tools.ietf.org/html/rfc5389#section-15.5 */
           Fingerprint* fp = new Fingerprint();
           fp->crc = readU32();
-          printf("stun::Reader - verbose: Fingerprint: %x\n",fp->crc);
+          PrintDebug("stun::Reader - verbose: Fingerprint: %x\n",fp->crc);
           attr = (Attribute*) fp;
           break;
         }
@@ -234,7 +245,7 @@ namespace stun {
         }
         
         case STUN_ATTR_USERHASH: {
-            printf("STUN_ATTR_USERHASH\n");
+            PrintDebug("STUN_ATTR_USERHASH\n");
             if (attr_length != USERHASH_SIZE) {
         			SWarn << "STUN user hash value too long, length= " << attr_length;
         			return -1;
@@ -245,27 +256,27 @@ namespace stun {
             break;
         }
         case STUN_ATTR_REALM: {
-      		printf("Reading realm\n");
+      		PrintDebug("Reading realm\n");
       		if (attr_length + 1 > STUN_MAX_REALM_LEN) {
       			SWarn << "STUN realm attribute value too long, length= " <<  attr_length;
       			return -1;
 		}
 		memcpy(msg->credentials.realm, getArray(attr_length), attr_length);
 		msg->credentials.realm[attr_length] = '\0';
-		printf("Got realm: %s \n", msg->credentials.realm);
+		PrintDebug("Got realm: %s \n", msg->credentials.realm);
                 
                 skip(1);// padding
 		break;
 	}
 	case STUN_ATTR_NONCE: {
-		printf("Reading nonce \n");
+		PrintDebug("Reading nonce \n");
 		if (attr_length + 1 > STUN_MAX_NONCE_LEN) {
 			SWarn << "STUN nonce attribute value too long, length= " <<  attr_length;
 			return -1;
 		}
 		memcpy(msg->credentials.nonce, getArray(attr_length), attr_length);
 		msg->credentials.nonce[attr_length] = '\0';
-		printf("Got nonce: %s \n", msg->credentials.nonce);
+		PrintDebug("Got nonce: %s \n", msg->credentials.nonce);
 
 		// If the nonce of a response starts with the nonce cookie, decode the Security Feature bits
 		// See https://www.rfc-editor.org/rfc/rfc8489.html#section-9.2
@@ -291,15 +302,15 @@ namespace stun {
 //			}
 		}
 //                else if (msg->msg_class == STUN_CLASS_RESP_ERROR) {
-//			printf("Remote agent does not support RFC 8489");
+//			PrintDebug("Remote agent does not support RFC 8489");
 //		}
                  skip(3);// padding
 		break;
 	}
 	case STUN_ATTR_PASSWORD_ALGORITHM: {
-		printf("Reading password algorithm\n");
+		PrintDebug("Reading password algorithm\n");
 		if (attr_length < sizeof(struct stun_value_password_algorithm)) {
-			printf("STUN password algorithm value too short, length=%zu \n", attr_length);
+			PrintDebug("STUN password algorithm value too short, length=%zu \n", attr_length);
 			return -1;
 		}
 		if ((msg->type != STUN_BINDING_RESPONSE)) {
@@ -310,9 +321,9 @@ namespace stun {
 			    algorithm == STUN_PASSWORD_ALGORITHM_SHA256)
 				msg->credentials.password_algorithm = algorithm;
 			else
-				printf("Unknown password algorithm 0x%hX \n", algorithm);
+				PrintDebug("Unknown password algorithm 0x%hX \n", algorithm);
 		} else {
-			printf("Found password algorithm in response, ignoring \n");
+			PrintDebug("Found password algorithm in response, ignoring \n");
 		}
 		break;
 	}
@@ -323,11 +334,16 @@ namespace stun {
 
                 MessageIntegrity* integ = new MessageIntegrity(32);
                 memcpy(integ->sha.sha256, &buffer[dx], 32);
-                printf("stun::Reader - received Message-Integrity: ");
+                
+                 #if PRINTDEBUG
+                PrintDebug("stun::Reader - received Message-Integrity: ");
                 for (int k = 0; k < 32; ++k) {
-                  printf("%02X ", integ->sha.sha256[k]);
+                  PrintDebug("%02X ", integ->sha.sha256[k]);
                 }
-                printf("\n");
+                PrintDebug("\n");
+                #endif
+                
+                
                 attr = (Attribute*) integ;
                 skip(32);
 
@@ -336,7 +352,7 @@ namespace stun {
         
 
         default: {
-          printf("stun::Reader - error: unhandled STUN attribute %s of length: %u, this will result in incorrect message integrity\n", attribute_type_to_string(attr_type).c_str(), attr_length);
+          PrintDebug("stun::Reader - error: unhandled STUN attribute %s of length: %u, this will result in incorrect message integrity\n", attribute_type_to_string(attr_type).c_str(), attr_length);
           break;
         }
       }
@@ -386,7 +402,7 @@ namespace stun {
   uint16_t Reader::readU16() {
 
     if (bytesLeft() < 2) { 
-      printf("Error: trying to readU16() in STUN, but the buffer is not big enough.\n");
+      PrintDebug("Error: trying to readU16() in STUN, but the buffer is not big enough.\n");
       return 0;
     }
 
@@ -404,7 +420,7 @@ namespace stun {
   uint32_t Reader::readU32() {
 
     if (bytesLeft() < 4) {
-      printf("Error: trying to readU32() in STUN, but the buffer is not big enough.\n");
+      PrintDebug("Error: trying to readU32() in STUN, but the buffer is not big enough.\n");
       return 0;
     }
 
@@ -424,7 +440,7 @@ namespace stun {
   uint64_t Reader::readU64() {
 
     if (bytesLeft() < 8) {
-      printf("Error: trying to readU64() in STUN, but the buffer is not big enough.\n");
+      PrintDebug("Error: trying to readU64() in STUN, but the buffer is not big enough.\n");
       return 0;
     }
 
@@ -639,7 +655,7 @@ namespace stun {
 //
 //    }
 //    else {
-//      printf("Warning: we shouldn't arrive here in stun::Reader.\n");
+//      PrintDebug("Warning: we shouldn't arrive here in stun::Reader.\n");
 //      delete addr;
 //      return NULL;
 //    }
@@ -658,7 +674,7 @@ size_t generate_hmac_key(Message* msg, std::string &password, std::string &key)
     if (*msg->credentials.realm != '\0') {
         // long-term credentials
         if( *msg->credentials.username == '\0')
-           printf("Generating HMAC key for long-term credentials with empty STUN username \n");
+           PrintDebug("Generating HMAC key for long-term credentials with empty STUN username \n");
 
         char input[MAX_HMAC_INPUT_LEN];
         int input_len = snprintf(input, MAX_HMAC_INPUT_LEN, "%s:%s:%s", msg->credentials.username,
@@ -744,7 +760,7 @@ bool Reader::computeMessageIntegrity(Message* msg, std::string password) {
   /* --------------------------------------------------------------------- */
 
   static bool stun_validate_cookie(uint32_t cookie) {
-    //printf("%02X:%02X:%02X:%02X\n", ptr[3], ptr[2], ptr[1], ptr[0]);
+    //PrintDebug("%02X:%02X:%02X:%02X\n", ptr[3], ptr[2], ptr[1], ptr[0]);
     uint8_t* ptr = (uint8_t*) &cookie;
     return (ptr[3] == 0x21 
             && ptr[2] == 0x12 

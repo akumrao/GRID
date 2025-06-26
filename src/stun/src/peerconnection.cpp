@@ -429,16 +429,6 @@ void PeerConnection::processRemoteCandidate(Candidate candidate) {
 	    Candidate  *cand  = mRemoteDescription.addCandidate(candidate);
             if(cand)
 		iceTransport->addRemoteCandidate(cand);
-            else
-            {
-                SError << " exit 0";
-                exit(0);
-            }
-        //else 
-       // {
-		// We might need a lookup, do it asynchronously
-	
-	//}
 }
 
 //void PeerConnection::setMediaHandler(shared_ptr<MediaHandler> handler) {
@@ -546,7 +536,7 @@ void PeerConnection::processLocalCandidate(Candidate candidate)
 		return;
 	}
 
-	SInfo << "AgentNo " << iceTransport->agent.agentNo << " Issuing local candidate: " << candidate;
+	STrace << "AgentNo " << iceTransport->agent.agentNo << " Issuing local candidate: " << candidate;
 
 	//candidate.resolve(Candidate::ResolveMode::Simple);
 	// mLocalDescription.addCandidate(candidate, false);

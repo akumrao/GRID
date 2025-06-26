@@ -233,18 +233,25 @@ Candidate::operator string() const {
 	return line.str();
 }
 
-bool Candidate::operator==(const Candidate &other) const {
-    
-    if(isResolved() && other.isResolved() )
-	return (mFoundation == other.mFoundation &&  IP::addr_record_is_equal( &resolved,  &other.resolved,  true) );
-    else
-    return (mFoundation == other.mFoundation && mService == other.mService && mNode == other.mNode);
-    
-}
-
-bool Candidate::operator!=(const Candidate &other) const {
-	return mFoundation != other.mFoundation;
-}
+//bool Candidate::operator==(const Candidate &other) const {
+//    
+//    if(isResolved() && other.isResolved() )
+//    {
+//
+//    	return ((mFoundation == other.mFoundation  &&  IP::addr_record_is_equal( &resolved,  &other.resolved,  true)) );
+//    }
+//    else
+//    {
+//        SError << " This is not allowed state , exiting stun";
+//        exit(0);
+//       // return (mFoundation == other.mFoundation && mService == other.mService && mNode == other.mNode);
+//    }
+//    
+//}
+//
+//bool Candidate::operator!=(const Candidate &other) const {
+//	return mFoundation != other.mFoundation;
+//}
 
 bool Candidate::isResolved() const {
     return resolved.len ;

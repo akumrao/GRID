@@ -220,12 +220,12 @@ int main()
     });
 
     pc2.onSignalingStateChange([](PeerConnection::SignalingState state) {
-        std::cout << "Signaling state 1: " << state << endl;
+        std::cout << "Signaling state 2: " << state << endl;
     });
 
     
     pc2.onRecv([](unsigned char * data , size_t size) {
-        std::cout << "onRecv state 1: " << data << endl;
+        std::cout << "onRecv state 2: " << data << endl;
     });
 
     pc2.setLocalDescription();

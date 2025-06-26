@@ -73,11 +73,15 @@ namespace stun {
 //    transaction[1] = b;
 //    transaction[2] = c;
     random_bytes(transaction_id, STUN_TRANSACTION_ID_SIZE);
+
+    #if PRINTDEBUG
+
     printf("Message::Set msg  transactionids: ");
        for (int k = 0; k < STUN_TRANSACTION_ID_SIZE; ++k) {
          printf("%02X ", transaction_id[k]);
     }
     printf("\n");
+    #endif
 
   }
 
