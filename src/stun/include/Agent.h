@@ -61,6 +61,19 @@ typedef enum ice_candidate_pair_state {
 	ICE_CANDIDATE_PAIR_STATE_SUCCEEDED,
 	ICE_CANDIDATE_PAIR_STATE_FAILED,
 	ICE_CANDIDATE_PAIR_STATE_FROZEN,
+                
+/*                
+                Frozen State:
+When a candidate pair is in the frozen state, it means that ongoing checks on other candidate pairs are preventing this pair from being evaluated. 
+        
+   ansitioning to Other States:
+Once the checks on higher priority pairs are complete or no longer blocking, the frozen pair can transition to the "waiting" state, and then to "in-progress" if it's selected for a connectivity check. 
+Failure or Success:
+If the check for the candidate pair succeeds, it moves to the "succeeded" state. If it fails, it moves to the "failed" state. 
+Example:
+In a video call, the "frozen" state might be used to prioritize checking direct connections between peers (e.g., host-to-host) before attempting more complex paths (e.g., relaying through a TURN server).      
+*/
+                
 } ice_candidate_pair_state_t;
 
 
@@ -69,8 +82,8 @@ typedef struct ice_candidate_pair {
 	Candidate *remote;
 	uint64_t priority;
 	ice_candidate_pair_state_t state;
-	bool nominated;
-	bool nomination_requested;
+	bool nominated{false};
+	bool nomination_requested{false};
 	int64_t consent_expiry;
 } ice_candidate_pair_t;
 
@@ -101,15 +114,15 @@ typedef enum agent_stun_entry_state {
 
 typedef struct agent_stun_entry {
 	agent_stun_entry_type_t type;
-	agent_stun_entry_state_t state;
+	agent_stun_entry_state_t state{AGENT_STUN_ENTRY_STATE_PENDING};
 	agent_mode_t mode;
 	ice_candidate_pair_t *pair;
 	addr_record_t record;
 	addr_record_t relayed;
 	uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
-	int64_t next_transmission;
-	int64_t retransmission_timeout;
-	int retransmissions;
+	int64_t next_transmission{0};
+	int64_t retransmission_timeout{0};
+	int retransmissions{0};
 	bool transaction_id_expired;
 
 	// TURN
@@ -175,8 +188,8 @@ typedef struct agent_stun_entry {
 
     ice_candidate_pair_t m_candidate_pairs[MAX_CANDIDATE_PAIRS_COUNT];
     ice_candidate_pair_t *m_ordered_pairs[MAX_CANDIDATE_PAIRS_COUNT];
-    ice_candidate_pair_t *m_selected_pair;
-    int m_candidate_pairs_count;
+    ice_candidate_pair_t *m_selected_pair{nullptr};
+    int m_candidate_pairs_count{0};
 
     
     
@@ -256,7 +269,7 @@ typedef struct agent_stun_entry {
     uint64_t ice_tiebreaker{0};  // random number
         
     int64_t nomination_timestamp{0};
-    int64_t pac_timestamp{0}; 
+    int64_t pac_timestamp{0}; ///* perform connectivity check, getting ice from websocket from other machine*/
     bool  m_gathering_done{false};
     int agentNo;
   private:
