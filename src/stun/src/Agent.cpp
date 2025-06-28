@@ -291,9 +291,9 @@ namespace stun {
 		return -2;
 	}
          STrace << "AgentNo " << agentNo << " timer ice_add_remote_candidate";
-        _timer.Start(1);
+        //_timer.Start(200);
         
-        // m_next_timestamp = 0; onTimer();
+         m_next_timestamp = 0; onTimer();
         
     } 
     
@@ -593,8 +593,14 @@ namespace stun {
         
         int64_t cur =  current_timestamp();
                 
-        //if( m_next_timestamp <=  cur )
-        int ret =  agent_bookkeeping( cur) ;
+        if( m_next_timestamp <=  cur )
+        {
+            int ret =  agent_bookkeeping( cur) ;
+        }
+        else
+        {
+            SInfo << "onTimer";
+        }
         
         
 //        if (expired())
@@ -668,10 +674,13 @@ namespace stun {
   
 		agent_dispatch_stun( buf, len, &msg, src, relayed);
                 
-               // m_next_timestamp = 0; onTimer();
+              
                 
                  STrace << "AgentNo " << agentNo << " timer onStunMessage";
-                _timer.Start(1);
+                //_timer.Start(200);
+                
+                 m_next_timestamp = 0; onTimer();
+                
                 return 0; 
 	}
 
@@ -1880,7 +1889,7 @@ int Agent::agent_bookkeeping( int64_t &now)
             agent_change_state(JUICE_STATE_FAILED);
             //atomic_store(&selected_entry, NULL); // disallow sending
             m_selected_entry = NULL;
-            STrace << "AgentNo " << agentNo << " Bookkeeping end timer timer " << (m_next_timestamp - now);
+            STrace << "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now);
             _timer.Start(m_next_timestamp - now);
             return 0;
         }
@@ -1950,10 +1959,6 @@ int Agent::agent_bookkeeping( int64_t &now)
 
             } else
             {
-                if( agentNo == 2)
-                {
-                    int x = 1;
-                }
                 // Connected
                 agent_change_state(JUICE_STATE_CONNECTED);
 
@@ -1988,7 +1993,7 @@ int Agent::agent_bookkeeping( int64_t &now)
                 agent_change_state(JUICE_STATE_FAILED);
                 //atomic_store(&selected_entry, NULL); // disallow sending
                 m_selected_entry = NULL;
-                STrace << "AgentNo " << agentNo << " Bookkeeping end timer " << (m_next_timestamp - now);
+                STrace << "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now);
                 _timer.Start(m_next_timestamp - now);
                 return 0;
             } else if (m_next_timestamp > pac_timestamp) {
@@ -2114,9 +2119,11 @@ int Agent::agent_resolve_servers( addrinfo* start)
 
         agent_arm_transmission( entry, STUN_PACING_TIME * i++);
 
-       // m_next_timestamp = 0; onTimer();
+
          STrace << "AgentNo " << agentNo << " timer Resolved severs";
-        _timer.Start(1);
+        //_timer.Start(200);
+        
+        m_next_timestamp = 0; onTimer();
             
         break; // Arvind remote it later
     }

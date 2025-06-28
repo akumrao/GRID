@@ -147,13 +147,13 @@ namespace base {
             send(str.c_str(), str.length());
         }
 
-        void HttpsClient::cbDnsResolve(addrinfo* res, std::string ip,  int port,  void* ptr) {
+        void HttpsClient::cbDnsResolve(addrinfo* res) {
             if (_connect) return;
 
             if (!_connect) {
                 _connect = true;
 
-                LTrace("Connecting ", ip, ":", _url.port())
+                LTrace("Connecting ", _url.host(), ":", _url.port())
                 Connect(_url.host(), _url.port(), res);
             }
 
@@ -424,7 +424,7 @@ namespace base {
                    return;
                }
 
-               void HttpsClient::cbDnsResolve(addrinfo* res, std::string ip, int port,  void* ptr) {
+               void HttpsClient::cbDnsResolve(addrinfo* res) {
 
                    end_time = base::Application::GetTime();
 
