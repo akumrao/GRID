@@ -40,6 +40,7 @@ public:
                 json routerCapabilities;
                 json worker_createRouter;
                 json createWebRtcTransport;
+                json createPlainRtpTransport;
                 json maxbitrate;
                 json transport_connect;
                 json transport_produce;

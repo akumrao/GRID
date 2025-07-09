@@ -484,7 +484,10 @@ namespace RTC
 		if (this->rtcpMux)
 			this->tuple->Send(data, len);
 		else if (this->rtcpTuple)
-			this->rtcpTuple->Send(data, len);
+                {   this->rtcpTuple->Send(data, len);
+                   // STrace << "rtcpTuple ";
+                   // this->rtcpTuple->Dump();
+                }
 
 		// Increase send transmission.
 		RTC::Transport::DataSent(len);

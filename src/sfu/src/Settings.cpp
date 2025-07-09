@@ -87,6 +87,9 @@ void Settings::SetConfiguration(json &cnfg)
            Settings::configuration.createWebRtcTransport = cnfg["createWebRtcTransport"];
         }
         
+        if (cnfg.find("createPlainRtpTransport") != cnfg.end()) {
+           Settings::configuration.createPlainRtpTransport = cnfg["createPlainRtpTransport"];
+        }
         
         if (cnfg.find("maxbitrate") != cnfg.end()) {
            Settings::configuration.maxbitrate = cnfg["maxbitrate"];

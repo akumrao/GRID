@@ -25,6 +25,7 @@ namespace SdpParse {
         
         ~Handler();
         
+        void plain_transportCreate();
         
         void transportCreate();
         void transportConnect(const nlohmann::json& sdpObject, const std::string& localDtlsRole);
