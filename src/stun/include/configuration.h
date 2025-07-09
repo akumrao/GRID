@@ -46,6 +46,9 @@ enum class CertificateType {
 enum class TransportPolicy { All = RTC_TRANSPORT_POLICY_ALL, Relay = RTC_TRANSPORT_POLICY_RELAY };
 
 const size_t DEFAULT_LOCAL_MAX_MESSAGE_SIZE = 256 * 1024;
+
+#define RTC_DEFAULT_MTU 1280 // IPv6 minimum guaranteed MTU
+#define DEFAULT_MTU  RTC_DEFAULT_MTU
         
 struct RTC_CPP_EXPORT Configuration {
 	// ICE settings
@@ -67,7 +70,7 @@ struct RTC_CPP_EXPORT Configuration {
 	uint16_t portRangeEnd = 65535;
 
 	// Network MTU
-	size_t mtu;
+	size_t mtu{DEFAULT_MTU};
 
 	// Local maximum message size for Data Channels
 	size_t maxMessageSize{DEFAULT_LOCAL_MAX_MESSAGE_SIZE};

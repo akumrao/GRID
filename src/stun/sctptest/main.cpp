@@ -1,0 +1,317 @@
+/*
+  test_ice
+  ---------
+  
+  This is used during development of the library; it contains ugly snippets of 
+  code to try/experiment with the different parts of libwebrtc. This is not 
+  meant to be used by end-users of the library. This is also not a unit test.
+
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <Connection.h>
+#include <Agent.h>
+#include "configuration.h"
+#include "peerconnection.h"
+#include "tls.h"
+#include "json.hpp" 
+
+//#include <udpClient.h>
+
+using json = nlohmann::json;
+
+using namespace stun;
+using namespace rtc;
+
+
+int main()
+{
+
+    Logger::instance().add(new ConsoleChannel("debug", Level::Trace));
+    
+    
+    openssl::init();
+
+    Application app;
+
+    Configuration config1;
+    config1.iceTransportPolicy = TransportPolicy::All; // force relay
+    // STUN server example
+    config1.iceServers.emplace_back("stun:stun.l.google.com:19302");
+    
+    //config1.iceServers.emplace_back("stun:stun4.l.google.com:19302");
+    
+    //config1.iceServers.emplace_back("turn:openrelayproject:openrelayproject@openrelay.metered.ca:80");
+     
+    
+    //stun01.sipphone.com
+    //stun.ekiga.net
+    //stun.fwdnet.net
+    //stun.ideasip.com
+    //stun.iptel.org
+    //stun.rixtelecom.se
+    //stun.schlund.de
+    //stunserver.org
+    //stun.softjoys.
+             
+
+    Configuration config2;
+    // TURN server example (use your own server in production)
+    //config2.iceServers.emplace_back("turn:openrelayproject:openrelayproject@openrelay.metered.ca:80");
+    config2.iceServers.emplace_back("stun:stun.l.google.com:19302");
+
+    PeerConnection pc1(config1);
+    
+    PeerConnection pc2(config1);
+
+
+    pc1.onStateChange([](PeerConnection::State state) {
+        std::cout << "State 1: " << state << endl; });
+
+    pc1.onIceStateChange(
+            [](PeerConnection::IceState state) {
+                std::cout << "ICE state 1: " << state << endl; });
+
+    pc1.onGatheringStateChange([&pc1 ](juice_state_t state) {
+        std::cout << "Gathering state 1: " << state << endl;
+        if (state == JUICE_STATE_CONNECTED) {
+            
+            Candidate local; Candidate remote;
+            pc1.getSelectedCandidatePair( &local, &remote);
+            
+            SInfo << "getSelectedCandidatePair1 local " <<  local << " remote "  << remote;
+ 
+            std::string msg = "PC1 Hello world";
+            
+            pc1.send( (unsigned char *)msg.data(),  msg.size()+1);
+            
+            
+           // auto sdp = pc1.localDescription();
+                    //std::cout << "Description 1: " << sdp << endl;
+                    // pc2.setRemoteDescription(string(sdp));
+        }
+    });
+    
+    
+    pc1.onLocalDescription([&pc2 ](rtc::Description description) 
+    {
+        std::string type = description.typeString();
+     
+        std::string tmp = std::string(description);
+        
+        SInfo << type;
+        SInfo << tmp;
+        
+
+
+		//json message = {
+                     //           {"type", description.typeString()},
+		              //  {"description",}};
+
+        auto desc = Description(tmp, "answer");
+
+         pc2.setRemoteDescription(desc);
+           // pc->setLocalDescription( Description::Type::Answer);
+
+    });
+
+    pc1.onLocalCandidate([&pc2 ](rtc::Candidate candidate) {
+            json message = {
+                            {"type", "candidate"},
+                            {"candidate", std::string(candidate)},
+                            {"mid", candidate.mid()}};            
+            SInfo << message.dump();
+
+     //   sendCandidate( candidate.mid(), 1,  std::string(candidate)  );
+//            if (auto ws = wws.lock())
+//                    ws->send(message.dump());
+           pc2.addRemoteCandidate(candidate ) ;
+                
+     
+    });
+
+    pc1.onSignalingStateChange([](PeerConnection::SignalingState state) {
+        std::cout << "Signaling state 1: " << state << endl;
+    });
+    
+    
+    pc1.onRecv([](unsigned char * data , size_t size) {
+        std::cout << "onRecv state 1: " << data << endl;
+    });
+
+
+    pc1.setLocalDescription();
+
+    // STUN server example (use your own server in production)
+
+
+    
+    
+    pc2.onStateChange([](PeerConnection::State state) {
+        std::cout << "State 2: " << state << endl; });
+
+    pc2.onIceStateChange(
+            [](PeerConnection::IceState state) {
+                std::cout << "ICE state2: " << state << endl; });
+
+    pc2.onGatheringStateChange([&pc2 ](juice_state_t state) {
+        std::cout << "Gathering state 2: " << state << endl;
+        if (state == JUICE_STATE_CONNECTED) {
+          //  auto sdp = pc1.localDescription();
+                    //std::cout << "Description 2: " << sdp << endl;
+                    // pc2.setRemoteDescription(string(sdp));
+            
+         
+            Candidate local; Candidate remote;
+            pc2.getSelectedCandidatePair( &local, &remote);
+            
+            SInfo << "getSelectedCandidatePair2 local " <<  local << " remote "  << remote;
+            
+             
+            std::string msg = "PC2 Hello world";
+            
+            pc2.send( (unsigned char *)msg.data(),  msg.size()+1);
+            
+            
+            
+        }
+    });
+    
+    
+    pc2.onLocalDescription([&pc1 ](rtc::Description description) 
+    {
+        std::string type = description.typeString();
+     
+        std::string tmp = std::string(description);
+        
+        SInfo << type;
+        SInfo << tmp;
+		//json message = {
+                     //           {"type", description.typeString()},
+		              //  {"description",}};
+
+        auto desc = Description(tmp, "answer");
+
+         pc1.setRemoteDescription(desc);
+           // pc->setLocalDescription( Description::Type::Answer);
+//                
+//                  SInfo << message.dump();
+       // SInfo << "send:"  << description.typeString() <<  " des "<<  std::string(description);
+     //  pc->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
+       // sendSdp( std::string(description), description.typeString());
+        // Make the answer
+//		if (auto ws = wws.lock())
+//			ws->send(message.dump());
+    });
+
+    pc2.onLocalCandidate([&pc1 ](rtc::Candidate candidate) {
+            json message = {
+                            {"type", "candidate"},
+                            {"candidate", std::string(candidate)},
+                            {"mid", candidate.mid()}};            
+            SInfo << message.dump();
+
+     //   sendCandidate( candidate.mid(), 1,  std::string(candidate)  );
+//            if (auto ws = wws.lock())
+//                    ws->send(message.dump());
+           pc1.addRemoteCandidate(candidate ) ;
+                
+     
+    });
+
+    pc2.onSignalingStateChange([](PeerConnection::SignalingState state) {
+        std::cout << "Signaling state 2: " << state << endl;
+    });
+
+    
+    pc2.onRecv([](unsigned char * data , size_t size) {
+        std::cout << "onRecv state 2: " << data << endl;
+    });
+
+    pc2.setLocalDescription();
+    
+
+
+    printf("\n\ntest_ice\n\n");
+
+
+   
+
+    /* read SDP file. */
+
+
+//
+//#define STUN_SERVER_IP "74.125.250.129"
+//#define STUN_SERVER_PORT 19302
+//
+//
+//
+//    /* write */
+//    stun::Message response(stun::STUN_BINDING_REQUEST);
+//    response.setTransactionID();
+//    response.addAttribute(new stun::Software("libjuice"));
+//    response.addAttribute(new stun::Fingerprint());
+//
+//
+//    stun::Writer writer;
+//    writer.writeMessage(&response, "");
+//
+//    printf("---------------\n");
+//    for (size_t i = 0; i < writer.buffer.size(); ++i) {
+//        if (i == 0 || i % 4 == 0) {
+//            printf("\n");
+//        }
+//        printf("%02X ", writer.buffer[i]);
+//    }
+//    printf("\n---------------\n");
+//
+//
+//
+//
+//    
+////    Agent agent;
+////
+////    agent.getInterfaces();
+////    
+////    Transport transport(config1);
+////    
+////    transport.resolveStunServer( );
+//    
+//
+//    testUdpServer socket("0.0.0.0", 6000);
+//    socket.start();
+//
+//    socket.send(&writer.buffer[0], writer.buffer.size(), STUN_SERVER_IP, STUN_SERVER_PORT);
+
+
+//    Transport transport(config1);
+//    const char *ip = "174.125.250.129";
+//    Candidate cand;
+//    IP::StringToAddress( ip, 19302 , &cand.resolved);
+//    
+
+    //    tesTcpServer tsvsocket;
+    //    tsvsocket.start("0.0.0.0", 6000);
+    //    
+    //    
+    //    tesTcpClient socket;
+    //    socket.start(STUN_SERVER_IP , STUN_SERVER_PORT);
+    //    
+    //    socket.sendit( &writer.buffer[0], writer.buffer.size());    
+
+    app.waitForShutdown([&](void*) {
+
+
+    //app.run();
+
+//    socket.shutdown();
+
+     });
+
+
+    return 0;
+}
+
+
+
+

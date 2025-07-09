@@ -670,8 +670,33 @@
         "transportId": "e5302612-283c-4532-8acb-8f3cbb87a8a5"
       }
     },
-    "transport_produceData": {"id":16,"method":"transport.produceData","internal":{"routerId":"7bd24390-618a-4ad2-a1dc-9e22146e07f6","transportId":"eb8824d7-1674-41ec-bcb6-2224ac028430","dataProducerId":"8dc81f00-0d03-4293-93be-11a3582cf362"},"data":{"type":"sctp","sctpStreamParameters":{"streamId":1,"ordered":true,"maxRetransmits":0},"label":"chat","protocol":""}},
-    "transport_consumeData": {"id":11,"method":"transport.consumeData","internal":{"routerId":"1f63d48b-3980-4527-91db-3493bc790597","transportId":"a1a283cf-12f1-4e57-aaa0-f6615acad092","dataConsumerId":"c087feb9-3c88-4bff-bb69-aeacd5c4e800","dataProducerId":"4e28f634-5fcc-435f-8514-9ce8d5298694"},"data":{"type":"sctp","sctpStreamParameters":{"streamId":0,"ordered":true,"maxRetransmits":0},"label":"chat","protocol":""}}
+    "transport_produceData": {"id":46,"method":"transport.produceData","internal":{"routerId":"7bd24390-618a-4ad2-a1dc-9e22146e07f6","transportId":"eb8824d7-1674-41ec-bcb6-2224ac028430","dataProducerId":"8dc81f00-0d03-4293-93be-11a3582cf362"},"data":{"type":"sctp","sctpStreamParameters":{"streamId":1,"ordered":true,"maxRetransmits":0},"label":"chat","protocol":""}},
+    "transport_consumeData": {"id":47,"method":"transport.consumeData","internal":{"routerId":"1f63d48b-3980-4527-91db-3493bc790597","transportId":"a1a283cf-12f1-4e57-aaa0-f6615acad092","dataConsumerId":"c087feb9-3c88-4bff-bb69-aeacd5c4e800","dataProducerId":"4e28f634-5fcc-435f-8514-9ce8d5298694"},"data":{"type":"sctp","sctpStreamParameters":{"streamId":0,"ordered":true,"maxRetransmits":0},"label":"chat","protocol":""}},
+    "createPlainRtpTransport": {
+      "id": 48,
+      "method": "router.createPlainRtpTransport",
+      "internal": {
+        "routerId": "2e32062d-f04a-4c2d-a656-b586e50498ef",
+        "transportId": "f5302612-283c-4532-8acb-8f3cbb87a866"
+      },
+      "data": {
+        "listenIps": [
+          {
+            "ip": "127.0.0.1"
+          }
+        ],
+        "rtcpMux": false,
+        "comedia": true,
+        "srtpCryptoSuite": "AES_CM_128_HMAC_SHA1_80",
+        "enableSctp": false,
+        "numSctpStreams": {
+          "OS": 1024,
+          "MIS": 1024
+        },
+        "maxSctpMessageSize": 262144,
+        "isDataChannel": false
+      }
+    }
 
   }
 }

@@ -9,6 +9,8 @@
 #include "base/uuid.h"
 #include "sdp/Room.h"
 
+#define RTSP 1 
+
 using json = nlohmann::json;
 
 namespace SdpParse
@@ -58,7 +60,47 @@ namespace SdpParse
             remoteSdp = nullptr;
         }
     }
+ #if RTSP     
+    
+    void Handler::plain_transportCreate()
+    {
+        
+         {
 
+            json param = json::array();
+            param.push_back("createPlainRtpTransport");
+            param.push_back(peer->participantID);
+
+            json &trans = Settings::configuration.createPlainRtpTransport;
+            transportId = uuid4::uuid();
+
+            STrace << "transportId: " << transportId;
+
+            trans["data"]["enableUdp"] = true;
+            trans["data"]["preferUdp"] = true;
+        
+            transport_connect = true;
+            constructor_name = "PlainRtpTransport";
+
+            trans["data"]["listenIp"] = Settings::configuration.listenIps[0];
+            raiseRequest(param, trans, [&](const json & ack_resp)
+            {
+                const json &ackdata = ack_resp["data"];
+
+                SInfo << "createPlainRtpTransport: " << ackdata.dump();
+                
+                SInfo << "createPlainRtpTransport: run ./ffmpeg.sh " << ackdata["tuple"]["localPort"] << " "  << ackdata["rtcpTuple"]["localPort"];
+                 
+
+                
+            });
+
+        }
+
+
+        
+    }
+#endif
     void Handler::transportCreate() {
         {
 
@@ -131,7 +173,13 @@ namespace SdpParse
 
     Producers::Producers(Signaler *signaler, Peer *peer) : Handler(signaler, peer) {
         classtype = "Producers";
-        transportCreate();
+
+        #if RTSP 
+         plain_transportCreate();
+        #else
+         transportCreate();
+        #endif
+
     }
 
     void Producers::GetAnswer(std::string& kind, json &sendingRtpParameters, std::string mid, std::string reuseMid, json &offerMediaObject, const json& sctpParameters ) {
@@ -268,6 +316,12 @@ namespace SdpParse
             json& offerMediaObject = peer->sdpObject["media"][i];
 
             std::string kind = offerMediaObject["type"].get<std::string>();
+#if RTSP 
+            if( constructor_name == "PlainRtpTransport" &&  (kind == "audio"  ||  kind == "application"  ))
+            {
+                continue ;
+            }
+#endif
 
             std::string trackid = Sdp::Utils::extractTrackID(offerMediaObject); // trackid is producerid
             if( trackid.empty() &&  kind != "application" )
@@ -384,12 +438,21 @@ namespace SdpParse
 
                 //   Sdp::RemoteSdp::MediaSectionIdx mediaSectionIdx = remoteSdp->GetNextMediaSectionIdx();
 
+             
+#if RTSP              
+                if (constructor_name == "PlainRtpTransport")
+                {
+                    sendingRtpParameters = "{ \"codecs\": [{ \"mimeType\":\"video/VP8\", \"payloadType\":101, \"clockRate\":90000 }], \"encodings\": [{ \"ssrc\":2222 }] }"_json; 
+                        
+                   // sendingRtpParameters =   "{ \"codecs\": [{ \"mimeType\":\"video/H264\", \"clockRate\": 90000, \"payloadType\": 96, \"parameters\":{  \"packetization-mode\": 1, \"level-asymmetry-allowed\": 1, \"profile-level-id\": \"42e01f\"  } }], \"encodings\": [{ \"ssrc\":2222 }] }"_json; 
+
+                    STrace <<  "PlainRtpTransport  sendingRtpParameters=" << sendingRtpParameters.dump(); 
+
+                }
+#else
                 GetAnswer(kind, sendingRtpParameters, *midIt, "", offerMediaObject, sctpParameters);
+#endif
 
-              
-
-
-                /////////////////////
                 if (constructor_name != "PipeTransport")
                 {
                     // If CNAME is given and we don't have yet a CNAME for Producers in this
