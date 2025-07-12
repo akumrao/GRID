@@ -9,7 +9,7 @@
 #include "base/uuid.h"
 #include "sdp/Room.h"
 
-#define RTSP 1 
+// #define RTSP 1 
 
 using json = nlohmann::json;
 
