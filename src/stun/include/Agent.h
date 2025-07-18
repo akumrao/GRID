@@ -16,6 +16,8 @@ using namespace rtc;
 using namespace base;
 using namespace stun;
 
+#define AGENT_DEBUG 1
+
 #define MIN_STUN_RETRANSMISSION_TIMEOUT 500 // msecs
 #define LAST_STUN_RETRANSMISSION_TIMEOUT (MIN_STUN_RETRANSMISSION_TIMEOUT * 16)
 #define MAX_STUN_CHECK_RETRANSMISSION_COUNT 6  // exponential backoff, total 39500ms
@@ -85,6 +87,11 @@ typedef struct ice_candidate_pair {
 	bool nominated{false};
 	bool nomination_requested{false};
 	int64_t consent_expiry;
+        
+        #if AGENT_DEBUG
+        std::string dump();
+        #endif
+        
 } ice_candidate_pair_t;
 
 
@@ -125,6 +132,9 @@ typedef struct agent_stun_entry {
 	int retransmissions{0};
 	bool transaction_id_expired;
 
+#if AGENT_DEBUG
+        std::string dump();
+#endif
 	// TURN
 	//agent_turn_state_t *turn;
 	//unsigned int turn_redirections;
@@ -192,6 +202,18 @@ typedef struct agent_stun_entry {
     int m_candidate_pairs_count{0};
 
     
+    juice_state_t m_state{JUICE_STATE_DISCONNECTED};
+    
+    #if AGENT_DEBUG
+    std::string dump();
+    #endif
+    
+    agent_mode_t m_mode{AGENT_MODE_UNKNOWN};
+    
+    int m_entriesStun_count;
+    agent_stun_entry_t m_entriesStun[MAX_STUN_ENTRIES_COUNT]; // Stun server entries (  two stun sever entries per stun resolve( ipv4 + ipv6) for example stun.1.google.com will have two stun entries
+    
+    
     
     void agent_update_ordered_pairs() ;
     
@@ -214,12 +236,7 @@ typedef struct agent_stun_entry {
     
     int agent_unfreeze_candidate_pair( ice_candidate_pair_t *pair);
     
-    juice_state_t m_state{JUICE_STATE_DISCONNECTED};
-    agent_mode_t m_mode{AGENT_MODE_UNKNOWN};
-    int m_entries_count;
-    
 
-    agent_stun_entry_t m_entries[MAX_STUN_ENTRIES_COUNT];
     
     std::string localMid{0};
 

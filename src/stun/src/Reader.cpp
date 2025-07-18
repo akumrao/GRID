@@ -144,7 +144,7 @@ namespace stun {
           Software* software = new Software();
           software->value = readString(attr_length);
           attr = (Attribute*) software;
-          STrace<< " stun::Reader - verbose: software %s " <<  software->value.buffer.data();
+          //STrace<< " stun::Reader - verbose: software " <<  software->value.buffer.data();
           break;
         }
 

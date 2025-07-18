@@ -397,6 +397,9 @@ namespace stun {
             pair->local = local;
             pair->remote = remote;
             pair->state = ICE_CANDIDATE_PAIR_STATE_FROZEN;
+            
+            STrace<< "AgentNo " << agentNo << " ice_create_candidate_pair " <<   pair->dump();
+            
             return ice_update_candidate_pair(pair, is_controlling);
     }
 
@@ -460,7 +463,7 @@ namespace stun {
 
 	agent_update_ordered_pairs();
 
-	if (m_entries_count == MAX_STUN_ENTRIES_COUNT) {
+	if (m_entriesStun_count == MAX_STUN_ENTRIES_COUNT) {
 		LWarn("No free STUN entry left for candidate pair checking");
 		return -1;
 	}
@@ -481,8 +484,8 @@ namespace stun {
 //		}
 //	}
 
-	STrace << "AgentNo " << agentNo <<  " Registering STUN entry  " <<   m_entries_count << " for candidate pair checking";
-	agent_stun_entry_t *entry = m_entries + m_entries_count;
+	STrace << "AgentNo " << agentNo <<  " Registering STUN entry  " <<   m_entriesStun_count << " for candidate pair checking";
+	agent_stun_entry_t *entry = m_entriesStun + m_entriesStun_count;
 	entry->type = AGENT_STUN_ENTRY_TYPE_CHECK;
 	entry->state = AGENT_STUN_ENTRY_STATE_IDLE;
 	entry->mode = AGENT_MODE_UNKNOWN;
@@ -491,12 +494,12 @@ namespace stun {
 	//entry->relay_entry = relay_entry;
 	random_bytes(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
 	entry->transaction_id_expired = false;
-	++m_entries_count;
+	++m_entriesStun_count;
    /*     
         char ip[40];  uint16_t port;
         IP::AddressToString(entry->record, ip, port); 
         
-        STrace << "AgentNo " << agentNo <<  " Registering STUN entry  " <<   m_entries_count << " for candidate pair checking " << ip << " port " <<  port;
+        STrace << "AgentNo " << agentNo <<  " Registering STUN entry  " <<   m_entriesStun_count << " for candidate pair checking " << ip << " port " <<  port;
   */     
 //
 //	if (remote->mType  == Candidate::Type::Host)
@@ -534,17 +537,18 @@ namespace stun {
             if (pair->state != ICE_CANDIDATE_PAIR_STATE_FROZEN)
                     return 0;
 
-            for (int i = 0; i < m_entries_count; ++i) {
-                    agent_stun_entry_t *entry = m_entries + i;
+            for (int i = 0; i < m_entriesStun_count; ++i) {
+                    agent_stun_entry_t *entry = m_entriesStun + i;
                     if (entry->pair == pair) {
                             
-                            char ip[40];  uint16_t port;
-                            IP::AddressToString(entry->record, ip, port); 
+                            //char ip[40];  uint16_t port;
+                            //IP::AddressToString(entry->record, ip, port); 
     
                             pair->state = ICE_CANDIDATE_PAIR_STATE_PENDING;
                             entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
                             agent_arm_transmission( entry, 0); // transmit now
-                            STrace << "AgentNo " << agentNo  << " ent " << i <<    " type server[1]/relay[2] " <<   entry->type  <<   " mode controlled[1]/controlling[2] " <<  entry->mode  << " state PENDING[0]/CANCELLED[1]/FAILED[2]SUCCEEDED[3]KEEPALIVE[4]IDLE[5] " <<  entry->state << " add " << ip << ":" << port;
+                          
+                            STrace << "AgentNo " << agentNo  << " ent " << i <<   entry->dump() <<  " agent_unfreeze_candidate_pair " <<   pair->dump();
 
                             return 0;
                     }
@@ -572,14 +576,14 @@ namespace stun {
             }
 
             // Find a time slot
-            agent_stun_entry_t *other = m_entries;
-            while (other != m_entries + m_entries_count) {
+            agent_stun_entry_t *other = m_entriesStun;
+            while (other != m_entriesStun + m_entriesStun_count) {
                     if (other != entry) {
                             int64_t other_transmission = other->next_transmission;
                             int64_t timediff = entry->next_transmission - other_transmission;
                             if (other_transmission && abs((int)timediff) < STUN_PACING_TIME) {
                                     entry->next_transmission = other_transmission + STUN_PACING_TIME;
-                                    other = m_entries;
+                                    other = m_entriesStun;
                                     continue;
                             }
                     }
@@ -767,9 +771,9 @@ int Agent::agent_dispatch_stun( unsigned char *buf, size_t size, stun::Message  
             }
     }
     
-    char ip[40];  uint16_t port;
-    IP::AddressToString(entry->record, ip, port); 
-    STrace << "On Message AgentNo " << agentNo  <<    " type server[1]/relay[2] " <<   entry->type  <<   " mode controlled[1]/controlling[2] " <<  entry->mode  << " state PENDING[0]/CANCELLED[1]/FAILED[2]SUCCEEDED[3]KEEPALIVE[4]IDLE[5] " <<  entry->state << " add " << ip << port;
+   // char ip[40];  uint16_t port;
+    //IP::AddressToString(entry->record, ip, port); 
+    STrace << "On Message AgentNo " << agentNo  <<    entry->dump();
 
     switch (msg->msg_method) {
     case STUN_METHOD_BINDING:
@@ -1002,8 +1006,8 @@ const char *stun_get_error_reason(unsigned int code) {
 
 agent_stun_entry_t *Agent::agent_find_entry_from_transaction_id( const uint8_t *transaction_id) 
 {
-	for (int i = 0; i < m_entries_count; ++i) {
-		agent_stun_entry_t *entry = m_entries + i;
+	for (int i = 0; i < m_entriesStun_count; ++i) {
+		agent_stun_entry_t *entry = m_entriesStun + i;
 		if (memcmp(transaction_id, entry->transaction_id, STUN_TRANSACTION_ID_SIZE) == 0) {
 			STrace << "STUN entry " << i  << " matching incoming transaction ID ";
 			return entry;
@@ -1076,8 +1080,8 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 
 		if (matching_pair) {
 			// Just find the corresponding entry
-			for (int i = 0; i < m_entries_count; ++i) {
-				agent_stun_entry_t *entry = m_entries + i;
+			for (int i = 0; i < m_entriesStun_count; ++i) {
+				agent_stun_entry_t *entry = m_entriesStun + i;
 				if (entry->pair == matching_pair) {
 					SDebug << "AgentNo " << agentNo << " STUN entry " << i  << " pair matching incoming address";
 					return entry;
@@ -1086,8 +1090,8 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 		}
 
 		// Try to match entries directly
-		for (int i = 0; i < m_entries_count; ++i) {
-			agent_stun_entry_t *entry = m_entries + i;
+		for (int i = 0; i < m_entriesStun_count; ++i) {
+			agent_stun_entry_t *entry = m_entriesStun + i;
 			if (!entry_is_relayed(entry) && IP::addr_record_is_equal(&entry->record, record, true)) {
 				SDebug << "AgentNo " << agentNo << " STUN entry " << i << "  matching incoming address";
 				return entry;
@@ -1359,8 +1363,8 @@ void Agent::agent_update_candidate_pairs()
 	agent_update_ordered_pairs();
 
 	// Expire all transaction IDs for checks
-	for (int i = 0; i < m_entries_count; ++i) {
-		agent_stun_entry_t *entry = m_entries + i;
+	for (int i = 0; i < m_entriesStun_count; ++i) {
+		agent_stun_entry_t *entry = m_entriesStun + i;
 		if (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK) {
 			entry->transaction_id_expired = true;
 		}
@@ -1608,11 +1612,11 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
         #endif
         
         
-        char ip[40];  uint16_t port;
-        IP::AddressToString(entry->record, ip, port) ;
+       // char ip[40];  uint16_t port;
+      //  IP::AddressToString(entry->record, ip, port) ;
         
         
-        SInfo <<  "AgentNo " << agentNo << " send stun request to " << ip << ":" << port; 
+        SInfo <<  "AgentNo " << agentNo << " send stun request to " << entry->dump(); ; 
              
 
         
@@ -1649,8 +1653,8 @@ void Agent::agent_update_gathering_done()
     //STrace <<  "Updating gathering status";
      SInfo  << "AgentNo " << agentNo << " agent_update_gathering_done()";
      
-	for (int i = 0; i < m_entries_count; ++i) {
-		agent_stun_entry_t *entry = m_entries + i;
+	for (int i = 0; i < m_entriesStun_count; ++i) {
+		agent_stun_entry_t *entry = m_entriesStun + i;
 		if (entry->type != AGENT_STUN_ENTRY_TYPE_CHECK &&
 		    entry->state == AGENT_STUN_ENTRY_STATE_PENDING) {
 			STrace<< "AgentNo " << agentNo << " STUN server or relay entry "<< i << " is still pending" ;
@@ -1690,15 +1694,13 @@ int Agent::agent_bookkeeping( int64_t &now)
 
         STrace << "AgentNo " << agentNo << " Bookkeeping...";
 
-        for (int i = 0; i < m_entries_count; ++i) 
+        for (int i = 0; i < m_entriesStun_count; ++i) 
         {
-            agent_stun_entry_t *entry = m_entries + i;
+            agent_stun_entry_t *entry = m_entriesStun + i;
 
-            char ip[40];
-            uint16_t port;
-            IP::AddressToString(entry->record, ip, port);
 
-            STrace << "AgentNo " << agentNo << " ent " << i << " type server[1]/relay[2]/check[3] " << entry->type << " mode controlled[1]/controlling[2] " << entry->mode << " state PENDING[0]/CANCELLED[1]/FAILED[2]SUCCEEDED[3]KEEPALIVE[4]IDLE[5] " << entry->state << " add " << ip << ":" << port;
+
+            STrace << "AgentNo " << agentNo << " ent " << i << entry->dump();
             // STUN requests transmission or retransmission
             if (entry->state == AGENT_STUN_ENTRY_STATE_PENDING) {
                 if (entry->next_transmission > now)
@@ -1706,7 +1708,7 @@ int Agent::agent_bookkeeping( int64_t &now)
 
                 if (entry->retransmissions >= 0) {
                     
-                    SInfo << "STUN entry " << i << " Sending request to " <<  ip  << " ( " <<  entry->retransmissions  << " retransmission " << (entry->retransmissions >= 2 ? "s" : "") <<   " left)" ;
+                    SInfo << "STUN entry " << i << " Sending request to " <<   " ( " <<  entry->retransmissions  << " retransmission " << (entry->retransmissions >= 2 ? "s" : "") <<   " left)" ;
 
                     if (entry->transaction_id_expired) {
                         random_bytes(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
@@ -1873,8 +1875,8 @@ int Agent::agent_bookkeeping( int64_t &now)
         }
 
         // Cancel entries of frozen pairs
-        for (int i = 0; i < m_entries_count; ++i) {
-            agent_stun_entry_t *entry = m_entries + i;
+        for (int i = 0; i < m_entriesStun_count; ++i) {
+            agent_stun_entry_t *entry = m_entriesStun + i;
             if (entry->pair && entry->pair->state == ICE_CANDIDATE_PAIR_STATE_FROZEN &&
                     entry->state != AGENT_STUN_ENTRY_STATE_IDLE &&
                     entry->state != AGENT_STUN_ENTRY_STATE_CANCELLED) {
@@ -1905,8 +1907,8 @@ int Agent::agent_bookkeeping( int64_t &now)
                 if (m_mode == AGENT_MODE_CONTROLLING)
                     nomination_timestamp = now + 2000;
 
-                for (int i = 0; i < m_entries_count; ++i) {
-                    agent_stun_entry_t *entry = m_entries + i;
+                for (int i = 0; i < m_entriesStun_count; ++i) {
+                    agent_stun_entry_t *entry = m_entriesStun + i;
                     if (entry->pair == selected_pair) {
                         //atomic_store(&agent->selected_entry, entry);
                         m_selected_entry = entry;
@@ -1926,8 +1928,8 @@ int Agent::agent_bookkeeping( int64_t &now)
 
                 agent_stun_entry_t *nominated_entry = NULL;
                 agent_stun_entry_t *relay_entry = NULL;
-                for (int i = 0; i < m_entries_count; ++i) {
-                    agent_stun_entry_t *entry = m_entries + i;
+                for (int i = 0; i < m_entriesStun_count; ++i) {
+                    agent_stun_entry_t *entry = m_entriesStun + i;
                     if (entry->pair && entry->pair == nominated_pair) {
                         nominated_entry = entry;
                         //relay_entry = nominated_entry->relay_entry;
@@ -1950,8 +1952,8 @@ int Agent::agent_bookkeeping( int64_t &now)
                 }
 
                 // Disable keepalives for other entries
-                for (int i = 0; i < m_entries_count; ++i) {
-                    agent_stun_entry_t *entry = m_entries + i;
+                for (int i = 0; i < m_entriesStun_count; ++i) {
+                    agent_stun_entry_t *entry = m_entriesStun + i;
                     if (entry != nominated_entry && entry != relay_entry &&
                             entry->state == AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE)
                         entry->state = AGENT_STUN_ENTRY_STATE_SUCCEEDED;
@@ -1968,8 +1970,8 @@ int Agent::agent_bookkeeping( int64_t &now)
                         // Nominate selected
                         SDebug << "AgentNo " << agentNo << " Requesting pair nomination (controlling)";
                         selected_pair->nomination_requested = true;
-                        for (int i = 0; i < m_entries_count; ++i) {
-                            agent_stun_entry_t *entry = m_entries + i;
+                        for (int i = 0; i < m_entriesStun_count; ++i) {
+                            agent_stun_entry_t *entry = m_entriesStun + i;
                             if (entry->pair && entry->pair == selected_pair) {
                                 entry->state =
                                         AGENT_STUN_ENTRY_STATE_PENDING; // we don't want keepalives
@@ -2001,8 +2003,8 @@ int Agent::agent_bookkeeping( int64_t &now)
             }
         }
 
-        for (int i = 0; i < m_entries_count; ++i) {
-            agent_stun_entry_t *entry = m_entries + i;
+        for (int i = 0; i < m_entriesStun_count; ++i) {
+            agent_stun_entry_t *entry = m_entriesStun + i;
             if (entry->next_transmission && m_next_timestamp > entry->next_transmission)
                 m_next_timestamp = entry->next_transmission;
 
@@ -2047,7 +2049,7 @@ int  Agent::agent_set_remote_description() {
 	
 	STrace << "AgentNo " << agentNo << " agent_set_remote_description";
 
-         std::sort(remotedesp.desc.candidates,remotedesp.desc.candidates +remotedesp.desc.candidates_count , comp);
+        std::sort(remotedesp.desc.candidates,remotedesp.desc.candidates +remotedesp.desc.candidates_count , comp);
           
 	agent_update_pac_timer();
 
@@ -2055,20 +2057,22 @@ int  Agent::agent_set_remote_description() {
 		// RFC 8445 6.1.1. Determining Role:
 		// The full agent MUST take the controlling role, and the lite agent MUST take the
 		// controlled role.
-		LDebug("Remote ICE agent is lite, assuming controlling mode");
+		SDebug << "AgentNo " << agentNo << " Remote ICE agent is lite,  assuming controlling mode";
 		m_mode = AGENT_MODE_CONTROLLING;
 	} else if (m_mode == AGENT_MODE_UNKNOWN) {
-		LDebug("Assuming controlled mode");
+		SDebug << "AgentNo " << agentNo << "Assuming controlled mode";
 		m_mode = AGENT_MODE_CONTROLLED;
 	}
 
 	// There is only one component, therefore we can unfreeze already existing pairs now
-	SDebug  << "AgentNo " << agentNo << " Unfreezing %d existing candidate pairs " <<  (int)m_candidate_pairs_count;
+	SDebug  << "AgentNo " << agentNo << " Unfreezing " <<  (int)m_candidate_pairs_count << " existing candidate pairs ";
         
 	for (int i = 0; i < m_candidate_pairs_count; ++i) {
 		agent_unfreeze_candidate_pair(m_candidate_pairs + i);
 	}
-	SDebug <<  "AgentNo " << agentNo << "Adding " << (int)remotedesp.desc.candidates_count << " candidates from remote description";
+        
+        
+	SDebug <<  "AgentNo " << agentNo << " Adding " << (int)remotedesp.desc.candidates_count << " candidates from remote description";
 	for (int i = 0; i < remotedesp.desc.candidates_count; ++i) {
 		Candidate *remote = &remotedesp.desc.candidates[ i];
 		if (agent_add_candidate_pairs_for_remote( remote))
@@ -2097,9 +2101,9 @@ int Agent::agent_resolve_servers( addrinfo* start)
     for (;res != NULL; res = res->ai_next) 
     { 
 
-        STrace << "AgentNo " << agentNo <<  " Registering STUN server request  " <<   m_entries_count ;
+        STrace << "AgentNo " << agentNo <<  " Registering STUN server request  " <<   m_entriesStun_count ;
 
-        agent_stun_entry_t *entry = m_entries + m_entries_count;
+        agent_stun_entry_t *entry = m_entriesStun + m_entriesStun_count;
         entry->type = AGENT_STUN_ENTRY_TYPE_SERVER;
         entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
         entry->pair = NULL;
@@ -2110,17 +2114,17 @@ int Agent::agent_resolve_servers( addrinfo* start)
 
         random_bytes(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
         entry->transaction_id_expired = false;
-        ++m_entries_count;
+        ++m_entriesStun_count;
 
 
-        char ip[40];  uint16_t port;
-        IP::AddressToString(entry->record, ip, port) ;
-        SInfo << "AgentNo " << agentNo << " add " << ip << ":" <<port;
+        //char ip[40];  uint16_t port;
+       // IP::AddressToString(entry->record, ip, port) ;
+        //SInfo << "AgentNo " << agentNo << " add " << ip << ":" <<port;
 
         agent_arm_transmission( entry, STUN_PACING_TIME * i++);
 
 
-         STrace << "AgentNo " << agentNo << " timer Resolved severs";
+         STrace << "AgentNo " << agentNo << " timer Resolved severs"  << entry->dump();
         //_timer.Start(200);
         
         m_next_timestamp = 0; onTimer();
@@ -2229,6 +2233,165 @@ int Agent::agent_send( uint8_t* data, uint32_t nbytes, int ds)
 
 
 
+
+
+#if AGENT_DEBUG
+std::string agent_stun_entry::dump()
+{
+    std::string ret = " stun state "; 
+    switch(state)
+    {
+        case AGENT_STUN_ENTRY_STATE_PENDING:
+            ret += "pending";
+        break;
+
+        case AGENT_STUN_ENTRY_STATE_CANCELLED:
+            ret += "canceled";
+        break;
+
+        case AGENT_STUN_ENTRY_STATE_FAILED:
+            ret += "failed";
+        break;
+
+        case AGENT_STUN_ENTRY_STATE_SUCCEEDED:
+            ret += "succeded";
+        break;
+
+        case AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE:
+            ret += "succeded keep live";
+        break;
+
+        case AGENT_STUN_ENTRY_STATE_IDLE:
+            ret += "idle";
+        break;
+    };
+    
+    
+    
+    
+    ret += ", stun type  "; 
+    switch(type)
+    {
+
+        case AGENT_STUN_ENTRY_TYPE_EMPTY:
+            ret += "empty";
+        break;
+
+        case AGENT_STUN_ENTRY_TYPE_SERVER:
+            ret += "server";
+        break;
+
+        case AGENT_STUN_ENTRY_TYPE_RELAY:
+            ret += "relay";
+        break;
+
+        case AGENT_STUN_ENTRY_TYPE_CHECK:
+            ret += "check";
+        break;
+
+    
+    };
+    
+    
+    ret += ", mode  "; 
+    switch(mode)
+    {
+        case AGENT_MODE_UNKNOWN:
+            ret += "unknown";
+        break;
+
+        case AGENT_MODE_CONTROLLED:
+            ret += "controlled";
+        break;
+
+        case AGENT_MODE_CONTROLLING:
+            ret += "controlling";
+        break;
+    
+    };
+    
+    ret += " ";
+    
+    char ip[40];
+    uint16_t port;
+    IP::AddressToString(record, ip, port);
+    
+    ret +=  ip + std::string(":") + std::to_string(port);
+        
+
+    return ret;
+        
+}
+
+
+
+std::string ice_candidate_pair::dump()
+{
+    std::string ret = " candidate state pair "; 
+    switch(state)
+    {
+        case ICE_CANDIDATE_PAIR_STATE_PENDING:
+            ret += "pending";
+        break;
+
+        case ICE_CANDIDATE_PAIR_STATE_SUCCEEDED:
+            ret += "succeded";
+        break;
+
+        case ICE_CANDIDATE_PAIR_STATE_FAILED:
+            ret += "failed";
+        break;
+
+        case ICE_CANDIDATE_PAIR_STATE_FROZEN:
+            ret += "frozen";
+        break;
+
+
+    };
+    
+      return ret;
+}
+
+
+
+std::string Agent::dump()
+{
+    std::string ret = " Agent state "; 
+    switch(m_state)
+    {
+        case JUICE_STATE_DISCONNECTED:
+            ret += "disconnected";
+        break;
+
+        case JUICE_STATE_GATHERING:
+            ret += "gathering";
+        break;
+
+        case JUICE_STATE_CONNECTING:
+            ret += "connecting";
+        break;
+
+        case JUICE_STATE_CONNECTED:
+            ret += "connected";
+        break;
+        
+        case JUICE_STATE_COMPLETED:
+            ret += "completed";
+        break;
+        
+        case JUICE_STATE_FAILED:
+            ret += "failed";
+        break;
+
+
+    };
+    
+    return ret;
+}
+
+
+
+#endif
 
 
 
