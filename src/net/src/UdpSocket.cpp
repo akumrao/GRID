@@ -357,6 +357,7 @@ namespace base {
                     if (cb)
                     (cb)(false);
                     LTrace("send error: ", uv_strerror(status));
+                    Dump();
                }
         }
         
