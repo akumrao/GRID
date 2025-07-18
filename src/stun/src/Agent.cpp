@@ -2318,6 +2318,9 @@ std::string agent_stun_entry::dump()
     
     ret +=  ip + std::string(":") + std::to_string(port);
         
+    
+    if(pair)
+    ret +=  " pair dump " +  pair->dump();
 
     return ret;
         

@@ -90,7 +90,7 @@ namespace base {
 
             }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-            
+            // resolve ip to hostname and service number
             void  GetNameInfoReq::getnameinfo_cb1(uv_getnameinfo_t* handle, int status, const char* hostname, const char* service) 
             {
                   stTmp *tmp       =(stTmp * )handle->data;
@@ -104,7 +104,7 @@ namespace base {
                     //obj->cbDnsResolve(nullptr, "",0);
                     return;
                 }
-                    STrace << "Reolved Hostname:" <<  hostname << " dir " << tmp->data;
+                    STrace << "Reolved Hostname:" <<  hostname << " cls obj ptr " << tmp->data;
                     STrace << "Resolved Service:" <<  service;
                     obj->cbNameResolve(hostname, service, tmp->data);
                 
