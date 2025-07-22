@@ -64,7 +64,8 @@ namespace stun {
         
         
         static int port = 7000;
-        socket = new testUdpServer("0.0.0.0", ++port , this );
+        socket = new testUdpServer("::", ++port , this );
+      //  socket = new testUdpServer("0.0.0.0", ++port , this );
         socket->start();
         
         
@@ -99,6 +100,7 @@ namespace stun {
                     //candidate.resolved.len = sizeof(interface_a.address.address6);
                     interface_a.address.address6.sin6_port =  htons(port);
                     IP::CopyAddress((const struct sockaddr*) &interface_a.address.address6,  candidate.resolved);
+                   // continue;
                 }
                  
                 char ip[40];  uint16_t port;

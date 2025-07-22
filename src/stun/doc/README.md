@@ -105,3 +105,53 @@ Imagine your home network has an IPv6 address block (the prefix) of 2001:db8::/4
 
 
 NAT hole punching is not directly required for IPv6, as IPv6's design eliminates the need for NAT. However, firewalls can still block unsolicited incoming traffic, making hole punching a potential workaround, although it's less necessary in IPv6 than in IPv4. 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+To listen for UDP traffic on both IPv4 and IPv6 using nc (netcat), you don't need to specify both address families explicitly. nc will automatically listen on both if no address family is specified. However, you can force it to listen on IPv6 only with the -6 flag or IPv4 only with the -4 flag.
+Example:
+To listen for UDP traffic on all available interfaces (both IPv4 and IPv6) on port 12345, you would use:
+Code
+
+
+
+
+nc -ul :: 7000
+
+
+
+udp6       0      0 :::7000                 :::*                                6905/nc            
+root@desk:~# nc -v -u -z -w 3  fe80::1905:b255:3381:d5eb 7000
+
+root@desk:~# nc -v -u -z -w 3  2401:4900:9028:f1b0:aa70:fcd4:50c9:762c 7000
+Connection to 2401:4900:9028:f1b0:aa70:fcd4:50c9:762c 7000 port [udp/afs3-fileserver] succeeded!
+
+root@desk:~# nc -v -u -z -w 3 10.202.214.73 7000
+root@desk:~# nc -v -u -z -w 3 10.202.214.73 7000
+Connection to 10.202.214.73 7000 port [udp/afs3-fileserver] succeeded!
+root@desk:~# ifconfig
+lo: flags=73<UP,LOOPBACK,RUNNING>  mtu 65536
+        inet 127.0.0.1  netmask 255.0.0.0
+        inet6 ::1  prefixlen 128  scopeid 0x10<host>
+        loop  txqueuelen 1000  (Local Loopback)
+        RX packets 13044  bytes 1460229 (1.4 MB)
+        RX errors 0  dropped 0  overruns 0  frame 0
+        TX packets 13044  bytes 1460229 (1.4 MB)
+        TX errors 0  dropped 0 overruns 0  carrier 0  collisions 0
+
+
+root@desk:~# netstat -anp | grep 7000
+udp6       0      0 :::7000                 :::*                                6984/nc            
