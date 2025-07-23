@@ -442,6 +442,11 @@ int agent_resolve_servers(juice_agent_t *agent) {
 				juice_random(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
 				entry->transaction_id_expired = false;
 				++agent->entries_count;
+                                
+                                char src_str[ADDR_MAX_STRING_LEN];
+                                addr_record_to_string(&entry->record, src_str, ADDR_MAX_STRING_LEN);
+                                JLOG_INFO("add record ravind  =%d records_count=%d  record =%d, records_count=%d, agent_resolve_servers from %s, ", agent->agenNo, agent->entries_count, i, records_count ,  src_str);
+        
 
 				agent_arm_transmission(agent, entry, STUN_PACING_TIME * i);
 			}
@@ -821,7 +826,16 @@ int agent_input(juice_agent_t *agent, char *buf, size_t len, const addr_record_t
 int agent_bookkeeping(juice_agent_t *agent, timestamp_t *next_timestamp) {
 	JLOG_VERBOSE("Bookkeeping...");
 
+        
+        static timestamp_t prev = 0;
+        
+        
 	timestamp_t now = current_timestamp();
+        
+        printf("Rashmi is: %" PRId64 " -  %" PRId64 " \n", now, now - prev );
+         
+         prev = now;
+        
 	*next_timestamp = now + 6000000;
 
 	if (agent->state == JUICE_STATE_DISCONNECTED || agent->state == JUICE_STATE_GATHERING)
@@ -829,7 +843,28 @@ int agent_bookkeeping(juice_agent_t *agent, timestamp_t *next_timestamp) {
 
 	for (int i = 0; i < agent->entries_count; ++i) {
 		agent_stun_entry_t *entry = agent->entries + i;
+                
+               
+                
+                        
+                char src_str[ADDR_MAX_STRING_LEN];
+		addr_record_to_string(&entry->record, src_str, ADDR_MAX_STRING_LEN);
+		JLOG_INFO("arvind =%d  agent->entries_count=%d agent_bookkeeping from %s,  state = %d ", agent->agenNo, agent->entries_count, src_str, entry->state  );
+               
+                if(entry->pair && entry->pair->local)
+                {
+                    char src_str1[ADDR_MAX_STRING_LEN];
+                    addr_record_to_string(&entry->pair->local->resolved, src_str1, ADDR_MAX_STRING_LEN);
+                    JLOG_INFO("entry->pair->local =%d  agent->entries_count=%d agent_bookkeeping from %s, ", agent->agenNo, agent->entries_count, src_str1);
+                }
 
+                if(entry->pair && entry->pair->remote)
+                {
+                    char src_str2[ADDR_MAX_STRING_LEN];
+                    addr_record_to_string(&entry->pair->remote->resolved, src_str2, ADDR_MAX_STRING_LEN);
+                    JLOG_INFO("entry->pair->remote =%d  agent->entries_count=%d agent_bookkeeping from %s, ", agent->agenNo, agent->entries_count, src_str2);
+                }
+                        
 		// STUN requests transmission or retransmission
 		if (entry->state == AGENT_STUN_ENTRY_STATE_PENDING) {
 			if (entry->next_transmission > now)
@@ -1564,6 +1599,26 @@ int agent_process_stun_binding(juice_agent_t *agent, const stun_message_t *msg,
 	return 0;
 }
 
+
+
+static void printbyte(size_t const size, void const * const ptr)
+{
+    unsigned char *b = (unsigned char*) ptr;
+    unsigned char byte;
+    int i;
+    
+    printf("\n");
+     
+    for (i = 0 ; i <  size;  ++i) {
+
+            printf("%c", b[i]);
+        
+    }
+    //puts("");
+
+   printf("\n");
+}
+
 int agent_send_stun_binding(juice_agent_t *agent, agent_stun_entry_t *entry, stun_class_t msg_class,
                             unsigned int error_code, const uint8_t *transaction_id,
                             const addr_record_t *mapped) {
@@ -1672,6 +1727,11 @@ int agent_send_stun_binding(juice_agent_t *agent, agent_stun_entry_t *entry, stu
         perror("Error opening file");
         return 1; // Return error code
     }
+    
+    
+    printbyte(size, buffer);
+    
+    //printf("stun message \n%s\n", buffer);
 
     // Write the first employee record to the file
     if (fwrite(buffer, size, 1, fp) != 1) {
@@ -2357,6 +2417,12 @@ int agent_add_candidate_pair(juice_agent_t *agent, ice_candidate_t *local, // lo
 	juice_random(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
 	entry->transaction_id_expired = false;
 	++agent->entries_count;
+        
+        
+        char src_str[ADDR_MAX_STRING_LEN];
+        addr_record_to_string(&entry->record, src_str, ADDR_MAX_STRING_LEN);
+        JLOG_INFO("add pair ravind  =%d, agent->entries_count=%d, agent_add_candidate_pair from %s, ", agent->agenNo, agent->entries_count, src_str);
+        
 
 	if (remote->type == ICE_CANDIDATE_TYPE_HOST)
 		agent_translate_host_candidate_entry(agent, entry);
