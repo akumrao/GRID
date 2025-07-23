@@ -1184,6 +1184,35 @@ bool stun_check_integrity(void *buf, size_t size, const stun_message_t *msg, con
 			stun_update_header_length(begin, prev_length);
 
 			const uint8_t *expected_hmac = attr->value;
+                        
+                        printf("key=  %s \n ", key);
+                        
+                        {
+                            
+                            
+                        }
+                        for (int k = 0; k < 32; ++k) {
+                            printf("%02X ",hmac[k]);
+                        }
+                        
+                        printf("\n");
+                        
+                        
+                        for (int k = 0; k < 32; ++k) {
+                            printf("%02X ", expected_hmac[k]);
+                        }
+                        printf("\n");
+                        
+                       
+                        for (int k = 0; k < key_len; ++k) {
+                            printf("%02X ", key[k]);
+                        }
+                        printf("\n");
+                       
+                        
+     
+                                
+                                
 			if (const_time_memcmp(hmac, expected_hmac, HMAC_SHA256_SIZE) != 0) {
 				JLOG_DEBUG("STUN message integrity SHA256 check failed");
 				return false;
