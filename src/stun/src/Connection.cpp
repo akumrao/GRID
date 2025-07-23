@@ -61,8 +61,10 @@ void testUdpServer::OnUdpSocketPacketReceived(UdpServer* socket, const char* dat
     
     addr_record_t src;
     
-    addr_unmap_inet6_v4mapped( remoteAddr , (socklen_t *)&len);
+    
     IP::CopyAddress(remoteAddr, src );
+    
+    addr_unmap_inet6_v4mapped((struct sockaddr *)&src.addr , &src.len);
     
     agent->onStunMessage((unsigned char *)data, len,  &src, nullptr );
     
