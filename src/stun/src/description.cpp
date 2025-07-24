@@ -276,7 +276,7 @@ bool Description::hasCandidate(const Candidate &cand) const {
             
             if(cand.isResolved() && other->isResolved() )
             {
-                if (((cand.mFoundation == other->mFoundation || cand.mType == rtc::Candidate::Type::PeerReflexive) &&  IP::addr_record_is_equal( &cand.resolved,  &other->resolved,  true)) )
+                if (((cand.mFoundation == other->mFoundation || cand.mType == rtc::Candidate::Type::PeerReflexive || cand.mType == rtc::Candidate::Type::ServerReflexive) &&  IP::addr_record_is_equal( &cand.resolved,  &other->resolved,  true)) )
                 {
                     return true;
                 }
