@@ -65,7 +65,7 @@ namespace stun {
         
         static int port = 7000;
         socket = new testUdpServer("::", ++port , this );
-      //  socket = new testUdpServer("0.0.0.0", ++port , this );
+       // socket = new testUdpServer("0.0.0.0", ++port , this );
         socket->start();
         
         
@@ -1575,27 +1575,35 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
             msg.addAttribute( tmp); 
         }
         
-        if (msg.msg_class == STUN_CLASS_REQUEST ||
-	    (msg.msg_class == STUN_CLASS_RESP_ERROR &&
-	     (msg.error_code == 401 || msg.error_code == 438) // Unauthenticated or Stale Nonce
-	     )) {
-		// TBD
-            
-            SError << " TBD not yet implemented";
-	}
-        
-        
         msg.addAttribute(new stun::Software("libjuice"));
-     
-        
+           
         if(password)
         {
             SInfo << " MessageIntegrity(20) " << " with password " << password;
             
            msg.addAttribute(new stun::MessageIntegrity(20));
         }
+           
         
-        msg.addAttribute(new stun::Fingerprint());
+        if (msg.msg_class == STUN_CLASS_REQUEST ||
+	    (msg.msg_class == STUN_CLASS_RESP_ERROR &&
+	     (msg.error_code == 401 || msg.error_code == 438) // Unauthenticated or Stale Nonce
+	     )) {
+		// TBD
+            
+            
+              msg.addAttribute(new stun::Fingerprint());
+              
+            if(msg.msg_class == STUN_CLASS_RESP_ERROR )  
+            SError << " TBD not yet implemented nounce and password";
+	}
+        
+        
+     
+     
+        
+
+        //msg.addAttribute(new stun::Fingerprint());
 
         stun::Writer writer;
         writer.writeMessage(&msg, (password ? password: ""));
@@ -2131,7 +2139,7 @@ int Agent::agent_resolve_servers( addrinfo* start)
         
         m_next_timestamp = 0; onTimer();
             
-        break; // Arvind remote it later
+        //break; // Arvind remote it later
     }
 		
     //agent_update_gathering_done();

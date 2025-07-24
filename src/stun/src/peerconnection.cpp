@@ -536,7 +536,7 @@ void PeerConnection::processLocalCandidate(Candidate candidate)
 		return;
 	}
 
-	STrace << "AgentNo " << iceTransport->agent.agentNo << " Issuing local candidate: " << candidate;
+	//STrace << "AgentNo " << iceTransport->agent.agentNo << " Issuing local candidate: " << candidate;
 
 	//candidate.resolve(Candidate::ResolveMode::Simple);
 	// mLocalDescription.addCandidate(candidate, false);

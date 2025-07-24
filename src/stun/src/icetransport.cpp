@@ -246,10 +246,10 @@ void IceTransport::setRemoteDescription(const Description *description) {
 bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
     
     
-        SInfo<< "AgentNo " << agent.agentNo << " addRemoteCandidate  " << string(*candidate) <<  "  " <<   candidate;
+        STrace<< "AgentNo " << agent.agentNo << " about to resolve ip  " << string(*candidate) <<  "  " <<   candidate;
      
       
-        resolveNames((Candidate *)candidate);
+        resolveIP((Candidate *)candidate);
     
 	// Don't try to pass unresolved candidates for more safety
 	//if (!candidate->isResolved())

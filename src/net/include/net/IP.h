@@ -51,6 +51,7 @@ namespace base
             static void StringToAddress( const char *ip,  uint16_t port, addr_record_t &mapped);
             static bool addr_is_equal(const struct sockaddr *a, const struct sockaddr *b, bool compare_ports);
             static bool addr_record_is_equal(const addr_record_t *a, const addr_record_t *b, bool compare_ports);
+            static bool addr_unmap_inet6_v4mapped(struct sockaddr *sa, socklen_t *len); 
         };
 
 
