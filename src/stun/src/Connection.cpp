@@ -189,11 +189,11 @@ void Transport::cbNameResolve(  const char* hostname, const char* service,  void
 
 
  
-void Transport::resolveIP( Candidate *cand )
+void Transport::resolveIp( Candidate *cand )
 {
    // SInfo << "resolveName " <<  icesv.hostname << ":" << icesv.port << " addd " << cand;
     
-   resolveName(cand->resolved.addr,   Application::uvGetLoop(),  cand) ;
+   resolveIP(cand->resolved.addr,   Application::uvGetLoop(),  cand) ;
 }
  
 

@@ -170,7 +170,7 @@ public:
         void resolveStunServer();
         void cbDnsResolve(addrinfo* res) override;
         void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
-        void resolveIP( Candidate *certificate );
+        void resolveIp( Candidate *certificate );
         Configuration &mConfig;
      
  };

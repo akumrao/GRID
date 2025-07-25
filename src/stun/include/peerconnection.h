@@ -110,7 +110,7 @@ public:
 	uint16_t maxDataChannelId() const;
 	bool getSelectedCandidatePair(Candidate *local, Candidate *remote);
         
-        bool recv(unsigned char * data , size_t size);
+        void recv(unsigned char * data , size_t size);
         int send(unsigned char * data , size_t size);
 
 	void setLocalDescription(Description::Type type = Description::Type::Unspec);

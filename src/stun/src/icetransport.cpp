@@ -243,13 +243,13 @@ void IceTransport::setRemoteDescription(const Description *description) {
 //		throw std::invalid_argument("Invalid ICE settings from remote SDP");
 }
 
-bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
+void IceTransport::addRemoteCandidate(const Candidate *candidate) {
     
     
         STrace<< "AgentNo " << agent.agentNo << " about to resolve ip  " << string(*candidate) <<  "  " <<   candidate;
      
       
-        resolveIP((Candidate *)candidate);
+        resolveIp((Candidate *)candidate);
     
 	// Don't try to pass unresolved candidates for more safety
 	//if (!candidate->isResolved())

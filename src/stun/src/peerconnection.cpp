@@ -686,7 +686,7 @@ bool PeerConnection::getSelectedCandidatePair(Candidate *local, Candidate *remot
 }
 
 
-bool PeerConnection::recv(unsigned char * data , size_t size)
+void PeerConnection::recv(unsigned char * data , size_t size)
 {
      mRecvChangeCallback( data, size );
 }

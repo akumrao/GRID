@@ -45,7 +45,7 @@ public:
         Description *getLocalDescription(Description::Type type);
         
 	void setRemoteDescription(const Description *description);
-	bool addRemoteCandidate(const Candidate *candidate);
+	void addRemoteCandidate(const Candidate *candidate);
 	void gatherLocalCandidates(string mid, std::vector<IceServer> additionalIceServers = {});
 	void setIceAttributes(string uFrag, string pwd);
 

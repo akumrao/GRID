@@ -277,7 +277,7 @@ typedef struct agent_stun_entry {
     
     void  agent_update_pac_timer();
     
-    int  agent_set_remote_description();
+    void  agent_set_remote_description();
     
     int agent_resolve_servers( addrinfo* res);
     

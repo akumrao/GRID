@@ -91,7 +91,7 @@ namespace base {
             }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
             // resolve ip to hostname and service number
-            void  GetNameInfoReq::getnameinfo_cb1(uv_getnameinfo_t* handle, int status, const char* hostname, const char* service) 
+            void  GetNameInfoReq::on_resolvedIP(uv_getnameinfo_t* handle, int status, const char* hostname, const char* service) 
             {
                   stTmp *tmp       =(stTmp * )handle->data;
                  
@@ -113,7 +113,7 @@ namespace base {
                     delete handle;
             }
                 
-              void GetNameInfoReq::resolveName(sockaddr_storage &addrStorage,  uv_loop_t * loop, void* ptr) 
+              void GetNameInfoReq::resolveIP(sockaddr_storage &addrStorage,  uv_loop_t * loop, void* ptr) 
               {
                 req = new uv_getnameinfo_t; 
                 
@@ -124,7 +124,7 @@ namespace base {
                 req->data = tmp;
                 int r;
 
-                r = uv_getnameinfo(loop, req, getnameinfo_cb1, (const struct sockaddr*)&addrStorage,  NI_NUMERICHOST | NI_NUMERICSERV | NI_DGRAM); 
+                r = uv_getnameinfo(loop, req, on_resolvedIP, (const struct sockaddr*)&addrStorage,  NI_NUMERICHOST | NI_NUMERICSERV | NI_DGRAM); 
                 assert(r == 0);
 
             }
