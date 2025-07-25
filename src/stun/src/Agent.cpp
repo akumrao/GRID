@@ -141,6 +141,8 @@ namespace stun {
         }
         
         ice_add_candidate( candidate, &localdesp   );
+        
+        return 0;
     }
     
     
@@ -167,10 +169,11 @@ namespace stun {
         
 
         if (ice_create_local_candidate(1, localdesp.desc.candidates_count, candidate)) {
-            SInfo << "Failed to create host candidate";
+            SError << "Failed to create host candidate";
+            return -1;
         }
         
-        ice_add_candidate( candidate, &localdesp   );
+        return ice_add_candidate( candidate, &localdesp   );
     }
 
     int Agent::ice_create_local_candidate( int component, int index,  Candidate *candidate) {
@@ -296,7 +299,7 @@ namespace stun {
         //_timer.Start(200);
         
          m_next_timestamp = 0; onTimer();
-        
+         return 0;
     } 
     
     
@@ -1606,7 +1609,10 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
         //msg.addAttribute(new stun::Fingerprint());
 
         stun::Writer writer;
-        writer.writeMessage(&msg, (password ? password: ""));
+        if( writer.writeMessage(&msg, (password ? password: "")) < 0)
+        {
+             return -1;
+        }
 
         #if PRINTDEBUG
 
@@ -1649,7 +1655,10 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
         }
         */ 
         
-        socket->agent_direct_send(&writer.buffer[0], writer.buffer.size(), entry->record);
+        if( socket->agent_direct_send(&writer.buffer[0], writer.buffer.size(), entry->record) < 0)
+        {
+            return -1;
+        }
             
 
         
@@ -1733,7 +1742,7 @@ int Agent::agent_bookkeeping( int64_t &now)
                         default:
                             ret = agent_send_stun_binding(entry, STUN_CLASS_REQUEST, 0, NULL, NULL);
                             break;
-                    }
+                    };
 
                     if (ret >= 0) {
                         --entry->retransmissions;
@@ -2055,7 +2064,7 @@ void  Agent::agent_update_pac_timer() {
 
 
 
-int  Agent::agent_set_remote_description() {
+void  Agent::agent_set_remote_description() {
 	
 	STrace << "AgentNo " << agentNo << " agent_set_remote_description";
 

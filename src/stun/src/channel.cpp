@@ -21,7 +21,7 @@ Channel::~Channel() { resetCallbacks(); }
 
 size_t Channel::maxMessageSize() const { return 0; }
 
-size_t Channel::bufferAmount() const { bufferedAmount; }
+size_t Channel::bufferAmount() const { return bufferedAmount; }
 
 void Channel::onOpen(std::function<void()> callback) { openCallback = callback; }
 

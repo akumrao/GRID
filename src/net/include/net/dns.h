@@ -57,9 +57,9 @@ namespace base {
                // LTrace("GetAddrInfoReq::cbDnsResolve");
             }
 
-            static void getnameinfo_cb1(uv_getnameinfo_t* handle, int status, const char* hostname, const char* service); 
+            static void on_resolvedIP(uv_getnameinfo_t* handle, int status, const char* hostname, const char* service); 
 
-            void resolveName(sockaddr_storage &addrStorage,  uv_loop_t * loop, void* ptr=nullptr) ;
+            void resolveIP(sockaddr_storage &addrStorage,  uv_loop_t * loop, void* ptr=nullptr) ;
 
             uv_getnameinfo_t *req{nullptr};
             
