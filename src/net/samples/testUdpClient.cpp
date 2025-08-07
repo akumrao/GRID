@@ -12,14 +12,14 @@
 #include "base/logger.h"
 #include "base/application.h"
 #include "net/UdpSocket.h"
-#include "base/test.h"
+//#include "base/test.h"
 #include "base/time.h"
 
 
 using std::endl;
 using namespace base;
 using namespace net;
-using namespace base::test;
+///using namespace base::test;
 
 class testUdpClient {
 public:
@@ -59,9 +59,11 @@ int main(int argc, char** argv) {
 
     Application app;
 
-    testUdpClient socket("127.0.0.1", 6000);
+    //testUdpClient socket("127.0.0.1", 6000);
+    testUdpClient socket("192.168.0.10", 6000);
+        
     socket.start();
-    while (true)
+    //while (true)
     {
     socket.send("arvind testing");
     socket.send("arvind testing1");
@@ -73,6 +75,7 @@ int main(int argc, char** argv) {
     app.run();
 
 
+    sleep(660);
 
     return 0;
 }
