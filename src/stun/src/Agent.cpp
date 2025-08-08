@@ -296,9 +296,9 @@ namespace stun {
 		return -2;
 	}
          STrace << "AgentNo " << agentNo << " timer ice_add_remote_candidate";
-        //_timer.Start(200);
+        _timer.Start(0);
         
-         m_next_timestamp = 0; onTimer();
+        // m_next_timestamp = 0; onTimer();
          return 0;
     } 
     
@@ -602,14 +602,14 @@ namespace stun {
         
         int64_t cur =  current_timestamp();
                 
-        if( m_next_timestamp <=  cur )
+       // if( m_next_timestamp <=  cur )
         {
             int ret =  agent_bookkeeping( cur) ;
         }
-        else
-        {
-            SInfo << "onTimer";
-        }
+//        else
+//        {
+//            SInfo << "onTimer";
+//        }
         
         
 //        if (expired())
@@ -688,7 +688,8 @@ namespace stun {
                  STrace << "AgentNo " << agentNo << " timer onStunMessage";
                 //_timer.Start(200);
                 
-                 m_next_timestamp = 0; onTimer();
+                // m_next_timestamp = 0; onTimer();
+                _timer.Start(0);
                 
                 return 0; 
 	}
@@ -1870,7 +1871,7 @@ int Agent::agent_bookkeeping( int64_t &now)
                 if (m_mode == AGENT_MODE_CONTROLLING && selected_pair) {
                     // A higher-priority pair will be used, we can stop checking.
                     // Entries will be synchronized after the current loop.
-                    STrace << "AgentNo " << agentNo << " Cancelling check for lower-priority pair";
+                    SInfo << "AgentNo " << agentNo << " Cancelling check for lower-priority pair";
                     pair->state = ICE_CANDIDATE_PAIR_STATE_FROZEN;
                 } else {
                     ++pending_count;
@@ -2146,12 +2147,15 @@ int Agent::agent_resolve_servers( addrinfo* start)
          STrace << "AgentNo " << agentNo << " timer Resolved severs"  << entry->dump();
         //_timer.Start(200);
         
-        m_next_timestamp = 0; onTimer();
-            
+        
+ 
         //break; // Arvind remote it later
     }
-		
-    //agent_update_gathering_done();
+	
+    if(i)
+    _timer.Start(0);  // m_next_timestamp = 0; onTimer();
+    
+    
 	
     return 0;
 }
