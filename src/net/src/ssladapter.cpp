@@ -19,9 +19,12 @@
 #include <iterator>
 #include <stdexcept>
 #include <vector>
-//#include "Settings.h" // not possible, always you have to have to hardcode the path
 
-//#define FROMFILE 1
+#if SETTINGFromCONFIG
+#include "Settings.h"
+#endif 
+
+#define FROMFILE 1
 
 using namespace std;
 
@@ -61,8 +64,10 @@ SSL_CTX *InitCTX(bool server)
     SSL_CTX *ctx;
 
 
-    std::string KeyFile = "/mnt/key/private_key.pem";
-    //KeyFile = Settings::configuration.dtlsPrivateKeyFile; // not possible, always you have to have to hardcode the path
+    std::string KeyFile = "/var/tmp/key/private_key.pem";
+    #if SETTINGFromCONFIG
+    KeyFile = Settings::configuration.dtlsPrivateKeyFile;
+    #endif
 
     SSL_library_init();
 
@@ -91,8 +96,10 @@ SSL_CTX *InitCTX(bool server)
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if FROMFILE
 
-    std::string CertFile = "/mnt/key/certificate.crt";
-   // CertFile = Settings::configuration.dtlsCertificateFile; // not possible, always you have to have to hardcode the path
+    std::string CertFile = "/var/tmp/key/certificate.crt";
+    #if SETTINGFromCONFIG
+    CertFile = Settings::configuration.dtlsCertificateFile;
+    #endif
 
 
     if (SSL_CTX_load_verify_locations(ctx, CertFile.c_str(), nullptr) != 1) ERR_print_errors_fp(stderr);

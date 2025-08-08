@@ -13,14 +13,14 @@
 #include "base/application.h"
 #include "net/netInterface.h"
 #include "net/TcpConnection.h"
-#include "base/test.h"
+//#include "base/test.h"
 #include "base/time.h"
 #include "base/platform.h"
 
 using std::endl;
 using namespace base;
 using namespace net;
-using namespace base::test;
+//using namespace base::test;
 
 
 class tesTcpClient {

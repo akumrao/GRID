@@ -12,14 +12,14 @@
 #include "base/logger.h"
 #include "base/application.h"
 #include "net/UdpSocket.h"
-#include "base/test.h"
+//#include "base/test.h"
 #include "base/time.h"
 
 
 using std::endl;
 using namespace base;
 using namespace net;
-using namespace base::test;
+//using namespace base::test;
 
 
 class testUdpServer : public UdpServer::Listener {
