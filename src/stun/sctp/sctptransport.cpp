@@ -1,7 +1,7 @@
 
 
-#include "sctptransport.h"
-//#include "dtlstransport.hpp"
+#include "sctptransport.hpp"
+#include "dtlstransport.hpp"
 //#include "internals.hpp"
 //#include "logcounter.hpp"
 
@@ -151,7 +151,7 @@ SctpTransport::SctpTransport(shared_ptr<Transport> lower, const Configuration &c
                              state_callback stateChangeCallback)
     : Transport(lower, stateChangeCallback),
       mMaxMessageSize(config.maxMessageSize),
-      mPorts(ports), 
+      mPorts(ports), mSendQueue(0, message_size_func),
      mBufferedAmountCallback(bufferedAmountCallback) 
     {
 	onRecv(recvCallback);
@@ -687,30 +687,30 @@ bool SctpTransport::trySendMessage(message_ptr message) {
 	return true;
 }
 
-//void SctpTransport::updateBufferedAmount(uint16_t streamId, ptrdiff_t delta) {
-//	// Requires mSendMutex to be locked
-//
-//	if (delta == 0)
-//		return;
-//
-//	auto it = mBufferedAmount.insert(std::make_pair(streamId, 0)).first;
-//	size_t amount = size_t(std::max(ptrdiff_t(it->second) + delta, ptrdiff_t(0)));
-//	if (amount == 0)
-//		mBufferedAmount.erase(it);
-//	else
-//		it->second = amount;
-//
-//	// Synchronously call the buffered amount callback
-//	triggerBufferedAmount(streamId, amount);
-//}
-//
-//void SctpTransport::triggerBufferedAmount(uint16_t streamId, size_t amount) {
-//	try {
-//		mBufferedAmountCallback(streamId, amount);
-//	} catch (const std::exception &e) {
-//		SWarn << "SCTP buffered amount callback: " << e.what();
-//	}
-//}
+void SctpTransport::updateBufferedAmount(uint16_t streamId, ptrdiff_t delta) {
+	// Requires mSendMutex to be locked
+
+	if (delta == 0)
+		return;
+
+	auto it = mBufferedAmount.insert(std::make_pair(streamId, 0)).first;
+	size_t amount = size_t(std::max(ptrdiff_t(it->second) + delta, ptrdiff_t(0)));
+	if (amount == 0)
+		mBufferedAmount.erase(it);
+	else
+		it->second = amount;
+
+	// Synchronously call the buffered amount callback
+	triggerBufferedAmount(streamId, amount);
+}
+
+void SctpTransport::triggerBufferedAmount(uint16_t streamId, size_t amount) {
+	try {
+		mBufferedAmountCallback(streamId, amount);
+	} catch (const std::exception &e) {
+		PLOG_WARNING << "SCTP buffered amount callback: " << e.what();
+	}
+}
 
 void SctpTransport::sendReset(uint16_t streamId) {
 	// Requires mSendMutex to be locked

@@ -6,14 +6,13 @@
 #include "configuration.h"
 //#include "global.h"
 //#include "processor.hpp"
-//#include "queue.hpp"
-#include "transport.h"
+#include "queue.hpp"
+#include "transport.hpp"
 
 #include <condition_variable>
 #include <functional>
 #include <map>
 #include <mutex>
-#include <queue>
 #include "usrsctp.h"
 
 namespace rtc {
@@ -110,7 +109,7 @@ private:
 	void sendReset(uint16_t streamId);
 
 	void handleUpcall() noexcept;
-	int handleWrite(unsigned char *data, size_t len, uint8_t tos, uint8_t set_df) noexcept;
+	int handleWrite(byte *data, size_t len, uint8_t tos, uint8_t set_df) noexcept;
 
 	void processData(binary &&data, uint16_t streamId, PayloadId ppid);
 	void processNotification(const union sctp_notification *notify, size_t len);
@@ -124,8 +123,8 @@ private:
 	std::atomic<int> mPendingRecvCount{0};
 	std::atomic<int> mPendingFlushCount{0};
 	std::mutex mRecvMutex;
-	//std::recursive_mutex mSendMutex; // buffered amount callback is synchronous
-	std::queue<message_ptr> mSendQueue;
+	std::recursive_mutex mSendMutex; // buffered amount callback is synchronous
+	Queue<message_ptr> mSendQueue;
 	bool mSendShutdown = false;
 	std::map<uint16_t, size_t> mBufferedAmount;
 	amount_callback mBufferedAmountCallback;

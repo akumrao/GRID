@@ -1,7 +1,6 @@
 
 #include "transport.hpp"
 
-namespace rtc::impl {
 
 Transport::Transport(shared_ptr<Transport> lower, state_callback callback)
     : mLower(std::move(lower)), mStateChangeCallback(std::move(callback)) {}
@@ -69,4 +68,4 @@ bool Transport::outgoing(message_ptr message) {
 		return false;
 }
 
-} // namespace rtc::impl
+
