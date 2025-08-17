@@ -573,6 +573,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
             }
         }
     });
+#if VIDEOMEDIA
 
     client->video = addVideo(pc, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
        // MainThread.dispatch([wc]() 
@@ -602,6 +603,8 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
         //);
         SInfo << "Audio from " << id << " opened" << endl;
     });
+
+#endif
 
     auto dc = pc->createDataChannel("ping-pong");
     dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
