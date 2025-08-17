@@ -23,6 +23,7 @@ using json = nlohmann::json;
 using namespace stun;
 using namespace rtc;
 
+template <class T> weak_ptr<T> make_weak_ptr(shared_ptr<T> ptr) { return ptr; }
 
 int main()
 {
@@ -139,6 +140,22 @@ int main()
         std::cout << "onRecv state 1: " << data << endl;
     });
 
+    
+    auto dc = pc1.createDataChannel("ping-pong");
+    dc->onOpen([ wdc = make_weak_ptr(dc)]() {
+        if (auto dc = wdc.lock()) {
+            dc->send("Ping");
+        }
+    });
+
+    dc->onMessage(nullptr, [ wdc = make_weak_ptr(dc)](string msg) {
+        std::cout << "Message from " << " received: " << msg << endl;
+        if (auto dc = wdc.lock()) {
+            dc->send("Ping");
+        }
+    });
+  
+    
 
     pc1.setLocalDescription();
 
