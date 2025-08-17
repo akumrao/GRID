@@ -6,12 +6,19 @@
 #include "candidate.h"
 #include "common.h"
 #include "configuration.h"
+
+#if DATACHANNEL
+
 #include "datachannel.h"
+
+#endif
+
+
 #include "description.h"
 #include "reliability.h"
 #include "certificate.h"
 
-#include "datachannel.h"
+
 
 //#include "track.h"
 #include "rtc.h"

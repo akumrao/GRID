@@ -1,6 +1,6 @@
 
-#ifndef RTC_COMMON_H
-#define RTC_COMMON_H
+#ifndef RTC_COMMON_HPP
+#define RTC_COMMON_HPP
 
 #ifdef RTC_STATIC
 #define RTC_CPP_EXPORT
@@ -29,11 +29,13 @@
 #define RTC_ENABLE_WEBSOCKET 1
 #endif
 
-//#ifndef RTC_ENABLE_MEDIA
-//#define RTC_ENABLE_MEDIA 1
-//#endif
+#ifndef RTC_ENABLE_MEDIA
+#define RTC_ENABLE_MEDIA 1
+#endif
 
 #include "rtc.h" // for C API defines
+
+#include "utils.hpp"
 
 #include <cstddef>
 #include <functional>
@@ -47,19 +49,19 @@
 
 namespace rtc {
 
-//using std::byte;
-//using std::nullopt;
-//using std::optional;
+using std::byte;
+using std::nullopt;
+using std::optional;
 using std::shared_ptr;
 using std::string;
-//using std::string_view;
+using std::string_view;
 using std::unique_ptr;
-//using std::variant;
+using std::variant;
 using std::weak_ptr;
 
-//using binary = std::vector<byte>;
-//using binary_ptr = shared_ptr<binary>;
-//using message_variant = variant<binary, string>;
+using binary = std::vector<byte>;
+using binary_ptr = shared_ptr<binary>;
+using message_variant = variant<binary, string>;
 
 using std::int16_t;
 using std::int32_t;

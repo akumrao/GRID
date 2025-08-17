@@ -2,9 +2,9 @@
 #ifndef RTC_MESSAGE_H
 #define RTC_MESSAGE_H
 
-//#include "common.hpp"
+#include "common.hpp"
 #include "frameinfo.hpp"
-#include "reliability.hpp"
+#include "reliability.h"
 
 #include <functional>
 
@@ -65,7 +65,7 @@ RTC_CPP_EXPORT message_ptr make_message(message_variant data);
 
 // Reconstructs a message_ptr from an opaque rtcMessage pointer that
 // was allocated by rtcCreateOpaqueMessage().
-message_ptr make_message_from_opaque_ptr(rtcMessage *&&message);
+//message_ptr make_message_from_opaque_ptr(rtcMessage *&&message);
 
 #endif
 

@@ -4,8 +4,8 @@
 
 #include "common.h"
 #include "configuration.h"
-//#include "global.h"
-//#include "processor.hpp"
+#include "global.hpp"
+#include "processor.hpp"
 #include "queue.hpp"
 #include "transport.hpp"
 
@@ -17,33 +17,19 @@
 
 namespace rtc {
 
-    struct SctpSettings {
-	// For the following settings, not set means optimized default
-	size_t recvBufferSize{1024 * 1024};                // in bytes
-	size_t sendBufferSize{1024 * 1024};                // in bytes
-	size_t maxChunksOnQueue{10 * 1024};              // in chunks
-	size_t initialCongestionWindow{10};       // in MTUs
-	size_t maxBurst{10};                      // in MTUs
-	unsigned int congestionControlModule{0}; // 0: RFC2581, 1: HSTCP, 2: H-TCP, 3: RTCC
-	std::chrono::milliseconds delayedSackTime{20};
-	std::chrono::milliseconds minRetransmitTimeout{200};
-	std::chrono::milliseconds maxRetransmitTimeout{10000};
-	std::chrono::milliseconds initialRetransmitTimeout{1000};
-	unsigned int maxRetransmitAttempts{5};
-	std::chrono::milliseconds heartbeatInterval{10000};
-};
+
 
 //RTC_CPP_EXPORT void SetSctpSettings(SctpSettings s);
     
-const uint16_t DEFAULT_SCTP_PORT = 5000; // SCTP port to use by default
+//const uint16_t DEFAULT_SCTP_PORT = 5000; // SCTP port to use by default
 
-const uint16_t MAX_SCTP_STREAMS_COUNT = 1024; // Max number of negotiated SCTP streams
+//const uint16_t MAX_SCTP_STREAMS_COUNT = 1024; // Max number of negotiated SCTP streams
                                               // RFC 8831 recommends 65535 but usrsctp needs a lot
                                               // of memory, Chromium historically limits to 1024.
 
 
     
-class SctpTransport final : public Transport, public std::enable_shared_from_this<SctpTransport> {
+class SctpTransport final : public Transport_del, public std::enable_shared_from_this<SctpTransport> {
 public:
 	static void Init();
 	static void SetSettings(const SctpSettings &s);
@@ -56,7 +42,7 @@ public:
 		uint16_t remote = DEFAULT_SCTP_PORT;
 	};
 
-	SctpTransport(shared_ptr<Transport> lower, const Configuration &config, Ports ports,
+	SctpTransport(shared_ptr<Transport_del> lower, const Configuration &config, Ports ports,
 	              message_callback recvCallback, amount_callback bufferedAmountCallback,
 	              state_callback stateChangeCallback);
 	~SctpTransport();
@@ -104,8 +90,8 @@ private:
 	void enqueueFlush();
 	bool trySendQueue();
 	bool trySendMessage(message_ptr message);
-	//void updateBufferedAmount(uint16_t streamId, ptrdiff_t delta);
-	//void triggerBufferedAmount(uint16_t streamId, size_t amount);
+	void updateBufferedAmount(uint16_t streamId, ptrdiff_t delta);
+	void triggerBufferedAmount(uint16_t streamId, size_t amount);
 	void sendReset(uint16_t streamId);
 
 	void handleUpcall() noexcept;
@@ -119,7 +105,7 @@ private:
 	struct socket *mSock;
 	uint16_t mNegotiatedStreamsCount{MAX_SCTP_STREAMS_COUNT};
 
-	//Processor mProcessor;
+	Processor mProcessor;
 	std::atomic<int> mPendingRecvCount{0};
 	std::atomic<int> mPendingFlushCount{0};
 	std::mutex mRecvMutex;

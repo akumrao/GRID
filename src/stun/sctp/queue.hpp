@@ -11,7 +11,7 @@
 #include <mutex>
 #include <queue>
 
-namespace rtc::impl {
+namespace rtc {
 
 template <typename T> class Queue {
 public:

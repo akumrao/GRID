@@ -1,7 +1,7 @@
 
 
 #include "sctptransport.hpp"
-#include "dtlstransport.hpp"
+//#include "dtlstransport.hpp"
 //#include "internals.hpp"
 //#include "logcounter.hpp"
 
@@ -56,35 +56,35 @@ using namespace base;
 
 namespace rtc {
 
-//using utils::to_uint16;
-//using utils::to_uint32;
+using utils::to_uint16;
+using utils::to_uint32;
 
 
 
-//class SctpTransport::InstancesSet {
-//public:
-//	void insert(SctpTransport *instance) {
-//		std::unique_lock lock(mMutex);
-//		mSet.insert(instance);
-//	}
-//
-//	void erase(SctpTransport *instance) {
-//		std::unique_lock lock(mMutex);
-//		mSet.erase(instance);
-//	}
-//
-//	using shared_lock = std::shared_lock<std::shared_mutex>;
-//	optional<shared_lock> lock(SctpTransport *instance) noexcept {
-//		shared_lock lock(mMutex);
-//		return mSet.find(instance) != mSet.end() ? std::make_optional(std::move(lock)) : nullopt;
-//	}
-//
-//private:
-//	std::unordered_set<SctpTransport *> mSet;
-//	std::shared_mutex mMutex;
-//};
+class SctpTransport::InstancesSet {
+public:
+	void insert(SctpTransport *instance) {
+		std::unique_lock lock(mMutex);
+		mSet.insert(instance);
+	}
 
-//std::unique_ptr<SctpTransport::InstancesSet> SctpTransport::Instances = std::make_unique<InstancesSet>();
+	void erase(SctpTransport *instance) {
+		std::unique_lock lock(mMutex);
+		mSet.erase(instance);
+	}
+
+	using shared_lock = std::shared_lock<std::shared_mutex>;
+	optional<shared_lock> lock(SctpTransport *instance) noexcept {
+		shared_lock lock(mMutex);
+		return mSet.find(instance) != mSet.end() ? std::make_optional(std::move(lock)) : nullopt;
+	}
+
+private:
+	std::unordered_set<SctpTransport *> mSet;
+	std::shared_mutex mMutex;
+};
+
+std::unique_ptr<SctpTransport::InstancesSet> SctpTransport::Instances = std::make_unique<InstancesSet>();
 
 void SctpTransport::Init() {
 	usrsctp_init(0, SctpTransport::WriteCallback, SctpTransport::DebugCallback);
@@ -146,10 +146,10 @@ void SctpTransport::Cleanup() {
 		std::this_thread::sleep_for(100ms);
 }
 
-SctpTransport::SctpTransport(shared_ptr<Transport> lower, const Configuration &config, Ports ports,
+SctpTransport::SctpTransport(shared_ptr<Transport_del> lower, const Configuration &config, Ports ports,
                              message_callback recvCallback, amount_callback bufferedAmountCallback,
                              state_callback stateChangeCallback)
-    : Transport(lower, stateChangeCallback),
+    : Transport_del(lower, stateChangeCallback),
       mMaxMessageSize(config.maxMessageSize),
       mPorts(ports), mSendQueue(0, message_size_func),
      mBufferedAmountCallback(bufferedAmountCallback) 
@@ -464,7 +464,7 @@ bool SctpTransport::outgoing(message_ptr message) {
 	// Set recommended medium-priority DSCP value
 	// See https://www.rfc-editor.org/rfc/rfc8837.html#section-5
 	message->dscp = 10; // AF11: Assured Forwarding class 1, low drop probability
-	return Transport::outgoing(std::move(message));
+	return Transport_del::outgoing(std::move(message));
 }
 
 void SctpTransport::doRecv() {
@@ -633,33 +633,38 @@ bool SctpTransport::trySendMessage(message_ptr message) {
 	if (reliability.unordered)
 		spa.sendv_sndinfo.snd_flags |= SCTP_UNORDERED;
 
-	if (reliability.maxPacketLifeTime) {
+	if (reliability.maxPacketLifeTime.count()) {
 		spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
 		spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
-		spa.sendv_prinfo.pr_value = to_uint32(reliability.maxPacketLifeTime->count());
+		spa.sendv_prinfo.pr_value = to_uint32(reliability.maxPacketLifeTime.count());
 	} else if (reliability.maxRetransmits) {
 		spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
 		spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
-		spa.sendv_prinfo.pr_value = to_uint32(*reliability.maxRetransmits);
+		spa.sendv_prinfo.pr_value = to_uint32(reliability.maxRetransmits);
 	}
 	// else {
 	// 	spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
 	// }
 	// Deprecated
 	else switch (reliability.typeDeprecated) {
-	case Reliability::Type::Rexmit:
-		spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
-		spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
-		spa.sendv_prinfo.pr_value = to_uint32(std::get<int>(reliability.rexmit));
-		break;
-	case Reliability::Type::Timed:
-		spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
-		spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
-		spa.sendv_prinfo.pr_value = to_uint32(std::get<milliseconds>(reliability.rexmit).count());
-		break;
+//	case Reliability::Type::Rexmit:
+//		spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
+//		spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
+//		spa.sendv_prinfo.pr_value = to_uint32(std::get<int>(reliability.rexmit));
+//		break;
+//	case Reliability::Type::Timed:
+//		spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
+//		spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
+//		spa.sendv_prinfo.pr_value = to_uint32(std::get<milliseconds>(reliability.rexmit).count());
+//		break;
 	default:
-		spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
-		break;
+//		spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
+//		break;
+            
+            
+            std::cerr<< " typeDeprecated rexmit not supported ";
+            exit(0);
+            
 	}
 
 	ssize_t ret;
@@ -677,7 +682,7 @@ bool SctpTransport::trySendMessage(message_ptr message) {
 			return false;
 		}
 
-		PLOG_ERROR << "SCTP sending failed, errno=" << errno;
+		SError << "SCTP sending failed, errno=" << errno;
 		throw std::runtime_error("Sending failed, errno=" + std::to_string(errno));
 	}
 
@@ -708,7 +713,7 @@ void SctpTransport::triggerBufferedAmount(uint16_t streamId, size_t amount) {
 	try {
 		mBufferedAmountCallback(streamId, amount);
 	} catch (const std::exception &e) {
-		PLOG_WARNING << "SCTP buffered amount callback: " << e.what();
+		SWarn << "SCTP buffered amount callback: " << e.what();
 	}
 }
 
@@ -752,7 +757,7 @@ void SctpTransport::handleUpcall() noexcept {
 			enqueueFlush();
 
 	} catch (const std::exception &e) {
-		PLOG_ERROR << "SCTP upcall: " << e.what();
+		SError << "SCTP upcall: " << e.what();
 	}
 }
 
@@ -770,7 +775,7 @@ int SctpTransport::handleWrite(byte *data, size_t len, uint8_t /*tos*/,
 		mWrittenCondition.notify_all();
 
 	} catch (const std::exception &e) {
-		PLOG_ERROR << "SCTP write: " << e.what();
+		SError << "SCTP write: " << e.what();
 		return -1;
 	}
 	return 0; // success
@@ -839,8 +844,8 @@ void SctpTransport::processData(binary &&data, uint16_t sid, PayloadId ppid) {
 
 	default:
 		// Unknown
-		COUNTER_UNKNOWN_PPID++;
-		STrace << "Unknown PPID: " << uint32_t(ppid);
+		//COUNTER_UNKNOWN_PPID++;
+		SWarn << "Unknown PPID: " << uint32_t(ppid);
 		return;
 	}
 }
@@ -862,8 +867,7 @@ void SctpTransport::processNotification(const union sctp_notification *notify, s
 		if (sac.sac_state == SCTP_COMM_UP) {
 			SDebug << "SCTP negotiated streams: incoming=" << sac.sac_inbound_streams
 			           << ", outgoing=" << sac.sac_outbound_streams;
-			mNegotiatedStreamsCount.emplace(
-			    std::min(sac.sac_inbound_streams, sac.sac_outbound_streams));
+			mNegotiatedStreamsCount=  std::min(sac.sac_inbound_streams, sac.sac_outbound_streams);
 
 			SInfo << "SCTP connected";
 			changeState(State::Connected);
@@ -949,12 +953,12 @@ size_t SctpTransport::bytesReceived() { return mBytesReceived; }
 
 milliseconds SctpTransport::rtt() {
 	if (state() != State::Connected)
-		return nullopt;
+		return std::chrono::milliseconds(0);
 
 	struct sctp_status status = {};
 	socklen_t len = sizeof(status);
 	if (usrsctp_getsockopt(mSock, IPPROTO_SCTP, SCTP_STATUS, &status, &len))
-		return nullopt;
+		return std::chrono::milliseconds(0);
 
 	return milliseconds(status.sstat_primary.spinfo_srtt);
 }

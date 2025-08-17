@@ -4,7 +4,7 @@
 #define RTC_IMPL_TRANSPORT_H
 
 //#include "common.h"
-//#include "init.h"
+ #include "init.hpp"
 //#include "internals.h"
 #include "message.hpp"
 #include "reliability.h"
@@ -15,13 +15,13 @@
 namespace rtc {
 
     
-class Transport {
+class Transport_del {
 public:
 	enum class State { Disconnected, Connecting, Connected, Completed, Failed };
 	using state_callback = std::function<void(State state)>;
 
-	Transport(shared_ptr<Transport> lower = nullptr, state_callback callback = nullptr);
-	virtual ~Transport();
+	Transport_del(shared_ptr<Transport_del> lower = nullptr, state_callback callback = nullptr);
+	virtual ~Transport_del();
 
 	void registerIncoming();
 	void unregisterIncoming();
@@ -43,7 +43,7 @@ protected:
 private:
 	const init_token mInitToken = Init::Instance().token();
 
-	shared_ptr<Transport> mLower;
+	shared_ptr<Transport_del> mLower;
 	synchronized_callback<State> mStateChangeCallback;
 	synchronized_callback<message_ptr> mRecvCallback;
 
