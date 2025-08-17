@@ -97,8 +97,28 @@ Description PeerConnection::remoteDescription() const {
 	return mRemoteDescription;
 }
 
+#if DATACHANNEL
 
-//size_t PeerConnection::remoteMaxMessageSize() const { return impl()->remoteMaxMessageSize(); }
+size_t PeerConnection::remoteMaxMessageSize() const { 
+
+const size_t localMax = mConfig.maxMessageSize;
+
+size_t remoteMax = DEFAULT_REMOTE_MAX_MESSAGE_SIZE;
+	std::lock_guard lock(mRemoteDescriptionMutex);
+	//if (mRemoteDescription)
+		if (auto *application = mRemoteDescription.application())
+			if (auto max = application->maxMessageSize()) {
+				// RFC 8841: If the SDP "max-message-size" attribute contains a maximum message
+				// size value of zero, it indicates that the SCTP endpoint will handle messages
+				// of any size, subject to memory capacity, etc.
+				remoteMax = max > 0 ? max : std::numeric_limits<size_t>::max();
+			}
+
+	return std::min(remoteMax, localMax);
+
+}
+
+#endif
 
 //bool PeerConnection::hasMedia() const {
 //	auto local = localDescription();

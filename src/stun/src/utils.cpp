@@ -27,7 +27,7 @@ typedef HRESULT(WINAPI *pfnSetThreadDescription)(HANDLE, PCWSTR);
 
 using namespace base;
 
-namespace rtc::impl::utils {
+namespace rtc::utils {
 
 //using std::to_integer;
 

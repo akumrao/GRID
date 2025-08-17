@@ -25,13 +25,13 @@ extern "C" {
 #endif
 #endif
 
-#ifndef RTC_ENABLE_WEBSOCKET
-#define RTC_ENABLE_WEBSOCKET 1
-#endif
-
-#ifndef RTC_ENABLE_MEDIA
-#define RTC_ENABLE_MEDIA 1
-#endif
+//#ifndef RTC_ENABLE_WEBSOCKET
+//#define RTC_ENABLE_WEBSOCKET 1
+//#endif
+//
+//#ifndef RTC_ENABLE_MEDIA
+//#define RTC_ENABLE_MEDIA 1
+//#endif
 
 #define RTC_DEFAULT_MTU 1280 // IPv6 minimum guaranteed MTU
 

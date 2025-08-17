@@ -2,12 +2,12 @@
 #ifndef RTC_IMPL_DATA_CHANNEL_H
 #define RTC_IMPL_DATA_CHANNEL_H
 
-#include "channel.hpp"
-//#include "common.hpp"
+#include "channel.h"
+#include "common.hpp"
 #include "message.hpp"
 #include "peerconnection.h"
 #include "queue.hpp"
-#include "reliability.hpp"
+#include "reliability.h"
 #include "sctptransport.hpp"
 
 #include <atomic>
@@ -47,7 +47,7 @@ struct DataChannel : Channel, std::enable_shared_from_this<DataChannel> {
 	virtual void processOpenMessage(message_ptr);
 
 protected:
-	const weak_ptr<impl::PeerConnection> mPeerConnection;
+	const weak_ptr<PeerConnection> mPeerConnection;
 	weak_ptr<SctpTransport> mSctpTransport;
 
 	optional<uint16_t> mStream;
@@ -81,6 +81,6 @@ struct IncomingDataChannel final : public DataChannel {
 	void processOpenMessage(message_ptr message) override;
 };
 
-} // namespace rtc::impl
+} // namespace rtc
 
 #endif

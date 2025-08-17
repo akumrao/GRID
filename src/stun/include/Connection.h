@@ -36,7 +36,7 @@ using std::endl;
 //using namespace base;
 //using namespace net;
 using namespace stun;
-//using namespace base::test;
+using namespace base::net;
 
 namespace stun {
     class Agent;

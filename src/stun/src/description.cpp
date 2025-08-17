@@ -65,7 +65,7 @@ template <typename T> T to_integer(const string& s) {
 
 namespace rtc {
 
-namespace utils = impl::utils;
+//namespace utils = utils;
 
 
 Description::Description(const string &sdp, string typeString)

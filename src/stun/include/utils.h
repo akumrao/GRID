@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace rtc::impl::utils {
+namespace rtc::utils {
 
 std::vector<string> explode(const string &str, char delim);
 string implode(const std::vector<string> &tokens, char delim);
