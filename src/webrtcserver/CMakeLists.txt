@@ -24,8 +24,8 @@ option(SCTP_DEBUG "Enable SCTP debugging output to verbose log" OFF)
 option(RTC_UPDATE_VERSION_HEADER "Enable updating the version header" OFF)
 
 
-SET(SSL_ROOT "/workspace/MagicAI/src/openssl/buildx64")
-SET(SSL_LIB "/workspace/MagicAI/src/openssl/buildx64/lib")
+SET(SSL_ROOT "${WORKSPACE}/src/openssl/buildx64")
+SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
 
 #SET(WEBRTC_REPO "${CMAKE_SOURCE_DIR}/webrtc/src")
 
