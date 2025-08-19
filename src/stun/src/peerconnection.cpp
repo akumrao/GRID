@@ -555,11 +555,11 @@ shared_ptr<DataChannel> PeerConnection::createDataChannel(string label, DataChan
 	auto channelImpl = emplaceDataChannel(std::move(label), std::move(init));
 	auto channel = std::make_shared<DataChannel>(channelImpl);
 
-	if (!mConfig.disableAutoNegotiation && signalingState == SignalingState::Stable) {
-		// We might need to make a new offer
-		if (negotiationNeeded())
-			setLocalDescription(Description::Type::Offer);
-	}
+//	if (!mConfig.disableAutoNegotiation && signalingState == SignalingState::Stable) {
+//		// We might need to make a new offer
+//		if (negotiationNeeded())
+//			setLocalDescription(Description::Type::Offer);
+//	}
 
 	return channel;
 }
