@@ -274,6 +274,8 @@ include_directories(
     ${WEBRTC_REPO}/deps/libsrtp/crypto/include
     ${WEBRTC_REPO}/deps/libsrtp/include
     ${WEBRTC_REPO}/deps/json/include
+    ${WEBRTC_REPO}/deps/usrsctp/usrsctplib
+
     ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/ ../net/include/ ../libuv/include ../libuv/src ../build/ ../http_parser/  
    
 )
