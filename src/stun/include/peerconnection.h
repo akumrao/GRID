@@ -233,6 +233,8 @@ public:
 	                                                        DataChannelInit init = {});
 	void onDataChannel(std::function<void(std::shared_ptr<DataChannel> dataChannel)> callback);
         
+        synchronized_callback<std::shared_ptr<DataChannel>> mDataChannelCallback;
+        
         
 };
 

@@ -478,37 +478,39 @@ uint16_t PeerConnection::maxDataChannelStream() const {
 shared_ptr<DataChannel> PeerConnection::emplaceDataChannel(string label, DataChannelInit init) {
 	std::unique_lock lock(mDataChannelsMutex); // we are going to emplace
 
-	// If the DataChannel is user-negotiated, do not negotiate it in-band
-	auto channel =
-	    init.negotiated
-	        ? std::make_shared<DataChannel>(weak_from_this(), std::move(label),
-	                                        std::move(init.protocol), std::move(init.reliability))
-	        : std::make_shared<OutgoingDataChannel>(weak_from_this(), std::move(label),
-	                                                std::move(init.protocol),
-	                                                std::move(init.reliability));
+//	// If the DataChannel is user-negotiated, do not negotiate it in-band
+//	auto channel =
+//	    init.negotiated
+//	        ? std::make_shared<DataChannel>(weak_from_this(), std::move(label),
+//	                                        std::move(init.protocol), std::move(init.reliability))
+//	        : std::make_shared<OutgoingDataChannel>(weak_from_this(), std::move(label),
+//	                                                std::move(init.protocol),
+//	                                                std::move(init.reliability));
+//
+//	// If the user supplied a stream id, use it, otherwise assign it later
+//	if (init.id) {
+//		uint16_t stream = *init.id;
+//		if (stream > maxDataChannelStream())
+//			throw std::invalid_argument("DataChannel stream id is too high");
+//
+//		channel->assignStream(stream);
+//		mDataChannels.emplace(std::make_pair(stream, channel));
+//
+//	} else {
+//		mUnassignedDataChannels.push_back(channel);
+//	}
+//
+//	lock.unlock(); // we are going to call assignDataChannels()
+//
+//	// If SCTP is connected, assign and open now
+//	auto sctpTransport = std::atomic_load(&mSctpTransport);
+//	if (sctpTransport && sctpTransport->state() == SctpTransport::State::Connected) {
+//		assignDataChannels();
+//		channel->open(sctpTransport);
+//	}
 
-	// If the user supplied a stream id, use it, otherwise assign it later
-	if (init.id) {
-		uint16_t stream = *init.id;
-		if (stream > maxDataChannelStream())
-			throw std::invalid_argument("DataChannel stream id is too high");
-
-		channel->assignStream(stream);
-		mDataChannels.emplace(std::make_pair(stream, channel));
-
-	} else {
-		mUnassignedDataChannels.push_back(channel);
-	}
-
-	lock.unlock(); // we are going to call assignDataChannels()
-
-	// If SCTP is connected, assign and open now
-	auto sctpTransport = std::atomic_load(&mSctpTransport);
-	if (sctpTransport && sctpTransport->state() == SctpTransport::State::Connected) {
-		assignDataChannels();
-		channel->open(sctpTransport);
-	}
-
+        
+        shared_ptr<DataChannel> channel;
 	return channel;
 }
 
@@ -516,51 +518,51 @@ shared_ptr<DataChannel> PeerConnection::emplaceDataChannel(string label, DataCha
 void PeerConnection::assignDataChannels() {
 	std::unique_lock lock(mDataChannelsMutex); // we are going to emplace
 
-	auto iceTransport = std::atomic_load(&mIceTransport);
-	if (!iceTransport)
-		throw std::logic_error("Attempted to assign DataChannels without ICE transport");
-
-	const uint16_t maxStream = maxDataChannelStream();
-	for (auto it = mUnassignedDataChannels.begin(); it != mUnassignedDataChannels.end(); ++it) {
-		auto channel = it->lock();
-		if (!channel)
-			continue;
-
-		// RFC 8832: The peer that initiates opening a data channel selects a stream identifier
-		// for which the corresponding incoming and outgoing streams are unused.  If the side is
-		// acting as the DTLS client, it MUST choose an even stream identifier; if the side is
-		// acting as the DTLS server, it MUST choose an odd one. See
-		// https://www.rfc-editor.org/rfc/rfc8832.html#section-6
-		uint16_t stream = (iceTransport->role() == Description::Role::Active) ? 0 : 1;
-		while (true) {
-			if (stream > maxStream)
-				throw std::runtime_error("Too many DataChannels");
-
-			if (mDataChannels.find(stream) == mDataChannels.end())
-				break;
-
-			stream += 2;
-		}
-
-		SDebug << "Assigning stream " << stream << " to DataChannel";
-
-		channel->assignStream(stream);
-		mDataChannels.emplace(std::make_pair(stream, channel));
-	}
+//	auto iceTransport = std::atomic_load(&mIceTransport);
+//	if (!iceTransport)
+//		throw std::logic_error("Attempted to assign DataChannels without ICE transport");
+//
+//	const uint16_t maxStream = maxDataChannelStream();
+//	for (auto it = mUnassignedDataChannels.begin(); it != mUnassignedDataChannels.end(); ++it) {
+//		auto channel = it->lock();
+//		if (!channel)
+//			continue;
+//
+//		// RFC 8832: The peer that initiates opening a data channel selects a stream identifier
+//		// for which the corresponding incoming and outgoing streams are unused.  If the side is
+//		// acting as the DTLS client, it MUST choose an even stream identifier; if the side is
+//		// acting as the DTLS server, it MUST choose an odd one. See
+//		// https://www.rfc-editor.org/rfc/rfc8832.html#section-6
+//		uint16_t stream = (iceTransport->role() == Description::Role::Active) ? 0 : 1;
+//		while (true) {
+//			if (stream > maxStream)
+//				throw std::runtime_error("Too many DataChannels");
+//
+//			if (mDataChannels.find(stream) == mDataChannels.end())
+//				break;
+//
+//			stream += 2;
+//		}
+//
+//		SDebug << "Assigning stream " << stream << " to DataChannel";
+//
+//		channel->assignStream(stream);
+//		mDataChannels.emplace(std::make_pair(stream, channel));
+//	}
 
 	mUnassignedDataChannels.clear();
 }
 
 shared_ptr<DataChannel> PeerConnection::createDataChannel(string label, DataChannelInit init) {
-	auto channelImpl = emplaceDataChannel(std::move(label), std::move(init));
-	auto channel = std::make_shared<DataChannel>(channelImpl);
+	///auto channelImpl = emplaceDataChannel(std::move(label), std::move(init));
+	//auto channel = std::make_shared<DataChannel>();
 
 //	if (!mConfig.disableAutoNegotiation && signalingState == SignalingState::Stable) {
 //		// We might need to make a new offer
 //		if (negotiationNeeded())
 //			setLocalDescription(Description::Type::Offer);
 //	}
-
+        shared_ptr<DataChannel> channel;
 	return channel;
 }
 
