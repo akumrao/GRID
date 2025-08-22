@@ -17,8 +17,8 @@ public:
 	virtual ~Channel();
 
 	virtual void close() = 0;
-	virtual bool send(message_variant data) = 0; // returns false if buffered
-	virtual bool send(const byte *data, size_t size) = 0;
+	virtual bool send(message_variant data){return true;}; // returns false if buffered
+	virtual bool send(const byte *data, size_t size) { return true;};
 
 	virtual bool isOpen() const = 0;
 	virtual bool isClosed() const = 0;

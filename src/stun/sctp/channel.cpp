@@ -105,7 +105,11 @@ size_t Channel::maxMessageSize() const { return 0; }
 //    return bufferedAmount;
 //}
 
-void Channel::onOpen(std::function<void()> callback) { openCallback = callback; }
+void Channel::onOpen(std::function<void()> callback) {
+
+    openCallback = callback;
+
+}
 
 void Channel::onClosed(std::function<void()> callback) {closedCallback = callback; }
 
