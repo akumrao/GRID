@@ -10,6 +10,7 @@
 #if DATACHANNEL
 
 #include "datachannel.h"
+#include "sctptransport.hpp"
 
 #endif
 
@@ -38,7 +39,10 @@
 
 namespace rtc {
 
- struct DataChannel;
+    
+#if DATACHANNEL
+
+struct DataChannel;
 
 struct RTC_CPP_EXPORT DataChannelInit {
 	Reliability reliability = {};
@@ -46,6 +50,10 @@ struct RTC_CPP_EXPORT DataChannelInit {
 	optional<uint16_t> id = nullopt;
 	string protocol = "";
 };
+
+#endif
+
+
 
 struct RTC_CPP_EXPORT LocalDescriptionInit {
     string iceUfrag;
@@ -210,30 +218,36 @@ public:
         
         IceTransport *iceTransport{nullptr};
                
-        
+        #if DATACHANNEL
         //shared_ptr<DtlsTransport> mDtlsTransport;
-	shared_ptr<SctpTransport> mSctpTransport;
-        
-	shared_ptr<IceTransport> mIceTransport;
-        
-        std::unordered_map<uint16_t, DataChannel*> mDataChannels; // by stream ID
-	//std::vector<DataChannel*> mUnassignedDataChannels;
+        shared_ptr<SctpTransport> mSctpTransport;
+
+        shared_ptr<IceTransport> mIceTransport;
+
+
+        //std::unordered_map<uint16_t, DataChannel*> mDataChannels; // by stream ID
+        std::unordered_map<uint16_t, weak_ptr<DataChannel>> mDataChannels; // by stream ID
+                
+        //std::vector<DataChannel*> mUnassignedDataChannels;
         std::vector<weak_ptr<DataChannel>> mUnassignedDataChannels;
-	std::mutex mDataChannelsMutex;
-        
+        std::mutex mDataChannelsMutex;
+
         void assignDataChannels();
 
-	bool removeDataChannel(uint16_t stream);
-	uint16_t maxDataChannelStream() const;
-	
+        bool removeDataChannel(uint16_t stream);
+        uint16_t maxDataChannelStream() const;
 
-    shared_ptr<DataChannel> emplaceDataChannel(string label, DataChannelInit init);
-        
-	shared_ptr<DataChannel> createDataChannel(string label,
-	                                                        DataChannelInit init = {});
-	void onDataChannel(std::function<void(std::shared_ptr<DataChannel> dataChannel)> callback);
-        
+
+        shared_ptr<DataChannel> emplaceDataChannel(string label, DataChannelInit init);
+
+        shared_ptr<DataChannel> createDataChannel(string label,
+                                                                DataChannelInit init = {});
+        void onDataChannel(std::function<void(std::shared_ptr<DataChannel> dataChannel)> callback);
+
         synchronized_callback<std::shared_ptr<DataChannel>> mDataChannelCallback;
+        void triggerPendingDataChannels();
+
+        #endif  
         
         
 };
