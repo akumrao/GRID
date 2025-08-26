@@ -12,15 +12,42 @@
 #include <functional>
 #include <memory>
 
+#include "configuration.h"
+#include "net/dns.h"
+#include "candidate.h"
+
+
+
+using namespace base::net;
+
+
 namespace rtc {
 
     
-class Transport_del {
+
+ 
+ 
+    
+class Transport_del: public GetAddrInfoReq, GetNameInfoReq
+{
 public:
+    
+    
+       Transport_del( Configuration &Config): mConfig(Config)
+        {
+            
+        }
+        void resolveStunServer();
+        void cbDnsResolve(addrinfo* res) override;
+        void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
+        void resolveIp( Candidate *certificate );
+        Configuration &mConfig;
+     
+        
 	enum class State { Disconnected, Connecting, Connected, Completed, Failed };
 	using state_callback = std::function<void(State state)>;
 
-	Transport_del(shared_ptr<Transport_del> lower = nullptr, state_callback callback = nullptr);
+	Transport_del(Configuration &Config, shared_ptr<Transport_del> lower = nullptr, state_callback callback = nullptr );
 	virtual ~Transport_del();
 
 	void registerIncoming();

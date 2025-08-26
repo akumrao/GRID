@@ -7,6 +7,8 @@
 #include "queue.hpp"
 #include "tls.hpp"
 #include "transport.hpp"
+#include "icetransport.h"
+
 
 #include <atomic>
 #include <functional>
@@ -15,16 +17,16 @@
 
 namespace rtc {
 
-class IceTransport: public Transport_del
-{
-public:
-
-    Description::Role role()
-    {
-        return Description::Role::ActPass;
-    }
-    
-};
+//class IceTransport: public Transport_del
+//{
+//public:
+//
+//    Description::Role role()
+//    {
+//        return Description::Role::ActPass;
+//    }
+//    
+//};
 
 class DtlsTransport : public Transport_del, public std::enable_shared_from_this<DtlsTransport> {
 public:
