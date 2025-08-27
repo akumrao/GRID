@@ -20,7 +20,7 @@ namespace rtc {
 	
 
         
-class IceTransport : public Transport_del {
+class IceTransport : public Transport {
 public:
 //	static void Init();
 //	static void Cleanup();
@@ -89,12 +89,6 @@ private:
         
         Description &localDes;
         Description &remoteDes;
-        
-public:    
-        Description::Role role()
-        {
-            return Description::Role::ActPass;
-        }
          
 };
 
