@@ -18,15 +18,11 @@
 #include "net/UdpSocket.h"
 //#include "description.h"
 #include "base/time.h"
-#include "net/dns.h"
-
-
-
 #include "net/TcpServer.h"
 
 #include "base/time.h"
 #include "net/netInterface.h"
-#include "configuration.h"
+
 
 
 #include <Reader.h>
@@ -160,22 +156,6 @@ public:
 
 
 
- class Transport: public GetAddrInfoReq, GetNameInfoReq
- {
- public:
-        Transport( Configuration &Config): mConfig(Config)
-        {
-            
-        }
-        void resolveStunServer();
-        void cbDnsResolve(addrinfo* res) override;
-        void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
-        void resolveIp( Candidate *certificate );
-        Configuration &mConfig;
-     
- };
- 
- 
 }
  
  #endif

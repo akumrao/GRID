@@ -29,7 +29,7 @@ namespace rtc {
 
 
     
-class SctpTransport final : public Transport_del, public std::enable_shared_from_this<SctpTransport> {
+class SctpTransport final : public Transport, public std::enable_shared_from_this<SctpTransport> {
 public:
 	static void Init();
 	static void SetSettings(const SctpSettings &s);
@@ -42,7 +42,7 @@ public:
 		uint16_t remote = DEFAULT_SCTP_PORT;
 	};
 
-	SctpTransport(shared_ptr<Transport_del> lower, const Configuration &config, Ports ports,
+	SctpTransport(shared_ptr<Transport> lower, const Configuration &config, Ports ports,
 	              message_callback recvCallback, amount_callback bufferedAmountCallback,
 	              state_callback stateChangeCallback);
 	~SctpTransport();

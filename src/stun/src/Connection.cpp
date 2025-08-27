@@ -129,72 +129,7 @@ void tesTcpClient::on_read(Listener* connection, const char* data, size_t len) {
 //    on_udp_data(data ,len );
 }
 
-void Transport::resolveStunServer( )
-{
-    
-    for( IceServer &icesv:  mConfig.iceServers  )
-    {
-        SInfo << "resolve " <<  icesv.hostname << ":" << icesv.port;
-        resolve(icesv.hostname, icesv.port, Application::uvGetLoop(), &icesv);
-        //break;
-    }
-   
-}
 
-void Transport::cbDnsResolve(addrinfo* start)
-{
-    
-    //IceServer *icesv = (IceServer *)ptr;
-   // icesv->ip = ip;
-
-    // SInfo <<  "IceServer" <<  ip << ":" << port  ;
-    
-                    char addr[40] = {'\0'};
-                int port =0; 
-
-                struct addrinfo*  res = start;
-                
-                for (;res != NULL; res = res->ai_next) 
-                { 
-                    
-                    if (res->ai_family == AF_INET) {
-                        // ipv4
-                        //char c[17] = { '\0' };
-                        
-                        sockaddr_in* tmp  =   (sockaddr_in*) res->ai_addr;
-                        port= htons(tmp->sin_port);
-                        uv_ip4_name(tmp, addr, 16);
-                        
-        
-                        
-                    } else if (res->ai_family == AF_INET6) {
-                        // ipv6
-                        //char c[40] = { '\0' };
-                        sockaddr_in6* tmp  =   (sockaddr_in6*) res->ai_addr;
-                        port= htons(tmp->sin6_port);
-                        uv_ip6_name(tmp, addr, 39);
-                    }
-                    LTrace("address ",  addr);
-                    // uv_tcp_connect(connect_req, socket, (const struct sockaddr*) res->ai_addr, on_connect);
-
-                }
-}
-
-void Transport::cbNameResolve(  const char* hostname, const char* service,  void* ptr)
-{
-     SInfo <<  "resoved " <<  hostname << ":" << service  ;
-}
-
-
-
-
- 
-void Transport::resolveIp( Candidate *cand )
-{
-   // SInfo << "resolveName " <<  icesv.hostname << ":" << icesv.port << " addd " << cand;
-    
-   resolveIP(cand->resolved.addr,   Application::uvGetLoop(),  cand) ;
-}
  
 
 }//end namespace

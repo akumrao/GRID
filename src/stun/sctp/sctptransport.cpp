@@ -146,10 +146,10 @@ void SctpTransport::Cleanup() {
 		std::this_thread::sleep_for(100ms);
 }
 
-SctpTransport::SctpTransport(shared_ptr<Transport_del> lower, const Configuration &config, Ports ports,
+SctpTransport::SctpTransport(shared_ptr<Transport> lower, const Configuration &config, Ports ports,
                              message_callback recvCallback, amount_callback bufferedAmountCallback,
                              state_callback stateChangeCallback)
-    : Transport_del(lower, stateChangeCallback),
+    : Transport(config, lower, stateChangeCallback),
       mMaxMessageSize(config.maxMessageSize),
       mPorts(ports), mSendQueue(0, message_size_func),
      mBufferedAmountCallback(bufferedAmountCallback) 
@@ -464,7 +464,7 @@ bool SctpTransport::outgoing(message_ptr message) {
 	// Set recommended medium-priority DSCP value
 	// See https://www.rfc-editor.org/rfc/rfc8837.html#section-5
 	message->dscp = 10; // AF11: Assured Forwarding class 1, low drop probability
-	return Transport_del::outgoing(std::move(message));
+	return Transport::outgoing(std::move(message));
 }
 
 void SctpTransport::doRecv() {

@@ -7,7 +7,8 @@
 #include "common.h"
 #include "configuration.h"
 #include "description.h"
-//#include "peerconnection.h"
+#include "transport.hpp"
+
 #include <Agent.h>
 #include <atomic>
 #include <chrono>
@@ -89,6 +90,12 @@ private:
         
         Description &localDes;
         Description &remoteDes;
+        
+public:    
+        Description::Role role()
+        {
+            return Description::Role::ActPass;
+        }
          
 };
 
