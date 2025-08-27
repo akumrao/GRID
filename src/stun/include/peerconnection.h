@@ -11,7 +11,7 @@
 
 #include "datachannel.h"
 #include "sctptransport.hpp"
-#include "dtlstransport.hpp"
+
 #endif
 
 
@@ -244,9 +244,8 @@ public:
                                                                 DataChannelInit init = {});
         void onDataChannel(std::function<void(std::shared_ptr<DataChannel> dataChannel)> callback);
 
-        synchronized_callback<std::shared_ptr<DataChannel>> mDataChannelCallback;       
+        synchronized_callback<std::shared_ptr<DataChannel>> mDataChannelCallback;
         void triggerPendingDataChannels();
-        shared_ptr<DtlsTransport> initDtlsTransport();          
 
         #endif  
         
