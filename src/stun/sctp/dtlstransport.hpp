@@ -7,6 +7,8 @@
 #include "queue.hpp"
 #include "tls.hpp"
 #include "transport.hpp"
+#include "icetransport.h"
+
 
 #include <atomic>
 #include <functional>
@@ -15,25 +17,25 @@
 
 namespace rtc {
 
-class IceTransport: public Transport_del
-{
-public:
+//class IceTransport: public Transport
+//{
+//public:
+//
+//    Description::Role role()
+//    {
+//        return Description::Role::ActPass;
+//    }
+//    
+//};
 
-    Description::Role role()
-    {
-        return Description::Role::ActPass;
-    }
-    
-};
-
-class DtlsTransport : public Transport_del, public std::enable_shared_from_this<DtlsTransport> {
+class DtlsTransport : public Transport, public std::enable_shared_from_this<DtlsTransport> {
 public:
 	static void Init();
 	static void Cleanup();
 
 	using verifier_callback = std::function<bool(const std::string &fingerprint)>;
 
-	DtlsTransport(shared_ptr<IceTransport> lower, certificate_ptr certificate, optional<size_t> mtu,
+	DtlsTransport( const Configuration & conf, shared_ptr<IceTransport> lower, certificate_ptr certificate, optional<size_t> mtu,
 	              CertificateFingerprint::Algorithm fingerprintAlgorithm,
 	              verifier_callback verifierCallback, state_callback stateChangeCallback);
 	~DtlsTransport();
@@ -57,7 +59,7 @@ protected:
 	const certificate_ptr mCertificate;
 	CertificateFingerprint::Algorithm mFingerprintAlgorithm;
 	const verifier_callback mVerifierCallback;
-	const bool mIsClient;
+	const bool mIsClient{0};
 
 	Queue<message_ptr> mIncomingQueue;
 	std::atomic<int> mPendingRecvCount = 0;

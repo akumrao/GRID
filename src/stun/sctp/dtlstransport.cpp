@@ -45,7 +45,7 @@ DtlsTransport::DtlsTransport(shared_ptr<IceTransport> lower, certificate_ptr cer
                              optional<size_t> mtu,
                              CertificateFingerprint::Algorithm fingerprintAlgorithm,
                              verifier_callback verifierCallback, state_callback stateChangeCallback)
-    : Transport_del(lower, std::move(stateChangeCallback)), mMtu(mtu), mCertificate(certificate),
+    : Transport(lower, std::move(stateChangeCallback)), mMtu(mtu), mCertificate(certificate),
       mFingerprintAlgorithm(fingerprintAlgorithm), mVerifierCallback(std::move(verifierCallback)),
       mIsClient(lower->role() == Description::Role::Active) {
 
@@ -160,7 +160,7 @@ void DtlsTransport::incoming(message_ptr message) {
 bool DtlsTransport::outgoing(message_ptr message) {
 	message->dscp = mCurrentDscp;
 
-	bool result = Transport_del::outgoing(std::move(message));
+	bool result = Transport::outgoing(std::move(message));
 	mOutgoingResult = result;
 	return result;
 }
@@ -372,7 +372,7 @@ DtlsTransport::DtlsTransport(shared_ptr<IceTransport> lower, certificate_ptr cer
                              optional<size_t> mtu,
                              CertificateFingerprint::Algorithm fingerprintAlgorithm,
                              verifier_callback verifierCallback, state_callback stateChangeCallback)
-    : Transport_del(lower, std::move(stateChangeCallback)), mMtu(mtu), mCertificate(certificate),
+    : Transport(lower, std::move(stateChangeCallback)), mMtu(mtu), mCertificate(certificate),
       mFingerprintAlgorithm(fingerprintAlgorithm), mVerifierCallback(std::move(verifierCallback)),
       mIsClient(lower->role() == Description::Role::Active) {
 
@@ -498,7 +498,7 @@ void DtlsTransport::incoming(message_ptr message) {
 bool DtlsTransport::outgoing(message_ptr message) {
 	message->dscp = mCurrentDscp;
 
-	bool result = Transport_del::outgoing(std::move(message));
+	bool result = Transport::outgoing(std::move(message));
 	mOutgoingResult = result;
 	return result;
 }
@@ -717,13 +717,14 @@ void DtlsTransport::Cleanup() {
 	// Nothing to do
 }
 
-DtlsTransport::DtlsTransport(shared_ptr<IceTransport> lower, certificate_ptr certificate,
+DtlsTransport::DtlsTransport( const Configuration & conf,shared_ptr<IceTransport> lower, certificate_ptr certificate,
                              optional<size_t> mtu,
                              CertificateFingerprint::Algorithm fingerprintAlgorithm,
                              verifier_callback verifierCallback, state_callback stateChangeCallback)
-    : Transport_del(lower, std::move(stateChangeCallback)), mMtu(mtu), mCertificate(certificate),
-      mFingerprintAlgorithm(fingerprintAlgorithm), mVerifierCallback(std::move(verifierCallback)),
-      mIsClient(lower->role() == Description::Role::Active) {
+    : Transport(conf, lower, std::move(stateChangeCallback)), mMtu(mtu), mCertificate(certificate),
+      mFingerprintAlgorithm(fingerprintAlgorithm), mVerifierCallback(std::move(verifierCallback))
+      ,mIsClient(lower->role() == Description::Role::Active)
+     {
 	SDebug << "Initializing DTLS transport (OpenSSL)";
 
 	if (!mCertificate)
@@ -891,7 +892,7 @@ void DtlsTransport::incoming(message_ptr message) {
 bool DtlsTransport::outgoing(message_ptr message) {
 	message->dscp = mCurrentDscp;
 
-	bool result = Transport_del::outgoing(std::move(message));
+	bool result = Transport::outgoing(std::move(message));
 	mOutgoingResult = result;
 	return result;
 }

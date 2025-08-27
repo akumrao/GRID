@@ -12,16 +12,43 @@
 #include <functional>
 #include <memory>
 
+#include "configuration.h"
+#include "net/dns.h"
+#include "candidate.h"
+
+
+
+using namespace base::net;
+
+
 namespace rtc {
 
     
-class Transport_del {
+
+ 
+ 
+    
+class Transport: public GetAddrInfoReq, GetNameInfoReq
+{
 public:
+    
+    
+       Transport( Configuration &Config): mConfig(Config)
+        {
+            
+        }
+        void resolveStunServer();
+        void cbDnsResolve(addrinfo* res) override;
+        void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
+        void resolveIp( Candidate *certificate );
+        const Configuration &mConfig;
+     
+        
 	enum class State { Disconnected, Connecting, Connected, Completed, Failed };
 	using state_callback = std::function<void(State state)>;
 
-	Transport_del(shared_ptr<Transport_del> lower = nullptr, state_callback callback = nullptr);
-	virtual ~Transport_del();
+	Transport(const Configuration &Config, shared_ptr<Transport> lower = nullptr, state_callback callback = nullptr );
+	virtual ~Transport();
 
 	void registerIncoming();
 	void unregisterIncoming();
@@ -43,7 +70,7 @@ protected:
 private:
 	const init_token mInitToken = Init::Instance().token();
 
-	shared_ptr<Transport_del> mLower;
+	shared_ptr<Transport> mLower;
 	synchronized_callback<State> mStateChangeCallback;
 	synchronized_callback<message_ptr> mRecvCallback;
 
