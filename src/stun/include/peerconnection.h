@@ -39,10 +39,9 @@
 
 namespace rtc {
 
-    
+struct DataChannel;    
 #if DATACHANNEL
 
-struct DataChannel;
 
 struct RTC_CPP_EXPORT DataChannelInit {
 	Reliability reliability = {};
@@ -218,6 +217,11 @@ public:
         
         IceTransport *iceTransport{nullptr};
                
+        std::vector<weak_ptr<DataChannel>> mUnassignedDataChannels;
+        
+        std::unordered_map<uint16_t, weak_ptr<DataChannel>> mDataChannels; // by stream ID
+                
+          
         #if DATACHANNEL
         //shared_ptr<DtlsTransport> mDtlsTransport;
         shared_ptr<SctpTransport> mSctpTransport;
@@ -226,10 +230,9 @@ public:
 
 
         //std::unordered_map<uint16_t, DataChannel*> mDataChannels; // by stream ID
-        std::unordered_map<uint16_t, weak_ptr<DataChannel>> mDataChannels; // by stream ID
-                
+      
         //std::vector<DataChannel*> mUnassignedDataChannels;
-        std::vector<weak_ptr<DataChannel>> mUnassignedDataChannels;
+      
         std::mutex mDataChannelsMutex;
 
         void assignDataChannels();
