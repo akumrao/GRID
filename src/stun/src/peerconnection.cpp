@@ -147,7 +147,6 @@ void PeerConnection::processLocalDescription(Description *description) {
         	// Add application for data channels
         if (!description->hasApplication())
         {
-                    #if DATACHANNEL
                     //std::shared_lock<std::mutex> lock(mDataChannelsMutex);
                     if (!mDataChannels.size() || !mUnassignedDataChannels.size()) {
                             // Prevents mid collision with remote or local tracks
@@ -163,7 +162,6 @@ void PeerConnection::processLocalDescription(Description *description) {
 
                             description->addMedia(std::move(app));
                     }
-                    #endif
         }
 
         // There might be no media at this point, for instance if the user deleted tracks
