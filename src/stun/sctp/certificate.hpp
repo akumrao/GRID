@@ -1,6 +1,6 @@
 
-#ifndef RTC_IMPL_CERTIFICATE_H
-#define RTC_IMPL_CERTIFICATE_H
+#ifndef RTC_IMPL_CERTIFICATE_HH
+#define RTC_IMPL_CERTIFICATE_HH
 
 #include "description.h" // for CertificateFingerprint
 #include "common.hpp"
@@ -64,8 +64,8 @@ string make_fingerprint(X509 *x509, CertificateFingerprint::Algorithm fingerprin
 using certificate_ptr = shared_ptr<Certificate_good>;
 using future_certificate_ptr = std::shared_future<certificate_ptr>;
 
-future_certificate_ptr make_certificate(CertificateType type = CertificateType::Default);
+//future_certificate_ptr make_certificate(CertificateType type = CertificateType::Default);
 
-} // namespace rtc::impl
+} // RTC_IMPL_CERTIFICATE_HH
 
 #endif
