@@ -6,7 +6,7 @@ CXX     = g++
 TARGET=stunClient 
 SOURCES=$(wildcard main.cpp Connection.cpp ../src/*.cpp ../../base/src/*.cpp  ../../net/src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp )
 
-CXXFLAGS   := -g   -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized
+CXXFLAGS   := -g   -std=c++17 -Wno-inconsistent-missing-override -Wno-uninitialized
 
 
 CPPFLAGS   := -I./ -I../include -I../../base/include/ -I../../net/include/  -I../../libuv/include -I../../libuv/src  -I../../facedetec/include/json/
