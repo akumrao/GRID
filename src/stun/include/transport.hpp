@@ -4,7 +4,10 @@
 #define RTC_IMPL_TRANSPORT_H
 
 //#include "common.h"
- #include "init.hpp"
+
+#if DATACHANNEL
+#include "init.hpp"
+#endif 
 //#include "internals.h"
 #include "message.hpp"
 #include "reliability.h"
@@ -68,7 +71,11 @@ protected:
 	virtual bool outgoing(message_ptr message);
 
 private:
+    
+    #if DATACHANNEL
 	const init_token mInitToken = Init::Instance().token();
+    #endif
+        
 
 	shared_ptr<Transport> mLower;
 	synchronized_callback<State> mStateChangeCallback;
