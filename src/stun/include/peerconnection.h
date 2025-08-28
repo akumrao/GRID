@@ -11,7 +11,7 @@
 
 #include "datachannel.h"
 #include "sctptransport.hpp"
-
+#include "dtlstransport.hpp"
 #endif
 
 
@@ -223,16 +223,14 @@ public:
                 
           
         #if DATACHANNEL
-        //shared_ptr<DtlsTransport> mDtlsTransport;
+        shared_ptr<DtlsTransport> mDtlsTransport;
         shared_ptr<SctpTransport> mSctpTransport;
 
         shared_ptr<IceTransport> mIceTransport;
 
 
         //std::unordered_map<uint16_t, DataChannel*> mDataChannels; // by stream ID
-      
         //std::vector<DataChannel*> mUnassignedDataChannels;
-      
         std::mutex mDataChannelsMutex;
 
         void assignDataChannels();
@@ -249,6 +247,8 @@ public:
 
         synchronized_callback<std::shared_ptr<DataChannel>> mDataChannelCallback;
         void triggerPendingDataChannels();
+        shared_ptr<DtlsTransport> initDtlsTransport();
+        shared_ptr<SctpTransport> initSctpTransport();
 
         #endif  
         
