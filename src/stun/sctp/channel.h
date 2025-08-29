@@ -47,7 +47,7 @@ public:
 protected:
 	Channel();
         
-        
+     public:   
         virtual void triggerOpen();
 	virtual void triggerClosed();
 	virtual void triggerError(string error);
@@ -57,6 +57,7 @@ protected:
 	virtual void flushPendingMessages();
 	void resetOpenCallback();
 	//void resetCallbacks();
+
 
 	synchronized_stored_callback<> openCallback;
 	synchronized_stored_callback<> closedCallback;

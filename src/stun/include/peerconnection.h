@@ -27,6 +27,7 @@
 #include <functional>
 
 #include <mutex>
+#include <shared_mutex>
 
 #include <atomic>
 
@@ -231,7 +232,7 @@ public:
 
         //std::unordered_map<uint16_t, DataChannel*> mDataChannels; // by stream ID
         //std::vector<DataChannel*> mUnassignedDataChannels;
-        std::mutex mDataChannelsMutex;
+       // std::mutex mDataChannelsMutex;
 
         void assignDataChannels();
 
@@ -249,7 +250,33 @@ public:
         void triggerPendingDataChannels();
         shared_ptr<DtlsTransport> initDtlsTransport();
         shared_ptr<SctpTransport> initSctpTransport();
+        
+        CertificateFingerprint::Algorithm mRemoteFingerprintAlgorithm = CertificateFingerprint::Algorithm::Sha256;
+        
+        bool checkFingerprint(const std::string &fingerprint) ;
+        bool changeState(State newState);
+        
+        void forwardMessage(message_ptr message);
+        
+        void forwardBufferedAmount(uint16_t stream, size_t amount);
+        
+        
+        std::string mRemoteFingerprint;
+        
+   
+	std::pair<shared_ptr<DataChannel>, bool> findDataChannel(uint16_t stream);
 
+
+	void iterateDataChannels(std::function<void(shared_ptr<DataChannel> channel)> func);
+	void openDataChannels();
+	void closeDataChannels();
+	void remoteCloseDataChannels();
+        void remoteClose();
+        
+        
+        mutable std::shared_mutex mDataChannelsMutex;
+        
+        
         #endif  
         
         
