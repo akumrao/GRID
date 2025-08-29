@@ -570,6 +570,25 @@ shared_ptr<DataChannel> PeerConnection::createDataChannel(string label, DataChan
 }
 
 
+// Helper for PeerConnection::initXTransport methods: start and emplace the transport
+template <typename T>
+shared_ptr<T> emplaceTransport(PeerConnection *pc, shared_ptr<T> *member, shared_ptr<T> transport) {
+	std::atomic_store(member, transport);
+	try {
+		transport->start();
+	} catch (...) {
+		std::atomic_store(member, decltype(transport)(nullptr));
+		throw;
+	}
+
+//	if (pc->closing.load() || pc->state.load() == PeerConnection::State::Closed) {
+//		std::atomic_store(member, decltype(transport)(nullptr));
+//		transport->stop();
+//		return nullptr;
+//	}
+
+	return transport;
+}
 
 
 shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() 
@@ -583,8 +602,8 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport()
 		CertificateFingerprint::Algorithm fingerprintAlgorithm;
 		{
 			std::lock_guard lock(mRemoteDescriptionMutex);
-			if (mRemoteDescription.fingerprint()) {
-				mRemoteFingerprintAlgorithm = mRemoteDescription.fingerprint()->algorithm;
+			if (mRemoteDescription.fingerprint().value.size()) {
+				mRemoteFingerprintAlgorithm = mRemoteDescription.fingerprint().algorithm;
 			}
 			fingerprintAlgorithm = mRemoteFingerprintAlgorithm;
 		}
@@ -603,20 +622,26 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport()
 
 			    switch (transportState) {
 			    case DtlsTransport::State::Connected:
-				    if (auto remote = remoteDescription(); remote && remote->hasApplication())
+                            {
+				    auto remote = remoteDescription(); 
+                                    if(remote.hasApplication())
 					    initSctpTransport();
-				    else
+				    else{
 					    changeState(State::Connected);
+                                    }
+                                    
 
-				    mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
-				    break;
+				   // mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
+                                    
+			    break;
+                            }
 			    case DtlsTransport::State::Failed:
 				    changeState(State::Failed);
-				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+				  //  mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
 				    break;
 			    case DtlsTransport::State::Disconnected:
 				    changeState(State::Disconnected);
-				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+				   // mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
 				    break;
 			    default:
 				    // Ignore
@@ -626,14 +651,14 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport()
 
 		shared_ptr<DtlsTransport> transport;
 		auto local = localDescription();
-		if (config.forceMediaTransport || (local && local->hasAudioOrVideo())) {
+		if (mConfig.forceMediaTransport || ( local.hasAudioOrVideo())) {
 #if RTC_ENABLE_MEDIA
-			PLOG_INFO << "This connection requires media support";
+			STrace << "This connection requires media support";
 
 			// DTLS-SRTP
-			transport = std::make_shared<DtlsSrtpTransport>(
-			    lower, certificate, config.mtu, fingerprintAlgorithm, verifierCallback,
-			    weak_bind(&PeerConnection::forwardMedia, this, _1), dtlsStateChangeCallback);
+//			transport = std::make_shared<DtlsSrtpTransport>(
+//			    lower, certificate, config.mtu, fingerprintAlgorithm, verifierCallback,
+//			    weak_bind(&PeerConnection::forwardMedia, this, _1), dtlsStateChangeCallback);
 #else
 			PLOG_WARNING << "Ignoring media support (not compiled with media support)";
 #endif
@@ -641,9 +666,9 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport()
 
 		if (!transport) {
 			// DTLS only
-			transport = std::make_shared<DtlsTransport>(lower, certificate, config.mtu,
-			                                            fingerprintAlgorithm, verifierCallback,
-			                                            dtlsStateChangeCallback);
+//			transport = std::make_shared<DtlsTransport>(mConfig, lower, certificate, mConfig.mtu,
+//			                                            fingerprintAlgorithm, verifierCallback,
+//			                                            dtlsStateChangeCallback);    //arvind
 		}
 
 		return emplaceTransport(this, &mDtlsTransport, std::move(transport));
@@ -654,6 +679,8 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport()
 		throw std::runtime_error("DTLS transport initialization failed");
 	}
 }
+
+
 
 shared_ptr<SctpTransport> PeerConnection::initSctpTransport()
 {
@@ -668,20 +695,20 @@ shared_ptr<SctpTransport> PeerConnection::initSctpTransport()
 			throw std::logic_error("No underlying DTLS transport for SCTP transport");
 
 		auto local = localDescription();
-		if (!local || !local->application())
+		if (!local.application())
 			throw std::logic_error("Starting SCTP transport without local application description");
 
 		auto remote = remoteDescription();
-		if (!remote || !remote->application())
+		if (!remote.application())
 			throw std::logic_error(
 			    "Starting SCTP transport without remote application description");
 
 		SctpTransport::Ports ports = {};
-		ports.local = local->application()->sctpPort().value_or(DEFAULT_SCTP_PORT);
-		ports.remote = remote->application()->sctpPort().value_or(DEFAULT_SCTP_PORT);
+		ports.local = local.application()->sctpPort();
+		ports.remote = remote.application()->sctpPort();
 
 		auto transport = std::make_shared<SctpTransport>(
-		    lower, config, std::move(ports), weak_bind(&PeerConnection::forwardMessage, this, _1),
+		    lower, mConfig, std::move(ports), weak_bind(&PeerConnection::forwardMessage, this, _1),
 		    weak_bind(&PeerConnection::forwardBufferedAmount, this, _1, _2),
 		    [this, weak_this = weak_from_this()](SctpTransport::State transportState) {
 			    auto shared_this = weak_this.lock();
@@ -692,15 +719,15 @@ shared_ptr<SctpTransport> PeerConnection::initSctpTransport()
 			    case SctpTransport::State::Connected:
 				    changeState(State::Connected);
 				    assignDataChannels();
-				    mProcessor.enqueue(&PeerConnection::openDataChannels, shared_from_this());
+				    openDataChannels();
 				    break;
 			    case SctpTransport::State::Failed:
 				    changeState(State::Failed);
-				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+				    remoteClose();
 				    break;
 			    case SctpTransport::State::Disconnected:
 				    changeState(State::Disconnected);
-				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+				    remoteClose();
 				    break;
 			    default:
 				    // Ignore
@@ -1109,5 +1136,231 @@ std::ostream &operator<<(std::ostream &out, PeerConnection::SignalingState state
 	}
 	return out << str;
 }
+
+
+
+
+bool PeerConnection::changeState(State newState) {
+//	State current;
+//	do {
+//		current = state.load();
+//		if (current == State::Closed)
+//			return false;
+//		if (current == newState)
+//			return false;
+//
+//	} while (!state.compare_exchange_weak(current, newState));
+//
+//	std::ostringstream s;
+//	s << newState;
+//	PLOG_INFO << "Changed state to " << s.str();
+//
+//	if (newState == State::Closed) {
+//		auto callback = std::move(stateChangeCallback); // steal the callback
+//		callback(State::Closed);                        // call it synchronously
+//	} else {
+//		mProcessor.enqueue(&PeerConnection::trigger<State>, shared_from_this(),
+//		                   &stateChangeCallback, newState);
+//	}
+	return true;
+}
+
+
+
+bool PeerConnection::checkFingerprint(const std::string &fingerprint) {
+	std::lock_guard lock(mRemoteDescriptionMutex);
+	mRemoteFingerprint = fingerprint;
+
+	if (!mRemoteDescription.fingerprint().value.size()
+			|| mRemoteFingerprintAlgorithm != mRemoteDescription.fingerprint().algorithm)
+		return false;
+
+	if (mConfig.disableFingerprintVerification) {
+		STrace << "Skipping fingerprint validation";
+		return true;
+	}
+
+	auto expectedFingerprint = mRemoteDescription.fingerprint().value;
+	if (expectedFingerprint == fingerprint) {
+		STrace << "Valid fingerprint \"" << fingerprint << "\"";
+		return true;
+	}
+
+	SError << "Invalid fingerprint \"" << fingerprint << "\", expected \""
+	           << expectedFingerprint << "\"";
+	return false;
+}
+
+
+
+
+
+void PeerConnection::forwardMessage(message_ptr message) {
+	if (!message) {
+		remoteCloseDataChannels();
+		return;
+	}
+
+	auto iceTransport = std::atomic_load(&mIceTransport);
+	auto sctpTransport = std::atomic_load(&mSctpTransport);
+	if (!iceTransport || !sctpTransport)
+		return;
+
+	const uint16_t stream = uint16_t(message->stream);
+	auto [channel, found] = findDataChannel(stream);
+
+	if (DataChannel::IsOpenMessage(message)) {
+		if (found) {
+			// The stream is already used, the receiver must close the DataChannel
+			SWarn << "Got open message on already used stream " << stream;
+			if (channel && !channel->isClosed())
+				channel->close();
+			else
+				sctpTransport->closeStream(message->stream);
+
+			return;
+		}
+
+		const uint16_t remoteParity = (iceTransport->role() == Description::Role::Active) ? 1 : 0;
+		if (stream % 2 != remoteParity) {
+			// The odd/even rule is violated, the receiver must close the DataChannel
+			SWarn << "Got open message violating the odd/even rule on stream " << stream;
+			sctpTransport->closeStream(message->stream);
+			return;
+		}
+
+		channel = std::make_shared<IncomingDataChannel>(weak_from_this(), sctpTransport);
+		channel->assignStream(stream);
+		//channel->openCallback =	    weak_bind(&PeerConnection::triggerDataChannel, this, weak_ptr<DataChannel>{channel}); // arvind
+
+		std::unique_lock lock(mDataChannelsMutex); // we are going to emplace
+		mDataChannels.emplace(stream, channel);
+	} else if (!found) {
+		if (message->type == Message::Reset)
+			return; // ignore
+
+		// Invalid, close the DataChannel
+		SWarn << "Got unexpected message on stream " << stream;
+		sctpTransport->closeStream(message->stream);
+		return;
+	}
+
+	if (message->type == Message::Reset) {
+		// Incoming stream is reset, unregister it
+		removeDataChannel(stream);
+	}
+
+	if (channel) {
+		// Forward the message
+		channel->incoming(message);
+	} else {
+		// DataChannel was destroyed, ignore
+		SDebug << "Ignored message on stream " << stream << ", DataChannel is destroyed";
+	}
+}
+
+
+
+void PeerConnection::forwardBufferedAmount(uint16_t stream, size_t amount) {
+	[[maybe_unused]] auto [channel, found] = findDataChannel(stream);
+	if (channel)
+		channel->triggerBufferedAmount(amount);
+}
+
+
+
+
+
+
+
+
+
+
+void PeerConnection::openDataChannels() {
+	if (auto transport = std::atomic_load(&mSctpTransport))
+		iterateDataChannels([&](shared_ptr<DataChannel> channel) {
+			if (!channel->isOpen())
+				channel->open(transport);
+		});
+}
+
+void PeerConnection::closeDataChannels() {
+	iterateDataChannels([&](shared_ptr<DataChannel> channel) { channel->close(); });
+}
+
+void PeerConnection::remoteCloseDataChannels() {
+	iterateDataChannels([&](shared_ptr<DataChannel> channel) { channel->remoteClose(); });
+}
+
+
+void PeerConnection::remoteClose() 
+{
+	close();
+	//if (state.load() != State::Closed) 
+        {
+		// Close data channels and tracks asynchronously
+		closeDataChannels();
+
+//		closeTransports();
+	}
+}
+
+
+
+CertificateFingerprint PeerConnection::remoteFingerprint() {
+	std::lock_guard lock(mRemoteDescriptionMutex);
+	if (mRemoteFingerprint.size())
+		return {CertificateFingerprint{mRemoteFingerprintAlgorithm, mRemoteFingerprint}};
+	else
+		return {};
+}
+
+
+std::pair<shared_ptr<DataChannel>, bool> PeerConnection::findDataChannel(uint16_t stream) {
+	std::shared_lock lock(mDataChannelsMutex); // read-only
+	if (auto it = mDataChannels.find(stream); it != mDataChannels.end())
+		return std::make_pair(it->second.lock(), true);
+	else
+		return std::make_pair(nullptr, false);
+}
+
+
+void PeerConnection::iterateDataChannels(
+    std::function<void(shared_ptr<DataChannel> channel)> func) {
+	std::vector<shared_ptr<DataChannel>> locked;
+	{
+		std::shared_lock lock(mDataChannelsMutex); // read-only
+		locked.reserve(mDataChannels.size());
+		for (auto it = mDataChannels.begin(); it != mDataChannels.end(); ++it) {
+			auto channel = it->second.lock();
+			if (channel && !channel->isClosed())
+                        {
+                           // PLOG_INFO << it->first << " mid " <<  remoteMedia->mid();
+			    locked.push_back(std::move(channel));
+                        }
+		}
+	}
+
+	for (auto &channel : locked) {
+		try {
+			func(std::move(channel));
+		} catch (const std::exception &e) {
+			SWarn << e.what();
+		}
+	}
+}
+
+
+
+bool PeerConnection::removeDataChannel(uint16_t stream) {
+	std::unique_lock lock(mDataChannelsMutex); // we are going to erase
+	return mDataChannels.erase(stream) != 0;
+}
+
+
+
+
+
+
 
 } // namespace rtc
