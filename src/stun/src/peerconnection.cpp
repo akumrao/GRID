@@ -1138,7 +1138,7 @@ std::ostream &operator<<(std::ostream &out, PeerConnection::SignalingState state
 }
 
 
-
+ #if DATACHANNEL
 
 bool PeerConnection::changeState(State newState) {
 //	State current;
@@ -1357,7 +1357,7 @@ bool PeerConnection::removeDataChannel(uint16_t stream) {
 	return mDataChannels.erase(stream) != 0;
 }
 
-
+#endif
 
 
 
