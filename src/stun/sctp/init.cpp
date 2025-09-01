@@ -1,7 +1,7 @@
 
 
 #include "init.hpp"
-#include "certificate.hpp"
+#include "certificate.h"
 #include "dtlstransport.hpp"
 //#include "icetransport.hpp"
 //#include "internals.hpp"

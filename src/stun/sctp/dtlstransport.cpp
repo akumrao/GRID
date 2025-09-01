@@ -717,7 +717,7 @@ void DtlsTransport::Cleanup() {
 	// Nothing to do
 }
 
-DtlsTransport::DtlsTransport( const Configuration & conf,shared_ptr<IceTransport> lower, certificate_ptr certificate,
+DtlsTransport::DtlsTransport( const Configuration & conf,shared_ptr<IceTransport> lower, Certificate* certificate,
                              optional<size_t> mtu,
                              CertificateFingerprint::Algorithm fingerprintAlgorithm,
                              verifier_callback verifierCallback, state_callback stateChangeCallback)

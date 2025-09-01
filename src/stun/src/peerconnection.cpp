@@ -666,9 +666,9 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport()
 
 		if (!transport) {
 			// DTLS only
-//			transport = std::make_shared<DtlsTransport>(mConfig, lower, certificate, mConfig.mtu,
-//			                                            fingerprintAlgorithm, verifierCallback,
-//			                                            dtlsStateChangeCallback);    //arvind
+			transport = std::make_shared<DtlsTransport>(mConfig, lower, certificate, mConfig.mtu,
+			                                            fingerprintAlgorithm, verifierCallback,
+			                                            dtlsStateChangeCallback);    
 		}
 
 		return emplaceTransport(this, &mDtlsTransport, std::move(transport));
