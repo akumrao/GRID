@@ -2,7 +2,7 @@
 #ifndef RTC_IMPL_DTLS_TRANSPORT_H
 #define RTC_IMPL_DTLS_TRANSPORT_H
 
-#include "certificate.hpp"
+#include "certificate.h"
 #include "common.hpp"
 #include "queue.hpp"
 #include "tls.hpp"
@@ -35,7 +35,7 @@ public:
 
 	using verifier_callback = std::function<bool(const std::string &fingerprint)>;
 
-	DtlsTransport( const Configuration & conf, shared_ptr<IceTransport> lower, certificate_ptr certificate, optional<size_t> mtu,
+	DtlsTransport( const Configuration & conf, shared_ptr<IceTransport> lower, Certificate * certificate, optional<size_t> mtu,
 	              CertificateFingerprint::Algorithm fingerprintAlgorithm,
 	              verifier_callback verifierCallback, state_callback stateChangeCallback);
 	~DtlsTransport();
@@ -56,7 +56,7 @@ protected:
 	void doRecv();
 
 	const optional<size_t> mMtu;
-	const certificate_ptr mCertificate;
+	const Certificate* mCertificate{nullptr};
 	CertificateFingerprint::Algorithm mFingerprintAlgorithm;
 	const verifier_callback mVerifierCallback;
 	const bool mIsClient{0};
