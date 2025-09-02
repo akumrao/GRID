@@ -521,7 +521,7 @@ shared_ptr<DataChannel> PeerConnection::emplaceDataChannel(string label, DataCha
 void PeerConnection::assignDataChannels() {
 	std::unique_lock lock(mDataChannelsMutex); // we are going to emplace
 
-	auto iceTransport = std::atomic_load(&mIceTransport);
+	//auto iceTransport = std::atomic_load(&iceTransport);
 	if (!iceTransport)
 		throw std::logic_error("Attempted to assign DataChannels without ICE transport");
 
@@ -898,6 +898,22 @@ void PeerConnection::iceGathering(juice_state_t state) {
     
     mGatheringState =  state;
     
+    #if DATACHANNEL
+    
+     switch (state) 
+    {
+        case JUICE_STATE_CONNECTED:
+         initDtlsTransport();
+            
+        break;
+        
+        default:
+            break; 
+         
+    };
+    
+    #endif
+    
     
     if(mGatheringStateChangeCallback)
     mGatheringStateChangeCallback(state);
@@ -1201,7 +1217,7 @@ void PeerConnection::forwardMessage(message_ptr message) {
 		return;
 	}
 
-	auto iceTransport = std::atomic_load(&mIceTransport);
+	//auto iceTransport = std::atomic_load(&iceTransport);
 	auto sctpTransport = std::atomic_load(&mSctpTransport);
 	if (!iceTransport || !sctpTransport)
 		return;
