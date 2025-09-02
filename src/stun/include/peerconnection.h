@@ -274,6 +274,9 @@ public:
         void remoteClose();
         
         
+        void triggerDataChannel(weak_ptr<DataChannel> weakDataChannel);
+            
+        
         mutable std::shared_mutex mDataChannelsMutex;
         
         

@@ -1231,7 +1231,7 @@ void PeerConnection::forwardMessage(message_ptr message) {
 
 		channel = std::make_shared<IncomingDataChannel>(weak_from_this(), sctpTransport);
 		channel->assignStream(stream);
-		//channel->openCallback =	    weak_bind(&PeerConnection::triggerDataChannel, this, weak_ptr<DataChannel>{channel}); // arvind
+		channel->openCallback =	    weak_bind(&PeerConnection::triggerDataChannel, this, weak_ptr<DataChannel>{channel}); // arvind
 
 		std::unique_lock lock(mDataChannelsMutex); // we are going to emplace
 		mDataChannels.emplace(stream, channel);
@@ -1356,6 +1356,18 @@ bool PeerConnection::removeDataChannel(uint16_t stream) {
 	std::unique_lock lock(mDataChannelsMutex); // we are going to erase
 	return mDataChannels.erase(stream) != 0;
 }
+
+
+
+
+void PeerConnection::triggerDataChannel(weak_ptr<DataChannel> weakDataChannel) {
+	auto dataChannel = weakDataChannel.lock();
+	if (!dataChannel)
+		return;
+
+	//mProcessor->enqueue(mDataChannelCallback.wrap(), std::move(dataChannel));
+}
+
 
 #endif
 
