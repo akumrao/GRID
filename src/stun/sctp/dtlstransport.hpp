@@ -35,7 +35,7 @@ public:
 
 	using verifier_callback = std::function<bool(const std::string &fingerprint)>;
 
-	DtlsTransport( const Configuration & conf, shared_ptr<IceTransport> lower, Certificate * certificate, optional<size_t> mtu,
+	DtlsTransport( const Configuration & conf, Description::Role role, Certificate * certificate, optional<size_t> mtu,
 	              CertificateFingerprint::Algorithm fingerprintAlgorithm,
 	              verifier_callback verifierCallback, state_callback stateChangeCallback);
 	~DtlsTransport();

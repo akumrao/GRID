@@ -608,9 +608,9 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport()
 			fingerprintAlgorithm = mRemoteFingerprintAlgorithm;
 		}
 
-		auto lower = std::atomic_load(&mIceTransport);
-		if (!lower)
-			throw std::logic_error("No underlying ICE transport for DTLS transport");
+		//auto lower = std::atomic_load(&mIceTransport);
+		//if (!lower)
+			//throw std::logic_error("No underlying ICE transport for DTLS transport");
 
 		auto certificate = mCertificate.get();
 		auto verifierCallback = weak_bind(&PeerConnection::checkFingerprint, this, _1);
@@ -666,7 +666,7 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport()
 
 		if (!transport) {
 			// DTLS only
-			transport = std::make_shared<DtlsTransport>(mConfig, lower, certificate, mConfig.mtu,
+			transport = std::make_shared<DtlsTransport>(mConfig, iceTransport->role(), certificate, mConfig.mtu,
 			                                            fingerprintAlgorithm, verifierCallback,
 			                                            dtlsStateChangeCallback);    
 		}
