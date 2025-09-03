@@ -4,30 +4,30 @@
 using namespace base;
 
 namespace rtc {
-Transport::Transport(const Configuration &Config, shared_ptr<Transport> lower, state_callback callback  )
-    : mLower(std::move(lower)), mStateChangeCallback(std::move(callback)), mConfig(Config){}
+Transport::Transport(const Configuration &Config, state_callback callback  )
+    : mStateChangeCallback(std::move(callback)), mConfig(Config){}
 
 Transport::~Transport() {
 	unregisterIncoming();
 
-	if (mLower) {
-		mLower->stop();
-		mLower.reset();
-	}
+//	if (mLower) {
+//		mLower->stop();
+//		mLower.reset();
+//	}
 }
 
 void Transport::registerIncoming() {
-	if (mLower) {
-		STrace << "Registering incoming callback";
-		mLower->onRecv(std::bind(&Transport::incoming, this, std::placeholders::_1));
-	}
+//	if (mLower) {
+//		STrace << "Registering incoming callback";
+//		mLower->onRecv(std::bind(&Transport::incoming, this, std::placeholders::_1));
+//	}
 }
 
 void Transport::unregisterIncoming() {
-	if (mLower) {
-		STrace << "Unregistering incoming callback";
-		mLower->onRecv(nullptr);
-	}
+//	if (mLower) {
+//		STrace << "Unregistering incoming callback";
+//		mLower->onRecv(nullptr);
+//	}
 }
 
 Transport::State Transport::state() const { return mState; }
@@ -64,10 +64,10 @@ void Transport::changeState(State state) {
 void Transport::incoming(message_ptr message) { recv(message); }
 
 bool Transport::outgoing(message_ptr message) {
-	if (mLower)
-		return mLower->send(message);
-	else
-		return false;
+//	if (mLower)
+//		return mLower->send(message);
+//	else
+//		return false;
 }
 
 
