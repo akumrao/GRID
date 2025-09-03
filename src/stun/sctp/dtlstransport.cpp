@@ -721,7 +721,7 @@ DtlsTransport::DtlsTransport( const Configuration & conf,shared_ptr<IceTransport
                              optional<size_t> mtu,
                              CertificateFingerprint::Algorithm fingerprintAlgorithm,
                              verifier_callback verifierCallback, state_callback stateChangeCallback)
-    : Transport(conf, lower, std::move(stateChangeCallback)), mMtu(mtu), mCertificate(certificate),
+    : Transport(conf, std::move(stateChangeCallback)), mMtu(mtu), mCertificate(certificate),
       mFingerprintAlgorithm(fingerprintAlgorithm), mVerifierCallback(std::move(verifierCallback))
       ,mIsClient(lower->role() == Description::Role::Active)
      {

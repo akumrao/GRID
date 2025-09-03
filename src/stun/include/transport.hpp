@@ -50,7 +50,7 @@ public:
 	enum class State { Disconnected, Connecting, Connected, Completed, Failed };
 	using state_callback = std::function<void(State state)>;
 
-	Transport(const Configuration &Config, shared_ptr<Transport> lower = nullptr, state_callback callback = nullptr );
+	Transport(const Configuration &Config, state_callback callback = nullptr );
 	virtual ~Transport();
 
 	void registerIncoming();
@@ -77,7 +77,7 @@ private:
     #endif
         
 
-	shared_ptr<Transport> mLower;
+	//shared_ptr<Transport> mLower;
 	synchronized_callback<State> mStateChangeCallback;
 	synchronized_callback<message_ptr> mRecvCallback;
 

@@ -149,7 +149,7 @@ void SctpTransport::Cleanup() {
 SctpTransport::SctpTransport(shared_ptr<Transport> lower, const Configuration &config, Ports ports,
                              message_callback recvCallback, amount_callback bufferedAmountCallback,
                              state_callback stateChangeCallback)
-    : Transport(config, lower, stateChangeCallback),
+    : Transport(config, stateChangeCallback),
       mMaxMessageSize(config.maxMessageSize),
       mPorts(ports), mSendQueue(0, message_size_func),
      mBufferedAmountCallback(bufferedAmountCallback) 
