@@ -717,13 +717,13 @@ void DtlsTransport::Cleanup() {
 	// Nothing to do
 }
 
-DtlsTransport::DtlsTransport( const Configuration & conf,shared_ptr<IceTransport> lower, Certificate* certificate,
+DtlsTransport::DtlsTransport( const Configuration & conf, Description::Role role, Certificate* certificate,
                              optional<size_t> mtu,
                              CertificateFingerprint::Algorithm fingerprintAlgorithm,
                              verifier_callback verifierCallback, state_callback stateChangeCallback)
     : Transport(conf, std::move(stateChangeCallback)), mMtu(mtu), mCertificate(certificate),
       mFingerprintAlgorithm(fingerprintAlgorithm), mVerifierCallback(std::move(verifierCallback))
-      ,mIsClient(lower->role() == Description::Role::Active)
+      ,mIsClient( role == Description::Role::Active)
      {
 	SDebug << "Initializing DTLS transport (OpenSSL)";
 
