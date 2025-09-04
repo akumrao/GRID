@@ -338,7 +338,7 @@ int main(int argc, char **argv) try {
     
     std::string room = "65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0";
     std::string host = ip_address;
-    int port = 443;
+    int port = 8443;
     
     sockio::SocketioClient *client;
 
