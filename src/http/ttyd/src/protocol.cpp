@@ -9,8 +9,8 @@
 #include "pty.h"
 #include "server.h"
 #include "utils.h"
-
-
+//#include  <sys/socket.h>
+#include <unistd.h>
 
 
 // initial message list

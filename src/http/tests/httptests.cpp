@@ -9,13 +9,13 @@
  */
 
 #include "http/HTTPResponder.h"
-#include "base/test.h"
+//#include "base/test.h"
 #include "base/logger.h"
 #include "base/application.h"
 
 using namespace base;
 using namespace base::net;
-using namespace base::test;
+//using namespace base::test;
 
 
 
