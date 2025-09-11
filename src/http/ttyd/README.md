@@ -1,4 +1,4 @@
-./ttyd -W -I test.html   bash
+./ttyd -W -I test.html bash
 
 
 ./ttyd -W -p 8080 bash
