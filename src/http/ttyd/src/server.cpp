@@ -627,6 +627,8 @@ int main(int argc, char **argv) {
     uv_signal_start(&signals[i], signal_cb, sig_nums[i]);
   }
 
+   uv_run(server->loop, UV_RUN_DEFAULT);
+   
 //  lws_service(context, 0);// arvind
 
   for (int i = 0; i < sig_count; i++) {
