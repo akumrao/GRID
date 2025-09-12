@@ -136,6 +136,10 @@ static void print_help() {
   // clang-format on
 }
 
+
+extern bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows);
+
+
 static void print_config() {
   lwsl_notice("tty configuration:\n");
   if (server->credential != NULL) lwsl_notice("  credential: %s\n", server->credential);
@@ -627,6 +631,63 @@ int main(int argc, char **argv) {
     uv_signal_start(&signals[i], signal_cb, sig_nums[i]);
   }
 
+  
+  
+   struct pss_tty *pss = (struct pss_tty *) malloc( sizeof (struct pss_tty ));
+  
+   pss->initialized = false;
+   pss->authenticated = false;
+      
+  uint16_t columns =0;
+  uint16_t rows =0;
+  
+   if (!spawn_process(pss, columns, rows)) return 1;
+  
+  
+    pss->process->columns = 300;
+    pss->process->rows = 75;
+    
+    pty_resize(pss->process);
+    
+    
+     if (process_running(pss->process)) {
+          pty_pause(pss->process);
+          lwsl_notice("killing process, pid: %d\n", pss->process->pid);
+          pty_kill(pss->process, server->sig_code);
+        }
+    
+     if (!spawn_process(pss, columns, rows)) return 1;
+  
+  
+    pss->process->columns = 300;
+    pss->process->rows = 75;
+    
+    pty_resize(pss->process);
+    
+    pss->initialized = true;
+    pty_resume(pss->process);
+          
+    
+    char in[]="ls\r\t";
+    int len = strlen(in)+1;
+    
+    if (pss->buffer == NULL) {
+    pss->buffer = xmalloc(len);
+    pss->len = len;
+    memcpy(pss->buffer, in, len);
+    } else {
+    pss->buffer = xrealloc(pss->buffer, pss->len + len);
+    memcpy(pss->buffer + pss->len, in, len);
+    pss->len += len;
+    }
+
+    
+          
+    int err = pty_write(pss->process, pty_buf_init(pss->buffer , pss->len));
+
+    
+          
+  
    uv_run(server->loop, UV_RUN_DEFAULT);
    
 //  lws_service(context, 0);// arvind
