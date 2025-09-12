@@ -69,7 +69,7 @@ static void read_cb(uv_stream_t *stream, ssize_t n, const uv_buf_t *buf) {
     goto done;
   }
   
- // printf( "read_cb %s \n", buf->base);
+   printf( "read_cb %s \n", buf->base);
   
   process->read_cb(process, pty_buf_init(buf->base, (size_t) n), false);
 
@@ -142,7 +142,7 @@ int pty_write(pty_process *process, pty_buf_t *buf) {
   }
   uv_buf_t b = uv_buf_init(buf->base, buf->len);
   
-  //printf( "pty_write= %s \n" , buf->base );
+   printf( "pty_write= %s \n" , buf->base );
   
   uv_write_t *req = (uv_write_t *)xmalloc(sizeof(uv_write_t));
   req->data = buf;
@@ -443,7 +443,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
     
     
   
-       // printf("Argument: %s\n", process->argv[0]);
+    printf("Argument: %s\n", process->argv[0]);
 
     
     int ret = execvp(process->argv[0], process->argv);
