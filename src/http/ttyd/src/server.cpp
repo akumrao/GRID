@@ -668,22 +668,19 @@ int main(int argc, char **argv) {
     pty_resume(pss->process);
           
     
-    char in[]="ls\r\t";
-    int len = strlen(in)+1;
-    
-    if (pss->buffer == NULL) {
-    pss->buffer = xmalloc(len);
-    pss->len = len;
-    memcpy(pss->buffer, in, len);
-    } else {
-    pss->buffer = xrealloc(pss->buffer, pss->len + len);
-    memcpy(pss->buffer + pss->len, in, len);
-    pss->len += len;
-    }
-
-    
-          
-    int err = pty_write(pss->process, pty_buf_init(pss->buffer , pss->len));
+//    char in[]="ls\r\t";
+//    int len = strlen(in)+1;
+//    
+//    if (pss->buffer == NULL) {
+//    pss->buffer = xmalloc(len);
+//    pss->len = len;
+//    memcpy(pss->buffer, in, len);
+//    } else {
+//    pss->buffer = xrealloc(pss->buffer, pss->len + len);
+//    memcpy(pss->buffer + pss->len, in, len);
+//    pss->len += len;
+//    }
+//    int err = pty_write(pss->process, pty_buf_init(pss->buffer , pss->len));
 
     
           

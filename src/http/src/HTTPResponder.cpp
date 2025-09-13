@@ -224,6 +224,8 @@ namespace base {
                         << "Connection: close\r\n"
                         << "Content-Length: " << result.size() << "\r\n"
                         << "Access-Control-Allow-Origin: *" << "\r\n"
+                        << "Access-Control-Allow-Headers: *" << "\r\n"
+                        <<"Access-Control-Allow-Methods: POST, PUT, PATCH, GET, DELETE, OPTIONS"<< "\r\n"
                         << "\r\n";
                 rep << result;
                 std::string res = rep.str();
