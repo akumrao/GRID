@@ -4,6 +4,8 @@
 
 #include "pty.h"
 
+#include <json.h>
+
 // client message
 #define INPUT '0'
 #define RESIZE_TERMINAL '1'
@@ -18,9 +20,9 @@
 
 
 
+  #define LWS_CLOSE_STATUS_NOSTATUS      0
 
-
-
+ #define LWS_WRITE_BINARY  1
 
 
 
@@ -92,3 +94,10 @@ struct server {
 
   uv_loop_t *loop;         // the libuv event loop
 };
+
+
+static json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows);
+
+int lws_close_reason();
+
+extern bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows);

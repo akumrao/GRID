@@ -7,19 +7,30 @@ project(ttyd VERSION 1.7.7 LANGUAGES CXX)
 set(TTYD_VERSION "${PROJECT_VERSION}")
 
 
+set(THREADS_PREFER_PTHREAD_FLAG TRUE)
+find_package(Threads REQUIRED)
 
 set(SOURCE_FILES src/utils.cpp src/pty.cpp src/protocol.cpp src/http.cpp src/server.cpp)
 
+set(WORKSPACE "/workspace/MagicAI")
+SET(SSL_ROOT "${WORKSPACE}/src/openssl/buildx64")
+SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
+
+
+file(GLOB src_HTTP
+    ../src/*.cpp
+    ../../libuv/src/*.cpp
+    ../../libuv/src/unix/*.cpp
+    ../../base/src/*.cpp
+    ../../crypto/src/*.cpp
+    ../../net/src/*.cpp
+    ../../net/uv_multiplex/src/*.cpp
+    ../../http_parser/*.cpp
+)
+
 include(FindPackageHandleStandardArgs)
 
-find_path(LIBUV_INCLUDE_DIR NAMES uv.h)
-find_library(LIBUV_LIBRARY NAMES uv libuv)
-find_package_handle_standard_args(LIBUV REQUIRED_VARS LIBUV_LIBRARY LIBUV_INCLUDE_DIR)
-mark_as_advanced(LIBUV_INCLUDE_DIR LIBUV_LIBRARY)
-if(LIBUV_FOUND)
-    SET(LIBUV_INCLUDE_DIRS "${LIBUV_INCLUDE_DIR}")
-    SET(LIBUV_LIBRARIES "${LIBUV_LIBRARY}")
-endif()
+
 
 find_path(JSON-C_INCLUDE_DIR NAMES json.h PATH_SUFFIXES json-c)
 find_library(JSON-C_LIBRARY NAMES json-c)
@@ -33,8 +44,11 @@ endif()
 find_package(ZLIB REQUIRED)
 #find_package(Libwebsockets 3.2.0 REQUIRED)
 
-set(INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIRS} ${JSON-C_INCLUDE_DIRS} ${LIBUV_INCLUDE_DIRS})
-set(LINK_LIBS ${ZLIB_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARIES} ${LIBUV_LIBRARIES})
+set(INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIRS} ${JSON-C_INCLUDE_DIRS} ../include/ ../../net/include/ ../../base/include ../../http_parser/
+ ../../net/uv_multiplex/include/ ../../libuv/include ../../libuv/src ${SSL_ROOT}/include
+)
+
+set(LINK_LIBS ${ZLIB_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARIES} )
 
 set (CMAKE_REQUIRED_INCLUDES ${INCLUDE_DIRS})
 include(CheckSymbolExists)
@@ -44,11 +58,9 @@ include(CheckSymbolExists)
 #if(NOT LWS_WITH_LIBUV)
 #    message(FATAL_ERROR "libwebsockets was not build with libuv support (-DLWS_WITH_LIBUV=ON)")
 #endif()
-if(LWS_OPENSSL_ENABLED AND NOT LWS_MBEDTLS_ENABLED)
-    find_package(OpenSSL REQUIRED)
-    list(APPEND INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR})
-    list(APPEND LINK_LIBS ${OPENSSL_LIBRARIES})
-endif()
+
+list(APPEND LINK_LIBS dl Threads::Threads ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a)
+
 
 if(WIN32)
     list(APPEND LINK_LIBS shell32 ws2_32)
@@ -61,7 +73,7 @@ else()
     endif()
 endif()
 
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${src_HTTP})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
 target_compile_definitions(${PROJECT_NAME} PUBLIC

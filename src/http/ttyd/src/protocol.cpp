@@ -12,10 +12,19 @@
 //#include  <sys/socket.h>
 #include <unistd.h>
 
-
+extern struct pss_tty *pss;
 // initial message list
 static char initial_cmds[] = {SET_WINDOW_TITLE, SET_PREFERENCES};
 #define  LWS_PRE 6
+
+
+
+int lws_write (struct lws * wsi, unsigned char * buf, size_t len, bool binary)
+{
+//    sendAll( buf, len );
+    
+}
+
 static int send_initial_message(struct lws *wsi, int index) {
   unsigned char message[LWS_PRE + 1 + 4096];
   unsigned char *p = &message[LWS_PRE];
@@ -35,8 +44,66 @@ static int send_initial_message(struct lws *wsi, int index) {
       break;
   }
 
-//   return lws_write(wsi, p, (size_t)n, LWS_WRITE_BINARY); arvind
+  return lws_write(wsi, p, (size_t)n, LWS_WRITE_BINARY);
 }
+
+static void wsi_output(struct lws *wsi, pty_buf_t *buf) {
+  if (buf == NULL) return;
+  char *message = (char *)xmalloc(LWS_PRE + 1 + buf->len);
+  char *ptr = message + LWS_PRE;
+
+  *ptr = OUTPUT;
+  memcpy(ptr + 1, buf->base, buf->len);
+  size_t n = buf->len + 1;
+
+  if (lws_write(wsi, (unsigned char *)ptr, n, LWS_WRITE_BINARY) < n) {
+    lwsl_err("write OUTPUT to WS\n");
+  }
+  // arvind
+
+  free(message);
+}
+
+
+int lws_close_reason()
+{
+    
+}
+
+int lws_callback_on_writable	(	struct lws * 	wsi	)
+{
+    if (!pss->initialized) {
+        if (pss->initial_cmd_index == sizeof (initial_cmds)) {
+            pss->initialized = true;
+            pty_resume(pss->process);
+            return 0;
+        }
+        if (send_initial_message(wsi, pss->initial_cmd_index) < 0) {
+            lwsl_err("failed to send initial message, index: %d\n", pss->initial_cmd_index);
+            lws_close_reason();
+            return -1;
+        }
+        pss->initial_cmd_index++;
+        lws_callback_on_writable(wsi);
+        return 0;
+    }
+
+    if (pss->lws_close_status > LWS_CLOSE_STATUS_NOSTATUS) {
+        lws_close_reason();
+        return 1;
+    }
+
+    if (pss->pty_buf != NULL) {
+        wsi_output(wsi, pss->pty_buf);
+        pty_buf_free(pss->pty_buf);
+        pss->pty_buf = NULL;
+        pty_resume(pss->process);
+    }
+}
+
+
+
+
 
 static json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows) {
   json_tokener *tok = json_tokener_new();
@@ -92,7 +159,7 @@ static void process_read_cb(pty_process *process, pty_buf_t *buf, bool eof) {
     ctx->pss->lws_close_status = process->exit_code == 0 ? 1000 : 1006;
   else
     ctx->pss->pty_buf = buf;
- //   lws_callback_on_writable(ctx->pss->wsi); arvind
+   lws_callback_on_writable(ctx->pss->wsi);
 }
 
 static void process_exit_cb(pty_process *process) {
@@ -105,7 +172,7 @@ static void process_exit_cb(pty_process *process) {
   printf("process exited with code %d, pid: %d\n", process->exit_code, process->pid);
   ctx->pss->process = NULL;
   ctx->pss->lws_close_status = process->exit_code == 0 ? 1000 : 1006;
-//  lws_callback_on_writable(ctx->pss->wsi);  //arvind
+  lws_callback_on_writable(ctx->pss->wsi);  //arvind
 
 done:
   pty_ctx_free(ctx);
@@ -150,7 +217,8 @@ static char **build_env(struct pss_tty *pss) {
   return envp;
 }
 
-extern bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) {
+extern bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) 
+{
   pty_process *process = process_init((void *)pty_ctx_init(pss), server->loop, build_args(pss), build_env(pss));
   if (server->cwd != NULL) process->cwd = strdup(server->cwd);
   if (columns > 0) process->columns = columns;
@@ -162,27 +230,11 @@ extern bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows) 
   }
   lwsl_notice("started process, pid: %d\n", process->pid);
   pss->process = process;
-//  lws_callback_on_writable(pss->wsi); // arvind
+  lws_callback_on_writable(pss->wsi); // arvind
 
   return true;
 }
 
-static void wsi_output(struct lws *wsi, pty_buf_t *buf) {
-  if (buf == NULL) return;
-  char *message = (char *)xmalloc(LWS_PRE + 1 + buf->len);
-  char *ptr = message + LWS_PRE;
-
-  *ptr = OUTPUT;
-  memcpy(ptr + 1, buf->base, buf->len);
-  size_t n = buf->len + 1;
-
-//  if (lws_write(wsi, (unsigned char *)ptr, n, LWS_WRITE_BINARY) < n) {
-//    lwsl_err("write OUTPUT to WS\n");
-//  }
-  // arvind
-
-  free(message);
-}
 
 //static bool check_auth(struct lws *wsi, struct pss_tty *pss) {
 //  if (server->auth_header != NULL) {

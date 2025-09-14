@@ -79,7 +79,7 @@ int main(int argc, char** argv) {
    StreamingResponderFactory *stream =   new StreamingResponderFactory();
             
    Application app;
-   testwebscoket  *socket = new testwebscoket("0.0.0.0", 8000, stream , true  );
+   testwebscoket  *socket = new testwebscoket("0.0.0.0", 8000, stream , false  );
     //socket.start();
 
    app.waitForShutdown([&](void*)
