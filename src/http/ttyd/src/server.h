@@ -6,6 +6,8 @@
 
 #include <json.h>
 
+#include  "net/netInterface.h"
+
 // client message
 #define INPUT '0'
 #define RESIZE_TERMINAL '1'
@@ -56,7 +58,7 @@ struct pss_tty {
   char **args;
   int argc;
 
-  struct lws *wsi;
+  base::net::Listener* con;
   char *buffer;
   size_t len;
 
@@ -96,7 +98,7 @@ struct server {
 };
 
 
-static json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows);
+json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows);
 
 int lws_close_reason();
 

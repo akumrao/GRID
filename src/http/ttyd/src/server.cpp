@@ -13,6 +13,18 @@
 #include <unistd.h>
 #include "utils.h"
 
+
+
+#include "http/HTTPResponder.h"
+//#include "base/test.h"
+#include "base/logger.h"
+#include "base/application.h"
+
+using namespace base;
+using namespace base::net;
+//using namespace base::test;
+
+
 #ifndef TTYD_VERSION
 #define TTYD_VERSION "unknown"
 #endif
@@ -28,7 +40,7 @@ struct endpoints endpoints = {"/ws", "/", "/token", ""};
 
 struct pss_tty *pss;
    
-#if 0 
+#if 1
 //extern int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
 //extern int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
 
@@ -208,8 +220,8 @@ static struct server *server_new(int argc, char **argv, int start) {
   }
   *ptr = '\0';  // null terminator
 
-  ts->loop = (uv_loop_t*) xmalloc(sizeof *ts->loop);
-  uv_loop_init(ts->loop);
+  //ts->loop = (uv_loop_t*) xmalloc(sizeof *ts->loop);
+  //uv_loop_init(ts->loop);
 
   return ts;
 }
@@ -312,6 +324,206 @@ static int calc_command_start(int argc, char **argv) {
   return start;
 }
 
+
+class testwebscoket: public net::HttpServer 
+{
+public:
+    
+     testwebscoket( std::string ip, int port, ServerConnectionFactory *factory = nullptr,  bool multithreaded =false) : net::HttpServer(  ip, port,  factory, multithreaded)
+     {
+         
+     }
+    
+    void on_wsread(Listener* connection, const char* msg, size_t len) {
+      
+        //connection->send("arvind", 6 );
+        SInfo << "msg " << std::string(msg,len);
+        WebSocketConnection *con = (WebSocketConnection*)connection;
+        
+        //con->send( msg, len );
+        
+       // sendAll( msg, len );
+        
+        
+        if (pss->buffer == NULL) {
+        pss->buffer = ( char *)xmalloc(len);
+        pss->len = len;
+        memcpy(pss->buffer, msg, len);
+      } else {
+        pss->buffer =  (char *)xrealloc(pss->buffer, pss->len + len);
+        memcpy(pss->buffer + pss->len, msg, len);
+        pss->len += len;
+      }
+
+      const char command = pss->buffer[0];
+
+      // check auth
+      if (server->credential != NULL && !pss->authenticated && command != JSON_DATA) {
+        lwsl_warn("WS client not authenticated\n");
+        return ;
+      }
+
+      // check if there are more fragmented messages
+//      if (lws_remaining_packet_payload(wsi) > 0 || !lws_is_final_fragment(wsi)) {
+//        return ;
+//      }
+
+      switch (command) {
+        case INPUT:
+        {
+          if (!server->writable) break;
+          int err = pty_write(pss->process, pty_buf_init(pss->buffer + 1, pss->len - 1));
+          if (err) {
+            lwsl_err("uv_write: %s (%s)\n", uv_err_name(err), uv_strerror(err));
+            return ;
+          }
+          break;
+        }
+        case RESIZE_TERMINAL:
+        {
+          if (pss->process == NULL) break;
+          json_object_put(
+              parse_window_size(pss->buffer + 1, pss->len - 1, &pss->process->columns, &pss->process->rows));
+          pty_resize(pss->process);
+          break;
+        }
+        case PAUSE:
+        {
+          pty_pause(pss->process);
+          break;
+        }
+        case RESUME:
+        {
+          pty_resume(pss->process);
+          break;
+        }
+        case JSON_DATA:
+        {
+          if (pss->process != NULL) break;
+          uint16_t columns = 0;
+          uint16_t rows = 0;
+          json_object *obj = parse_window_size(pss->buffer, pss->len, &columns, &rows);
+          if (server->credential != NULL) {
+            struct json_object *o = NULL;
+            if (json_object_object_get_ex(obj, "AuthToken", &o)) {
+              const char *token = json_object_get_string(o);
+              if (token != NULL && !strcmp(token, server->credential))
+                pss->authenticated = true;
+              else
+                lwsl_warn("WS authentication failed with token: %s\n", token);
+            }
+            if (!pss->authenticated) {
+              json_object_put(obj);
+              //lws_close_reason(wsi, LWS_CLOSE_STATUS_POLICY_VIOLATION, NULL, 0);
+              lws_close_reason();
+              return ;
+            }
+          }
+          json_object_put(obj);
+          if (!spawn_process(pss, columns, rows)) return ;
+          break;
+        }
+        default:
+        {
+          lwsl_warn("ignored unknown message type: %c\n", command);
+          break;
+        }
+      }
+
+      if (pss->buffer != NULL) {
+        free(pss->buffer);
+        pss->buffer = NULL;
+      }
+      
+      
+         
+    }
+    
+    void on_wsclose(Listener* conn)
+    {
+        
+     if (pss->con == NULL) return;
+
+      server->client_count--;
+      lwsl_notice("WS closed from %s, clients: %d\n", pss->address, server->client_count);
+      if (pss->buffer != NULL) free(pss->buffer);
+      if (pss->pty_buf != NULL) pty_buf_free(pss->pty_buf);
+      for (int i = 0; i < pss->argc; i++) {
+        free(pss->args[i]);
+      }
+
+      if (pss->process != NULL) {
+        ((pty_ctx_t *)pss->process->ctx)->ws_closed = true;
+        if (process_running(pss->process)) {
+          pty_pause(pss->process);
+          lwsl_notice("killing process, pid: %d\n", pss->process->pid);
+          pty_kill(pss->process, server->sig_code);
+        }
+      }
+
+      if ((server->once || server->exit_no_conn) && server->client_count == 0) {
+        lwsl_notice("exiting due to the --once/--exit-no-conn option.\n");
+        force_exit = true;
+       // lws_cancel_service(context);
+        exit(0);
+      }
+    }
+    
+    
+    void on_wsconnect(Listener* conn) 
+    { 
+     
+        SInfo << "on_wsconnect" ;
+    
+        pss->initialized = false;
+        pss->authenticated = false;
+        pss->con = conn;
+        pss->lws_close_status = LWS_CLOSE_STATUS_NOSTATUS;
+
+        if (server->url_arg) {
+//        while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
+//        if (strncmp(buf, "arg=", 4) == 0) {
+//          pss->args = (char**)xrealloc(pss->args, (pss->argc + 1) * sizeof(char *));
+//          pss->args[pss->argc] = strdup(&buf[4]);
+//          pss->argc++;
+//        }
+//        }
+        }
+
+        server->client_count++;
+      
+    }
+      
+    
+    
+    void sendAll(const char* msg, size_t len) {
+      
+        
+        SInfo << "No of Connectons " << this->GetNumConnections();
+        
+        for (auto* connection :  this->GetConnections())
+        {
+            
+#if HTTPSSL
+                    
+             WebSocketConnection *con = ((HttpConnection*)connection)->getWebSocketCon();
+#else
+             WebSocketConnection *con = ((HttpConnection*)connection)->getWebSocketCon();
+#endif
+             if(con)
+             con->send(msg ,len );
+//             else
+//             {
+//                WebSocketConnection *con = ((HttpsConnection*)connection)->getWebSocketCon();
+//                if(con)
+//                con->send(msg ,len );
+//             }
+        }
+         
+    }
+    
+};
+
 int main(int argc, char **argv) {
   if (argc == 1) {
     print_help();
@@ -324,8 +536,26 @@ int main(int argc, char **argv) {
   }
 #endif
 
+  
+    ConsoleChannel *ch =  new ConsoleChannel("debug", Level::Trace);
+    Logger::instance().add(ch);
+      
+
+     
   int start = calc_command_start(argc, argv);
   server = server_new(argc, argv, start);
+  
+  Application app;
+  
+  server->loop = app.uvGetLoop();
+  
+  
+     StreamingResponderFactory *stream =   new StreamingResponderFactory();
+            
+
+   testwebscoket  *socket = new testwebscoket("0.0.0.0", 8000, stream , false  );
+   
+
 
 //  struct lws_context_creation_info info;
 //  memset(&info, 0, sizeof(info));
@@ -640,39 +870,39 @@ int main(int argc, char **argv) {
 
   
   
-   struct pss_tty *pss = (struct pss_tty *) malloc( sizeof (struct pss_tty ));
+   pss = (struct pss_tty *) malloc( sizeof (struct pss_tty ));
   
-   pss->initialized = false;
-   pss->authenticated = false;
-      
-  uint16_t columns =0;
-  uint16_t rows =0;
-  
-   if (!spawn_process(pss, columns, rows)) return 1;
-  
-  
-    pss->process->columns = 300;
-    pss->process->rows = 75;
-    
-    pty_resize(pss->process);
-    
-    
-     if (process_running(pss->process)) {
-          pty_pause(pss->process);
-          lwsl_notice("killing process, pid: %d\n", pss->process->pid);
-          pty_kill(pss->process, server->sig_code);
-        }
-    
-     if (!spawn_process(pss, columns, rows)) return 1;
-  
-  
-    pss->process->columns = 300;
-    pss->process->rows = 75;
-    
-    pty_resize(pss->process);
-    
-    pss->initialized = true;
-    pty_resume(pss->process);
+//   pss->initialized = false;
+//   pss->authenticated = false;
+//      
+//  uint16_t columns =0;
+//  uint16_t rows =0;
+//  
+//   if (!spawn_process(pss, columns, rows)) return 1;
+//  
+//  
+//    pss->process->columns = 300;
+//    pss->process->rows = 75;
+//    
+//    pty_resize(pss->process);
+//    
+//    
+//     if (process_running(pss->process)) {
+//          pty_pause(pss->process);
+//          lwsl_notice("killing process, pid: %d\n", pss->process->pid);
+//          pty_kill(pss->process, server->sig_code);
+//        }
+//    
+//     if (!spawn_process(pss, columns, rows)) return 1;
+//  
+//  
+//    pss->process->columns = 300;
+//    pss->process->rows = 75;
+//    
+//    pty_resize(pss->process);
+//    
+//    pss->initialized = true;
+//    pty_resume(pss->process);
           
     
 //    char in[]="ls\r\t";
@@ -692,7 +922,9 @@ int main(int argc, char **argv) {
     
           
   
-   uv_run(server->loop, UV_RUN_DEFAULT);
+   //uv_run(server->loop, UV_RUN_DEFAULT);
+    
+    app.run();
    
 //  lws_service(context, 0);// arvind
 
@@ -709,8 +941,9 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+#else
 
-#endif
+
 
 
 /* This file is part of mediaserver. A webrtc sfu server.
@@ -723,14 +956,6 @@ int main(int argc, char **argv) {
  *
  */
 
-#include "http/HTTPResponder.h"
-//#include "base/test.h"
-#include "base/logger.h"
-#include "base/application.h"
-
-using namespace base;
-using namespace base::net;
-//using namespace base::test;
 
 
 
@@ -779,6 +1004,7 @@ public:
 
       switch (command) {
         case INPUT:
+        {
           if (!server->writable) break;
           int err = pty_write(pss->process, pty_buf_init(pss->buffer + 1, pss->len - 1));
           if (err) {
@@ -786,19 +1012,27 @@ public:
             return ;
           }
           break;
+        }
         case RESIZE_TERMINAL:
+        {
           if (pss->process == NULL) break;
           json_object_put(
               parse_window_size(pss->buffer + 1, pss->len - 1, &pss->process->columns, &pss->process->rows));
           pty_resize(pss->process);
           break;
+        }
         case PAUSE:
+        {
           pty_pause(pss->process);
           break;
+        }
         case RESUME:
+        {
           pty_resume(pss->process);
           break;
+        }
         case JSON_DATA:
+        {
           if (pss->process != NULL) break;
           uint16_t columns = 0;
           uint16_t rows = 0;
@@ -816,15 +1050,18 @@ public:
               json_object_put(obj);
               //lws_close_reason(wsi, LWS_CLOSE_STATUS_POLICY_VIOLATION, NULL, 0);
               lws_close_reason();
-              return -1;
+              return ;
             }
           }
           json_object_put(obj);
-          if (!spawn_process(pss, columns, rows)) return 1;
+          if (!spawn_process(pss, columns, rows)) return ;
           break;
+        }
         default:
+        {
           lwsl_warn("ignored unknown message type: %c\n", command);
           break;
+        }
       }
 
       if (pss->buffer != NULL) {
@@ -873,7 +1110,7 @@ public:
     
         pss->initialized = false;
         pss->authenticated = false;
-       // pss->wsi = wsi;
+        pss->con = conn;
         pss->lws_close_status = LWS_CLOSE_STATUS_NOSTATUS;
 
         if (server->url_arg) {
@@ -923,11 +1160,11 @@ public:
 int main(int argc, char** argv) {
 
    ConsoleChannel *ch =  new ConsoleChannel("debug", Level::Trace);
-   
+      Logger::instance().add(ch);
    
    pss = (struct pss_tty *) malloc( sizeof (struct pss_tty ));
             
-   Logger::instance().add(ch);
+
     //test::init();
   
     
@@ -1008,3 +1245,4 @@ EAK SUMMARY:
 
     // return test::finalize();
 }
+#endif
