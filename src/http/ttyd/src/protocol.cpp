@@ -12,6 +12,8 @@
 //#include  <sys/socket.h>
 #include <unistd.h>
 
+#include "http/websocket.h"
+
 extern struct pss_tty *pss;
 // initial message list
 static char initial_cmds[] = {SET_WINDOW_TITLE, SET_PREFERENCES};
@@ -19,13 +21,18 @@ static char initial_cmds[] = {SET_WINDOW_TITLE, SET_PREFERENCES};
 
 
 
-int lws_write (struct lws * wsi, unsigned char * buf, size_t len, bool binary)
+int lws_write ( base::net::Listener* conn, unsigned char * buf, size_t len, bool binary)
 {
-//    sendAll( buf, len );
+
+    
+    base::net::WebSocketConnection *con = (base::net::WebSocketConnection*)conn;
+        
+    con->send( buf, len );
+     
     
 }
 
-static int send_initial_message(struct lws *wsi, int index) {
+static int send_initial_message(base::net::Listener* con, int index) {
   unsigned char message[LWS_PRE + 1 + 4096];
   unsigned char *p = &message[LWS_PRE];
   char buffer[128];
@@ -44,10 +51,10 @@ static int send_initial_message(struct lws *wsi, int index) {
       break;
   }
 
-  return lws_write(wsi, p, (size_t)n, LWS_WRITE_BINARY);
+  return lws_write(con, p, (size_t)n, LWS_WRITE_BINARY);
 }
 
-static void wsi_output(struct lws *wsi, pty_buf_t *buf) {
+static void wsi_output(base::net::Listener* con, pty_buf_t *buf) {
   if (buf == NULL) return;
   char *message = (char *)xmalloc(LWS_PRE + 1 + buf->len);
   char *ptr = message + LWS_PRE;
@@ -56,7 +63,7 @@ static void wsi_output(struct lws *wsi, pty_buf_t *buf) {
   memcpy(ptr + 1, buf->base, buf->len);
   size_t n = buf->len + 1;
 
-  if (lws_write(wsi, (unsigned char *)ptr, n, LWS_WRITE_BINARY) < n) {
+  if (lws_write(con, (unsigned char *)ptr, n, LWS_WRITE_BINARY) < n) {
     lwsl_err("write OUTPUT to WS\n");
   }
   // arvind
@@ -70,7 +77,7 @@ int lws_close_reason()
     
 }
 
-int lws_callback_on_writable	(	struct lws * 	wsi	)
+int lws_callback_on_writable(	base::net::Listener* con	)
 {
     if (!pss->initialized) {
         if (pss->initial_cmd_index == sizeof (initial_cmds)) {
@@ -78,13 +85,13 @@ int lws_callback_on_writable	(	struct lws * 	wsi	)
             pty_resume(pss->process);
             return 0;
         }
-        if (send_initial_message(wsi, pss->initial_cmd_index) < 0) {
+        if (send_initial_message(con, pss->initial_cmd_index) < 0) {
             lwsl_err("failed to send initial message, index: %d\n", pss->initial_cmd_index);
             lws_close_reason();
             return -1;
         }
         pss->initial_cmd_index++;
-        lws_callback_on_writable(wsi);
+        lws_callback_on_writable(con);
         return 0;
     }
 
@@ -94,7 +101,7 @@ int lws_callback_on_writable	(	struct lws * 	wsi	)
     }
 
     if (pss->pty_buf != NULL) {
-        wsi_output(wsi, pss->pty_buf);
+        wsi_output(con, pss->pty_buf);
         pty_buf_free(pss->pty_buf);
         pss->pty_buf = NULL;
         pty_resume(pss->process);
@@ -105,7 +112,7 @@ int lws_callback_on_writable	(	struct lws * 	wsi	)
 
 
 
-static json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows) {
+ json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows) {
   json_tokener *tok = json_tokener_new();
   json_object *obj = json_tokener_parse_ex(tok, buf, len);
   struct json_object *o = NULL;
@@ -159,7 +166,7 @@ static void process_read_cb(pty_process *process, pty_buf_t *buf, bool eof) {
     ctx->pss->lws_close_status = process->exit_code == 0 ? 1000 : 1006;
   else
     ctx->pss->pty_buf = buf;
-   lws_callback_on_writable(ctx->pss->wsi);
+   lws_callback_on_writable(ctx->pss->con);
 }
 
 static void process_exit_cb(pty_process *process) {
@@ -172,7 +179,7 @@ static void process_exit_cb(pty_process *process) {
   printf("process exited with code %d, pid: %d\n", process->exit_code, process->pid);
   ctx->pss->process = NULL;
   ctx->pss->lws_close_status = process->exit_code == 0 ? 1000 : 1006;
-  lws_callback_on_writable(ctx->pss->wsi);  //arvind
+  lws_callback_on_writable(ctx->pss->con);  //arvind
 
 done:
   pty_ctx_free(ctx);
@@ -230,7 +237,7 @@ extern bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows)
   }
   lwsl_notice("started process, pid: %d\n", process->pid);
   pss->process = process;
-  lws_callback_on_writable(pss->wsi); // arvind
+  lws_callback_on_writable(pss->con); // arvind
 
   return true;
 }

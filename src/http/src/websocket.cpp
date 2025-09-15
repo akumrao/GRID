@@ -219,6 +219,14 @@ namespace base {
             try {
                 framer.acceptServerRequest(_request, _response);
                 LTrace("Handshake success")
+                        
+                   if(_connection->fnConnect)
+                    _connection->fnConnect(_connection);
+
+                    if(listener)
+                    listener->on_wsconnect( this);
+                
+                        
             } catch (std::exception& exc) {
                 LWarn("Handshake failed: ", exc.what())
             }
