@@ -27,7 +27,7 @@ int lws_write ( base::net::Listener* conn, unsigned char * buf, size_t len, bool
     
     base::net::WebSocketConnection *con = (base::net::WebSocketConnection*)conn;
         
-    con->send( buf, len );
+    con->send( buf, len, binary );
      
     
 }
@@ -63,8 +63,9 @@ static void wsi_output(base::net::Listener* con, pty_buf_t *buf) {
   memcpy(ptr + 1, buf->base, buf->len);
   size_t n = buf->len + 1;
 
-  if (lws_write(con, (unsigned char *)ptr, n, LWS_WRITE_BINARY) < n) {
-    lwsl_err("write OUTPUT to WS\n");
+  if (lws_write(con, (unsigned char *)ptr, n, LWS_WRITE_BINARY) < n) 
+  {
+//    lwsl_err("write OUTPUT to WS\n");
   }
   // arvind
 
