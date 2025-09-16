@@ -435,6 +435,9 @@ static void wait_cb(void *arg) {
 }
 
 static void async_cb(uv_async_t *async) {
+    
+    SInfo << "async_cb";
+    
   pty_process *process = (pty_process *) async->data;
   process->exit_cb(process);
 
@@ -443,6 +446,9 @@ static void async_cb(uv_async_t *async) {
 }
 
 int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
+    
+    SInfo << "pty_spawn";
+    
   int status = 0;
 
   uv_disable_stdio_inheritance();
