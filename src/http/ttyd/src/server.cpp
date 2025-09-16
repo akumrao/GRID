@@ -205,6 +205,9 @@ static struct server *server_new(int argc, char **argv, int start) {
 }
 
 static void server_free(struct server *ts) {
+    
+    SInfo << "server_free";
+            
     if (ts == NULL) return;
     if (ts->credential != NULL) free(ts->credential);
     if (ts->auth_header != NULL) free(ts->auth_header);
