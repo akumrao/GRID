@@ -22,7 +22,11 @@
 
 
 
-  #define LWS_CLOSE_STATUS_NOSTATUS      0
+#define LWS_CLOSE_STATUS_NOSTATUS      0
+#define LWS_CLOSE_STATUS_UNEXPECTED_CONDITION   1011
+#define LWS_CLOSE_STATUS_POLICY_VIOLATION     1008
+
+
 
  #define LWS_WRITE_BINARY  1
 
@@ -100,6 +104,6 @@ struct server {
 
 json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows);
 
-int lws_close_reason();
+int lws_close_reason( base::net::Listener* conn, uint16_t statusCode ) ;
 
 extern bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows);

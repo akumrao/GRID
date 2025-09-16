@@ -6,6 +6,9 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "base/logger.h"
+using namespace base;
+
 #ifndef _WIN32
 #include <sys/ioctl.h>
 #include <sys/wait.h>
@@ -69,7 +72,7 @@ static void read_cb(uv_stream_t *stream, ssize_t n, const uv_buf_t *buf) {
     goto done;
   }
   
-   printf( "read_cb %s \n", buf->base);
+  // printf( "read_cb %s \n", buf->base);
   
   process->read_cb(process, pty_buf_init(buf->base, (size_t) n), false);
 
@@ -84,6 +87,9 @@ static void write_cb(uv_write_t *req, int unused) {
 }
 
 pty_process *process_init(void *ctx, uv_loop_t *loop, char *argv[], char *envp[]) {
+    
+  SInfo << "process_init" ;
+    
   pty_process *process = (pty_process *)xmalloc(sizeof(pty_process));
   memset(process, 0, sizeof(pty_process));
   process->ctx = ctx;
@@ -101,6 +107,9 @@ bool process_running(pty_process *process) {
 }
 
 void process_free(pty_process *process) {
+    
+    SInfo << "process_free" ;
+       
   if (process == NULL) return;
 #ifdef _WIN32
   if (process->si.lpAttributeList != NULL) {
@@ -123,12 +132,18 @@ void process_free(pty_process *process) {
 }
 
 void pty_pause(pty_process *process) {
+    
+   SInfo << "pty_pause" ;
+   
   if (process == NULL) return;
   if (process->paused) return;
   uv_read_stop((uv_stream_t *) process->out);
 }
 
 void pty_resume(pty_process *process) {
+    
+  SInfo << "pty_resume" ;
+    
   if (process == NULL) return;
   if (!process->paused) return;
   process->out->data = process;
@@ -142,7 +157,9 @@ int pty_write(pty_process *process, pty_buf_t *buf) {
   }
   uv_buf_t b = uv_buf_init(buf->base, buf->len);
   
-   printf( "pty_write= %s \n" , buf->base );
+  SInfo << "pty_write" << std::string( buf->base, buf->len);
+  
+   //printf( "pty_write= %s \n" , buf->base );
   
   uv_write_t *req = (uv_write_t *)xmalloc(sizeof(uv_write_t));
   req->data = buf;
@@ -162,6 +179,9 @@ bool pty_resize(pty_process *process) {
 }
 
 bool pty_kill(pty_process *process, int sig) {
+    
+    SInfo << "pty_kill" ;
+      
   if (process == NULL) return false;
 #ifdef _WIN32
   return TerminateProcess(process->handle, 1) != 0;
@@ -443,7 +463,7 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
     
     
   
-    printf("Argument: %s\n", process->argv[0]);
+    //printf("Argument: %s\n", process->argv[0]);
 
     
     int ret = execvp(process->argv[0], process->argv);

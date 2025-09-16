@@ -23,13 +23,10 @@ static char initial_cmds[] = {SET_WINDOW_TITLE, SET_PREFERENCES};
 
 int lws_write ( base::net::Listener* conn, unsigned char * buf, size_t len, bool binary)
 {
-
     
     base::net::WebSocketConnection *con = (base::net::WebSocketConnection*)conn;
-        
-    con->send( buf, len, binary );
-     
-    
+    con->send((const char*) buf, len, binary );
+
 }
 
 static int send_initial_message(base::net::Listener* con, int index) {
@@ -73,9 +70,11 @@ static void wsi_output(base::net::Listener* con, pty_buf_t *buf) {
 }
 
 
-int lws_close_reason()
+int lws_close_reason(base::net::Listener* conn, uint16_t statusCode  )
 {
-    
+        
+    base::net::WebSocketConnection *con = (base::net::WebSocketConnection*)conn;
+    con->shutdown( statusCode, nullptr);
 }
 
 int lws_callback_on_writable(	base::net::Listener* con	)
@@ -88,7 +87,7 @@ int lws_callback_on_writable(	base::net::Listener* con	)
         }
         if (send_initial_message(con, pss->initial_cmd_index) < 0) {
             lwsl_err("failed to send initial message, index: %d\n", pss->initial_cmd_index);
-            lws_close_reason();
+            lws_close_reason(con, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION);
             return -1;
         }
         pss->initial_cmd_index++;
@@ -97,7 +96,7 @@ int lws_callback_on_writable(	base::net::Listener* con	)
     }
 
     if (pss->lws_close_status > LWS_CLOSE_STATUS_NOSTATUS) {
-        lws_close_reason();
+        lws_close_reason(con, pss->lws_close_status);
         return 1;
     }
 
