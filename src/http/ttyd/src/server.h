@@ -63,10 +63,10 @@ struct pss_tty {
   int argc;
 
   base::net::Listener* con;
-  char *buffer;
+  char *buffer{nullptr};
   size_t len;
 
-  pty_process *process;
+  pty_process *process{nullptr};
   pty_buf_t *pty_buf;
 
   int lws_close_status;
