@@ -414,8 +414,7 @@ public:
             }
             if (!pss->authenticated) {
               json_object_put(obj);
-              //lws_close_reason(wsi, LWS_CLOSE_STATUS_POLICY_VIOLATION, NULL, 0);
-              lws_close_reason();
+              lws_close_reason(connection, LWS_CLOSE_STATUS_POLICY_VIOLATION );
               return ;
             }
           }
@@ -441,6 +440,9 @@ public:
     
     void on_wsclose(Listener* conn)
     {
+        
+        SInfo << "on_wsconnect" ;
+        
         
      if (pss->con == NULL) return;
 
@@ -496,31 +498,7 @@ public:
       
     
     
-    void sendAll(const char* msg, size_t len) {
-      
-        
-        SInfo << "No of Connectons " << this->GetNumConnections();
-        
-        for (auto* connection :  this->GetConnections())
-        {
-            
-#if HTTPSSL
-                    
-             WebSocketConnection *con = ((HttpConnection*)connection)->getWebSocketCon();
-#else
-             WebSocketConnection *con = ((HttpConnection*)connection)->getWebSocketCon();
-#endif
-             if(con)
-             con->send(msg ,len );
-//             else
-//             {
-//                WebSocketConnection *con = ((HttpsConnection*)connection)->getWebSocketCon();
-//                if(con)
-//                con->send(msg ,len );
-//             }
-        }
-         
-    }
+//    
     
 };
 
@@ -537,7 +515,7 @@ int main(int argc, char **argv) {
 #endif
 
   
-    ConsoleChannel *ch =  new ConsoleChannel("debug", Level::Trace);
+    ConsoleChannel *ch =  new ConsoleChannel("debug", Level::Info);
     Logger::instance().add(ch);
       
 
