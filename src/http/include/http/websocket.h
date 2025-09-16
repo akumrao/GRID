@@ -294,6 +294,8 @@ namespace base {
             
         public:
             std::string key;
+            
+            void *user{nullptr};
         };
 
 

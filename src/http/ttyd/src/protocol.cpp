@@ -14,7 +14,12 @@
 
 #include "http/websocket.h"
 
-extern struct pss_tty *pss;
+#include "base/application.h"
+
+using namespace base;
+
+
+
 // initial message list
 static char initial_cmds[] = {SET_WINDOW_TITLE, SET_PREFERENCES};
 #define  LWS_PRE 6
@@ -77,8 +82,21 @@ int lws_close_reason(base::net::Listener* conn, uint16_t statusCode  )
     con->shutdown( statusCode, nullptr);
 }
 
-int lws_callback_on_writable(	base::net::Listener* con	)
+int lws_callback_on_writable(	base::net::Listener* conn)
 {
+    
+     struct pss_tty *pss;
+        
+    base::net::WebSocketConnection *con = (base::net::WebSocketConnection*)conn;
+    if(!con->user)
+    {
+        SError << "not possible state";
+        exit (0);
+    }else
+    {
+        pss = (pss_tty*)con->user;
+    }
+     
     if (!pss->initialized) {
         if (pss->initial_cmd_index == sizeof (initial_cmds)) {
             pss->initialized = true;
