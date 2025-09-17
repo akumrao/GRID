@@ -1,5 +1,5 @@
 #include <errno.h>
-#include <json.h>
+//#include <json.h>
 //#include <libwebsockets.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -130,15 +130,26 @@ int lws_callback_on_writable(	base::net::Listener* conn)
 
 
 
- json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows) {
-  json_tokener *tok = json_tokener_new();
-  json_object *obj = json_tokener_parse_ex(tok, buf, len);
-  struct json_object *o = NULL;
-
-  if (json_object_object_get_ex(obj, "columns", &o)) *cols = (uint16_t)json_object_get_int(o);
-  if (json_object_object_get_ex(obj, "rows", &o)) *rows = (uint16_t)json_object_get_int(o);
-
-  json_tokener_free(tok);
+ json parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows) {
+//  json_tokener *tok = json_tokener_new();
+//  json_object *obj = json_tokener_parse_ex(tok, buf, len);
+//  struct json_object *o = NULL;
+//
+//  if (json_object_object_get_ex(obj, "columns", &o)) *cols = (uint16_t)json_object_get_int(o);
+//  if (json_object_object_get_ex(obj, "rows", &o)) *rows = (uint16_t)json_object_get_int(o);
+//
+//  json_tokener_free(tok);
+     
+     
+       json obj = json::parse( std::string(buf, len));
+       
+       if (obj.find("columns") != obj.end()) 
+      *cols = obj["columns"].get<uint16_t>();
+     
+       if (obj.find("rows") != obj.end()) 
+       *rows = obj["rows"].get<uint16_t>();
+     
+     
   return obj;
 }
 

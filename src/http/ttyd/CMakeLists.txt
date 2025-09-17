@@ -28,27 +28,17 @@ file(GLOB src_HTTP
     ../../http_parser/*.cpp
 )
 
-include(FindPackageHandleStandardArgs)
 
 
-
-find_path(JSON-C_INCLUDE_DIR NAMES json.h PATH_SUFFIXES json-c)
-find_library(JSON-C_LIBRARY NAMES json-c)
-find_package_handle_standard_args(JSON-C REQUIRED_VARS JSON-C_LIBRARY JSON-C_INCLUDE_DIR)
-mark_as_advanced(JSON-C_INCLUDE_DIR JSON-C_LIBRARY)
-if(JSON-C_FOUND)
-    SET(JSON-C_INCLUDE_DIRS "${JSON-C_INCLUDE_DIR}")
-    SET(JSON-C_LIBRARIES "${JSON-C_LIBRARY}")
-endif()
 
 find_package(ZLIB REQUIRED)
 #find_package(Libwebsockets 3.2.0 REQUIRED)
 
-set(INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIRS} ${JSON-C_INCLUDE_DIRS} ../include/ ../../net/include/ ../../base/include ../../http_parser/
+set(INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIRS}  ../include/ ../../net/include/ ../../base/include ../../http_parser/ ../../json/include
  ../../net/uv_multiplex/include/ ../../libuv/include ../../libuv/src ${SSL_ROOT}/include
 )
 
-set(LINK_LIBS ${ZLIB_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES} ${JSON-C_LIBRARIES} )
+set(LINK_LIBS ${ZLIB_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES}  )
 
 set (CMAKE_REQUIRED_INCLUDES ${INCLUDE_DIRS})
 include(CheckSymbolExists)

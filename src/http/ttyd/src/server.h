@@ -1,12 +1,14 @@
-//#include <libwebsockets.h>
 #include <stdbool.h>
 #include <uv.h>
-
 #include "pty.h"
-
-#include <json.h>
-
 #include  "net/netInterface.h"
+
+#include <json/json.hpp>
+#include <uv.h>
+using json = nlohmann::json;
+
+
+
 
 // client message
 #define INPUT '0'
@@ -21,29 +23,25 @@
 #define SET_PREFERENCES '2'
 
 
-
 #define LWS_CLOSE_STATUS_NOSTATUS      0
 #define LWS_CLOSE_STATUS_UNEXPECTED_CONDITION   1011
 #define LWS_CLOSE_STATUS_POLICY_VIOLATION     1008
 
 
-
  #define LWS_WRITE_BINARY  1
 
-
-
 // url paths
-struct endpoints {
-  char *ws;
-  char *index;
-  char *token;
-  char *parent;
-};
+//struct endpoints {
+//  char *ws;
+//  char *index;
+//  char *token;
+//  char *parent;
+//};
 
 extern volatile bool force_exit;
 extern struct lws_context *context;
 extern struct server *server;
-extern struct endpoints endpoints;
+//extern struct endpoints endpoints;
 
 struct pss_http {
   char path[128];
@@ -79,7 +77,7 @@ typedef struct {
 
 struct server {
   int client_count;        // client count
-  char *prefs_json;        // client preferences
+  std::string prefs_json;        // client preferences
   char *credential;        // encoded basic auth credential
   char *auth_header;       // header name used for auth proxy
   char *index;             // custom index.html
@@ -102,7 +100,7 @@ struct server {
 };
 
 
-json_object *parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows);
+json parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows);
 
 int lws_close_reason( base::net::Listener* conn, uint16_t statusCode ) ;
 
