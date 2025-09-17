@@ -2,8 +2,7 @@
 
 #include <errno.h>
 #include <getopt.h>
-#include <json.h>
-//#include <libwebsockets.h>
+//#include <json.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -33,8 +32,8 @@ using namespace base::net;
 
 volatile bool force_exit = false;
 struct lws_context *context;
-struct server *server;
-struct endpoints endpoints = {"/ws", "/", "/token", ""};
+struct server *server{nullptr};
+//struct endpoints endpoints = {"/ws", "/", "/token", ""};
 
 
 
@@ -143,13 +142,13 @@ static void print_config() {
     lwsl_notice("  start command: %s\n", server->command);
     lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
     lwsl_notice("  terminal type: %s\n", server->terminal_type);
-    if (endpoints.parent[0]) {
-        lwsl_notice("endpoints:\n");
-        lwsl_notice("  base-path: %s\n", endpoints.parent);
-        lwsl_notice("  index    : %s\n", endpoints.index);
-        lwsl_notice("  token    : %s\n", endpoints.token);
-        lwsl_notice("  websocket: %s\n", endpoints.ws);
-    }
+//    if (endpoints.parent[0]) {
+//        lwsl_notice("endpoints:\n");
+//        lwsl_notice("  base-path: %s\n", endpoints.parent);
+//        lwsl_notice("  index    : %s\n", endpoints.index);
+//        lwsl_notice("  token    : %s\n", endpoints.token);
+//        lwsl_notice("  websocket: %s\n", endpoints.ws);
+//    }
     if (server->auth_header != NULL) lwsl_notice("  auth header: %s\n", server->auth_header);
     if (server->check_origin) lwsl_notice("  check origin: true\n");
     if (server->url_arg) lwsl_notice("  allow url arg: true\n");
@@ -214,7 +213,7 @@ static void server_free(struct server *ts) {
     if (ts->index != NULL) free(ts->index);
     if (ts->cwd != NULL) free(ts->cwd);
     free(ts->command);
-    free(ts->prefs_json);
+//    free(ts->prefs_json);
 
     char **p = ts->argv;
     for (; *p; p++) free(*p);
@@ -372,8 +371,7 @@ public:
             case RESIZE_TERMINAL:
             {
                 if (pss->process == NULL) break;
-                json_object_put(
-                        parse_window_size(pss->buffer + 1, pss->len - 1, &pss->process->columns, &pss->process->rows));
+                     parse_window_size(pss->buffer + 1, pss->len - 1, &pss->process->columns, &pss->process->rows);
                 pty_resize(pss->process);
                 break;
             }
@@ -392,23 +390,23 @@ public:
                 if (pss->process != NULL) break;
                 uint16_t columns = 0;
                 uint16_t rows = 0;
-                json_object *obj = parse_window_size(pss->buffer, pss->len, &columns, &rows);
-                if (server->credential != NULL) {
-                    struct json_object *o = NULL;
-                    if (json_object_object_get_ex(obj, "AuthToken", &o)) {
-                        const char *token = json_object_get_string(o);
-                        if (token != NULL && !strcmp(token, server->credential))
-                            pss->authenticated = true;
-                        else
-                            lwsl_warn("WS authentication failed with token: %s\n", token);
-                    }
-                    if (!pss->authenticated) {
-                        json_object_put(obj);
-                        lws_close_reason(connection, LWS_CLOSE_STATUS_POLICY_VIOLATION);
-                        return;
-                    }
-                }
-                json_object_put(obj);
+                json obj = parse_window_size(pss->buffer, pss->len, &columns, &rows);
+//                if (server->credential != NULL) {
+//                    struct json_object *o = NULL;
+//                    if (json_object_object_get_ex(obj, "AuthToken", &o)) {
+//                        const char *token = json_object_get_string(o);
+//                        if (token != NULL && !strcmp(token, server->credential))
+//                            pss->authenticated = true;
+//                        else
+//                            lwsl_warn("WS authentication failed with token: %s\n", token);
+//                    }
+//                    if (!pss->authenticated) {
+//                        json_object_put(obj);
+//                        lws_close_reason(connection, LWS_CLOSE_STATUS_POLICY_VIOLATION);
+//                        return;
+//                    }
+//                }
+               // json_object_put(obj);
                 if (!spawn_process(pss, columns, rows)) return;
                 break;
             }
@@ -589,7 +587,9 @@ int main(int argc, char **argv) {
     char key_path[1024] = "";
     char ca_path[1024] = "";
 
-    struct json_object *client_prefs = json_object_new_object();
+    json client_prefs = json::object();
+    
+       
 
 #ifdef _WIN32
     json_object_object_add(client_prefs, "isWindows", json_object_new_boolean(true));
@@ -698,16 +698,16 @@ int main(int argc, char **argv) {
                 break;
             case 'b':
             {
-                char path[128];
-                strncpy(path, optarg, 128);
-                size_t len = strlen(path);
-                while (len && path[len - 1] == '/') path[--len] = 0; // trim trailing /
-                if (!len) break;
-#define sc(f)                                  \
-  strncpy(path + len, endpoints.f, 128 - len); \
-  endpoints.f = strdup(path);
-                sc(ws) sc(index) sc(token) sc(parent)
-#undef sc
+//                char path[128];
+//                strncpy(path, optarg, 128);
+//                size_t len = strlen(path);
+//                while (len && path[len - 1] == '/') path[--len] = 0; // trim trailing /
+//                if (!len) break;
+//#define sc(f)                                  \
+//  strncpy(path + len, endpoints.f, 128 - len); \
+//  endpoints.f = strdup(path);
+//                sc(ws) sc(index) sc(token) sc(parent)
+//#undef sc
             }
             break;
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
@@ -757,31 +757,34 @@ int main(int argc, char **argv) {
                 break;
             case '?':
                 break;
-            case 't':
-                optind--;
-                for (; optind < start && *argv[optind] != '-'; optind++) {
-                    char *option = optarg;
-                    char *key = strsep(&option, "=");
-                    if (key == NULL) {
-                        fprintf(stderr, "ttyd: invalid client option: %s, format: key=value\n", optarg);
-                        return -1;
-                    }
-                    char *value = strsep(&option, "=");
-                    if (value == NULL) {
-                        fprintf(stderr, "ttyd: invalid client option: %s, format: key=value\n", optarg);
-                        return -1;
-                    }
-                    struct json_object *obj = json_tokener_parse(value);
-                    json_object_object_add(client_prefs, key, obj != NULL ? obj : json_object_new_string(value));
-                }
-                break;
+//            case 't':
+//                optind--;
+//                for (; optind < start && *argv[optind] != '-'; optind++) {
+//                    char *option = optarg;
+//                    char *key = strsep(&option, "=");
+//                    if (key == NULL) {
+//                        fprintf(stderr, "ttyd: invalid client option: %s, format: key=value\n", optarg);
+//                        return -1;
+//                    }
+//                    char *value = strsep(&option, "=");
+//                    if (value == NULL) {
+//                        fprintf(stderr, "ttyd: invalid client option: %s, format: key=value\n", optarg);
+//                        return -1;
+//                    }
+//                    json obj = json::parse(value);
+//                    json_object_object_add(client_prefs, key, obj != NULL ? obj : json_object_new_string(value));
+//                }
+//                break;
             default:
                 print_help();
                 return -1;
         }
     }
-    server->prefs_json = strdup(json_object_to_json_string(client_prefs));
-    json_object_put(client_prefs);
+    
+    std::string tmp = client_prefs.dump();
+            
+    server->prefs_json = tmp;
+   // json_object_put(client_prefs);
 
     if (server->command == NULL || strlen(server->command) == 0) {
         fprintf(stderr, "ttyd: missing start command\n");
