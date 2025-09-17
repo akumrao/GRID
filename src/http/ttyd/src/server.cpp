@@ -333,7 +333,7 @@ public:
             pss = (pss_tty*)con->user;
         }
         
-        
+        SInfo << "on_wsread" << pss;
 
         if (pss->buffer == NULL) {
             pss->buffer = (char *) xmalloc(len);
@@ -433,7 +433,6 @@ public:
         
         WebSocketConnection *con = (WebSocketConnection*) connection;
          
-        SInfo << "on_wsconnect";
 
         struct pss_tty *pss;
         
@@ -447,6 +446,7 @@ public:
             pss = (pss_tty*)con->user;
         }
         
+        SInfo << "on_wsclose" << pss;
         
         
         if (pss->con == NULL) return;
@@ -482,7 +482,7 @@ public:
 
     void on_wsconnect(Listener* connection) {
 
-        SInfo << "on_wsconnect";
+       
         
         WebSocketConnection *con = (WebSocketConnection*) connection;
        
@@ -491,12 +491,20 @@ public:
         if(!con->user)
         {
             pss = (struct pss_tty *) malloc(sizeof (struct pss_tty));
+            
+            memset(pss, 0, sizeof(struct pss_tty));
             con->user = pss;
+            
         }else
         {
             pss = (pss_tty*)con->user;
+	    SError << "not possible state";
+            exit (0);	
         }
         
+        
+        SInfo << "on_wsconnect" << pss;
+         
 
         pss->initialized = false;
         pss->authenticated = false;
