@@ -365,10 +365,11 @@ function createPeerConnection() {
     pc.ondatachannel = function(event) {  // receiver /PC2
     var channel = event.channel;
     channel.onopen = function(event) {
-    channel.send('ravind back!');
+       console.log("onopen ");
+       channel.send('ravind back!');
     }
-    channel.onmessage = function(event) {
-    console.log("ravind " + event.data);
+      channel.onmessage = function(event) {
+      console.log("ravind " + event.data);
     }
     }
 
