@@ -51,17 +51,7 @@ static lws_retry_bo_t retry = {
 
 // command line options
 static const struct option options[] = {
-    {"port", required_argument, NULL, 'p'},
-    {"interface", required_argument, NULL, 'i'},
-    {"socket-owner", required_argument, NULL, 'U'},
-    {"credential", required_argument, NULL, 'c'},
-    {"auth-header", required_argument, NULL, 'H'},
-    {"uid", required_argument, NULL, 'u'},
-    {"gid", required_argument, NULL, 'g'},
-    {"signal", required_argument, NULL, 's'},
-    {"cwd", required_argument, NULL, 'w'},
-    {"index", required_argument, NULL, 'I'},
-    {"base-path", required_argument, NULL, 'b'},
+  
 #if LWS_LIBRARY_VERSION_NUMBER >= 4000000
     {"ping-interval", required_argument, NULL, 'P'},
 #endif
