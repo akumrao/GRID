@@ -381,7 +381,7 @@ void IceTransport::LogCallback(juice_log_level_t level, const char *message) {
 		severity = plog::verbose; // libjuice debug as verbose
 		break;
 	}
-	PLOG(severity) << "juice: " << message;
+//	PLOG(severity) << "juice: " << message;
 }
 
 #else // USE_NICE == 1

@@ -264,16 +264,17 @@ function createPeerConnection() {
 
 
 
-    // channelSnd = pc.createDataChannel("chat"); // sende PC1 
+     channelSnd = pc.createDataChannel("chat"); // sende PC1 
     
-    // channelSnd.onopen = function(event)
-    // {
-    //     channelSnd.send('Hi you!');
-    // }
+     channelSnd.onopen = function(event)
+     {
+         channelSnd.send('Hi you!');
+     }
     
-    // channelSnd.onmessage = function(event)
-    // {
-    //     console.log("event.data " + event.data);
+     channelSnd.onmessage = function(event)
+     {
+         console.log("event.data " + event.data);
+     }
         
 
     //     var msg = JSON.parse(event.data);
@@ -362,16 +363,16 @@ function createPeerConnection() {
 
 
 
-    pc.ondatachannel = function(event) {  // receiver /PC2
-    var channel = event.channel;
-    channel.onopen = function(event) {
-       console.log("onopen ");
-       channel.send('ravind back!');
-    }
-      channel.onmessage = function(event) {
-      console.log("ravind " + event.data);
-    }
-    }
+    // pc.ondatachannel = function(event) {  // receiver /PC2
+    // var channel = event.channel;
+    // channel.onopen = function(event) {
+    //    console.log("onopen ");
+    //    channel.send('ravind back!');
+    // }
+    //   channel.onmessage = function(event) {
+    //   console.log("ravind " + event.data);
+    // }
+    // }
 
 
     pc.onicecandidate = handleIceCandidate;

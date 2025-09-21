@@ -20,6 +20,8 @@
 //#include "ArgParser.hpp"
 #include "socketio/socketioClient.h"
 
+#define localtesting 1
+
 using namespace rtc;
 using namespace std;
 using namespace std::chrono_literals;
@@ -235,12 +237,16 @@ void wsOnMessage(json const &m ) {
     
 }
 
-int main(int argc, char **argv) try {
+int main(int argc, char **argv) 
+
+
+//try 
+{
     bool enableDebugLogs = false;
     bool printHelp = false;
     //int c = 0;
     
-    Logger::instance().add(new ConsoleChannel("info", Level::Trace));
+    Logger::instance().add(new ConsoleChannel("info", Level::Info));
     
      Application app;
     
@@ -303,39 +309,8 @@ int main(int argc, char **argv) try {
     std::string id ="server";
 
    clients.emplace(id, createPeerConnection(config,  id));
-#endif
-    
+#else
 
-//    auto ws = make_shared<WebSocket>();
-//
-//    ws->onOpen([]() { cout << "WebSocket connected, signaling ready" << endl; });
-//
-//    ws->onClosed([]() { cout << "WebSocket closed" << endl; });
-//
-//    ws->onError([](const string &error) { cout << "WebSocket failed: " << error << endl; });
-//
-//    ws->onMessage([&](variant<binary, string> data) {
-//        if (!holds_alternative<string>(data))
-//            return;
-//
-//        json message = json::parse(get<string>(data));
-//        MainThread.dispatch([message, config, ws]() {
-//            wsOnMessage(message, config, ws);
-//        });
-//    });
-//
-//    const string url = "ws://" + ip_address + ":" + to_string(port) + "/" + localId;
-//    cout << "URL is " << url << endl;
-//    ws->open(url);
-//
-//    cout << "Waiting for signaling to be connected..." << endl;
-//    while (!ws->isOpen()) {
-//        if (ws->isClosed())
-//            return 1;
-//        this_thread::sleep_for(100ms);
-//    }
-    
-    
     std::string room = "65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0";
     std::string host = ip_address;
     int port = 8443;
@@ -426,7 +401,7 @@ int main(int argc, char **argv) try {
                 mysocket->emit("createorjoin" , room);
             }));
 
-    
+#endif
 
 //    while (true) {
 //        string id;
@@ -460,10 +435,12 @@ int main(int argc, char **argv) try {
     SInfo << "Cleaning up..." << endl;
     return 0;
 
-} catch (const std::exception &e) {
-    SError << "Error: " << e.what() << std::endl;
-    return -1;
-}
+} 
+
+//catch (const std::exception &e) {
+//    SError << "Error: " << e.what() << std::endl;
+//    return -1;
+//}
 
 shared_ptr<ClientTrackData> addVideo(const shared_ptr<PeerConnection> pc, const uint8_t payloadType, const uint32_t ssrc, const string cname, const string msid, const function<void (void)> onOpen) {
     auto video = Description::Video(cname);
@@ -508,6 +485,314 @@ shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const 
     auto trackData = make_shared<ClientTrackData>(track, srReporter);
     return trackData;
 }
+
+#if localtesting 
+// Create and setup a PeerConnection
+shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
+{
+    auto pc1 = make_shared<PeerConnection>(config);
+    auto pc2 = make_shared<PeerConnection>(config); 
+    {
+       
+        auto client = make_shared<Client>(pc1);
+
+        pc1->onStateChange([id](PeerConnection::State state) {
+            SInfo << "pc1 State: " << state << endl;
+            if (state == PeerConnection::State::Disconnected ||
+                state == PeerConnection::State::Failed ||
+                state == PeerConnection::State::Closed) {
+                // remove disconnected client
+                //MainThread.dispatch([id]() 
+                {
+                  //  clients.erase(id);
+
+                    int x = 1; //arvind
+                }
+                //);
+            }
+        });
+
+
+
+        pc1->onLocalDescription([ id, pc1, pc2](rtc::Description description) {
+    //		json message = {{"id", id},
+    //		                {"type", description.typeString()},
+    //		                {"description", std::string(description)}};
+
+            SInfo << "pc1 send sdp:"  << description.typeString() <<  " des "<<  std::string(description);
+
+         //  pc1->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
+            //sendSdp( std::string(description), description.typeString());
+            // Make the answer
+    //		if (auto ws = wws.lock())
+    //			ws->send(message.dump());
+            
+           // SInfo << "setRemoteDescription " << type ;
+            
+           // auto description = Description(sdp, type);
+            pc2->setRemoteDescription(description);
+            
+        });
+
+        pc1->onLocalCandidate([ id, pc2](rtc::Candidate candidate) {
+    //            json message = {{"id", id},
+    //                            {"type", "candidate"},
+    //                            {"candidate", std::string(candidate)},
+    //                            {"mid", candidate.mid()}};
+
+            //sendCandidate( candidate.mid(), 1,  std::string(candidate)  );
+    //            if (auto ws = wws.lock())
+    //                    ws->send(message.dump());
+            
+            SInfo << "pc1 send candidated:"  << candidate.mid() <<  " des "<<  std::string(candidate);
+            
+            pc2->addRemoteCandidate(candidate);
+            
+        });
+
+        pc1->onGatheringStateChange(
+            [](PeerConnection::GatheringState state) {
+            SInfo << "pc1 Gathering State: " << state << endl;
+            if (state == PeerConnection::GatheringState::Complete)
+            {
+              //  if(auto pc1 = wpc1.lock())
+                {
+    //                json desc;
+    //                desc["type"] =  description->typeString();
+    //                desc[sdp] = sdp;
+    //    
+
+                }
+            }
+        });
+    #if VIDEOMEDIA
+
+        client->video = addVideo(pc1, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
+           // MainThread.dispatch([wc]() 
+
+            SInfo << "addToStream";
+
+            {
+                if (auto c = wc.lock()) {
+                    addToStream(c, true);
+                }
+            }
+
+            //);
+            SInfo << "Video from " << id << " opened" << endl;
+        });
+
+        client->audio = addAudio(pc1, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
+
+
+            //MainThread.dispatch([wc]() 
+
+            {
+                if (auto c = wc.lock()) {
+                    addToStream(c, false);
+                }
+            }
+            //);
+            SInfo << "Audio from " << id << " opened" << endl;
+        });
+
+    #endif
+
+        auto dc = pc1->createDataChannel("ping-pong2");
+        dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
+            if (auto dc = wdc.lock()) {
+                 SInfo << "PC1 onOpen";
+                dc->send("Ping");
+            }
+        });
+
+        dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg) {
+            SInfo << "Pc1 Message from " << id << " received: " << msg << endl;
+            if (auto dc = wdc.lock()) {
+                dc->send("Ping");
+            }
+        });
+//        client->dataChannel = dc;
+
+
+
+        pc1->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
+    		SInfo << "DataChannel from " << id << " received with label \"" << dc->label() << "\""
+    		          << std::endl;
+    
+    		dc->onOpen([wdc = make_weak_ptr(dc)]() {
+    			if (auto dc = wdc.lock())
+                        {       SInfo << "pc1 open ";
+    				dc->send("Hello from  arvind");
+                        }
+    		});
+    
+    		dc->onClosed([id]() { std::cout << "DataChannel from " << id << " closed" << std::endl; });
+    
+    		dc->onMessage([id](auto data) {
+    			// data holds either std::string or rtc::binary
+    			if (std::holds_alternative<std::string>(data))
+    				std::cout << "Message from " << id << " received: " << std::get<std::string>(data)
+    				          << std::endl;
+    			else
+    				std::cout << "Binary message from " << id
+    				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+    		});
+    
+    		 client->dataChannel = dc;
+    	});
+
+        pc1->setLocalDescription();
+     //   return client;
+    }
+    
+     {
+       
+        auto client = make_shared<Client>(pc2);
+
+        pc2->onStateChange([id](PeerConnection::State state) {
+            SInfo << "pc2 State: " << state << endl;
+            if (state == PeerConnection::State::Disconnected ||
+                state == PeerConnection::State::Failed ||
+                state == PeerConnection::State::Closed) {
+                // remove disconnected client
+                //MainThread.dispatch([id]() 
+                {
+                  //  clients.erase(id);
+
+                    int x = 1; //arvind
+                }
+                //);
+            }
+        });
+
+
+
+        pc2->onLocalDescription([ id, pc1](rtc::Description description) {
+    //		json message = {{"id", id},
+    //		                {"type", description.typeString()},
+    //		                {"description", std::string(description)}};
+
+            SInfo << "pc2 send sdp:"  << description.typeString() <<  " des "<<  std::string(description);
+
+         //  pc2->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
+            //sendSdp( std::string(description), description.typeString());
+            // Make the answer
+    //		if (auto ws = wws.lock())
+    //			ws->send(message.dump());
+            
+             pc1->setRemoteDescription(description);
+        });
+
+        pc2->onLocalCandidate([ id, pc1](rtc::Candidate candidate) {
+    //            json message = {{"id", id},
+    //                            {"type", "candidate"},
+    //                            {"candidate", std::string(candidate)},
+    //                            {"mid", candidate.mid()}};
+          SInfo << "pc2 send candidated:"  << candidate.mid() <<  " des "<<  std::string(candidate);
+            //sendCandidate( candidate.mid(), 1,  std::string(candidate)  );
+    //            if (auto ws = wws.lock())
+    //                    ws->send(message.dump());
+            pc1->addRemoteCandidate(candidate);
+        });
+
+        pc2->onGatheringStateChange(
+            [](PeerConnection::GatheringState state) {
+            SInfo << "Gathering State: " << state << endl;
+            if (state == PeerConnection::GatheringState::Complete)
+            {
+              //  if(auto pc2 = wpc2.lock())
+                {
+    //                json desc;
+    //                desc["type"] =  description->typeString();
+    //                desc[sdp] = sdp;
+    //    
+
+                }
+            }
+        });
+    #if VIDEOMEDIA
+
+        client->video = addVideo(pc2, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
+           // MainThread.dispatch([wc]() 
+
+            SInfo << "addToStream";
+
+            {
+                if (auto c = wc.lock()) {
+                    addToStream(c, true);
+                }
+            }
+
+            //);
+            SInfo << "Video from " << id << " opened" << endl;
+        });
+
+        client->audio = addAudio(pc2, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
+
+
+            //MainThread.dispatch([wc]() 
+
+            {
+                if (auto c = wc.lock()) {
+                    addToStream(c, false);
+                }
+            }
+            //);
+            SInfo << "Audio from " << id << " opened" << endl;
+        });
+
+    #endif
+
+        auto dc = pc2->createDataChannel("ping-pong");
+        dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
+            if (auto dc = wdc.lock()) {
+                SInfo << "pc2 onOpen";
+                dc->send("Ping");
+            }
+        });
+
+        dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg) {
+            SInfo << "Message from " << id << "pc2  received: " << msg << endl;
+            if (auto dc = wdc.lock()) {
+                dc->send("Ping");
+            }
+        });
+        client->dataChannel = dc;
+
+
+
+        pc2->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
+    		SInfo << "DataChannel from " << id << " received with label \"" << dc->label() << "\""
+    		          << std::endl;
+    
+    		dc->onOpen([wdc = make_weak_ptr(dc)]() {
+    			if (auto dc = wdc.lock())
+    				dc->send("Hello from  arvind");
+    		});
+    
+    		dc->onClosed([id]() { std::cout << "DataChannel from " << id << " closed" << std::endl; });
+    
+    		dc->onMessage([id](auto data) {
+    			// data holds either std::string or rtc::binary
+    			if (std::holds_alternative<std::string>(data))
+    				SInfo << "Message from " << id << " received: " << std::get<std::string>(data)
+    				          << std::endl;
+    			else
+    				SInfo << "Binary message from " << id
+    				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+    		});
+    
+    		 client->dataChannel = dc;
+    	});
+
+        pc2->setLocalDescription();
+        return client;
+    }
+};
+
+#else
+
 
 // Create and setup a PeerConnection
 shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
@@ -560,7 +845,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 
     pc->onGatheringStateChange(
         [](PeerConnection::GatheringState state) {
-        SInfo << "Gathering State: " << state << endl;
+        SInfo << "Gathering State: " << state ;
         if (state == PeerConnection::GatheringState::Complete)
         {
           //  if(auto pc = wpc.lock())
@@ -609,13 +894,16 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
     auto dc = pc->createDataChannel("ping-pong");
     dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
         if (auto dc = wdc.lock()) {
+            SInfo << "onOpen: "  ;
             dc->send("Ping");
         }
     });
 
     dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg) {
-        cout << "Message from " << id << " received: " << msg << endl;
+        SInfo << "Message from " << id << " received: " << msg << endl;
         if (auto dc = wdc.lock()) {
+            
+            SInfo << "onOpen: " << msg  ;
             dc->send("Ping");
         }
     });
@@ -623,33 +911,37 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
     
     
     
-//    pc->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
-//		std::cout << "DataChannel from " << id << " received with label \"" << dc->label() << "\""
-//		          << std::endl;
-//
-//		dc->onOpen([wdc = make_weak_ptr(dc)]() {
-//			if (auto dc = wdc.lock())
-//				dc->send("Hello from  arvind");
-//		});
-//
-//		dc->onClosed([id]() { std::cout << "DataChannel from " << id << " closed" << std::endl; });
-//
-//		dc->onMessage([id](auto data) {
-//			// data holds either std::string or rtc::binary
-//			if (std::holds_alternative<std::string>(data))
-//				std::cout << "Message from " << id << " received: " << std::get<std::string>(data)
-//				          << std::endl;
-//			else
-//				std::cout << "Binary message from " << id
-//				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
-//		});
-//
-//		 client->dataChannel = dc;
-//	});
+    pc->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
+		SInfo << "DataChannel from " << id << " received with label \"" << dc->label() ;
+
+                
+                dc->onOpen([wdc = make_weak_ptr(dc)]() {
+			if (auto dc = wdc.lock()) {
+				SInfo << "DataChannel 2: Open" << endl;
+				dc->send("Hello from 2");
+			}
+		});
+                
+
+		dc->onClosed([id]() { std::cout << "DataChannel from " << id << " closed" << std::endl; });
+
+		dc->onMessage([id](auto data) {
+			// data holds either std::string or rtc::binary
+			if (std::holds_alternative<std::string>(data))
+				SInfo << "Message from " << id << " received: " << std::get<std::string>(data)
+				          << std::endl;
+			else
+				SInfo << "Binary message from " << id
+				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+		});
+
+		 client->dataChannel = dc;
+	});
 
     pc->setLocalDescription();
     return client;
 };
+#endif
 
 /// Create stream
 shared_ptr<Stream> createStream(const string h264Samples, const unsigned fps, const string opusSamples) {
