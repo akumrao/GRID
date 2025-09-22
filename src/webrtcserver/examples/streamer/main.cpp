@@ -598,18 +598,18 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 
     #endif
 
-        auto dc = pc1->createDataChannel("ping-pong2");
+        auto dc = pc1->createDataChannel("ping-pong-pc1");
         dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
             if (auto dc = wdc.lock()) {
-                 SInfo << "PC1 onOpen";
-                dc->send("Ping");
+                 SInfo << "ping-pong-pc1 onOpen";
+                dc->send("ping-pong-pc1 send on open Ping");
             }
         });
 
         dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg) {
             SInfo << "Pc1 Message from " << id << " received: " << msg << endl;
             if (auto dc = wdc.lock()) {
-                dc->send("Ping");
+                dc->send("ping-pong-pc1 send on message Ping");
             }
         });
 //        client->dataChannel = dc;
@@ -617,25 +617,25 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 
 
         pc1->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
-    		SInfo << "DataChannel from " << id << " received with label \"" << dc->label() << "\""
+    		SInfo << "pc1 onDataChannel from " << id << " received with label \"" << dc->label() << "\""
     		          << std::endl;
     
     		dc->onOpen([wdc = make_weak_ptr(dc)]() {
     			if (auto dc = wdc.lock())
                         {       SInfo << "pc1 open ";
-    				dc->send("Hello from  arvind");
+    				dc->send("Hello from  pc1");
                         }
     		});
     
-    		dc->onClosed([id]() { std::cout << "DataChannel from " << id << " closed" << std::endl; });
+    		dc->onClosed([id]() { SInfo << "pc1 DataChannel from " << id << " closed" << std::endl; });
     
     		dc->onMessage([id](auto data) {
     			// data holds either std::string or rtc::binary
     			if (std::holds_alternative<std::string>(data))
-    				std::cout << "Message from " << id << " received: " << std::get<std::string>(data)
+    				SInfo << "pc1 Message from " << id << " received: " << std::get<std::string>(data)
     				          << std::endl;
     			else
-    				std::cout << "Binary message from " << id
+    				SInfo << "pc1  Binary message from " << id
     				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
     		});
     
@@ -744,18 +744,18 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 
     #endif
 
-        auto dc = pc2->createDataChannel("ping-pong");
+        auto dc = pc2->createDataChannel("ping-pong-pc2");
         dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
             if (auto dc = wdc.lock()) {
                 SInfo << "pc2 onOpen";
-                dc->send("Ping");
+                dc->send("ping-pong pc2 on open send");
             }
         });
 
         dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg) {
             SInfo << "Message from " << id << "pc2  received: " << msg << endl;
             if (auto dc = wdc.lock()) {
-                dc->send("Ping");
+                dc->send("ping-pong pc2 on message send");
             }
         });
         client->dataChannel = dc;
@@ -763,12 +763,12 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 
 
         pc2->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
-    		SInfo << "DataChannel from " << id << " received with label \"" << dc->label() << "\""
+    		SInfo << "PC2 onDataChannel from " << id << " received with label \"" << dc->label() << "\""
     		          << std::endl;
     
     		dc->onOpen([wdc = make_weak_ptr(dc)]() {
     			if (auto dc = wdc.lock())
-    				dc->send("Hello from  arvind");
+    				dc->send("PC2 Hello from  arvind");
     		});
     
     		dc->onClosed([id]() { std::cout << "DataChannel from " << id << " closed" << std::endl; });
@@ -776,10 +776,10 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
     		dc->onMessage([id](auto data) {
     			// data holds either std::string or rtc::binary
     			if (std::holds_alternative<std::string>(data))
-    				SInfo << "Message from " << id << " received: " << std::get<std::string>(data)
+    				SInfo << "PC2 Message from " << id << " received: " << std::get<std::string>(data)
     				          << std::endl;
     			else
-    				SInfo << "Binary message from " << id
+    				SInfo << "PC2 Binary message from " << id
     				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
     		});
     
