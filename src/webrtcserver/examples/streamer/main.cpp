@@ -612,7 +612,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
                 dc->send("ping-pong-pc1 send on message Ping");
             }
         });
-//        client->dataChannel = dc;
+        client->dataChannel1 = dc;
 
 
 
@@ -627,9 +627,12 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
                         }
     		});
     
-    		dc->onClosed([id]() { SInfo << "pc1 DataChannel from " << id << " closed" << std::endl; });
+    		dc->onClosed([id]() {
+                    SInfo << "pc1 DataChannel from " << id << " closed" << std::endl; }
+                
+                );
     
-    		dc->onMessage([id](auto data) {
+    		dc->onMessage([id,dc](auto data) {
     			// data holds either std::string or rtc::binary
     			if (std::holds_alternative<std::string>(data))
     				SInfo << "pc1 Message from " << id << " received: " << std::get<std::string>(data)
@@ -637,9 +640,14 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
     			else
     				SInfo << "pc1  Binary message from " << id
     				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+                        
+                        
+                        sleep(500);
+                        dc->send("PC2 Hello from  arvind");
+                        
     		});
     
-    		 client->dataChannel = dc;
+    		 client->dataChannel11 = dc;
     	});
 
         pc1->setLocalDescription();
@@ -758,32 +766,40 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
                 dc->send("ping-pong pc2 on message send");
             }
         });
-        client->dataChannel = dc;
+        client->dataChannel2 = dc;
 
 
 
         pc2->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
-    		SInfo << "PC2 onDataChannel from " << id << " received with label \"" << dc->label() << "\""
-    		          << std::endl;
+    		SInfo << "PC2 onDataChannel from " << id << " received with label \"" << dc->label() ;
+    		     
     
     		dc->onOpen([wdc = make_weak_ptr(dc)]() {
     			if (auto dc = wdc.lock())
     				dc->send("PC2 Hello from  arvind");
     		});
     
-    		dc->onClosed([id]() { std::cout << "DataChannel from " << id << " closed" << std::endl; });
+    		dc->onClosed([id]() {
+                    SInfo << "DataChannel from " << id << " closed" << std::endl;
+                }
+                
+                );
     
-    		dc->onMessage([id](auto data) {
+    		dc->onMessage([id,dc](auto data) {
     			// data holds either std::string or rtc::binary
     			if (std::holds_alternative<std::string>(data))
-    				SInfo << "PC2 Message from " << id << " received: " << std::get<std::string>(data)
+    				SInfo << "onDataChannel:onMessage  PC2 Message from " << id << " received: " << std::get<std::string>(data)
     				          << std::endl;
     			else
-    				SInfo << "PC2 Binary message from " << id
+    				SInfo << "onDataChannel:onMessage PC2 Binary message from " << id
     				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+                        
+                        sleep(500);
+                        dc->send("PC2 Hello from  arvind");
+                        
     		});
     
-    		 client->dataChannel = dc;
+    		 client->dataChannel22 = dc;
     	});
 
         pc2->setLocalDescription();
