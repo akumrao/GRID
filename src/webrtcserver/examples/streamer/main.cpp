@@ -643,7 +643,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
                         
                         
                         sleep(500);
-                        dc->send("PC2 Hello from  arvind");
+                        dc->send("PC1 to PC2");
                         
     		});
     
@@ -795,7 +795,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
     				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
                         
                         sleep(500);
-                        dc->send("PC2 Hello from  arvind");
+                        dc->send("PC2 tp PC1");
                         
     		});
     
