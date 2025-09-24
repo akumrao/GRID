@@ -35,7 +35,7 @@ namespace base {
 //            }
             
             
-            virtual void cbDnsResolve(addrinfo* res) {
+            virtual void cbDnsResolve(addrinfo* ) {
                // LTrace("GetAddrInfoReq::cbDnsResolve");
             }
 
@@ -53,7 +53,7 @@ namespace base {
         
         struct GetNameInfoReq {
 
-            virtual void cbNameResolve(  const char* hostname, const char* service,  void* data) {
+            virtual void cbNameResolve(  const char* , const char* ,  void* ) {
                // LTrace("GetAddrInfoReq::cbDnsResolve");
             }
 

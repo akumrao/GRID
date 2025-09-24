@@ -22,15 +22,15 @@ namespace base
             {
             public:
                 Listener(){}
-                virtual void on_read( Listener* conn, const char* data, size_t len){}
-                virtual void on_connect(Listener* conn) { }
-                virtual void on_close(Listener* conn){}
+                virtual void on_read( Listener* , const char* , size_t ){}
+                virtual void on_connect(Listener* ) { }
+                virtual void on_close(Listener* ){}
                 
-                virtual void on_wsread( Listener* conn, const char* data, size_t len){}
-                virtual void on_wsconnect(Listener* conn) { }
-                virtual void on_wsclose(Listener* conn){}
+                virtual void on_wsread( Listener* , const char* , size_t ){}
+                virtual void on_wsconnect(Listener* ) { }
+                virtual void on_wsclose(Listener* ){}
                 
-                virtual void send(const char* data, size_t len){}
+                virtual void send(const char* , size_t ){}
 
                 virtual const std::string& GetLocalIp() const{ return ip_port;}
                 virtual const std::string& GetPeerIp() const{return ip_port;}
@@ -39,7 +39,7 @@ namespace base
                 virtual uint16_t GetPeerPort() const {return 0;}
                 
                       /////////////////////////////////////////
-                virtual void on_header(Listener* conn) { }
+                virtual void on_header(Listener* ) { }
         
                 std::string ip_port="please overide it";
 

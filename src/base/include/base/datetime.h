@@ -1665,9 +1665,9 @@ inline std::string DateTimeFormatter::format(const Timestamp& timestamp,
 }
 
 
-inline std::string DateTimeFormatter::format(const DateTime& dateTime,
-                                             const std::string& fmt,
-                                             int timeZoneDifferential)
+inline std::string DateTimeFormatter::format(const DateTime& ,
+                                             const std::string& ,
+                                             int )
 {
     
     abort();
@@ -1695,10 +1695,10 @@ inline std::string DateTimeFormatter::format(const Timespan& timespan,
 }
 
 
-inline void DateTimeFormatter::append(std::string& str,
+inline void DateTimeFormatter::append(std::string& ,
                                       const Timestamp& timestamp,
-                                      const std::string& fmt,
-                                      int timeZoneDifferential)
+                                      const std::string& ,
+                                      int )
 {
     DateTime dateTime(timestamp);
     //append(str, dateTime, fmt, timeZoneDifferential); // arvind

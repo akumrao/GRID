@@ -78,7 +78,7 @@ namespace base {
             /// Factory method for instantiating the ServerResponder
             /// instance using the given ServerConnection.
 
-            virtual ServerResponder* createResponder(HttpBase* connection) {
+            virtual ServerResponder* createResponder(HttpBase* ) {
                 return nullptr;
             }
         };

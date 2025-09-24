@@ -1,7 +1,7 @@
 
 
-#ifndef RTC_DESCRIPTION_H
-#define RTC_DESCRIPTION_H
+#ifndef RTC_DESCRIPTION_HPP
+#define RTC_DESCRIPTION_HPP
 
 #include "candidate.hpp"
 #include "common.hpp"

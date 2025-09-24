@@ -99,7 +99,7 @@ namespace base {
             /* Pure virtual methods that must be implemented by the subclass. */
         protected:
             virtual void UserOnUdpDatagramReceived(
-                    const char* data, size_t len,  struct sockaddr* addr){}
+                    const char* , size_t ,  struct sockaddr* ){}
             
          void startRead();
  

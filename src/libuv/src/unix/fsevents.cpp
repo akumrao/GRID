@@ -36,7 +36,7 @@
 //}
 
 
-void uv__fsevents_loop_delete(uv_loop_t* loop) {
+void uv__fsevents_loop_delete(uv_loop_t* ) {
 }
 
 #else /* TARGET_OS_IPHONE */
