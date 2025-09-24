@@ -12,7 +12,12 @@
 #include "transport.hpp"
 
 #if !USE_NICE
-#include <juice/juice.h>
+//#include <juice/juice.h>
+#include <Agent.h>
+#include "configuration.h"
+#include "peerconnection.h"
+#include "tls.h"
+#include "json/json.hpp" 
 #else
 #include <nice/agent.h>
 #endif

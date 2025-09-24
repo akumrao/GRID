@@ -9,10 +9,10 @@ include(GNUInstallDirs)
 # Options
 option(USE_GNUTLS "Use GnuTLS instead of OpenSSL" OFF)
 option(USE_MBEDTLS "Use Mbed TLS instead of OpenSSL" OFF)
-option(USE_NICE "Use libnice instead of libjuice" OFF)
+#ption(USE_NICE "Use libnice instead of libjuice" OFF)
 option(PREFER_SYSTEM_LIB "Prefer system libraries over deps folder" OFF)
 option(USE_SYSTEM_SRTP "Use system libSRTP" ${PREFER_SYSTEM_LIB})
-option(USE_SYSTEM_JUICE "Use system libjuice" ${PREFER_SYSTEM_LIB})
+#option(USE_SYSTEM_JUICE "Use system libjuice" ${PREFER_SYSTEM_LIB})
 #option(USE_SYSTEM_USRSCTP "Use system libusrsctp" ${PREFER_SYSTEM_LIB})
 option(NO_WEBSOCKET "Disable WebSocket support" OFF)
 option(NO_MEDIA "Disable media transport support" OFF)
@@ -35,9 +35,9 @@ if (USE_GNUTLS AND USE_MBEDTLS)
 endif()
 
 if(USE_GNUTLS)
-	option(USE_NETTLE "Use Nettle in libjuice" ON)
-else()
-	option(USE_NETTLE "Use Nettle in libjuice" OFF)
+#	option(USE_NETTLE "Use Nettle in libjuice" ON)
+#else()
+#	option(USE_NETTLE "Use Nettle in libjuice" OFF)
 
 	if(NOT USE_SYSTEM_SRTP)
 		if (USE_MBEDTLS)
@@ -269,7 +269,8 @@ endif()
 
 
 include_directories(
-    ${WEBRTC_REPO}/deps/libjuice/include
+    #${WEBRTC_REPO}/deps/libjuice/include
+    ${WEBRTC_REPO}/stun/include
     ${WEBRTC_REPO}/deps/libsrtp/config
     ${WEBRTC_REPO}/deps/libsrtp/crypto/include
     ${WEBRTC_REPO}/deps/libsrtp/include
@@ -429,19 +430,19 @@ if (USE_NICE)
 else()
 	target_compile_definitions(datachannel PRIVATE USE_NICE=0)
 	target_compile_definitions(datachannel-static PRIVATE USE_NICE=0)
-	if(USE_SYSTEM_JUICE)
-		find_package(LibJuice REQUIRED)
-		target_compile_definitions(datachannel PRIVATE RTC_SYSTEM_JUICE=1)
-		target_compile_definitions(datachannel-static PRIVATE RTC_SYSTEM_JUICE=1)
-		#target_link_libraries(datachannel PRIVATE LibJuice::LibJuice)
-		target_link_libraries(datachannel-static PRIVATE LibJuice::LibJuice)
-	else()
-		add_subdirectory(deps/libjuice EXCLUDE_FROM_ALL)
-		target_compile_definitions(datachannel PRIVATE RTC_SYSTEM_JUICE=0)
-		target_compile_definitions(datachannel-static PRIVATE RTC_SYSTEM_JUICE=0)
-		#target_link_libraries(datachannel PRIVATE LibJuice::LibJuiceStatic)
-		target_link_libraries(datachannel-static PRIVATE LibJuice::LibJuiceStatic)
-	endif()
+#if(USE_SYSTEM_JUICE)
+#		find_package(LibJuice REQUIRED)
+#		target_compile_definitions(datachannel PRIVATE RTC_SYSTEM_JUICE=1)
+#		target_compile_definitions(datachannel-static PRIVATE RTC_SYSTEM_JUICE=1)
+#		#target_link_libraries(datachannel PRIVATE LibJuice::LibJuice)
+#		target_link_libraries(datachannel-static PRIVATE LibJuice::LibJuice)
+#	else()
+#		add_subdirectory(deps/libjuice EXCLUDE_FROM_ALL)
+#		target_compile_definitions(datachannel PRIVATE RTC_SYSTEM_JUICE=0)
+#		target_compile_definitions(datachannel-static PRIVATE RTC_SYSTEM_JUICE=0)
+#		#target_link_libraries(datachannel PRIVATE LibJuice::LibJuiceStatic)
+#		target_link_libraries(datachannel-static PRIVATE LibJuice::LibJuiceStatic)
+#endif()
 endif()
 
 if(CAPI_STDCALL)
