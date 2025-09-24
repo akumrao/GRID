@@ -25,7 +25,7 @@ namespace base {
                 }
                 
                 char addr[40] = {'\0'};
-                int port =0; 
+//                int port =0; 
 
                 struct addrinfo* start =  res;
                 
@@ -63,7 +63,7 @@ namespace base {
 
             }
 
-            void GetAddrInfoReq::resolve(const std::string& host, int port, uv_loop_t * loop, void* ptr) {
+            void GetAddrInfoReq::resolve(const std::string& host, int port, uv_loop_t * loop, void* ) {
 
                 req = new uv_getaddrinfo_t; 
                 //this->clsPtr =ptr;

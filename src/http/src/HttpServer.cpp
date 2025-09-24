@@ -62,7 +62,7 @@ namespace base {
             
         }
 
-        bool HttpServerBase::UserOnNewTcpConnection(TcpConnectionBase* connection) {
+        bool HttpServerBase::UserOnNewTcpConnection(TcpConnectionBase* ) {
 
 
             if (GetNumConnections() >= MaxTcpConnectionsPerServer) {
@@ -74,7 +74,7 @@ namespace base {
             return true;
         }
 
-        void HttpServerBase::UserOnTcpConnectionClosed(TcpConnectionBase* connection) {
+        void HttpServerBase::UserOnTcpConnectionClosed(TcpConnectionBase* ) {
 
             //override this function
 
@@ -86,7 +86,7 @@ namespace base {
 
         HttpServer::HttpServer( std::string ip, int port, ServerConnectionFactory *factory, bool multithreaded ) 
         : HttpServerBase( this,  ip, port, multithreaded )
-        ,ip(ip), port(port), _factory(factory)
+        ,_factory(factory), ip(ip), port(port)
         {
  
         }
@@ -125,10 +125,10 @@ namespace base {
        
 
 
-        void HttpServer::on_read(Listener* connection, const char* BODY, size_t len) {
+        void HttpServer::on_read(Listener* , const char* BODY, size_t ) {
             STrace  << BODY << std::endl << std::flush;
             
-             HttpConnection *con = (HttpConnection*)connection;
+            // HttpConnection *con = (HttpConnection*)connection;
              // WebSocketConnection *con = (WebSocketConnection*)connection;
     
              //if(con->wsAdapter)

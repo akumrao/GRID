@@ -65,7 +65,7 @@ namespace base {
             /// for websocket connect
             
 
-            virtual void setReadStream(std::ostream* os) {
+            virtual void setReadStream(std::ostream* ) {
             }
             
             virtual std::stringstream* readStream()
@@ -75,10 +75,10 @@ namespace base {
 		// Returns the cast read stream pointer or nullptr.
 	
             
-            virtual void send(const char* data, size_t len, bool binary=false){}
+            virtual void send(const char* , size_t , bool binary=false){}
             virtual void send(){}
-            virtual void send(Request& req){}
-            virtual void send(const std::string &str){}
+            virtual void send(Request& ){}
+            virtual void send(const std::string &){}
             
 
             void Close() {}

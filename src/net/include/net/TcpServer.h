@@ -90,6 +90,7 @@ namespace base
                 #ifdef base_WIN
                     return uv_tcp_simultaneous_accepts(uvHandle, enable ? 1 : 0) == 0;
                 #else
+                    (void) enable;
                     return false;
                 #endif
             }

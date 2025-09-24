@@ -371,8 +371,8 @@ public:
     virtual uint64_t length() const;
 
 protected:
-    std::string _data;
     int curlen;
+    std::string _data;
 };
 
 

@@ -39,7 +39,7 @@ namespace stun {
   class Username : public Attribute {
   public:
     Username():Attribute(STUN_ATTR_USERNAME){ }
-    Username(std::string name):value(name),Attribute(STUN_ATTR_USERNAME) { }
+    Username(std::string name):Attribute(STUN_ATTR_USERNAME), value(name) { }
     StringValue value;
   };
 
@@ -48,7 +48,7 @@ namespace stun {
   class Software : public Attribute {
   public:
     Software():Attribute(STUN_ATTR_SOFTWARE) {}
-    Software(std::string name):value(name),Attribute(STUN_ATTR_SOFTWARE) {}
+    Software(std::string name):Attribute(STUN_ATTR_SOFTWARE),value(name) {}
     StringValue value;
   };
 
@@ -84,7 +84,7 @@ namespace stun {
   public:
     IceControlled();
     
-    IceControlled(uint64_t tie_breaker):tie_breaker(tie_breaker),Attribute(STUN_ATTR_ICE_CONTROLLED)
+    IceControlled(uint64_t tie_breaker):Attribute(STUN_ATTR_ICE_CONTROLLED),tie_breaker(tie_breaker)
     {
         
     }
@@ -97,7 +97,7 @@ namespace stun {
   class IceControlling : public Attribute {
   public:
     IceControlling();
-    IceControlling(uint64_t tie_breaker):tie_breaker(tie_breaker),Attribute(STUN_ATTR_ICE_CONTROLLING)
+    IceControlling(uint64_t tie_breaker):Attribute(STUN_ATTR_ICE_CONTROLLING), tie_breaker(tie_breaker)
     {
         
     }

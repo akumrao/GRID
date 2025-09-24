@@ -143,13 +143,13 @@ int uv_getaddrinfo(uv_loop_t* loop,
                    const char* hostname,
                    const char* service,
                    const struct addrinfo* hints) {
-  char hostname_ascii[256];
+//  char hostname_ascii[256];
   size_t hostname_len;
   size_t service_len;
   size_t hints_len;
   size_t len;
   char* buf;
-  long rc;
+//  long rc;
 
   if (req == NULL || (hostname == NULL && service == NULL))
     return UV_EINVAL;

@@ -79,7 +79,7 @@ namespace base {
         ClientConnecton::~ClientConnecton() {
         }
 
-        void ClientConnecton::on_payload(const char* data, size_t len) {
+        void ClientConnecton::on_payload(const char* , size_t ) {
 
             LTrace("ClientConnecton::on_payload")
         }
