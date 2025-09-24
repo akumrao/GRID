@@ -294,6 +294,7 @@ struct LogStream
     /// This method flushes the log message and queues it for write.
     LogStream& operator<<(std::ostream& (*f)(std::ostream&))
     {
+        (void) *f;
         flush();
         return *this;
     }
