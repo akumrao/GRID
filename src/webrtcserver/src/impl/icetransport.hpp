@@ -15,7 +15,7 @@
 //#include <juice/juice.h>
 #include <Agent.h>
 #include "configuration.h"
-#include "peerconnection.h"
+#include "peerconnection.hpp"
 #include "tls.h"
 #include "json/json.hpp" 
 #else
