@@ -15,9 +15,9 @@
 #include <functional>
 #include <memory>
 
-#include "configuration.h"
+#include "configuration.hpp"
 #include "net/dns.h"
-#include "candidate.h"
+#include "candidate.hpp"
 
 
 

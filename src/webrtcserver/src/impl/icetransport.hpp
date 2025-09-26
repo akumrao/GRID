@@ -14,7 +14,7 @@
 #if !USE_NICE
 //#include <juice/juice.h>
 #include <Agent.h>
-#include "configuration.h"
+#include "configuration.hpp"
 #include "peerconnection.hpp"
 #include "tls.h"
 #include "json/json.hpp" 
@@ -79,7 +79,7 @@ private:
 	candidate_callback mCandidateCallback;
 	gathering_state_callback mGatheringStateChangeCallback;
 
-#if !USE_NICE
+#if USE_libjuice
 	unique_ptr<juice_agent_t, void (*)(juice_agent_t *)> mAgent;
 	int mTurnServersAdded = 0;
 
@@ -89,26 +89,7 @@ private:
 	static void RecvCallback(juice_agent_t *agent, const char *data, size_t size, void *user_ptr);
 	static void LogCallback(juice_log_level_t level, const char *message);
 #else
-	static unique_ptr<GMainLoop, void (*)(GMainLoop *)> MainLoop;
-	static std::thread MainLoopThread;
-
-	unique_ptr<NiceAgent, void (*)(NiceAgent *)> mNiceAgent;
-	uint32_t mStreamId = 0;
-	guint mTimeoutId = 0;
-	std::mutex mOutgoingMutex;
-	unsigned int mOutgoingDscp;
-
-	static string AddressToString(const NiceAddress &addr);
-
-	static void CandidateCallback(NiceAgent *agent, NiceCandidate *candidate, gpointer userData);
-	static void GatheringDoneCallback(NiceAgent *agent, guint streamId, gpointer userData);
-	static void StateChangeCallback(NiceAgent *agent, guint streamId, guint componentId,
-	                                guint state, gpointer userData);
-	static void RecvCallback(NiceAgent *agent, guint stream_id, guint component_id, guint len,
-	                         gchar *buf, gpointer userData);
-	static gboolean TimeoutCallback(gpointer userData);
-	static void LogCallback(const gchar *log_domain, GLogLevelFlags log_level, const gchar *message,
-	                        gpointer user_data);
+	
 #endif
 };
 

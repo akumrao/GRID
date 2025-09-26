@@ -4,8 +4,10 @@
 #define RTC_CANDIDATE_H
 
 #include "common.hpp"
-
+#include <Types.h>
+#include "net/IP.h"
 #include <string>
+using namespace base::net;
 
 namespace rtc {
 
@@ -44,11 +46,13 @@ public:
 
 private:
 	void parse(string candidate);
-
+public:
 	string mFoundation;
 	uint32_t mComponent, mPriority;
 	string mTypeString, mTransportString;
+
 	Type mType;
+        
 	TransportType mTransportType;
 	string mNode, mService;
 	string mTail;
@@ -59,6 +63,8 @@ private:
 	Family mFamily;
 	string mAddress;
 	uint16_t mPort;
+public:
+        mutable addr_record_t resolved{0};
 };
 
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, const Candidate &candidate);

@@ -15,7 +15,7 @@ namespace rtc
 
 testUdpServer::testUdpServer(std::string IP, int port,   Agent *agent ) :IP(IP), port(port), agent(agent) {
     
-    int x = 0;
+//    int x = 0;
 
 }
 
