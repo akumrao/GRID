@@ -3,9 +3,9 @@
 #ifndef RTC_SDP_COMMON_H
 #define RTC_SDP_COMMON_H
 
-#include "candidate.h"
+#include "candidate.hpp"
 #include "common.h"
-#include "description.h"
+//#include "description.h"
 //#include "peerconnection.h"
 #include <Connection.h>
 

@@ -5,7 +5,7 @@
 
 #include "candidate.hpp"
 #include "common.hpp"
-
+  #include <optional>
 #include <iostream>
 #include <map>
 #include <vector>
@@ -88,6 +88,7 @@ public:
 	std::vector<Candidate> candidates() const;
 	std::vector<Candidate> extractCandidates();
 	bool hasCandidate(const Candidate &candidate) const;
+	Candidate* ice_find_candidate_from_addr(const addr_record_t *record,  Candidate::Type type);
 	void addCandidate(Candidate candidate);
 	void addCandidates(std::vector<Candidate> candidates);
 	void endCandidates();

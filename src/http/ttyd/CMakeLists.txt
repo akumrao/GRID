@@ -12,7 +12,7 @@ find_package(Threads REQUIRED)
 
 set(SOURCE_FILES src/utils.cpp src/pty.cpp src/protocol.cpp src/http.cpp src/server.cpp)
 
-set(WORKSPACE "/workspace/MagicAI")
+#set(WORKSPACE "/usr/local/google/home/aumrao/workspace/MagicAi")
 SET(SSL_ROOT "${WORKSPACE}/src/openssl/buildx64")
 SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
 

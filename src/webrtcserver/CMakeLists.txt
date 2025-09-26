@@ -64,6 +64,8 @@ if(WIN32)
 	endif()
 endif()
 
+add_definitions( -Wno-write-strings -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-value -Wno-deprecated-declarations -Wno-reorder -Wno-extra -Wno-switch)
+
 set(LIBDATACHANNEL_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/candidate.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/channel.cpp
@@ -95,6 +97,28 @@ set(LIBDATACHANNEL_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/pacinghandler.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/rembhandler.cpp
 )
+
+
+set(LIBSTUN_SOURCES
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Agent.cpp    
+ #${CMAKE_CURRENT_SOURCE_DIR}/stun/src/candidate.cpp 
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Connection.cpp 
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Message.cpp
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/sdpcommon.cpp
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/transport.cpp      
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Types.cpp 
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Utils.cpp
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Attribute.cpp  
+ #${CMAKE_CURRENT_SOURCE_DIR}/stun/src/configuration.cpp
+ #${CMAKE_CURRENT_SOURCE_DIR}/stun/src/icetransport.cpp 
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Reader.cpp
+ #${CMAKE_CURRENT_SOURCE_DIR}/stun/src/tls.cpp 
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/TransportTuple.cpp
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/utils.cpp 
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Writer.cpp
+)
+
+
 
 set(LIBDATACHANNEL_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/include/rtc/candidate.hpp
@@ -288,6 +312,7 @@ file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp"
 
 add_library(datachannel SHARED
 	${LIBDATACHANNEL_SOURCES}
+	${LIBSTUN_SOURCES}
 	${LIBDATACHANNEL_HEADERS}
 	${LIBDATACHANNEL_IMPL_SOURCES}
 	${SOURCES}
@@ -308,6 +333,7 @@ target_compile_definitions(datachannel PRIVATE RTC_EXPORTS)
 
 add_library(datachannel-static STATIC EXCLUDE_FROM_ALL
 	${LIBDATACHANNEL_SOURCES}
+	${LIBSTUN_SOURCES}
 	${LIBDATACHANNEL_HEADERS}
 	${LIBDATACHANNEL_IMPL_SOURCES}
         ${SOURCES}
@@ -558,3 +584,4 @@ if(NOT NO_EXAMPLES)
 
 endif()
 
+ 

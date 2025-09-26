@@ -6,7 +6,7 @@
 
 #include <Attribute.h>
 #include <Types.h>
-#include "candidate.h"
+#include "candidate.hpp"
 #include "description.hpp"
 #include "base/Timer.h"
 #include <Message.h>
@@ -46,6 +46,10 @@ using namespace stun;
 // RFC 7675: Consent expires after 30 seconds.
 #define CONSENT_TIMEOUT 30000 // msecs
 
+#define ICE_CANDIDATE_PREF_HOST 126
+#define ICE_CANDIDATE_PREF_PEER_REFLEXIVE 110
+#define ICE_CANDIDATE_PREF_SERVER_REFLEXIVE 100
+#define ICE_CANDIDATE_PREF_RELAYED 0
 namespace stun {
 
     
