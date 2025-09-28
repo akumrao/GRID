@@ -154,6 +154,16 @@ typedef struct agent_stun_entry {
 //typedef void (*cb_recv_t)(juice_agent_t *agent, const char *data, size_t size,
 //                                void *user_ptr);
 
+
+  class IceListen 
+    {
+        public:
+	void StateChangeCallback( juice_state_t state);
+	void CandidateCallback( const char *sdp);
+	void GatheringDoneCallback();
+	void RecvCallback( const char *data, size_t size);
+    };
+
   class Agent {
   public:
       
@@ -163,10 +173,10 @@ typedef struct agent_stun_entry {
       
     Agent() = delete;
     
-    Agent(Description &localdesp, Description &remotedesp, candidate_callback candidateCallback, gathering_state_callback stateCallback , recv_callback recvcallback );
+    Agent( IceListen *list );
     ~Agent();
     bool getInterfaces( );
-
+    IceListen *list;
            
   public:
     uint16_t type;
@@ -176,9 +186,9 @@ typedef struct agent_stun_entry {
     uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
     std::vector<Attribute*> attributes;
     std::vector<uint8_t> buffer;
-    Description &localdesp;
+    ice_description_t localdesp;
     
-    Description &remotedesp;
+    ice_description_t remotedesp;
     
     //local candidate
     int ice_create_host_candidate( Candidate *candidate);
@@ -190,13 +200,12 @@ typedef struct agent_stun_entry {
     //Remote candidate
     int ice_add_remote_candidate(const Candidate *candidate);
     int  agent_add_remote_peer_reflexive_candidate( uint32_t priority, const addr_record_t *record); // peer-reflex only
-    int ice_add_candidate( Candidate *candidate, Description *description);
+    int ice_add_candidate( Candidate *candidate, ice_description_t *description);
         
         
-   candidate_callback mCandidateCallback;
-   gathering_state_callback mstateCallback;
-
-   recv_callback mrecvcallback;
+   //candidate_callback mCandidateCallback;
+  // gathering_state_callback mstateCallback;
+  // recv_callback mrecvcallback;
             
   //  ice_description_t local;
    // ice_description_t remote;
