@@ -7,17 +7,30 @@
 #include "init.hpp"
 #include "internals.hpp"
 #include "message.hpp"
-
+#include "net/dns.h"
 #include <atomic>
 #include <functional>
 #include <memory>
+#include "configuration.hpp"
+#include "candidate.hpp"
+
+using namespace base::net;
 
 namespace rtc::impl {
 
-class Transport {
+class Transport:public GetAddrInfoReq, GetNameInfoReq
+{
 public:
 	enum class State { Disconnected, Connecting, Connected, Completed, Failed };
 	using state_callback = std::function<void(State state)>;
+
+        void resolveStunServer();
+        void cbDnsResolve(addrinfo* res) override;
+        void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
+        void resolveIp( Candidate *certificate );
+        Configuration mConfig;
+
+
 
 	Transport(shared_ptr<Transport> lower = nullptr, state_callback callback = nullptr);
 	virtual ~Transport();

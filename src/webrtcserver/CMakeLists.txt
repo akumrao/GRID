@@ -105,7 +105,7 @@ set(LIBSTUN_SOURCES
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Connection.cpp 
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Message.cpp
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/sdpcommon.cpp
- ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/transport.cpp      
+ #${CMAKE_CURRENT_SOURCE_DIR}/stun/src/transport.cpp      
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Types.cpp 
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Utils.cpp
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Attribute.cpp  

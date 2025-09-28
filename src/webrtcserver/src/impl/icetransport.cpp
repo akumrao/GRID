@@ -396,13 +396,17 @@ IceTransport::IceTransport(const Configuration &config, candidate_callback candi
     : Transport(nullptr, std::move(stateChangeCallback)), mRole(Description::Role::ActPass),
       mMid("0"), mGatheringState(GatheringState::New),
       mCandidateCallback(std::move(candidateCallback)),
-      mGatheringStateChangeCallback(std::move(gatheringStateChangeCallback))
+      mGatheringStateChangeCallback(std::move(gatheringStateChangeCallback)),
+      agent(  this)  
 {
 
 SDebug << "Initializing ICE transport";	
 }
 
 void IceTransport::setIceAttributes(string uFrag, string pwd) {
+    
+    
+    
 	
 }
 
@@ -440,7 +444,7 @@ void IceTransport::addIceServer(IceServer server) {
 }
 
 IceTransport::~IceTransport() {
-//	PLOG_DEBUG << "Destroying ICE transport";
+	SInfo << "Destroying ICE transport";
 //	mAgent.reset();
 }
 

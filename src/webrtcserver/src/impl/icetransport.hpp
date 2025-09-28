@@ -28,8 +28,11 @@
 #include <thread>
 
 namespace rtc::impl {
+    
+  
+        
 
-class IceTransport : public Transport {
+class IceTransport : public Transport, IceListen {
 public:
 	static void Init();
 	static void Cleanup();
@@ -83,13 +86,9 @@ private:
 	unique_ptr<juice_agent_t, void (*)(juice_agent_t *)> mAgent;
 	int mTurnServersAdded = 0;
 
-	static void StateChangeCallback(juice_agent_t *agent, juice_state_t state, void *user_ptr);
-	static void CandidateCallback(juice_agent_t *agent, const char *sdp, void *user_ptr);
-	static void GatheringDoneCallback(juice_agent_t *agent, void *user_ptr);
-	static void RecvCallback(juice_agent_t *agent, const char *data, size_t size, void *user_ptr);
-	static void LogCallback(juice_log_level_t level, const char *message);
 #else
 	
+        Agent agent;
 #endif
 };
 
