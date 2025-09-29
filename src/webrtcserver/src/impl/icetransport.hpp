@@ -49,7 +49,7 @@ public:
 
 	Description::Role role() const;
 	GatheringState gatheringState() const;
-	Description getLocalDescription(Description::Type type) const;
+	Description getLocalDescription(Description::Type type) ;
 	void setRemoteDescription(const Description &description);
 	bool addRemoteCandidate(const Candidate &candidate);
 	void gatherLocalCandidates(string mid, std::vector<IceServer> additionalIceServers = {});
