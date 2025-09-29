@@ -28,3 +28,11 @@ https://www.rfc-editor.org/rfc/rfc6627.html#page-9
    receive from nodes in a DS domain.  Multiple DSCPs may indicate the
    same PHB.  PCN-traffic is high-priority traffic, which uses a DSCP
    (or DSCPs) that indicates a PHB with preferred treatment.
+
+
+
+Libuv
+
+   The statements setting alternate local addresses for inbound zone transfers (alt-transfer-source, alt-transfer-source-v6, and use-alt-transfer-source) have been removed. [GL #3714]
+
+The Differentiated Services Code Point (DSCP) feature in BIND has been non-operational since the new Network Manager was introduced in BIND 9.16. It is now marked as obsolete, and vestigial code implementing it has been removed. Configuring DSCP values in named.conf now causes a warning to be logged. [GL #3773]

@@ -203,7 +203,7 @@ typedef struct agent_stun_entry {
     int ice_add_candidate( Candidate *candidate, ice_description_t *description);
         
     
-    
+    int agent_set_local_ice_attributes(const char *ufrag, const char *pwd);
 
         
    //candidate_callback mCandidateCallback;
