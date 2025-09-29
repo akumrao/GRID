@@ -126,6 +126,22 @@ namespace stun {
         return 0;
 
     }
+    
+    
+    int agent_set_local_ice_attributes(const char *ufrag, const char *pwd)
+    {
+
+
+	if (strlen(ufrag) < 4 || strlen(pwd) < 22 || !ice_is_valid_string(ufrag) ||
+	    !ice_is_valid_string(pwd)) {
+		JLOG_ERROR("Invalid ICE attributes");
+		return JUICE_ERR_INVALID;
+	}
+
+	snprintf(agent->local.ice_ufrag, sizeof(agent->local.ice_ufrag), "%s", ufrag);
+	snprintf(agent->local.ice_pwd, sizeof(agent->local.ice_pwd), "%s", pwd);
+	return JUICE_ERR_SUCCESS;
+    }
 
     int Agent::ice_create_host_candidate( Candidate *candidate ) {
 
