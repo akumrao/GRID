@@ -191,6 +191,8 @@ typedef struct agent_stun_entry {
     ice_description_t remotedesp;
     
     //local candidate
+    int set_local_ice_attributes(const char *ufrag, const char *pwd);
+    int get_local_description( char *buffer, int size) ;
     int ice_create_host_candidate( Candidate *candidate);
     int ice_create_local_reflexive_candidate( Candidate *candidate );
     int ice_create_local_candidate(int component, int index, Candidate *candidate);
@@ -203,8 +205,8 @@ typedef struct agent_stun_entry {
     int ice_add_candidate( Candidate *candidate, ice_description_t *description);
         
     
-    int agent_set_local_ice_attributes(const char *ufrag, const char *pwd);
 
+    int ice_generate_sdp(const ice_description_t *description, char *buffer, size_t size);
         
    //candidate_callback mCandidateCallback;
   // gathering_state_callback mstateCallback;

@@ -127,20 +127,98 @@ namespace stun {
 
     }
     
+    bool static ice_is_valid_string(const char *str) {
+	if (!str)
+		return false;
+
+	for (size_t i = 0; i < strlen(str); ++i)
+		if (!isalpha(str[i]) && !isdigit(str[i]) && str[i] != '+' && str[i] != '/')
+			return false;
+
+	return true;
+    }
+
     
-    int agent_set_local_ice_attributes(const char *ufrag, const char *pwd)
+    
+    int Agent::ice_generate_sdp(const ice_description_t *description, char *buffer, size_t size) {
+	if (!*description->ice_ufrag || !*description->ice_pwd)
+		return -1;
+
+	int len = 0;
+	char *begin = buffer;
+	char *end = begin + size;
+
+	// Round 0: description
+	// Round i with i>0 and i<count+1: candidate i-1
+	// Round count + 1: end-of-candidates and ice-options lines
+	for (int i = 0; i < description->candidates_count + 2; ++i) {
+		int ret;
+		if (i == 0) {
+			ret = snprintf(begin, end - begin, "a=ice-ufrag:%s\r\na=ice-pwd:%s\r\n",
+			               description->ice_ufrag, description->ice_pwd);
+			if (description->ice_lite)
+				ret = snprintf(begin, end - begin, "a=ice-lite\r\n");
+
+		} else if (i < description->candidates_count + 1) {
+			const Candidate *candidate = description->candidates + i - 1;
+			if (candidate->mType == Candidate::Type::ServerReflexive ||
+			    candidate->mType == Candidate::Type::ServerReflexive)
+				continue;
+			char tmp[4096];
+			if (ice_generate_candidate_sdp(candidate, tmp, 4096) < 0)
+				continue;
+			ret = snprintf(begin, end - begin, "%s\r\n", tmp);
+		} else { // i == description->candidates_count + 1
+			// RFC 8445 10. ICE Option: An agent compliant to this specification MUST inform the
+			// peer about the compliance using the 'ice2' option.
+			if (description->finished)
+				ret = snprintf(begin, end - begin, "a=end-of-candidates\r\na=ice-options:ice2\r\n");
+			else
+				ret = snprintf(begin, end - begin, "a=ice-options:ice2,trickle\r\n");
+		}
+		if (ret < 0)
+			return -1;
+
+		len += ret;
+
+		if (begin < end)
+			begin += ret >= end - begin ? end - begin - 1 : ret;
+	}
+	return len;
+}
+    
+    
+    int Agent::get_local_description( char *buffer, int size) {
+ 
+        if (ice_generate_sdp(&localdesp, buffer, size) < 0) {
+                SError << "Failed to generate local SDP description";
+                return -1;
+        }
+       // JLOG_VERBOSE("Generated local SDP description: %s", buffer);
+
+        if (m_mode == AGENT_MODE_UNKNOWN) {
+                SError << "Assuming controlling mode";
+                m_mode = AGENT_MODE_CONTROLLING;
+        }
+
+
+        return 0;
+    }
+
+    
+    int Agent::set_local_ice_attributes(const char *ufrag, const char *pwd)
     {
 
 
 	if (strlen(ufrag) < 4 || strlen(pwd) < 22 || !ice_is_valid_string(ufrag) ||
 	    !ice_is_valid_string(pwd)) {
-		JLOG_ERROR("Invalid ICE attributes");
-		return JUICE_ERR_INVALID;
+		SError << "Invalid ICE attributes";
+		return -1;
 	}
 
-	snprintf(agent->local.ice_ufrag, sizeof(agent->local.ice_ufrag), "%s", ufrag);
-	snprintf(agent->local.ice_pwd, sizeof(agent->local.ice_pwd), "%s", pwd);
-	return JUICE_ERR_SUCCESS;
+	snprintf(localdesp.ice_ufrag, sizeof(localdesp.ice_ufrag), "%s", ufrag);
+	snprintf(localdesp.ice_pwd, sizeof(localdesp.ice_pwd), "%s", pwd);
+	return 0;
     }
 
     int Agent::ice_create_host_candidate( Candidate *candidate ) {

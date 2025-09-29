@@ -55,9 +55,10 @@ SDebug << "Initializing ICE transport";
 
 void IceTransport::setIceAttributes(string uFrag, string pwd) {
     
+    if (agent.set_local_ice_attributes( uFrag.c_str(), pwd.c_str()) < 0) {
+		throw std::invalid_argument("Invalid ICE attributes");
+    }
     
-    
-	
 }
 
 void IceTransport::addIceServer(IceServer server) {
@@ -100,10 +101,10 @@ IceTransport::~IceTransport() {
 
 Description::Role IceTransport::role() const { return mRole; }
 
-Description IceTransport::getLocalDescription(Description::Type type) const {
+Description IceTransport::getLocalDescription(Description::Type type)  {
 	char sdp[4096];
-//	if (juice_get_local_description(mAgent.get(), sdp, JUICE_MAX_SDP_STRING_LEN) < 0)
-//		throw std::runtime_error("Failed to generate local SDP");
+	if (agent.get_local_description( sdp, 4096) < 0 )
+		throw std::runtime_error("Failed to generate local SDP");
 
 	// RFC 5763: The endpoint that is the offerer MUST use the setup attribute value of
 	// setup:actpass.
