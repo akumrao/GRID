@@ -559,12 +559,79 @@ bool IceTransport::send(message_ptr message) {
 
 bool IceTransport::outgoing(message_ptr message) {
 	// Explicit Congestion Notification takes the least-significant 2 bits of the DS field
-	int ds = int(message->dscp << 2);
+	//int ds = int(message->dscp << 2);
 //	return juice_send_diffserv(mAgent.get(), reinterpret_cast<const char *>(message->data()),
 //	                           message->size(), ds) >= 0;
         
         return false;
 }
+
+
+
+void IceTransport::onStateChangeCallback( juice_state_t state)
+{
+    processStateChange(static_cast<unsigned int>(state));
+}
+void IceTransport::onCandidateCallback( Candidate *candidate)
+{
+    mCandidateCallback(*candidate);
+}
+void IceTransport::onGatheringDoneCallback()
+{
+    processGatheringDone();
+}
+void IceTransport::onRecvCallback( unsigned char *data, size_t size)
+{
+    try {
+                PLOG_VERBOSE << "Incoming size=" << size;
+                auto b = reinterpret_cast<const byte *>(data);
+                incoming(make_message(b, b + size));
+        } catch (const std::exception &e) {
+                SError << e.what();
+        }
+    
+}
+
+
+
+
+void IceTransport::processStateChange(unsigned int state) {
+	switch (state) {
+	case JUICE_STATE_DISCONNECTED:
+		changeState(State::Disconnected);
+		break;
+	case JUICE_STATE_CONNECTING:
+		changeState(State::Connecting);
+		break;
+	case JUICE_STATE_CONNECTED:
+		changeState(State::Connected);
+		break;
+	case JUICE_STATE_COMPLETED:
+		changeState(State::Completed);
+		break;
+	case JUICE_STATE_FAILED:
+		changeState(State::Failed);
+		break;
+	};
+}
+
+
+
+void IceTransport::changeGatheringState(GatheringState state) {
+	if (mGatheringState.exchange(state) != state)
+		mGatheringStateChangeCallback(mGatheringState);
+}
+
+void IceTransport::processGatheringDone() { changeGatheringState(GatheringState::Complete); }
+
+
+
+
+
+
+
+
+
 
 
 

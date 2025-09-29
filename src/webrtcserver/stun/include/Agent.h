@@ -155,13 +155,13 @@ typedef struct agent_stun_entry {
 //                                void *user_ptr);
 
 
-  class IceListen 
+    class IceListen 
     {
         public:
-	void StateChangeCallback( juice_state_t state);
-	void CandidateCallback( const char *sdp);
-	void GatheringDoneCallback();
-	void RecvCallback( const char *data, size_t size);
+	virtual void onStateChangeCallback( juice_state_t state)=0;
+	virtual void onCandidateCallback( Candidate *candidate)=0;;
+	virtual void onGatheringDoneCallback()=0;;
+	virtual void onRecvCallback( unsigned char *data, size_t size)=0;
     };
 
   class Agent {
@@ -202,6 +202,9 @@ typedef struct agent_stun_entry {
     int  agent_add_remote_peer_reflexive_candidate( uint32_t priority, const addr_record_t *record); // peer-reflex only
     int ice_add_candidate( Candidate *candidate, ice_description_t *description);
         
+    
+    
+
         
    //candidate_callback mCandidateCallback;
   // gathering_state_callback mstateCallback;
