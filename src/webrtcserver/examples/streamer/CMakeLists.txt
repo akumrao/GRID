@@ -40,7 +40,7 @@ set_target_properties(streamer PROPERTIES
 	OUTPUT_NAME streamer)
 
 target_include_directories(streamer PUBLIC
-/workspace/MagicAI/src/webrtcserver/include
+${WEBRTC_REPO}/include
 $<INSTALL_INTERFACE:include>)
 
 
