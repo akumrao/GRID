@@ -346,7 +346,7 @@ namespace stun {
         
         SInfo<< "AgentNo " << agentNo << " local ice_add_candidate  " << string(*candidate);
         
-        mCandidateCallback(*candidate);
+        list->onCandidateCallback(candidate);
         
         return 0;
 
@@ -714,8 +714,8 @@ namespace stun {
 
 	case AGENT_STUN_ENTRY_TYPE_CHECK:
 		//LDebug("Received application datagram");
-		if (mrecvcallback)
-			mrecvcallback(buf, len);
+		
+	        list->onRecvCallback(buf, len);
 		return 0;
 
 	default:
@@ -1701,7 +1701,7 @@ void Agent::agent_change_state( juice_state_t state)
     m_state = state;
     STrace  << "AgentNo " << agentNo << " agent_change_state " << state;
     
-    mstateCallback(state);
+    list->onStateChangeCallback(state);
 }
 
 
