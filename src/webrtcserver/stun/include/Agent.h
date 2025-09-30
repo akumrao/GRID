@@ -276,6 +276,7 @@ typedef struct agent_stun_entry {
     void onTimer();
     
     /// ON return messages 
+    int gather_candidates();
     int onStunMessage( unsigned char *buf, size_t len, const addr_record_t *src,  const addr_record_t *relayed);
     int agent_dispatch_stun( unsigned char *buf, size_t size, stun::Message  *msg,  const addr_record_t *src, const addr_record_t *relayed);
     int agent_verify_stun_binding(unsigned char *buf, size_t size, stun::Message *msg);
@@ -308,7 +309,7 @@ typedef struct agent_stun_entry {
     
     void  agent_update_pac_timer();
     
-    void  agent_set_remote_description();
+    int  agent_set_remote_description(const char *sdp);
     
     int agent_resolve_servers( addrinfo* res);
     

@@ -135,9 +135,8 @@ void IceTransport::setRemoteDescription(const Description &description) {
 		throw std::invalid_argument("Incompatible roles with remote description");
 
 	mMid = description.bundleMid();
-//	if (juice_set_remote_description(mAgent.get(),
-//	                                 description.generateApplicationSdp("\r\n").c_str()) < 0)
-//		throw std::invalid_argument("Invalid ICE settings from remote SDP");
+	if (agent.agent_set_remote_description(description.generateApplicationSdp("\r\n").c_str()) < 0)
+		throw std::invalid_argument("Invalid ICE settings from remote SDP");
 }
 
 bool IceTransport::addRemoteCandidate(const Candidate &candidate) {
@@ -145,57 +144,64 @@ bool IceTransport::addRemoteCandidate(const Candidate &candidate) {
 	if (!candidate.isResolved())
 		return false;
 
-	//return juice_add_remote_candidate(mAgent.get(), string(candidate).c_str()) >= 0;
+	return agent.ice_add_remote_candidate( &candidate) >= 0;
 }
 
 void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> additionalIceServers) {
 	mMid = std::move(mid);
+        
+        agent.localMid = mMid;
+         
 
 	std::shuffle(additionalIceServers.begin(), additionalIceServers.end(), utils::random_engine());
 	for (const auto &server : additionalIceServers)
 		addIceServer(server);
 
 	// Change state now as candidates calls can be synchronous
-	//changeGatheringState(GatheringState::InProgress);
+	changeGatheringState(GatheringState::InProgress);
 
-//	if (juice_gather_candidates(mAgent.get()) < 0) {
-//		throw std::runtime_error("Failed to gather local ICE candidates");
-//	}
+        
+         if (agent.gather_candidates() < 0) {
+		throw std::runtime_error("Failed to gather local ICE candidates");
+ 	  }
 }
 
-optional<string> IceTransport::getLocalAddress() const {
-	//char str[JUICE_MAX_ADDRESS_STRING_LEN];
-//	if (juice_get_selected_addresses(mAgent.get(), str, JUICE_MAX_ADDRESS_STRING_LEN, NULL, 0) ==
-//	    0) {
-//		return std::make_optional(string(str));
-//	}
-	return nullopt;
+optional<string> IceTransport::getLocalAddress()  {
+    
+    
+    Candidate local_cand, remote_cand;
+    if (getSelectedCandidatePair( &local_cand, &remote_cand))
+            return nullopt;
+
+    char ip[40];  uint16_t port;
+    base::net::IP::AddressToString(local_cand.resolved, ip, port);
+    return ip;
+
 }
-optional<string> IceTransport::getRemoteAddress() const {
-	//char str[JUICE_MAX_ADDRESS_STRING_LEN];
-//	if (juice_get_selected_addresses(mAgent.get(), NULL, 0, str, JUICE_MAX_ADDRESS_STRING_LEN) ==
-//	    0) {
-//		return std::make_optional(string(str));
-//	}
-	return nullopt;
+optional<string> IceTransport::getRemoteAddress()  {
+   
+    
+    	Candidate local_cand, remote_cand;
+	if (getSelectedCandidatePair( &local_cand, &remote_cand))
+		return nullopt;
+   
+    
+        char ip[40];  uint16_t port;
+        base::net::IP::AddressToString(remote_cand.resolved, ip, port);
+        return ip;
+
 }
 
 bool IceTransport::getSelectedCandidatePair(Candidate *local, Candidate *remote) {
-//	char sdpLocal[JUICE_MAX_CANDIDATE_SDP_STRING_LEN];
-//	char sdpRemote[JUICE_MAX_CANDIDATE_SDP_STRING_LEN];
-//	if (juice_get_selected_candidates(mAgent.get(), sdpLocal, JUICE_MAX_CANDIDATE_SDP_STRING_LEN,
-//	                                  sdpRemote, JUICE_MAX_CANDIDATE_SDP_STRING_LEN) == 0) {
-//		if (local) {
-//			*local = Candidate(sdpLocal, mMid);
-//			local->resolve(Candidate::ResolveMode::Simple);
-//		}
-//		if (remote) {
-//			*remote = Candidate(sdpRemote, mMid);
-//			remote->resolve(Candidate::ResolveMode::Simple);
-//		}
-//		return true;
-//	}
-	return false;
+
+    if(!agent.agent_get_selected_candidate_pair(local, remote))
+    {
+        return true;    
+    }
+    
+    //kausal 9721238934
+
+    return false;
 }
 
 
