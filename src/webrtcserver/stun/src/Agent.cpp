@@ -27,9 +27,7 @@ namespace stun {
 //}
 
     
-    bool comp(Candidate a, Candidate b) {
-        return a.priority() > b.priority();
-    }
+
     
     int64_t current_timestamp() { // millisecond time
 #ifdef _WIN32
@@ -139,54 +137,7 @@ namespace stun {
     }
 
     
-    
-    int Agent::ice_generate_sdp(const ice_description_t *description, char *buffer, size_t size) {
-	if (!*description->ice_ufrag || !*description->ice_pwd)
-		return -1;
-
-	int len = 0;
-	char *begin = buffer;
-	char *end = begin + size;
-
-	// Round 0: description
-	// Round i with i>0 and i<count+1: candidate i-1
-	// Round count + 1: end-of-candidates and ice-options lines
-	for (int i = 0; i < description->candidates_count + 2; ++i) {
-		int ret;
-		if (i == 0) {
-			ret = snprintf(begin, end - begin, "a=ice-ufrag:%s\r\na=ice-pwd:%s\r\n",
-			               description->ice_ufrag, description->ice_pwd);
-			if (description->ice_lite)
-				ret = snprintf(begin, end - begin, "a=ice-lite\r\n");
-
-		} else if (i < description->candidates_count + 1) {
-			const Candidate *candidate = description->candidates + i - 1;
-			if (candidate->mType == Candidate::Type::ServerReflexive ||
-			    candidate->mType == Candidate::Type::ServerReflexive)
-				continue;
-			char tmp[4096];
-			if (ice_generate_candidate_sdp(candidate, tmp, 4096) < 0)
-				continue;
-			ret = snprintf(begin, end - begin, "%s\r\n", tmp);
-		} else { // i == description->candidates_count + 1
-			// RFC 8445 10. ICE Option: An agent compliant to this specification MUST inform the
-			// peer about the compliance using the 'ice2' option.
-			if (description->finished)
-				ret = snprintf(begin, end - begin, "a=end-of-candidates\r\na=ice-options:ice2\r\n");
-			else
-				ret = snprintf(begin, end - begin, "a=ice-options:ice2,trickle\r\n");
-		}
-		if (ret < 0)
-			return -1;
-
-		len += ret;
-
-		if (begin < end)
-			begin += ret >= end - begin ? end - begin - 1 : ret;
-	}
-	return len;
-}
-    
+  
     
     int Agent::get_local_description( char *buffer, int size) {
  
@@ -2509,6 +2460,73 @@ std::string Agent::dump()
     
     return ret;
 }
+
+
+
+void Agent::resolveStunServer( )
+{
+    
+    for( const IceServer &icesv:  mConfig.iceServers  )
+    {
+        SInfo << "resolve " <<  icesv.hostname << ":" << icesv.port;
+        resolve(icesv.hostname, icesv.port, Application::uvGetLoop(), (void*)&icesv);
+        //break;
+    }
+   
+}
+
+void Agent::cbDnsResolve(addrinfo* start)
+{
+    
+    //IceServer *icesv = (IceServer *)ptr;
+   // icesv->ip = ip;
+
+    // SInfo <<  "IceServer" <<  ip << ":" << port  ;
+    
+                    char addr[40] = {'\0'};
+                int port =0; 
+
+                struct addrinfo*  res = start;
+                
+                for (;res != NULL; res = res->ai_next) 
+                { 
+                    
+                    if (res->ai_family == AF_INET) {
+                        // ipv4
+                        //char c[17] = { '\0' };
+                        
+                        sockaddr_in* tmp  =   (sockaddr_in*) res->ai_addr;
+                        port= htons(tmp->sin_port);
+                        uv_ip4_name(tmp, addr, 16);
+                        
+        
+                        
+                    } else if (res->ai_family == AF_INET6) {
+                        // ipv6
+                        //char c[40] = { '\0' };
+                        sockaddr_in6* tmp  =   (sockaddr_in6*) res->ai_addr;
+                        port= htons(tmp->sin6_port);
+                        uv_ip6_name(tmp, addr, 39);
+                    }
+                    LTrace("address ",  addr);
+                    // uv_tcp_connect(connect_req, socket, (const struct sockaddr*) res->ai_addr, on_connect);
+
+                }
+}
+
+void Agent::cbNameResolve(  const char* hostname, const char* service,  void* ptr)
+{
+     SInfo <<  "resoved " <<  hostname << ":" << service  ;
+}
+
+ 
+void Agent::resolveIp( Candidate *cand )
+{
+   // SInfo << "resolveName " <<  icesv.hostname << ":" << icesv.port << " addd " << cand;
+    
+   resolveIP(cand->resolved.addr,   Application::uvGetLoop(),  cand) ;
+}
+
 
 
 

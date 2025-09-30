@@ -12,6 +12,12 @@
 #include <Message.h>
 #include <Connection.h>
 
+#include "net/dns.h"
+#include "configuration.hpp"
+#include "candidate.hpp"
+
+using namespace base::net;
+
 using namespace rtc;
 using namespace base;
 using namespace stun;
@@ -164,12 +170,20 @@ typedef struct agent_stun_entry {
 	virtual void onRecvCallback( unsigned char *data, size_t size)=0;
     };
 
-  class Agent {
+  class Agent : public GetAddrInfoReq, GetNameInfoReq
+  {
   public:
       
     using candidate_callback = std::function<void(const Candidate candidate)>;
     using gathering_state_callback = std::function<void(juice_state_t state)>;
     using recv_callback = std::function<void(unsigned char * data , size_t size )>;
+    
+    void resolveStunServer();
+    void cbDnsResolve(addrinfo* res) override;
+    void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
+    void resolveIp( Candidate *certificate );
+    Configuration mConfig;
+        
       
     Agent() = delete;
     
@@ -205,8 +219,6 @@ typedef struct agent_stun_entry {
     int ice_add_candidate( Candidate *candidate, ice_description_t *description);
         
     
-
-    int ice_generate_sdp(const ice_description_t *description, char *buffer, size_t size);
         
    //candidate_callback mCandidateCallback;
   // gathering_state_callback mstateCallback;
