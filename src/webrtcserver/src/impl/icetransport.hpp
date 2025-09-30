@@ -55,8 +55,8 @@ public:
 	void gatherLocalCandidates(string mid, std::vector<IceServer> additionalIceServers = {});
 	void setIceAttributes(string uFrag, string pwd);
 
-	optional<string> getLocalAddress() const;
-	optional<string> getRemoteAddress() const;
+	optional<string> getLocalAddress() ;
+	optional<string> getRemoteAddress();
 
 	bool send(message_ptr message) override; // false if dropped
 

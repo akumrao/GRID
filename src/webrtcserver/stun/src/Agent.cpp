@@ -59,6 +59,19 @@ namespace stun {
 
     }
 
+    int Agent::gather_candidates()
+    {
+       if (m_mode == AGENT_MODE_UNKNOWN) {
+
+	    m_mode = AGENT_MODE_CONTROLLING;
+	}
+         
+        getInterfaces();
+        
+        resolveStunServer( );
+        
+    }
+    
     bool Agent::getInterfaces( ) {
         
         
@@ -2111,11 +2124,46 @@ void  Agent::agent_update_pac_timer() {
 
 
 
-void  Agent::agent_set_remote_description() {
+int  Agent::agent_set_remote_description(const char *sdp) {
 	
 	STrace << "AgentNo " << agentNo << " agent_set_remote_description";
+        
+        
+        ice_description_t remote;
+	int ret = ice_parse_sdp(sdp, &remote);
+	if (ret < 0) {
+		switch (ret) {
+		case ICE_PARSE_MISSING_UFRAG:
+			SError << "Missing ICE user fragment in remote description";
+			break;
+		case ICE_PARSE_MISSING_PWD:
+			SError << "Missing ICE password in remote description";
+			break;
+		default:
+			SError << "Failed to parse remote SDP description";
+			break;
+		}
 
-        std::sort(remotedesp.candidates,remotedesp.candidates +remotedesp.candidates_count , comp);
+		return -1;
+	}
+
+	if (remotedesp.ice_ufrag) {
+		// There is already a remote description
+		if (strcmp(remotedesp.ice_ufrag, remotedesp.ice_ufrag) == 0 &&
+		    strcmp(remotedesp.ice_pwd, remotedesp.ice_pwd) == 0) {
+			SDebug << "Remote description is already set, ignoring";
+			
+			return -1;
+		}
+
+		SWarn << "ICE restart is not supported";
+		return -1;
+	}
+
+	remotedesp = remote;
+        
+
+       // std::sort(remotedesp.candidates,remotedesp.candidates +remotedesp.candidates_count , comp);
           
 	agent_update_pac_timer();
 
