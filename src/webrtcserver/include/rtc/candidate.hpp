@@ -44,9 +44,9 @@ public:
 	optional<string> address() const;
 	optional<uint16_t> port() const;
 
-private:
-	void parse(string candidate);
 public:
+	void parse(string candidate);
+
 	string mFoundation;
 	uint32_t mComponent, mPriority;
 	string mTypeString, mTransportString;
