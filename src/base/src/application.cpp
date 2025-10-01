@@ -54,7 +54,7 @@ namespace base {
         }
         else
         {
-            SError << "No possible to come here uvGetLoop Tidid << tid";
+            SError << "No possible to come here uvGetLoop Tidid "<< tid;
              throw;
         }
     }
