@@ -42,7 +42,7 @@ namespace stun {
     /* --------------------------------------------------------------------- */
 
     static int agentCount = 0;
-    Agent::Agent( IceListen *list  ): list(list)
+    Agent::Agent( Configuration &config, IceListen *list  ): mConfig(config), list(list)
     {
 
         random_bytes(&ice_tiebreaker, sizeof(ice_tiebreaker));
@@ -50,6 +50,7 @@ namespace stun {
         //_timer.Start(20,20);
          agentNo = ++agentCount;
          m_next_timestamp = current_timestamp();
+         ice_create_local_description(&localdesp);
        
     }
 
@@ -59,6 +60,20 @@ namespace stun {
 
     }
 
+    
+    int Agent::ice_create_local_description(ice_description_t *description) 
+    {
+	memset(description, 0, sizeof(*description));
+	random_str64(description->ice_ufrag, 4 + 1);
+	random_str64(description->ice_pwd, 22 + 1);
+	description->ice_lite = false;
+	description->candidates_count = 0;
+	description->finished = false;
+	("Created local description: ufrag=\"%s\", pwd=\"%s\"", description->ice_ufrag,
+	           description->ice_pwd);
+	return 0;
+    }
+    
     int Agent::gather_candidates()
     {
        if (m_mode == AGENT_MODE_UNKNOWN) {
@@ -161,7 +176,7 @@ namespace stun {
        // JLOG_VERBOSE("Generated local SDP description: %s", buffer);
 
         if (m_mode == AGENT_MODE_UNKNOWN) {
-                SError << "Assuming controlling mode";
+                SWarn << "no agent mode set so assuming controlling mode";
                 m_mode = AGENT_MODE_CONTROLLING;
         }
 
@@ -663,7 +678,7 @@ namespace stun {
                 
        // if( m_next_timestamp <=  cur )
         {
-            int ret =  agent_bookkeeping( cur) ;
+          agent_bookkeeping( cur) ;
         }
 //        else
 //        {
@@ -2523,43 +2538,19 @@ void Agent::resolveStunServer( )
    
 }
 
-void Agent::cbDnsResolve(addrinfo* start)
+void Agent::cbDnsResolve(addrinfo* res)
 {
+    SInfo <<   "AgentNo " << agentNo << " On Candidate Address resolved ";
     
-    //IceServer *icesv = (IceServer *)ptr;
+   // SInfo <<  "IceServer" <<  ip << ":" << port  ;
+   
+   // IceServer *icesv = (IceServer *)ptr;
    // icesv->ip = ip;
-
-    // SInfo <<  "IceServer" <<  ip << ":" << port  ;
     
-                    char addr[40] = {'\0'};
-                int port =0; 
-
-                struct addrinfo*  res = start;
-                
-                for (;res != NULL; res = res->ai_next) 
-                { 
-                    
-                    if (res->ai_family == AF_INET) {
-                        // ipv4
-                        //char c[17] = { '\0' };
-                        
-                        sockaddr_in* tmp  =   (sockaddr_in*) res->ai_addr;
-                        port= htons(tmp->sin_port);
-                        uv_ip4_name(tmp, addr, 16);
-                        
-        
-                        
-                    } else if (res->ai_family == AF_INET6) {
-                        // ipv6
-                        //char c[40] = { '\0' };
-                        sockaddr_in6* tmp  =   (sockaddr_in6*) res->ai_addr;
-                        port= htons(tmp->sin6_port);
-                        uv_ip6_name(tmp, addr, 39);
-                    }
-                    LTrace("address ",  addr);
-                    // uv_tcp_connect(connect_req, socket, (const struct sockaddr*) res->ai_addr, on_connect);
-
-                }
+   //StartAgent( icesv->ip,  icesv->port);
+    
+   agent_resolve_servers(res );
+   
 }
 
 void Agent::cbNameResolve(  const char* hostname, const char* service,  void* ptr)

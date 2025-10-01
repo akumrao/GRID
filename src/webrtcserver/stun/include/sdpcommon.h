@@ -35,6 +35,6 @@ namespace rtc {
 
      bool comp(Candidate a, Candidate b);
 
-} // namespace rtc::impl
+}
 
 #endif

@@ -38,8 +38,6 @@ void IceTransport::Cleanup() {
 }
 
 
-#if 1
-
 IceTransport::IceTransport(const Configuration &config, candidate_callback candidateCallback,
                            state_callback stateChangeCallback,
                            gathering_state_callback gatheringStateChangeCallback)
@@ -47,7 +45,7 @@ IceTransport::IceTransport(const Configuration &config, candidate_callback candi
       mMid("0"), mGatheringState(GatheringState::New),
       mCandidateCallback(std::move(candidateCallback)),
       mGatheringStateChangeCallback(std::move(gatheringStateChangeCallback)),
-      agent(  this)  
+      agent(  (Configuration &)config, this)  
 {
 
 SDebug << "Initializing ICE transport";	
@@ -220,7 +218,12 @@ bool IceTransport::outgoing(message_ptr message) {
 //	return juice_send_diffserv(mAgent.get(), reinterpret_cast<const char *>(message->data()),
 //	                           message->size(), ds) >= 0;
         
-        return false;
+    if( agent.agent_send( reinterpret_cast<uint8_t *>(message->data()), message->size(),0 ))
+    {
+        return true;
+    }
+
+    return false;
 }
 
 
@@ -281,17 +284,5 @@ void IceTransport::changeGatheringState(GatheringState state) {
 
 void IceTransport::processGatheringDone() { changeGatheringState(GatheringState::Complete); }
 
-
-
-
-
-
-
-
-
-
-
-
-#endif
 
 } // namespace rtc::impl

@@ -80,7 +80,7 @@ struct stun_attr {
    int const_time_memcmp(unsigned char *a, unsigned char *b, size_t len);
    
    
-   bool IsStun(const char* data, size_t len);
+   //bool IsStun(const char* data, size_t len);
    
 } /* namespace stun */
 

@@ -141,13 +141,15 @@ namespace rtc {
 	Candidate candidate;
         
         candidate.parse(line);
+        
+//        resolveIp((Candidate *)candidate);
 //        
 //	if (ice_parse_candidate_sdp(line, &candidate) == 0) {
 //		ice_add_candidate(&candidate, description);  // arvind
 //		return 0;
 //	}
         
-	return ICE_PARSE_IGNORED;
+	return 0;
     }
     
     
