@@ -182,12 +182,12 @@ typedef struct agent_stun_entry {
     void cbDnsResolve(addrinfo* res) override;
     void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
     void resolveIp( Candidate *certificate );
-    Configuration mConfig;
+    Configuration &mConfig;
         
       
     Agent() = delete;
     
-    Agent( IceListen *list );
+    Agent( Configuration &config, IceListen *list );
     ~Agent();
     bool getInterfaces( );
     IceListen *list;
@@ -205,6 +205,7 @@ typedef struct agent_stun_entry {
     ice_description_t remotedesp;
     
     //local candidate
+    int ice_create_local_description(ice_description_t *description);
     int set_local_ice_attributes(const char *ufrag, const char *pwd);
     int get_local_description( char *buffer, int size) ;
     int ice_create_host_candidate( Candidate *candidate);

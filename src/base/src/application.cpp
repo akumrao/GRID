@@ -47,14 +47,14 @@ namespace base {
 
      uv_loop_t* Application::uvGetLoop()
     {
-        uv_thread_t x =  uv_thread_self();
-        if( m_mapLoop.find(x) != m_mapLoop.end())
+        uv_thread_t tid =  uv_thread_self();
+        if( m_mapLoop.find(tid) != m_mapLoop.end())
         {
-            return m_mapLoop[x];
+            return m_mapLoop[tid];
         }
         else
         {
-            SError << "No possible to come here";
+            SError << "No possible to come here uvGetLoop Tidid << tid";
              throw;
         }
     }
@@ -62,13 +62,13 @@ namespace base {
      
     void Application::uvInit() {
         
-        uv_thread_t x =  uv_thread_self();
+        uv_thread_t tid =  uv_thread_self();
         
-        SInfo << " uvInit Tidid " << x;
+        SInfo << " uvInit Tidid " << tid;
         
-        if( m_mapLoop.find(x) == m_mapLoop.end())
+        if( m_mapLoop.find(tid) == m_mapLoop.end())
         {
-           m_mapLoop[x]=new uv_loop_t;
+           m_mapLoop[tid]=new uv_loop_t;
             int err = uv_loop_init(uvGetLoop());
             if (err != 0)
                LError("libuv initialization failed");
