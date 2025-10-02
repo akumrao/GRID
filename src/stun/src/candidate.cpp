@@ -225,7 +225,7 @@ string Candidate::candidate() const {
 	return oss.str();
 }
 
-string Candidate::mid() const { return mMid; }
+string Candidate::mid() const { return mMid;}
 
 Candidate::operator string() const {
 	std::ostringstream line;

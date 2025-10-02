@@ -27,7 +27,7 @@ namespace rtc {
     
     int ice_type_suffix(const Candidate *candidate,  char **type , char **suffix  );
   
-    int ice_generate_candidate_sdp(const Candidate *candidate, char *buffer, size_t size);
+    int ice_generate_candidate_sdp( Candidate *candidate, char *buffer, size_t size);
     
     int ice_generate_sdp(const ice_description_t *description, char *buffer, size_t size);
     

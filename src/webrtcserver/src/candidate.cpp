@@ -9,6 +9,11 @@
 #include <cctype>
 #include <sstream>
 #include <unordered_map>
+#include "sdpcommon.h"
+#include "base/logger.h"
+#include <sys/types.h>
+
+using namespace base;
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -48,8 +53,8 @@ namespace rtc {
 
 Candidate::Candidate()
     : mFoundation("none"), mComponent(0), mPriority(0), mTypeString("unknown"),
-      mTransportString("unknown"), mType(Type::Unknown), mTransportType(TransportType::Unknown),
-      mNode("0.0.0.0"), mService("9"), mFamily(Family::Unresolved), mPort(0) {}
+      mTransportString("UDP"), mType(Type::Unknown), mTransportType(TransportType::Unknown),
+      mNode("0.0.0.0"), mService("9")  {}
 
 Candidate::Candidate(string candidate) : Candidate() {
 	if (!candidate.empty())
@@ -59,9 +64,30 @@ Candidate::Candidate(string candidate) : Candidate() {
 Candidate::Candidate(string candidate, string mid) : Candidate() {
 	if (!candidate.empty())
 		parse(std::move(candidate));
-	if (!mid.empty())
-		mMid.emplace(std::move(mid));
+	
+	mMid = std::move(mid);
 }
+
+ Candidate Candidate::operator=(const Candidate &other)
+ {
+     int x = 1;
+     
+    mTail =  other.mTail;
+    
+    mFoundation = other.mFoundation;
+    mComponent = other.mComponent;
+    mPriority = other.mPriority; 
+    mTypeString = other.mTypeString;
+    mType= other.mType;
+    mTransportType = other.mTransportType;
+    mNode = other.mNode;
+    mService = other.mService;
+    resolved = other.resolved;
+    mMid =  other.mMid;
+   
+   
+        
+ }
 
 void Candidate::parse(string candidate) {
 	using TypeMap_t = std::unordered_map<string, Type>;
@@ -76,12 +102,12 @@ void Candidate::parse(string candidate) {
 	                                        {"passive", TransportType::TcpPassive},
 	                                        {"so", TransportType::TcpSo}};
 
-	const std::array prefixes{"a=", "candidate:"};
+	const std::array<string , 2> prefixes{"a=", "candidate:"};
 	for (string prefix : prefixes)
 		if (match_prefix(candidate, prefix))
 			candidate.erase(0, prefix.size());
 
-	PLOG_VERBOSE << "Parsing candidate: " << candidate;
+	STrace << "Parsing candidate: " << candidate;
 
 	// See RFC 8839 for format
 	std::istringstream iss(candidate);
@@ -120,10 +146,10 @@ void Candidate::parse(string candidate) {
 }
 
 void Candidate::hintMid(string mid) {
-	if (!mMid)
-		mMid.emplace(std::move(mid));
+	
+	mMid = std::move(mid);
 }
-
+/*
 void Candidate::changeAddress(string addr) { changeAddress(std::move(addr), mService); }
 
 void Candidate::changeAddress(string addr, uint16_t port) {
@@ -189,7 +215,7 @@ bool Candidate::resolve(ResolveMode mode) {
 
 	return mFamily != Family::Unresolved;
 }
-
+*/
 Candidate::Type Candidate::type() const { return mType; }
 
 Candidate::TransportType Candidate::transportType() const { return mTransportType; }
@@ -202,11 +228,28 @@ string Candidate::candidate() const {
 	oss << "candidate:";
 	oss << mFoundation << sp << mComponent << sp << mTransportString << sp << mPriority << sp;
 	if (isResolved())
-		oss << mAddress << sp << mPort;
+        {
+
+            char ip[40];  uint16_t port;
+            base::net::IP::AddressToString(resolved, ip, port);
+	    oss << ip << sp << port;
+        }
 	else
 		oss << mNode << sp << mService;
 
-	oss << sp << "typ" << sp << mTypeString;
+        char *type = NULL;
+	char *suffix = NULL;
+        
+        int ret = ice_type_suffix(this, &type, &suffix );
+        
+        if(!ret)
+        { 
+            char tmp[100];
+            int ret = ice_type_suffix(this, &type, &suffix );
+            snprintf(tmp, 99, "%s%s%s",  type, suffix ? " " : "",   suffix ? suffix : "");
+            
+            oss << sp << "typ" << sp << tmp;
+        }
 
 	if (!mTail.empty())
 		oss << sp << mTail;
@@ -216,7 +259,7 @@ string Candidate::candidate() const {
 
 string Candidate::mid() const { 
     
-    return mMid.value_or("0");
+    return mMid;
 
 }
 
@@ -226,24 +269,47 @@ Candidate::operator string() const {
 	return line.str();
 }
 
-bool Candidate::operator==(const Candidate &other) const {
-	return (mFoundation == other.mFoundation && mService == other.mService && mNode == other.mNode);
+//bool Candidate::operator==(const Candidate &other) const {
+//	return (mFoundation == other.mFoundation && mService == other.mService && mNode == other.mNode);
+//}
+//
+//bool Candidate::operator!=(const Candidate &other) const {
+//	return mFoundation != other.mFoundation;
+//}
+
+bool Candidate::isResolved() const {
+    return resolved.len ;
 }
 
-bool Candidate::operator!=(const Candidate &other) const {
-	return mFoundation != other.mFoundation;
+bool Candidate::resolve(ResolveMode mode)
+{
+    IP::StringToAddress(mNode.c_str(), std::stoi( mService), resolved);
 }
 
-bool Candidate::isResolved() const { return mFamily != Family::Unresolved; }
+int Candidate::family() const { return resolved.addr.ss_family; }
 
-Candidate::Family Candidate::family() const { return mFamily; }
-
-optional<string> Candidate::address() const {
-	return isResolved() ? std::make_optional(mAddress) : nullopt;
+string Candidate::address() 
+{
+    
+    if(isResolved())
+    {
+        char ip[40];  uint16_t port;
+        base::net::IP::AddressToString(resolved, ip, port);
+        return ip;
+    }
+    else
+        return "";
 }
 
-optional<uint16_t> Candidate::port() const {
-	return isResolved() ? std::make_optional(mPort) : nullopt;
+uint16_t Candidate::port() const {
+    if(isResolved())
+    {
+        char ip[40];  uint16_t port;
+        base::net::IP::AddressToString(resolved, ip, port);
+        return port;
+    }
+    else
+        return 0;
 }
 
 std::ostream &operator<<(std::ostream &out, const Candidate &candidate) {
