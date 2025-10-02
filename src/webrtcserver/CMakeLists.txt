@@ -312,26 +312,9 @@ add_subdirectory(deps/libsrtp)
 file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"  "../net/src/*.cpp" "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" )
 
 
-add_library(datachannel SHARED
-	${LIBDATACHANNEL_SOURCES}
-	${LIBSTUN_SOURCES}
-	${LIBDATACHANNEL_HEADERS}
-	${LIBDATACHANNEL_IMPL_SOURCES}
-	${SOURCES}
-	${LIBDATACHANNEL_IMPL_HEADERS})
-set_target_properties(datachannel PROPERTIES
-	VERSION ${PROJECT_VERSION}
-	SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
-	CXX_STANDARD 17
-	CXX_VISIBILITY_PRESET default)
 
-if(APPLE)
-	set_target_properties(datachannel PROPERTIES
-		VERSION ${PROJECT_VERSION_MAJOR}
-		SOVERSION ${PROJECT_VERSION_MAJOR})
-endif()
 
-target_compile_definitions(datachannel PRIVATE RTC_EXPORTS)
+
 
 add_library(datachannel-static STATIC EXCLUDE_FROM_ALL
 	${LIBDATACHANNEL_SOURCES}
@@ -346,13 +329,7 @@ set_target_properties(datachannel-static PROPERTIES
 target_compile_definitions(datachannel-static PRIVATE RTC_EXPORTS)
 target_compile_definitions(datachannel-static PUBLIC RTC_STATIC)
 
-target_include_directories(datachannel PUBLIC
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>)
-target_include_directories(datachannel PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/rtc)
-target_include_directories(datachannel PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-#target_link_libraries(datachannel PRIVATE Threads::Threads)
-#target_link_libraries(datachannel PRIVATE usrsctp)
+
 
 target_include_directories(datachannel-static PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -363,36 +340,27 @@ target_link_libraries(datachannel-static PRIVATE Threads::Threads)
 target_link_libraries(datachannel-static PRIVATE usrsctp )
 
 if(WIN32)
-	target_link_libraries(datachannel PUBLIC ws2_32) # winsock2
 	target_link_libraries(datachannel-static PUBLIC ws2_32) # winsock2
 endif()
 
 if (NO_WEBSOCKET)
-	target_compile_definitions(datachannel PUBLIC RTC_ENABLE_WEBSOCKET=0)
 	target_compile_definitions(datachannel-static PUBLIC RTC_ENABLE_WEBSOCKET=0)
 else()
-	target_compile_definitions(datachannel PUBLIC RTC_ENABLE_WEBSOCKET=1)
 	target_compile_definitions(datachannel-static PUBLIC RTC_ENABLE_WEBSOCKET=1)
 endif()
 
 if(NO_MEDIA)
-	target_compile_definitions(datachannel PUBLIC RTC_ENABLE_MEDIA=0)
 	target_compile_definitions(datachannel-static PUBLIC RTC_ENABLE_MEDIA=0)
 else()
-	target_compile_definitions(datachannel PUBLIC RTC_ENABLE_MEDIA=1)
 	target_compile_definitions(datachannel-static PUBLIC RTC_ENABLE_MEDIA=1)
 	if(USE_SYSTEM_SRTP)
-		target_compile_definitions(datachannel PRIVATE RTC_SYSTEM_SRTP=1)
 		target_compile_definitions(datachannel-static PRIVATE RTC_SYSTEM_SRTP=1)
-		#target_link_libraries(datachannel PRIVATE srtp)
 		target_link_libraries(datachannel-static PRIVATE srtp)
 	else()
 		if(NOT TARGET srtp2)
 			#add_subdirectory(deps/libsrtp)
 		endif()
-		target_compile_definitions(datachannel PRIVATE RTC_SYSTEM_SRTP=0)
 		target_compile_definitions(datachannel-static PRIVATE RTC_SYSTEM_SRTP=0)
-		#target_link_libraries(datachannel PRIVATE srtp)
 		target_link_libraries(datachannel-static PRIVATE srtp)
 	endif()
 endif()
@@ -402,9 +370,7 @@ if(USE_MBEDTLS)
 	if(NOT TARGET MbedTLS::MbedTLS)
 		find_package(MbedTLS 3 REQUIRED)
 	endif()
-	#target_compile_definitions(datachannel PRIVATE USE_MBEDTLS=1)
 	target_compile_definitions(datachannel-static PRIVATE USE_MBEDTLS=1)
-	#target_link_libraries(datachannel PRIVATE MbedTLS::MbedTLS)
 	target_link_libraries(datachannel-static PRIVATE MbedTLS::MbedTLS)
 else()
 	if(APPLE)
@@ -424,120 +390,42 @@ else()
 		endif()
 	endif()
 	find_package(OpenSSL REQUIRED)
-	#target_compile_definitions(datachannel PRIVATE USE_GNUTLS=0)
 	target_compile_definitions(datachannel-static PRIVATE USE_GNUTLS=0)
 	#target_link_libraries(datachannel PRIVATE ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a)
 	target_link_libraries(datachannel-static PRIVATE ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a -lz)
 endif()
 
 
-target_compile_definitions(datachannel PRIVATE USE_NICE=0)
 target_compile_definitions(datachannel-static PRIVATE USE_NICE=0)
 
 
 if(CAPI_STDCALL)
-	target_compile_definitions(datachannel PUBLIC CAPI_STDCALL)
 	target_compile_definitions(datachannel-static PUBLIC CAPI_STDCALL)
 endif()
 
-#set_target_properties(datachannel PROPERTIES EXPORT_NAME #LibDataChannel)
-#add_library(LibDataChannel::LibDataChannel ALIAS datachannel)
+
 
 set_target_properties(datachannel-static PROPERTIES EXPORT_NAME LibDataChannelStatic)
-add_library(LibDataChannel::LibDataChannelStatic ALIAS datachannel-static )
+add_library(LibDataChannel::LibDataChannelStatic ALIAS datachannel-static)
 
 if(NOT MSVC)
-	target_compile_options(datachannel PRIVATE -Wall -Wextra)
 	target_compile_options(datachannel-static PRIVATE -Wall -Wextra)
 endif()
 
 if(WARNINGS_AS_ERRORS)
 	if(MSVC)
-		target_compile_options(datachannel PRIVATE /WX)
 		target_compile_options(datachannel-static PRIVATE /WX)
 	else()
-		target_compile_options(datachannel PRIVATE -Werror)
 		target_compile_options(datachannel-static PRIVATE -Werror)
 	endif()
 endif()
 
-install(TARGETS datachannel EXPORT LibDataChannelTargets
-	RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-	LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-	ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-)
 
-install(FILES ${LIBDATACHANNEL_HEADERS}
-	DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/rtc
-)
+#add_compile_options(-fsanitize=address)
+#add_link_options(-fsanitize=address)
 
-# Export targets
-install(
-	EXPORT LibDataChannelTargets
-	FILE LibDataChannelTargets.cmake
-	NAMESPACE LibDataChannel::
-	DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LibDataChannel
-)
 
-include(CMakePackageConfigHelpers)
-configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/LibDataChannelConfig.cmake.in
-    ${CMAKE_BINARY_DIR}/LibDataChannelConfig.cmake
-    INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LibDataChannel
-    NO_SET_AND_CHECK_MACRO
-    NO_CHECK_REQUIRED_COMPONENTS_MACRO
-)
-write_basic_package_version_file(
-    ${CMAKE_BINARY_DIR}/LibDataChannelConfigVersion.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion
-)
-# Export config and version files
-#install(FILES
-	#${CMAKE_BINARY_DIR}/LibDataChannelConfig.cmake
-	#${CMAKE_BINARY_DIR}/LibDataChannelConfigVersion.cmake
-    #DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/LibDataChannel)
 
-# Tests
-if(NOT NO_TESTS)
-	if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
-		# Add resource files needed for UWP apps.
-		add_executable(datachannel-tests ${TESTS_SOURCES} ${TESTS_UWP_RESOURCES})
-	else()
-		add_executable(datachannel-tests ${TESTS_SOURCES})
-	endif()
-
-	set_target_properties(datachannel-tests PROPERTIES
-		VERSION ${PROJECT_VERSION}
-		CXX_STANDARD 17
-		OUTPUT_NAME tests)
-
-	set_target_properties(datachannel-tests PROPERTIES
-		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.github.paullouisageneau.libdatachannel.tests)
-
-	target_include_directories(datachannel-tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-	target_link_libraries(datachannel-tests datachannel-static Threads::Threads)
-
-	# Benchmark
-	if(CMAKE_SYSTEM_NAME STREQUAL "WindowsStore")
-		# Add resource files needed for UWP apps.
-		add_executable(datachannel-benchmark test/benchmark.cpp ${BENCHMARK_UWP_RESOURCES})
-	else()
-		add_executable(datachannel-benchmark test/benchmark.cpp)
-	endif()
-
-	set_target_properties(datachannel-benchmark PROPERTIES
-		VERSION ${PROJECT_VERSION}
-		CXX_STANDARD 17
-		OUTPUT_NAME benchmark)
-
-	set_target_properties(datachannel-benchmark PROPERTIES
-		XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER com.github.paullouisageneau.libdatachannel.benchmark)
-
-	target_compile_definitions(datachannel-benchmark PRIVATE BENCHMARK_MAIN=1)
-	target_include_directories(datachannel-benchmark PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
-	target_link_libraries(datachannel-benchmark datachannel-static Threads::Threads)
-endif()
 
 # Examples
 if(NOT NO_EXAMPLES)
@@ -548,4 +436,3 @@ if(NOT NO_EXAMPLES)
 
 endif()
 
- 

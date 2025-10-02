@@ -43,7 +43,7 @@ namespace rtc {
     }
 
     
-   int ice_generate_candidate_sdp(const Candidate *candidate, char *buffer, size_t size) {
+   int ice_generate_candidate_sdp( Candidate *candidate, char *buffer, size_t size) {
 
        char *type = NULL;
 	char *suffix = NULL;
@@ -54,8 +54,10 @@ namespace rtc {
            exit(0);
        }
        
+       char *add =  (char *)candidate->address().c_str();
+               
 	return snprintf(buffer, size, "a=candidate:%s %u UDP %u %s %u typ %s%s%s",    candidate->mFoundation.c_str(), candidate->mComponent, candidate->mPriority, 
-	                candidate->mAddress , candidate->mPort, type, suffix ? " " : "",
+	                add , candidate->port(), type, suffix ? " " : "",
 	                suffix ? suffix : "");
    }
 
@@ -86,7 +88,7 @@ namespace rtc {
 			    candidate->mType == Candidate::Type::ServerReflexive)
 				continue;
 			char tmp[4096];
-			if (ice_generate_candidate_sdp(candidate, tmp, 4096) < 0)
+			if (ice_generate_candidate_sdp((Candidate*)candidate, tmp, 4096) < 0)
 				continue;
 			ret = snprintf(begin, end - begin, "%s\r\n", tmp);
 		} else { // i == description->candidates_count + 1

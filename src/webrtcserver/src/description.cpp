@@ -253,8 +253,31 @@ std::vector<Candidate> Description::extractCandidates() {
 	return result;
 }
 
-bool Description::hasCandidate(const Candidate &candidate) const {
-	return std::find(mCandidates.begin(), mCandidates.end(), candidate) != mCandidates.end();
+bool Description::hasCandidate(const Candidate &cand) const {
+
+        
+        for( int i = 0 ; i < mCandidates.size() ; ++i)
+        {
+            Candidate *other = (Candidate *)&mCandidates[i];
+            
+            if(cand.isResolved() && other->isResolved() )
+            {
+                if (((cand.mFoundation == other->mFoundation || cand.mType == rtc::Candidate::Type::PeerReflexive || cand.mType == rtc::Candidate::Type::ServerReflexive) &&  IP::addr_record_is_equal( &cand.resolved,  &other->resolved,  true)) )
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                SError << " This is not allowed state , exiting stun";
+                exit(0);
+            }
+            
+        }
+        
+        return false;
+    
+ 
 }
 
 void Description::addCandidate(Candidate candidate) {
@@ -315,11 +338,11 @@ string Description::generateSdp(string_view eol) const {
 
 	auto cand = defaultCandidate();
 	const string addr = cand && cand->isResolved()
-	                        ? (string(cand->family() == Candidate::Family::Ipv6 ? "IP6" : "IP4") +
-	                           " " + *cand->address())
+	                        ? (string(cand->family() == AF_INET6 ? "IP6" : "IP4") +
+	                           " " + cand->address())
 	                        : "IP4 0.0.0.0";
 	const uint16_t port =
-	    cand && cand->isResolved() ? *cand->port() : 9; // Port 9 is the discard protocol
+	    cand && cand->isResolved() ? cand->port() : 9; // Port 9 is the discard protocol
 
 	// Entries
 	bool first = true;
@@ -358,11 +381,11 @@ string Description::generateApplicationSdp(string_view eol) const {
 
 	auto cand = defaultCandidate();
 	const string addr = cand && cand->isResolved()
-	                        ? (string(cand->family() == Candidate::Family::Ipv6 ? "IP6" : "IP4") +
-	                           " " + *cand->address())
+	                        ? (string(cand->family() == AF_INET6 ? "IP6" : "IP4") +
+	                           " " + cand->address())
 	                        : "IP4 0.0.0.0";
 	const uint16_t port =
-	    cand && cand->isResolved() ? *cand->port() : 9; // Port 9 is the discard protocol
+	    cand && cand->isResolved() ? cand->port() : 9; // Port 9 is the discard protocol
 
 	// Session-level attributes
 	sdp << "a=msid-semantic:WMS *" << eol;
@@ -403,8 +426,8 @@ optional<Candidate> Description::defaultCandidate() const {
 	for (const auto &c : mCandidates) {
 		if (c.type() == Candidate::Type::Host) {
 			if (!result ||
-			    (result->family() == Candidate::Family::Ipv6 &&
-			     c.family() == Candidate::Family::Ipv4) ||
+			    (result->family() == AF_INET6 &&
+			     c.family() == AF_INET) ||
 			    (result->family() == c.family() && result->priority() < c.priority()))
 				result.emplace(c);
 		}
