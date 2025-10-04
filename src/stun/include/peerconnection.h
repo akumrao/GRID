@@ -3,7 +3,7 @@
 #ifndef RTC_PEER_CONNECTION_H
 #define RTC_PEER_CONNECTION_H
 
-#include "candidate.h"
+#include "candidate.hpp"
 #include "common.h"
 #include "configuration.h"
 
@@ -15,7 +15,7 @@
 #endif
 
 
-#include "description.h"
+#include "description.hpp"
 #include "reliability.h"
 #include "certificate.h"
 

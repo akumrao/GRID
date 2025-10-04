@@ -15,7 +15,7 @@
 #include <Attribute.h>
 #include <Types.h>
 
-#include "candidate.h"
+#include "candidate.hpp"
 
 
 using namespace rtc;

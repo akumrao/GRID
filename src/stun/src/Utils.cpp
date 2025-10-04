@@ -435,22 +435,22 @@ void sha256(const std::string& str , std::string& key) {
 }
        
 
-bool IsStun(const char* data, size_t len)
-{
-
-    	const uint8_t magicCookie[] = { 0x21, 0x12, 0xA4, 0x42 };
-    
-        return (
-                // STUN headers are 20 bytes.
-                (len >= 20) &&
-                // DOC: https://tools.ietf.org/html/draft-ietf-avtcore-rfc5764-mux-fixes
-                (data[0] < 3) &&
-                // Magic cookie must match.
-                (data[4] == magicCookie[0]) && (data[5] == magicCookie[1]) &&
-                (data[6] == magicCookie[2]) && (data[7] == magicCookie[3])
-        );
-
-}
+//bool IsStun(const char* data, size_t len)
+//{
+//
+//    	const uint8_t magicCookie[] = { 0x21, 0x12, 0xA4, 0x42 };
+//    
+//        return (
+//                // STUN headers are 20 bytes.
+//                (len >= 20) &&
+//                // DOC: https://tools.ietf.org/html/draft-ietf-avtcore-rfc5764-mux-fixes
+//                (data[0] < 3) &&
+//                // Magic cookie must match.
+//                (data[4] == magicCookie[0]) && (data[5] == magicCookie[1]) &&
+//                (data[6] == magicCookie[2]) && (data[7] == magicCookie[3])
+//        );
+//
+//}
 
 
 

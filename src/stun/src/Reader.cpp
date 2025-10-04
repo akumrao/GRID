@@ -94,7 +94,7 @@ namespace stun {
     }
 
     /* parse the rest of the message */
-    int c = 0;
+//    int c = 0;
     uint16_t attr_type;
     uint16_t attr_length;
     uint32_t attr_offset;

@@ -1,6 +1,6 @@
 
 
-#include "candidate.h"
+#include "candidate.hpp"
 
 #include <algorithm>
 #include <array>

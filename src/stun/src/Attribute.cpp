@@ -30,7 +30,7 @@ namespace stun {
     //socklen_t addrlen;
     
     
-    stun_address_family_t family =  strlen(ip) > 17 ? STUN_ADDRESS_FAMILY_IPV6: STUN_ADDRESS_FAMILY_IPV4;
+//    stun_address_family_t family =  strlen(ip) > 17 ? STUN_ADDRESS_FAMILY_IPV6: STUN_ADDRESS_FAMILY_IPV4;
 
    /*
     if(family == STUN_ADDRESS_FAMILY_IPV4) 

@@ -15,7 +15,7 @@ namespace rtc
 
 testUdpServer::testUdpServer(std::string IP, int port,   Agent *agent ) :IP(IP), port(port), agent(agent) {
     
-    int x = 0;
+//    int x = 0;
 
 }
 
@@ -53,20 +53,20 @@ void testUdpServer::OnUdpSocketPacketReceived(UdpServer* socket, const char* dat
     
     
     
-    
+    agent->onStunMessage((unsigned char *)data, len,  &remotesrc, nullptr );
 // Increase receive transmission.
 //    Transport::DataReceived(len);
 
-    // Check if it's STUN.
-    if (stun::IsStun(data, len))
-    {
-           // OnStunDataReceived(tuple, data, len);
-           agent->onStunMessage((unsigned char *)data, len,  &remotesrc, nullptr );
-    }
-    else
-    {
-         agent->onStunMessage((unsigned char *)data, len,  &remotesrc, nullptr );
-    }
+//    // Check if it's STUN.
+//    if (stun::IsStun(data, len))
+//    {
+//           // OnStunDataReceived(tuple, data, len);
+//           agent->onStunMessage((unsigned char *)data, len,  &remotesrc, nullptr );
+//    }
+//    else
+//    {
+//        agent->onStunMessage((unsigned char *)data, len,  &remotesrc, nullptr );
+//    }
     // Check if it's RTCP.
 //    else if (RTC::RTCP::Packet::IsRtcp(data, len))
 //    {

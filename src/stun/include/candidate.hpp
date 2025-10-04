@@ -15,15 +15,6 @@ using namespace stun;
 
 namespace rtc {
 
-//    typedef enum ice_candidate_type {
-//	ICE_CANDIDATE_TYPE_UNKNOWN,
-//	ICE_CANDIDATE_TYPE_HOST,
-//	ICE_CANDIDATE_TYPE_SERVER_REFLEXIVE,
-//	ICE_CANDIDATE_TYPE_PEER_REFLEXIVE,
-//	ICE_CANDIDATE_TYPE_RELAYED,
-//} ice_candidate_type_t;
-
-
 #define ICE_CANDIDATE_PREF_HOST 126
 #define ICE_CANDIDATE_PREF_PEER_REFLEXIVE 110
 #define ICE_CANDIDATE_PREF_SERVER_REFLEXIVE 100
@@ -31,19 +22,7 @@ namespace rtc {
 
 
 
- 
-//typedef struct ice_candidate {
-//	ice_candidate_type_t type;
-//	uint32_t priority;
-//	int component;
-//	char foundation[32 + 1]; // 1 to 32 characters
-//	char transport[32 + 1];
-//	char hostname[256 + 1];
-//	//char service[32 + 1];
-//        uint16_t port;
-//
-//} ice_candidate_t;    
-    
+
 class RTC_CPP_EXPORT Candidate {
 public:
 	//enum class Family { Unresolved, Ipv4, Ipv6 };
@@ -77,9 +56,9 @@ public:
 	int family() const;
 	string address() ;
 	uint16_t port() const;
-private:
-	void parse(string candidate);
 public:
+	void parse(string candidate);
+
 	string mFoundation;
 	uint32_t mComponent, mPriority;
 	string mTypeString, mTransportString;
