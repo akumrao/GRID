@@ -17,7 +17,7 @@
 
 #include "configuration.h"
 #include "net/dns.h"
-#include "candidate.h"
+#include "candidate.hpp"
 
 
 
@@ -31,26 +31,15 @@ namespace rtc {
  
  
     
-class Transport: public GetAddrInfoReq, GetNameInfoReq
+class Transport
 {
 public:
     
-    
-       Transport( Configuration &Config): mConfig(Config)
-        {
-            
-        }
-        void resolveStunServer();
-        void cbDnsResolve(addrinfo* res) override;
-        void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
-        void resolveIp( Candidate *certificate );
-        const Configuration &mConfig;
-     
         
 	enum class State { Disconnected, Connecting, Connected, Completed, Failed };
 	using state_callback = std::function<void(State state)>;
 
-	Transport(const Configuration &Config, state_callback callback = nullptr );
+	Transport(shared_ptr<Transport> lower = nullptr, state_callback callback = nullptr);
 	virtual ~Transport();
 
 	void registerIncoming();
@@ -77,7 +66,7 @@ private:
     #endif
         
 
-	//shared_ptr<Transport> mLower;
+	shared_ptr<Transport> mLower;
 	synchronized_callback<State> mStateChangeCallback;
 	synchronized_callback<message_ptr> mRecvCallback;
 

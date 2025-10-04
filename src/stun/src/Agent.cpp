@@ -1,5 +1,6 @@
 
 #include <stdio.h>
+#include "common.hpp"
 #include <Agent.h>
 #include <uv.h>
 #include "base/logger.h"
@@ -26,9 +27,7 @@ namespace stun {
 //}
 
     
-    bool comp(Candidate a, Candidate b) {
-        return a.priority() > b.priority();
-    }
+
     
     int64_t current_timestamp() { // millisecond time
 #ifdef _WIN32
@@ -43,7 +42,7 @@ namespace stun {
     /* --------------------------------------------------------------------- */
 
     static int agentCount = 0;
-    Agent::Agent( Description &localdesp, Description &remotedesp,  candidate_callback candidateCallback,  gathering_state_callback stateCallback, recv_callback recvcallback ):localdesp(localdesp), remotedesp(remotedesp), mCandidateCallback(candidateCallback), mstateCallback(stateCallback), mrecvcallback(recvcallback)
+    Agent::Agent( Configuration &config, IceListen *list  ): mConfig(config), list(list)
     {
 
         random_bytes(&ice_tiebreaker, sizeof(ice_tiebreaker));
@@ -51,6 +50,7 @@ namespace stun {
         //_timer.Start(20,20);
          agentNo = ++agentCount;
          m_next_timestamp = current_timestamp();
+         ice_create_local_description(&localdesp);
        
     }
 
@@ -60,6 +60,42 @@ namespace stun {
 
     }
 
+    
+    int Agent::ice_create_local_description(ice_description_t *description) 
+    {
+        
+        //memset(description, 0, sizeof(ice_description_t));
+	random_str64(description->ice_ufrag, 4 + 1);
+	random_str64(description->ice_pwd, 22 + 1);
+	description->ice_lite = false;
+	description->candidates_count = 0;
+	description->finished = false;
+        
+//        random_str64(localDes.desc.ice_ufrag, 4 + 1);
+//        random_str64(localDes.desc.ice_pwd, 22 + 1);
+//        localDes.desc.ice_lite = false;
+//        //localDes.desc.candidates_count = 0;
+//        localDes.desc.finished = false;
+        
+//	("Created local description: ufrag=\"%s\", pwd=\"%s\"", description->ice_ufrag,
+//	           description->ice_pwd);
+	return 0;
+
+    }
+    
+    int Agent::gather_candidates()
+    {
+       if (m_mode == AGENT_MODE_UNKNOWN) {
+
+	    m_mode = AGENT_MODE_CONTROLLING;
+	}
+         
+        getInterfaces();
+        
+        resolveStunServer( );
+        
+    }
+    
     bool Agent::getInterfaces( ) {
         
         
@@ -118,12 +154,59 @@ namespace stun {
 
         uv_free_interface_addresses(info, count);
         
-        std::sort(localdesp.desc.candidates,localdesp.desc.candidates +localdesp.desc.candidates_count , comp);
+        std::sort(localdesp.candidates,localdesp.candidates +localdesp.candidates_count , comp);
         
         agent_change_state(JUICE_STATE_CONNECTING);
                 
         return 0;
 
+    }
+    
+    bool static ice_is_valid_string(const char *str) {
+	if (!str)
+		return false;
+
+	for (size_t i = 0; i < strlen(str); ++i)
+		if (!isalpha(str[i]) && !isdigit(str[i]) && str[i] != '+' && str[i] != '/')
+			return false;
+
+	return true;
+    }
+
+    
+  
+    
+    int Agent::get_local_description( char *buffer, int size) {
+ 
+        if (ice_generate_sdp(&localdesp, buffer, size) < 0) {
+                SError << "Failed to generate local SDP description";
+                return -1;
+        }
+       // JLOG_VERBOSE("Generated local SDP description: %s", buffer);
+
+        if (m_mode == AGENT_MODE_UNKNOWN) {
+                SWarn << "no agent mode set so assuming controlling mode";
+                m_mode = AGENT_MODE_CONTROLLING;
+        }
+
+
+        return 0;
+    }
+
+    
+    int Agent::set_local_ice_attributes(const char *ufrag, const char *pwd)
+    {
+
+
+	if (strlen(ufrag) < 4 || strlen(pwd) < 22 || !ice_is_valid_string(ufrag) ||
+	    !ice_is_valid_string(pwd)) {
+		SError << "Invalid ICE attributes";
+		return -1;
+	}
+
+	snprintf(localdesp.ice_ufrag, sizeof(localdesp.ice_ufrag), "%s", ufrag);
+	snprintf(localdesp.ice_pwd, sizeof(localdesp.ice_pwd), "%s", pwd);
+	return 0;
     }
 
     int Agent::ice_create_host_candidate( Candidate *candidate ) {
@@ -136,7 +219,7 @@ namespace stun {
         }
         
         
-        if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  candidate)) {
+        if (ice_create_local_candidate( 1, localdesp.candidates_count,  candidate)) {
             SInfo << "Failed to create host candidate";
         }
         
@@ -162,13 +245,13 @@ namespace stun {
         }
         
         
-        if (candidate->mType == Candidate::Type::PeerReflexive && ice_candidates_count(&localdesp.desc, Candidate::Type::PeerReflexive) >= MAX_PEER_REFLEXIVE_CANDIDATES_COUNT) {
+        if (candidate->mType == Candidate::Type::PeerReflexive && ice_candidates_count(&localdesp, Candidate::Type::PeerReflexive) >= MAX_PEER_REFLEXIVE_CANDIDATES_COUNT) {
 		LInfo("Local description has the maximum number of peer reflexive candidates, ignoring");
 		return 0;
 	}
         
 
-        if (ice_create_local_candidate(1, localdesp.desc.candidates_count, candidate)) {
+        if (ice_create_local_candidate(1, localdesp.candidates_count, candidate)) {
             SError << "Failed to create host candidate";
             return -1;
         }
@@ -264,11 +347,11 @@ namespace stun {
 //                 port =  ntohs( ((sockaddr_in *)&record->addr)->sin_port); 
 //            }
             
-            if (ice_create_local_candidate( 1, localdesp.desc.candidates_count,  &candidate)) {
+            if (ice_create_local_candidate( 1, localdesp.candidates_count,  &candidate)) {
                     LError("Failed to create reflexive candidate");
                     return -1;
             }
-            if (ice_candidates_count(&remotedesp.desc , Candidate::Type::PeerReflexive ) >=    MAX_PEER_REFLEXIVE_CANDIDATES_COUNT) {
+            if (ice_candidates_count(&remotedesp , Candidate::Type::PeerReflexive ) >=    MAX_PEER_REFLEXIVE_CANDIDATES_COUNT) {
                     LInfo( "Remote description has the maximum number of peer reflexive candidates, ignoring");
                     return 0;
             }
@@ -279,7 +362,7 @@ namespace stun {
 
             SDebug << "AgentNo " << agentNo << " Obtained a new remote reflexive candidate, priority=" << (unsigned long)priority;
 
-            Candidate *remote = &remotedesp.desc.candidates[remotedesp.desc.candidates_count -1];
+            Candidate *remote = &remotedesp.candidates[remotedesp.candidates_count -1];
             remote->mPriority = priority;
 
             return agent_add_candidate_pairs_for_remote( remote);
@@ -303,14 +386,14 @@ namespace stun {
     } 
     
     
-    int Agent::ice_add_candidate( Candidate *candidate, Description *description) 
+    int Agent::ice_add_candidate( Candidate *candidate, ice_description_t *description) 
     {
         
         
        /* not required since already check happening in parent funtiions
          if(description->hasCandidate(*candidate ))
         {
-            SError << "Description already has the simillar candidates";
+            SError << "ice_description_t already has the simillar candidates";
             return -1;
         }
         */
@@ -318,26 +401,26 @@ namespace stun {
 //	if (candidate->cand.type == ICE_CANDIDATE_TYPE_UNKNOWN)
 //		return -1;
 
-	if (description->desc.candidates_count  >= ICE_MAX_CANDIDATES_COUNT) {
-	        SError << "Description already has the maximum number of candidates";
+	if (description->candidates_count  >= ICE_MAX_CANDIDATES_COUNT) {
+	        SError << "ice_description_t already has the maximum number of candidates";
 		return -1;
 	}
         
         candidate->mMid = localMid;
 
 	if (candidate->mFoundation == "-")
-		candidate->mFoundation = std::to_string(description->desc.candidates_count + 1);
+		candidate->mFoundation = std::to_string(description->candidates_count + 1);
 
 
 	//ice_candidate_t *pos = description->candidates + description->localCanSdp.candidates_count;
 	//*pos = *candidate;
-        description->desc.candidates[description->desc.candidates_count] = *candidate;
+        description->candidates[description->candidates_count] = *candidate;
         
-        ++description->desc.candidates_count;
+        ++description->candidates_count;
                 
 	//++description->desc.candidates.size();
 	
-        candidate = description->desc.candidates + description->desc.candidates_count -1;
+        candidate = description->candidates + description->candidates_count -1;
         
        // char buffer[4096];
         
@@ -345,7 +428,7 @@ namespace stun {
         
         SInfo<< "AgentNo " << agentNo << " local ice_add_candidate  " << string(*candidate);
         
-        mCandidateCallback(*candidate);
+        list->onCandidateCallback(candidate);
         
         return 0;
 
@@ -526,7 +609,7 @@ namespace stun {
 	}
 //
 //	// There is only one component, therefore we can unfreeze if no pair is nominated
-	if (*remotedesp.desc.ice_ufrag != '\0' &&
+	if (*remotedesp.ice_ufrag != '\0' &&
 	    (!m_selected_pair || !m_selected_pair->nominated)) {
 		STrace << "AgentNo " << agentNo << " Unfreezing the new candidate pair";
 		agent_unfreeze_candidate_pair( pos);
@@ -604,7 +687,7 @@ namespace stun {
                 
        // if( m_next_timestamp <=  cur )
         {
-            int ret =  agent_bookkeeping( cur) ;
+          agent_bookkeeping( cur) ;
         }
 //        else
 //        {
@@ -713,8 +796,8 @@ namespace stun {
 
 	case AGENT_STUN_ENTRY_TYPE_CHECK:
 		//LDebug("Received application datagram");
-		if (mrecvcallback)
-			mrecvcallback(buf, len);
+		
+	        list->onRecvCallback(buf, len);
 		return 0;
 
 	default:
@@ -856,23 +939,23 @@ int Agent::agent_verify_stun_binding( unsigned char *buf, size_t size, stun::Mes
 		*separator = '\0';
 		const char *local_ufrag = username;
 		const char *remote_ufrag = separator + 1;
-		if (strcmp(local_ufrag, localdesp.desc.ice_ufrag) != 0) {
-			SWarn << "STUN local ufrag check failed, expected= " << localdesp.desc.ice_ufrag  << " actual= " << local_ufrag;
+		if (strcmp(local_ufrag, localdesp.ice_ufrag) != 0) {
+			SWarn << "STUN local ufrag check failed, expected= " << localdesp.ice_ufrag  << " actual= " << local_ufrag;
 			return -1;
 		}
 		// RFC 8445 7.3. STUN Server Procedures:
 		// It is possible (and in fact very likely) that the initiating agent will receive a Binding
 		// request prior to receiving the candidates from its peer.  If this happens, the agent MUST
 		// immediately generate a response.
-		if (*remotedesp.desc.ice_ufrag != '\0' &&
-		    strcmp(remote_ufrag, remotedesp.desc.ice_ufrag) != 0) {
-			SWarn << "STUN remote ufrag check failed, expected= " << remotedesp.desc.ice_ufrag <<  " actual= " <<  remote_ufrag;
+		if (*remotedesp.ice_ufrag != '\0' &&
+		    strcmp(remote_ufrag, remotedesp.ice_ufrag) != 0) {
+			SWarn << "STUN remote ufrag check failed, expected= " << remotedesp.ice_ufrag <<  " actual= " <<  remote_ufrag;
 			return -1;
 		}
 	}
 	// Check password
 	const char *password =
-	    msg->msg_class == STUN_CLASS_REQUEST ?  localdesp.desc.ice_pwd : remotedesp.desc.ice_pwd;
+	    msg->msg_class == STUN_CLASS_REQUEST ?  localdesp.ice_pwd : remotedesp.ice_pwd;
 	if (*password == '\0') {
 		LWarn("STUN integrity check failed, unknown password");
 		return -1;
@@ -1193,7 +1276,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 		// of that pair is In-Progress, [...] the agent MUST [...] trigger a new connectivity check
 		// of the pair. [...] If the state of that pair is Waiting, Frozen, or Failed, the agent
 		// MUST [...] trigger a new connectivity check of the pair.
-		if (pair->state != ICE_CANDIDATE_PAIR_STATE_SUCCEEDED && *remotedesp.desc.ice_ufrag != '\0') {
+		if (pair->state != ICE_CANDIDATE_PAIR_STATE_SUCCEEDED && *remotedesp.ice_ufrag != '\0') {
 			LDebug("Triggered pair check");
 			pair->state = ICE_CANDIDATE_PAIR_STATE_PENDING;
 			entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
@@ -1396,7 +1479,7 @@ void Agent::agent_arm_keepalive(agent_stun_entry_t *entry)
 	int64_t period;
 	switch (entry->type) {
 	case AGENT_STUN_ENTRY_TYPE_RELAY:
-		period = localdesp.desc.candidates_count  > 0 ? TURN_REFRESH_PERIOD : STUN_KEEPALIVE_PERIOD;
+		period = localdesp.candidates_count  > 0 ? TURN_REFRESH_PERIOD : STUN_KEEPALIVE_PERIOD;
 		break;
 	case AGENT_STUN_ENTRY_TYPE_SERVER:
 		period = STUN_KEEPALIVE_PERIOD;
@@ -1458,12 +1541,12 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 		// the peer.
 		switch (msg_class) {
 		case STUN_CLASS_REQUEST: {
-			if (*remotedesp.desc.ice_ufrag == '\0' || *remotedesp.desc.ice_pwd == '\0') {
+			if (*remotedesp.ice_ufrag == '\0' || *remotedesp.ice_pwd == '\0') {
 				SError << "AgentNo " << agentNo << " Missing remote ICE credentials, dropping STUN binding request";
 				return 0;
 			}
-			snprintf(msg.credentials.username, STUN_MAX_USERNAME_LEN, "%s:%s",remotedesp.desc.ice_ufrag, localdesp.desc.ice_ufrag);
-			password = remotedesp.desc.ice_pwd;
+			snprintf(msg.credentials.username, STUN_MAX_USERNAME_LEN, "%s:%s",remotedesp.ice_ufrag, localdesp.ice_ufrag);
+			password = remotedesp.ice_pwd;
                         
                         Username *iceUser = new stun::Username(msg.credentials.username);
                         msg.addAttribute(iceUser);   
@@ -1491,7 +1574,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 			// candidate type preference of peer-reflexive candidates.
 			int family = entry->record.addr.ss_family;
 			int index = entry->pair && entry->pair->local
-			                ? (int)(entry->pair->local - localdesp.desc.candidates )    //arvind
+			                ? (int)(entry->pair->local - localdesp.candidates )    //arvind
 			                : 0;
                         
                         Priority *priority = new stun::Priority();
@@ -1515,7 +1598,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 		}
 		case STUN_CLASS_RESP_SUCCESS:
 		case STUN_CLASS_RESP_ERROR: {
-			password = localdesp.desc.ice_pwd;
+			password = localdesp.ice_pwd;
 			msg.error_code = error_code;
 			if (mapped)
 				msg.mapped = mapped;
@@ -1683,7 +1766,7 @@ void Agent::agent_update_gathering_done()
 	}
 	if (!m_gathering_done) {
 		 SInfo  << "AgentNo " << agentNo << " Candidate gathering done";
-		localdesp.desc.finished = true;
+		localdesp.finished = true;
 		m_gathering_done = true;
 
 		agent_update_pac_timer();
@@ -1700,7 +1783,7 @@ void Agent::agent_change_state( juice_state_t state)
     m_state = state;
     STrace  << "AgentNo " << agentNo << " agent_change_state " << state;
     
-    mstateCallback(state);
+    list->onStateChangeCallback(state);
 }
 
 
@@ -2054,7 +2137,7 @@ void  Agent::agent_update_pac_timer() {
 	// checks (e.g., the Username Fragment and Password [...]) and has received some indication that
 	// the remote side is ready to start connectivity checks, typically via receipt of the values
 	// mentioned above.
-	if (*remotedesp.desc.ice_ufrag != '\0' && m_gathering_done) {
+	if (*remotedesp.ice_ufrag != '\0' && m_gathering_done) {
 		LInfo("Connectivity timer started");
 		pac_timestamp = current_timestamp() + ICE_PAC_TIMEOUT;
 	}
@@ -2065,15 +2148,50 @@ void  Agent::agent_update_pac_timer() {
 
 
 
-void  Agent::agent_set_remote_description() {
+int  Agent::agent_set_remote_description(const char *sdp) {
 	
 	STrace << "AgentNo " << agentNo << " agent_set_remote_description";
+        
+        
+        ice_description_t remote;
+	int ret = ice_parse_sdp(sdp, &remote);
+	if (ret < 0) {
+		switch (ret) {
+		case ICE_PARSE_MISSING_UFRAG:
+			SError << "Missing ICE user fragment in remote description";
+			break;
+		case ICE_PARSE_MISSING_PWD:
+			SError << "Missing ICE password in remote description";
+			break;
+		default:
+			SError << "Failed to parse remote SDP description";
+			break;
+		}
 
-        std::sort(remotedesp.desc.candidates,remotedesp.desc.candidates +remotedesp.desc.candidates_count , comp);
+		return -1;
+	}
+
+	if (remotedesp.ice_ufrag) {
+		// There is already a remote description
+		if (strcmp(remotedesp.ice_ufrag, remotedesp.ice_ufrag) == 0 &&
+		    strcmp(remotedesp.ice_pwd, remotedesp.ice_pwd) == 0) {
+			SDebug << "Remote description is already set, ignoring";
+			
+			return -1;
+		}
+
+		SWarn << "ICE restart is not supported";
+		return -1;
+	}
+
+	remotedesp = remote;
+        
+
+       // std::sort(remotedesp.candidates,remotedesp.candidates +remotedesp.candidates_count , comp);
           
 	agent_update_pac_timer();
 
-	if (remotedesp.desc.ice_lite && m_mode != AGENT_MODE_CONTROLLING) {
+	if (remotedesp.ice_lite && m_mode != AGENT_MODE_CONTROLLING) {
 		// RFC 8445 6.1.1. Determining Role:
 		// The full agent MUST take the controlling role, and the lite agent MUST take the
 		// controlled role.
@@ -2092,9 +2210,9 @@ void  Agent::agent_set_remote_description() {
 	}
         
         
-	SDebug <<  "AgentNo " << agentNo << " Adding " << (int)remotedesp.desc.candidates_count << " candidates from remote description";
-	for (int i = 0; i < remotedesp.desc.candidates_count; ++i) {
-		Candidate *remote = &remotedesp.desc.candidates[ i];
+	SDebug <<  "AgentNo " << agentNo << " Adding " << (int)remotedesp.candidates_count << " candidates from remote description";
+	for (int i = 0; i < remotedesp.candidates_count; ++i) {
+		Candidate *remote = &remotedesp.candidates[ i];
 		if (agent_add_candidate_pairs_for_remote( remote))
 			LWarn("Failed to add candidate pair");
 	}
@@ -2162,7 +2280,7 @@ int Agent::agent_resolve_servers( addrinfo* start)
 
 
 
-void Agent::StartAgent( std::string &stunip, uint16_t &stunport)
+void Agent::StartAgent( std::string &stunip , uint16_t &stunport)
 {
     
 
@@ -2216,7 +2334,7 @@ int Agent::agent_get_selected_candidate_pair( Candidate *local, Candidate *remot
 	}
 
 	if (local)
-		*local = pair->local ? *pair->local : localdesp.desc.candidates[0];
+		*local = pair->local ? *pair->local : localdesp.candidates[0];
 	if (remote)
 		*remote = *pair->remote;
 
@@ -2414,6 +2532,200 @@ std::string Agent::dump()
     
     return ret;
 }
+
+
+
+void Agent::resolveStunServer( )
+{
+    
+    for( const IceServer &icesv:  mConfig.iceServers  )
+    {
+        SInfo << "resolve " <<  icesv.hostname << ":" << icesv.port;
+        resolve(icesv.hostname, icesv.port, Application::uvGetLoop(), (void*)&icesv);
+        //break;
+    }
+   
+}
+
+
+int Agent::parse_sdp_line(const char *line, ice_description_t *description)
+ {
+     const char *arg;
+     if (match_prefix(line, "a=ice-ufrag:", &arg)) {
+             sscanf(arg, "%256s", description->ice_ufrag);
+             return 0;
+     }
+     if (match_prefix(line, "a=ice-pwd:", &arg)) {
+             sscanf(arg, "%256s", description->ice_pwd);
+             return 0;
+     }
+     if (match_prefix(line, "a=ice-lite", &arg)) {
+             description->ice_lite = true;
+             return 0;
+     }
+     if (match_prefix(line, "a=end-of-candidates", &arg)) {
+             description->finished = true;
+             return 0;
+     }
+     Candidate candidate;
+
+ //    candidate.parse(line);
+
+//        
+//        
+    if (ice_parse_candidate_sdp(line, &candidate) == 0) {
+            ice_add_candidate(&candidate, description);  // arvind
+            return 0;
+    }
+
+     return 0;
+ }
+    
+
+int  Agent::ice_parse_sdp(const char *sdp, ice_description_t *description)
+{
+    memset(description, 0, sizeof(*description));
+    description->ice_lite = false;
+    description->candidates_count = 0;
+    description->finished = false;
+
+    char buffer[1024];
+    size_t size = 0;
+    while (*sdp) {
+            if (*sdp == '\n') {
+                    if (size) {
+                            buffer[size++] = '\0';
+                            if (parse_sdp_line(buffer, description) == ICE_PARSE_ERROR)
+                                    return ICE_PARSE_ERROR;
+
+                            size = 0;
+                    }
+            } else if (*sdp != '\r' && size + 1 < 1024) {
+                    buffer[size++] = *sdp;
+            }
+            ++sdp;
+    }
+    //ice_sort_candidates(description);
+
+     std::sort(description->candidates,description->candidates +description->candidates_count , comp);
+
+    STrace << "Parsed remote description: ufrag= " << description->ice_ufrag << " pwd= " << description->ice_pwd <<  " candidates= " <<  description->candidates_count;
+
+    if (*description->ice_ufrag == '\0')
+            return ICE_PARSE_MISSING_UFRAG;
+
+    if (*description->ice_pwd == '\0')
+            return ICE_PARSE_MISSING_PWD;
+
+    return 0;
+}
+
+    
+    
+    
+    
+ int  Agent::parse_sdp_candidate(const char *line, Candidate *candidate) {
+	memset(candidate, 0, sizeof(*candidate));
+
+	line = skip_prefix(line, "a=");
+	line = skip_prefix(line, "candidate:");
+
+	char transport[32 + 1];
+	char type[32 + 1];
+	if (sscanf(line, "%32s %d %32s %u %256s %32s typ %32s", candidate->mFoundation.c_str(),
+	           &candidate->mComponent, transport, &candidate->mPriority, candidate->mNode.c_str(),
+	           candidate->mService.c_str(), type) != 7) {
+		SWarn <<  "Failed to parse candidate: " <<  line;
+		return ICE_PARSE_ERROR;
+	}
+
+	for (int i = 0; transport[i]; ++i)
+		transport[i] = toupper((unsigned char)transport[i]);
+
+	for (int i = 0; type[i]; ++i)
+		type[i] = tolower((unsigned char)type[i]);
+
+	if (strcmp(type, "host") == 0) //enum class Type { Unknown, Host, ServerReflexive, PeerReflexive, Relayed };
+		candidate->mType  = Candidate::Type::Host;
+	else if (strcmp(type, "srflx") == 0)
+		candidate->mType = Candidate::Type::ServerReflexive;
+	else if (strcmp(type, "relay") == 0)
+		candidate->mType = Candidate::Type::Relayed;
+	else {
+		SWarn << "Ignoring candidate with unknown type " <<  type;
+		return ICE_PARSE_IGNORED;
+	}
+
+	if (strcmp(transport, "UDP") != 0) {
+		SWarn << "Ignoring candidate with transport " <<  transport;
+		return ICE_PARSE_IGNORED;
+	}
+
+	return 0;
+}
+
+int  Agent::ice_parse_candidate_sdp(const char *line, Candidate *candidate) {
+    const char *arg;
+    if (match_prefix(line, "a=candidate:", &arg)) {
+            int ret = parse_sdp_candidate(line, candidate);
+            if (ret < 0)
+                    return ret;
+            //ice_resolve_candidate(candidate, ICE_RESOLVE_MODE_SIMPLE);
+            
+            resolveIp(candidate);
+            return 0;
+    }
+    return ICE_PARSE_ERROR;
+}
+
+
+
+void Agent::cbDnsResolve(addrinfo* res)
+{
+    SInfo <<   "AgentNo " << agentNo << " On Candidate Address resolved ";
+    
+   // SInfo <<  "IceServer" <<  ip << ":" << port  ;
+   
+   // IceServer *icesv = (IceServer *)ptr;
+   // icesv->ip = ip;
+    
+   //StartAgent( icesv->ip,  icesv->port);
+    
+   agent_resolve_servers(res );
+   
+}
+
+void Agent::cbNameResolve(  const char* hostname, const char* service,  void* ptr)
+{
+     SInfo <<  "resoved " <<  hostname << ":" << service  ;
+}
+
+ 
+void Agent::resolveIp( Candidate *cand )
+{
+   // SInfo << "resolveName " <<  icesv.hostname << ":" << icesv.port << " addd " << cand;
+    
+   resolveIP(cand->resolved.addr,   Application::uvGetLoop(),  cand) ;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -292,9 +292,9 @@ void PeerConnection::setLocalDescription(Description::Type type) {
 
         
 
-	Description *local = iceTransport->getLocalDescription(type);
+	Description local = iceTransport->getLocalDescription(type);
         
-	processLocalDescription(local);
+	processLocalDescription(&local);
 
 	changeSignalingState(newSignalingState);
 
@@ -321,8 +321,7 @@ bool PeerConnection::changeSignalingState(SignalingState newState) {
 void PeerConnection::setRemoteDescription(Description description) {
 	SDebug << "Setting remote description: " << string(description);
         mRemoteDescription = std::move(description);
-        iceTransport->agent.agent_set_remote_description();
-                
+        iceTransport->setRemoteDescription(mRemoteDescription );            
         return ;
         
 	if (description.type() == Description::Type::Rollback) {

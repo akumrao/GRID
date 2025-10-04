@@ -6,17 +6,24 @@
 
 #include <Attribute.h>
 #include <Types.h>
-#include "candidate.h"
-#include "description.h"
+#include "candidate.hpp"
+#include "description.hpp"
 #include "base/Timer.h"
 #include <Message.h>
 #include <Connection.h>
+
+#include "net/dns.h"
+#include "configuration.h"
+#include "candidate.hpp"
+
+using namespace base::net;
 
 using namespace rtc;
 using namespace base;
 using namespace stun;
 
 #define AGENT_DEBUG 1
+#define ICE_MAX_CANDIDATES_COUNT 20 
 
 #define MIN_STUN_RETRANSMISSION_TIMEOUT 500 // msecs
 #define LAST_STUN_RETRANSMISSION_TIMEOUT (MIN_STUN_RETRANSMISSION_TIMEOUT * 16)
@@ -45,6 +52,10 @@ using namespace stun;
 // RFC 7675: Consent expires after 30 seconds.
 #define CONSENT_TIMEOUT 30000 // msecs
 
+#define ICE_CANDIDATE_PREF_HOST 126
+#define ICE_CANDIDATE_PREF_PEER_REFLEXIVE 110
+#define ICE_CANDIDATE_PREF_SERVER_REFLEXIVE 100
+#define ICE_CANDIDATE_PREF_RELAYED 0
 namespace stun {
 
     
@@ -149,19 +160,37 @@ typedef struct agent_stun_entry {
 //typedef void (*cb_recv_t)(juice_agent_t *agent, const char *data, size_t size,
 //                                void *user_ptr);
 
-  class Agent {
+
+    class IceListen 
+    {
+        public:
+	virtual void onStateChangeCallback( juice_state_t state)=0;
+	virtual void onCandidateCallback( Candidate *candidate)=0;;
+	virtual void onGatheringDoneCallback()=0;;
+	virtual void onRecvCallback( unsigned char *data, size_t size)=0;
+    };
+
+  class Agent : public GetAddrInfoReq, GetNameInfoReq
+  {
   public:
       
     using candidate_callback = std::function<void(const Candidate candidate)>;
     using gathering_state_callback = std::function<void(juice_state_t state)>;
     using recv_callback = std::function<void(unsigned char * data , size_t size )>;
+    
+    void resolveStunServer();
+    void cbDnsResolve(addrinfo* res) override;
+    void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
+    void resolveIp( Candidate *certificate );
+    Configuration &mConfig;
+        
       
     Agent() = delete;
     
-    Agent(Description &localdesp, Description &remotedesp, candidate_callback candidateCallback, gathering_state_callback stateCallback , recv_callback recvcallback );
+    Agent( Configuration &config, IceListen *list );
     ~Agent();
     bool getInterfaces( );
-
+    IceListen *list;
            
   public:
     uint16_t type;
@@ -171,11 +200,14 @@ typedef struct agent_stun_entry {
     uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
     std::vector<Attribute*> attributes;
     std::vector<uint8_t> buffer;
-    Description &localdesp;
+    ice_description_t localdesp;
     
-    Description &remotedesp;
+    ice_description_t remotedesp;
     
     //local candidate
+    int ice_create_local_description(ice_description_t *description);
+    int set_local_ice_attributes(const char *ufrag, const char *pwd);
+    int get_local_description( char *buffer, int size) ;
     int ice_create_host_candidate( Candidate *candidate);
     int ice_create_local_reflexive_candidate( Candidate *candidate );
     int ice_create_local_candidate(int component, int index, Candidate *candidate);
@@ -185,13 +217,13 @@ typedef struct agent_stun_entry {
     //Remote candidate
     int ice_add_remote_candidate(const Candidate *candidate);
     int  agent_add_remote_peer_reflexive_candidate( uint32_t priority, const addr_record_t *record); // peer-reflex only
-    int ice_add_candidate( Candidate *candidate, Description *description);
+    int ice_add_candidate( Candidate *candidate, ice_description_t *description);
         
+    
         
-   candidate_callback mCandidateCallback;
-   gathering_state_callback mstateCallback;
-
-   recv_callback mrecvcallback;
+   //candidate_callback mCandidateCallback;
+  // gathering_state_callback mstateCallback;
+  // recv_callback mrecvcallback;
             
   //  ice_description_t local;
    // ice_description_t remote;
@@ -245,6 +277,7 @@ typedef struct agent_stun_entry {
     void onTimer();
     
     /// ON return messages 
+    int gather_candidates();
     int onStunMessage( unsigned char *buf, size_t len, const addr_record_t *src,  const addr_record_t *relayed);
     int agent_dispatch_stun( unsigned char *buf, size_t size, stun::Message  *msg,  const addr_record_t *src, const addr_record_t *relayed);
     int agent_verify_stun_binding(unsigned char *buf, size_t size, stun::Message *msg);
@@ -277,7 +310,7 @@ typedef struct agent_stun_entry {
     
     void  agent_update_pac_timer();
     
-    void  agent_set_remote_description();
+    int  agent_set_remote_description(const char *sdp);
     
     int agent_resolve_servers( addrinfo* res);
     
@@ -293,6 +326,13 @@ typedef struct agent_stun_entry {
     bool is_stun_datagram(const void *data, size_t size);
     
     int64_t m_next_timestamp {0};
+    
+    
+    
+    int ice_parse_candidate_sdp(const char *line, Candidate *candidate); 
+    int parse_sdp_candidate(const char *line, Candidate *candidate);
+    int ice_parse_sdp(const char *sdp, ice_description_t *description);
+    int parse_sdp_line(const char *line, ice_description_t *description);
 
   };
 

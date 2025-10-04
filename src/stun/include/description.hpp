@@ -3,7 +3,7 @@
 #ifndef RTC_DESCRIPTION_H
 #define RTC_DESCRIPTION_H
 
-#include "candidate.h"
+#include "candidate.hpp"
 #include "common.h"
 
 #include <iostream>
@@ -50,6 +50,32 @@ typedef struct ice_description {
         
 	int candidates_count{0};
 	bool finished{false};
+        
+        
+                
+    Candidate *ice_find_candidate_from_addr( const addr_record_t *record,  Candidate::Type type)
+    {
+
+        for( int i =0; i < candidates_count; ++i)
+        {
+
+            Candidate *cur = & candidates[i];
+
+
+            //Candidate *end = cur + description->candidates_count;
+            //while (cur != end) 
+            //{
+            if ((type == Candidate::Type::Unknown || cur->mType == type) &&
+                IP::addr_is_equal((struct sockaddr *)&record->addr, (struct sockaddr *)&cur->resolved.addr,
+                              true))
+                    return cur;
+                    //++cur;
+            //}
+        }
+            return NULL;
+    }
+        
+        
 } ice_description_t;
 
 class RTC_CPP_EXPORT Description {

@@ -111,6 +111,8 @@ namespace stun {
     /* rewrite the message-length header. */
     uint16_t message_len = buffer.size() - 20;
     rewriteU16(2, message_len);
+    
+    return 0;
   }
 
   void Writer::writeAttribute(Attribute* attr , Message* msg) {

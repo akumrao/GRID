@@ -24,65 +24,28 @@ namespace rtc {
 
 const int MAX_TURN_SERVERS_COUNT = 2;
 
-//void IceTransport::Init() {
-//	// Dummy
-//}
-//
-//void IceTransport::Cleanup() {
-//	// Dummy
-//}
+
 
 IceTransport::IceTransport( Configuration &config,  Description &localdescription,  Description &remoteDes, candidate_callback candidateCallback,
                            state_callback stateChangeCallback,
-                           gathering_state_callback gatheringStateChangeCallback,  recv_callback recvcallback ): localDes(localdescription), remoteDes(remoteDes), agent( localdescription, remoteDes, candidateCallback, gatheringStateChangeCallback, recvcallback),
-    
-      mMid("0"),
-      mCandidateCallback(candidateCallback),
-      mGatheringStateChangeCallback(gatheringStateChangeCallback),
-      Transport(config)  
-      {
+                           gathering_state_callback gatheringStateChangeCallback,  recv_callback recvcallback )
 
-	SDebug << "Initializing ICE transport";
+:  Transport(nullptr, std::move(stateChangeCallback)), mRole(Description::Role::ActPass),
+      mMid("0"), mGatheringState(GatheringState::New),
+      mCandidateCallback(std::move(candidateCallback)),
+      mGatheringStateChangeCallback(std::move(gatheringStateChangeCallback)),
+      agent(  (Configuration &)config, this)  
+{
 
-
-
-//	// Pick a STUN server
-//	for (auto &server : servers) {
-//		if (!server.hostname.empty() && server.type == IceServer::Type::Stun) {
-//			if (server.port == 0)
-//				server.port = 3478; // STUN UDP port
-//			SInfo << "Using STUN server \"" << server.hostname << ":" << server.port << "\"";
-//			jconfig.stun_server_host = server.hostname.c_str();
-//			jconfig.stun_server_port = server.port;
-//			break;
-//		}
-//	}
-
-	// Bind address
-
-
-//	// Port range
-//	if (config.portRangeBegin > 1024 ||
-//	    (config.portRangeEnd != 0 && config.portRangeEnd != 65535)) {
-//		jconfig.local_port_range_begin = config.portRangeBegin;
-//		jconfig.local_port_range_end = config.portRangeEnd;
-//	}
-//
-//	// Create agent
-//	mAgent = decltype(mAgent)(juice_create(&jconfig), juice_destroy);
-//	if (!mAgent)
-//		throw std::runtime_error("Failed to create the ICE agent");
-//
-//	// Add TURN servers
-//	for (const auto &server : servers)
-//		if (!server.hostname.empty() && server.type != IceServer::Type::Stun)
-//			addIceServer(server);
+SDebug << "Initializing ICE transport";	
 }
 
 void IceTransport::setIceAttributes(string uFrag, string pwd) {
-//	if (juice_set_local_ice_attributes(mAgent.get(), uFrag.c_str(), pwd.c_str()) < 0) {
-//		throw std::invalid_argument("Invalid ICE attributes");
-//	}
+    
+    if (agent.set_local_ice_attributes( uFrag.c_str(), pwd.c_str()) < 0) {
+		throw std::invalid_argument("Invalid ICE attributes");
+    }
+    
 }
 
 void IceTransport::addIceServer(IceServer server) {
@@ -99,13 +62,13 @@ void IceTransport::addIceServer(IceServer server) {
 		return;
 	}
 
-	if (mTurnServersAdded >= MAX_TURN_SERVERS_COUNT)
-		return;
-
-	if (server.port == 0)
-		server.port = 3478; // TURN UDP port
-
-	SInfo << "Using TURN server \"" << server.hostname << ":" << server.port << "\"";
+//	if (mTurnServersAdded >= MAX_TURN_SERVERS_COUNT)
+//		return;
+//
+//	if (server.port == 0)
+//		server.port = 3478; // TURN UDP port
+//
+//	PLOG_INFO << "Using TURN server \"" << server.hostname << ":" << server.port << "\"";
 //	juice_turn_server_t turn_server = {};
 //	turn_server.host = server.hostname.c_str();
 //	turn_server.username = server.username.c_str();
@@ -114,316 +77,202 @@ void IceTransport::addIceServer(IceServer server) {
 //
 //	if (juice_add_turn_server(mAgent.get(), &turn_server) != 0)
 //		throw std::runtime_error("Failed to add TURN server");
-
-	++mTurnServersAdded;
+//
+//	++mTurnServersAdded;
 }
-
-
-
-
-
-/*
-int IceTransport::ice_generate_sdp(Description *description,  char *buffer, size_t size)
-{
-	if (!*description->desc.ice_ufrag || !*description->desc.ice_pwd)
-		return -1;
-
-	int len = 0;
-	char *begin = buffer;
-	char *end = begin + size;
-
-	// Round 0: description
-	// Round i with i>0 and i<count+1: candidate i-1
-	// Round count + 1: end-of-candidates and ice-options lines
-	for (int i = 0; i < description->desc.candidates.size() + 2; ++i) {
-		int ret;
-		if (i == 0) {
-			ret = snprintf(begin, end - begin, "a=ice-ufrag:%s\r\na=ice-pwd:%s\r\n",
-			               description->desc.ice_ufrag, description->desc.ice_pwd);
-			if (description->desc.ice_lite)
-				ret = snprintf(begin, end - begin, "a=ice-lite\r\n");
-
-		} else if (i < description->desc.candidates.size() + 1) {
-			const Candidate *candidate = &description->desc.candidates[i - 1];
-			if (candidate->mType == Candidate::Type::Unknown ||
-			    candidate->mType == Candidate::Type::PeerReflexive)
-				continue;
-			char tmp[4096];
-			if (ice_generate_candidate_sdp(candidate, tmp, 4096) < 0)
-				continue;
-			ret = snprintf(begin, end - begin, "%s\r\n", tmp);
-		} else { // i == description->candidates_count + 1
-			// RFC 8445 10. ICE Option: An agent compliant to this specification MUST inform the
-			// peer about the compliance using the 'ice2' option.
-			if (description->desc.finished)
-				ret = snprintf(begin, end - begin, "a=end-of-candidates\r\na=ice-options:ice2\r\n");
-			else
-				ret = snprintf(begin, end - begin, "a=ice-options:ice2,trickle\r\n");
-		}
-		if (ret < 0)
-			return -1;
-
-		len += ret;
-
-		if (begin < end)
-			begin += ret >= end - begin ? end - begin - 1 : ret;
-	}
-	return len;
-}
-*/
-
-
-
-
-
 
 IceTransport::~IceTransport() {
-	SDebug << "Destroying ICE transport";
-
+	SInfo << "Destroying ICE transport";
+//	mAgent.reset();
 }
 
 Description::Role IceTransport::role() const { return mRole; }
 
-Description *IceTransport::getLocalDescription(Description::Type type)  {
-	
-
-    //    Candidate candidate
-    //    mCandidateCallback(candidate);
-        
-       // char sdp[4096];
-        random_str64(localDes.desc.ice_ufrag, 4 + 1);
-        random_str64(localDes.desc.ice_pwd, 22 + 1);
-        localDes.desc.ice_lite = false;
-        //localDes.desc.candidates_count = 0;
-        localDes.desc.finished = false;
-        SInfo <<  "AgentNo " << agent.agentNo << " ice_ufrag " << localDes.desc.ice_ufrag  <<  " pwd "  <<   localDes.desc.ice_pwd;
-        
-        std::string sdp = localDes.generateSdp("\r\n");
-        
-        /*
-        if (ice_generate_sdp(&localDes, sdp, 4096) < 0)
-        {
-            throw std::runtime_error("Failed to generate local SDP");
-        }
-        */ 
+Description IceTransport::getLocalDescription(Description::Type type)  {
+	char sdp[4096];
+	if (agent.get_local_description( sdp, 4096) < 0 )
+		throw std::runtime_error("Failed to generate local SDP");
 
 	// RFC 5763: The endpoint that is the offerer MUST use the setup attribute value of
 	// setup:actpass.
 	// See https://www.rfc-editor.org/rfc/rfc5763.html#section-5
-        
-        localDes.readSdp( sdp, type, type == Description::Type::Offer ? Description::Role::ActPass : mRole);
-	localDes.addIceOption("trickle");
-        
-        
-	return &localDes;
+	Description desc;
+        desc.readSdp( sdp, type, type == Description::Type::Offer ? Description::Role::ActPass : mRole);
+	desc.addIceOption("trickle");
+	return desc;
 }
 
-void IceTransport::setRemoteDescription(const Description *description) {
+void IceTransport::setRemoteDescription(const Description &description) {
 	// RFC 5763: The answerer MUST use either a setup attribute value of setup:active or
 	// setup:passive.
 	// See https://www.rfc-editor.org/rfc/rfc5763.html#section-5
-	if (description->type() == Description::Type::Answer &&
-	    description->role() == Description::Role::ActPass)
-		throw std::invalid_argument("Illegal role actpass in remote answer description");
+//	if (description.type() == Description::Type::Answer &&
+//	    description.role() == Description::Role::ActPass)
+//		throw std::invalid_argument("Illegal role actpass in remote answer description");
 
 	// RFC 5763: Note that if the answerer uses setup:passive, then the DTLS handshake
 	// will not begin until the answerer is received, which adds additional latency.
 	// setup:active allows the answer and the DTLS handshake to occur in parallel. Thus,
 	// setup:active is RECOMMENDED.
 	if (mRole == Description::Role::ActPass)
-		mRole = description->role() == Description::Role::Active ? Description::Role::Passive
+		mRole = description.role() == Description::Role::Active ? Description::Role::Passive
 		                                                        : Description::Role::Active;
 
-	if (mRole == description->role())
+	if (mRole == description.role())
 		throw std::invalid_argument("Incompatible roles with remote description");
 
-	mMid = description->bundleMid();
-//	if (juice_set_remote_description(mAgent.get(),
-//	                                 description.generateApplicationSdp("\r\n").c_str()) < 0)
-//		throw std::invalid_argument("Invalid ICE settings from remote SDP");
+	mMid = description.bundleMid();
+	if (agent.agent_set_remote_description(description.generateApplicationSdp("\r\n").c_str()) < 0)
+		throw std::invalid_argument("Invalid ICE settings from remote SDP");
 }
 
-void IceTransport::addRemoteCandidate(const Candidate *candidate) {
-    
-    
-        STrace<< "AgentNo " << agent.agentNo << " about to resolve ip  " << string(*candidate) <<  "  " <<   candidate;
-     
-      
-        resolveIp((Candidate *)candidate);
-    
+bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
 	// Don't try to pass unresolved candidates for more safety
-	//if (!candidate->isResolved())
-		//return false;
+	if (!candidate->isResolved())
+		return false;
 
-        //agent.ice_add_remote_candidate(   candidate  );
-	//return juice_add_remote_candidate(mAgent.get(), string(candidate).c_str()) >= 0;
+	return agent.ice_add_remote_candidate( candidate) >= 0;
 }
 
 void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> additionalIceServers) {
 	mMid = std::move(mid);
-         agent.localMid = mMid;
         
-        if (agent.m_mode == AGENT_MODE_UNKNOWN) {
-
-		agent.m_mode = AGENT_MODE_CONTROLLING;
-	}
+        agent.localMid = mMid;
          
 
-        agent.getInterfaces();
-        
-
-
-      //  localDes.generateSdp();
-        
-
-        resolveStunServer( );
 	//std::shuffle(additionalIceServers.begin(), additionalIceServers.end(), utils::random_engine());
 	for (const auto &server : additionalIceServers)
 		addIceServer(server);
 
 	// Change state now as candidates calls can be synchronous
-	//changeGatheringState(GatheringState::InProgress);
+	changeGatheringState(GatheringState::InProgress);
 
-//	if (juice_gather_candidates(mAgent.get()) < 0) {
-//		throw std::runtime_error("Failed to gather local ICE candidates");
-//	}
+        
+         if (agent.gather_candidates() < 0) {
+		throw std::runtime_error("Failed to gather local ICE candidates");
+ 	  }
 }
 
+optional<string> IceTransport::getLocalAddress()  {
+    
+    
+    Candidate local_cand, remote_cand;
+    if (getSelectedCandidatePair( &local_cand, &remote_cand))
+            return nullopt;
 
+    char ip[40];  uint16_t port;
+    base::net::IP::AddressToString(local_cand.resolved, ip, port);
+    return ip;
+
+}
+optional<string> IceTransport::getRemoteAddress()  {
+   
+    
+    	Candidate local_cand, remote_cand;
+	if (getSelectedCandidatePair( &local_cand, &remote_cand))
+		return nullopt;
+   
+    
+        char ip[40];  uint16_t port;
+        base::net::IP::AddressToString(remote_cand.resolved, ip, port);
+        return ip;
+
+}
 
 bool IceTransport::getSelectedCandidatePair(Candidate *local, Candidate *remote) {
-	
+
     if(!agent.agent_get_selected_candidate_pair(local, remote))
     {
         return true;    
     }
     
-            //kausal 9721238934
+    //kausal 9721238934
 
     return false;
-
 }
 
-//bool IceTransport::send(message_ptr message) {
-//	auto s = state();
-//	if (!message || (s != State::Connected && s != State::Completed))
-//		return false;
-//
-//	PLOG_VERBOSE << "Send size=" << message->size();
-//	return outgoing(message);
-//}
-//
-//bool IceTransport::outgoing(message_ptr message) {
-//	// Explicit Congestion Notification takes the least-significant 2 bits of the DS field
-//	int ds = int(message->dscp << 2);
+
+
+bool IceTransport::send(message_ptr message) {
+	auto s = state();
+	if (!message || (s != State::Connected && s != State::Completed))
+		return false;
+
+	return outgoing(message);
+}
+
+bool IceTransport::outgoing(message_ptr message) {
+	// Explicit Congestion Notification takes the least-significant 2 bits of the DS field
+	//int ds = int(message->dscp << 2);
 //	return juice_send_diffserv(mAgent.get(), reinterpret_cast<const char *>(message->data()),
 //	                           message->size(), ds) >= 0;
-//}
-
-//void IceTransport::changeGatheringState(GatheringState state) {
-//	if (mGatheringState.exchange(state) != state)
-//		mGatheringStateChangeCallback(mGatheringState);
-//}
-
-void IceTransport::processStateChange(unsigned int state)
-{
-//	switch (state) {
-//	case JUICE_STATE_DISCONNECTED:
-//		changeState(State::Disconnected);
-//		break;
-//	case JUICE_STATE_CONNECTING:
-//		changeState(State::Connecting);
-//		break;
-//	case JUICE_STATE_CONNECTED:
-//		changeState(State::Connected);
-//		break;
-//	case JUICE_STATE_COMPLETED:
-//		changeState(State::Completed);
-//		break;
-//	case JUICE_STATE_FAILED:
-//		changeState(State::Failed);
-//		break;
-//	};
-}
-
-void IceTransport::processCandidate(const string &candidate) {
-	mCandidateCallback(Candidate(candidate, mMid));
-}
-
-//void IceTransport::processGatheringDone() { changeGatheringState(GatheringState::Complete); }
-/*
-void IceTransport::StateChangeCallback(juice_agent_t *, juice_state_t state, void *user_ptr) {
-	auto iceTransport = static_cast<rtc::impl::IceTransport *>(user_ptr);
-	try {
-		iceTransport->processStateChange(static_cast<unsigned int>(state));
-	} catch (const std::exception &e) {
-		SWarn << e.what();
-	}
-}
-
-void IceTransport::CandidateCallback(juice_agent_t *, const char *sdp, void *user_ptr) {
-	auto iceTransport = static_cast<rtc::impl::IceTransport *>(user_ptr);
-	try {
-		iceTransport->processCandidate(sdp);
-	} catch (const std::exception &e) {
-		SWarn << e.what();
-	}
-}
-
-void IceTransport::GatheringDoneCallback(juice_agent_t *, void *user_ptr) {
-	auto iceTransport = static_cast<rtc::impl::IceTransport *>(user_ptr);
-	try {
-		iceTransport->processGatheringDone();
-	} catch (const std::exception &e) {
-		SWarn << e.what();
-	}
-}
-*/
-
-
-
-
-void IceTransport::cbDnsResolve(addrinfo* res)
-{
-    SInfo <<   "AgentNo " << agent.agentNo << " On Candidate Address resolved ";
-    
-   // SInfo <<  "IceServer" <<  ip << ":" << port  ;
-   
-   // IceServer *icesv = (IceServer *)ptr;
-   // icesv->ip = ip;
-    
-   //StartAgent( icesv->ip,  icesv->port);
-    
-   agent.agent_resolve_servers(res );
-   
-}
-
-void IceTransport::cbNameResolve( const char* hostname, const char* service,  void* ptr)
-{
-   /* 
-    for (int i = 0; i < remoteDes.desc.candidates_count; ++i) {
-    
-        Candidate *cand = (Candidate *)&remoteDes.desc.candidates[i];
-        STrace << "AgentNo " << agent.agentNo << " iternate " <<  hostname << ":" << service <<  " "  << string(*cand) << " " <<  cand ;
-    
+        
+    if( agent.agent_send( reinterpret_cast<uint8_t *>(message->data()), message->size(),0 ))
+    {
+        return true;
     }
-    */
-     Candidate *cand = (Candidate *)ptr;
-     
-    STrace << "AgentNo " << agent.agentNo << " On Candidate Name resolved " <<  hostname << ":" << service <<  " "  << string(*cand) << " " <<  cand ;
+
+    return false;
+}
+
+
+
+void IceTransport::onStateChangeCallback( juice_state_t state)
+{
+    processStateChange(static_cast<unsigned int>(state));
+}
+void IceTransport::onCandidateCallback( Candidate *candidate)
+{
+    mCandidateCallback(*candidate);
+}
+void IceTransport::onGatheringDoneCallback()
+{
+    processGatheringDone();
+}
+void IceTransport::onRecvCallback( unsigned char *data, size_t size)
+{
+    try {
+                STrace << "Incoming size=" << size;
+                auto b = reinterpret_cast<const byte *>(data);
+                incoming(make_message(b, b + size));
+        } catch (const std::exception &e) {
+                SError << e.what();
+        }
     
-    SInfo << "AgentNo " << agent.agentNo << " About to pair remote candidate: " << cand->address() << ":" << cand->port()  ;
+}
+
+
+
+
+void IceTransport::processStateChange(unsigned int state) {
+	switch (state) {
+	case JUICE_STATE_DISCONNECTED:
+		changeState(State::Disconnected);
+		break;
+	case JUICE_STATE_CONNECTING:
+		changeState(State::Connecting);
+		break;
+	case JUICE_STATE_CONNECTED:
+		changeState(State::Connected);
+		break;
+	case JUICE_STATE_COMPLETED:
+		changeState(State::Completed);
+		break;
+	case JUICE_STATE_FAILED:
+		changeState(State::Failed);
+		break;
+	};
+}
+
+
+
+void IceTransport::changeGatheringState(GatheringState state) {
     
-       
-   // cand->bResolved = true;
-    
-    agent.ice_add_remote_candidate(   cand  );
-     
-}    
+	//if (mGatheringState.exchange(state) != state)
+	//	mGatheringStateChangeCallback(mGatheringState);
+}
 
-
-
-
+void IceTransport::processGatheringDone() { changeGatheringState(GatheringState::Complete); }
 
 
 } // namespace rtc::impl
