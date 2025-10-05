@@ -86,11 +86,11 @@ public:
 
 	
 	
-//	enum class GatheringState : int {
-//		New = RTC_GATHERING_NEW,
-//		InProgress = RTC_GATHERING_INPROGRESS,
-//		Complete = RTC_GATHERING_COMPLETE
-//	};
+	enum class GatheringState : int {
+		New = RTC_GATHERING_NEW,
+		InProgress = RTC_GATHERING_INPROGRESS,
+		Complete = RTC_GATHERING_COMPLETE
+	};
 
 	
 
@@ -157,7 +157,7 @@ public:
 	void onLocalCandidate(std::function<void(Candidate candidate)> callback);
 	void onStateChange(std::function<void(State state)> callback);
 	void onIceStateChange(std::function<void(IceState state)> callback);
-	void onGatheringStateChange(std::function<void(juice_state_t state)> callback);
+	void onGatheringStateChange(std::function<void(GatheringState state)> callback);
 	void onSignalingStateChange(std::function<void(SignalingState state)> callback);
         void onRecv(recv_callback callback);
 
@@ -182,12 +182,13 @@ public:
 //	GatheringState gatheringState = GatheringState::New;
 	//SignalingState> signalingState = SignalingState::Stable;
 	//std::atomic<bool> closing = false;
-
+        bool changeState(State newState);
+        
         std::atomic<State> mState{State::New};
         std::atomic<IceState> mIceState{IceState::New};
 	//std::atomic<GatheringState> mGatheringState{GatheringState::New};
         
-        juice_state_t mGatheringState{JUICE_STATE_DISCONNECTED};
+        GatheringState mGatheringState{GatheringState::New};
                 
 	std::atomic<SignalingState> mSignalingState{SignalingState::Stable};
 	std::atomic<bool> mNegotiationNeeded{false};
@@ -198,7 +199,7 @@ public:
 	std::function<void(Description)> mLocalDescriptionCallback;
 	std::function<void(Candidate)> mLocalCandidateCallback;
 	std::function<void(State)> mStateChangeCallback;
-	std::function<void(juice_state_t )> mGatheringStateChangeCallback;
+	std::function<void(GatheringState )> mGatheringStateChangeCallback;
 	std::function<void(SignalingState)> mSignalingStateChangeCallback;
 	//std::function<void<std::shared_ptr<Track>> mTrackCallback;
         recv_callback mRecvChangeCallback;
@@ -214,7 +215,8 @@ public:
 
         void iceState(IceTransport::State state);
 
-        void iceGathering(juice_state_t state);
+        void iceGathering(IceTransport::GatheringState state );
+        bool changeGatheringState(GatheringState newState);
         
         IceTransport *iceTransport{nullptr};
                

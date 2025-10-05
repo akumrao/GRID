@@ -68,7 +68,7 @@ Candidate::Candidate(string candidate, string mid) : Candidate() {
 	mMid = std::move(mid);
 }
 
- Candidate Candidate::operator=(const Candidate &other)
+/* Candidate Candidate::operator=(const Candidate &other)
  {
      int x = 1;
      
@@ -88,6 +88,7 @@ Candidate::Candidate(string candidate, string mid) : Candidate() {
    
         
  }
+*/
 
 void Candidate::parse(string candidate) {
 	using TypeMap_t = std::unordered_map<string, Type>;
@@ -258,7 +259,7 @@ string Candidate::candidate() const {
 }
 
 string Candidate::mid() const { 
-    
+
     return mMid;
 
 }

@@ -6,7 +6,7 @@
 #include "common.hpp"
 #include <Types.h>
 #include "net/IP.h"
-#include <string>
+//#include <string>
 using namespace base::net;
 
 namespace rtc {
@@ -40,28 +40,25 @@ public:
 //	bool operator==(const Candidate &other) const;
 //	bool operator!=(const Candidate &other) const;
         
-        Candidate operator=(const Candidate &other);
+        //Candidate operator=(const Candidate &other);
         
 
 	bool isResolved() const;
 	int family() const;
 	string address() ;
 	uint16_t port() const;
-
 public:
 	void parse(string candidate);
 
 	string mFoundation;
 	uint32_t mComponent, mPriority;
 	string mTypeString, mTransportString;
-
 	Type mType;
-        
 	TransportType mTransportType;
 	string mNode, mService;
 	string mTail;
-
-	string mMid{"0"};
+        string mMid;
+        
 
 	// Extracted on resolution
       //  Family mFamily;

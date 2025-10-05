@@ -14,7 +14,7 @@
 #include "configuration.h"
 #include "peerconnection.h"
 #include "tls.h"
-#include "json.hpp" 
+#include "json/json.hpp" 
 
 //#include <udpClient.h>
 
@@ -66,29 +66,58 @@ int main()
 
 
     pc1.onStateChange([](PeerConnection::State state) {
-        std::cout << "State 1: " << state << endl; });
+        SInfo << "pc1 State: " << state << endl;
+            if (state == PeerConnection::State::Disconnected ||
+                state == PeerConnection::State::Failed ||
+                state == PeerConnection::State::Closed) {
+                // remove disconnected client
+                //MainThread.dispatch([id]() 
+                {
+                  //  clients.erase(id);
+
+                    int x = 1; //arvind
+                }
+                //);
+            }
+    
+    
+    
+    });
 
     pc1.onIceStateChange(
             [](PeerConnection::IceState state) {
                 std::cout << "ICE state 1: " << state << endl; });
 
-    pc1.onGatheringStateChange([&pc1 ](juice_state_t state) {
-        std::cout << "Gathering state 1: " << state << endl;
-        if (state == JUICE_STATE_CONNECTED) {
-            
-            Candidate local; Candidate remote;
-            pc1.getSelectedCandidatePair( &local, &remote);
-            
-            SInfo << "getSelectedCandidatePair1 local " <<  local << " remote "  << remote;
- 
-            std::string msg = "PC1 Hello world";
-            
-            pc1.send( (unsigned char *)msg.data(),  msg.size()+1);
-            
-            
-           // auto sdp = pc1.localDescription();
-                    //std::cout << "Description 1: " << sdp << endl;
-                    // pc2.setRemoteDescription(string(sdp));
+    pc1.onGatheringStateChange([&pc1 ](PeerConnection::GatheringState state) {
+        //std::cout << "Gathering state 1: " << state << endl;
+//        if (state == JUICE_STATE_CONNECTED) {
+//            
+//            Candidate local; Candidate remote;
+//            pc1.getSelectedCandidatePair( &local, &remote);
+//            
+//            SInfo << "getSelectedCandidatePair1 local " <<  local << " remote "  << remote;
+// 
+//            std::string msg = "PC1 Hello world";
+//            
+//            pc1.send( (unsigned char *)msg.data(),  msg.size()+1);
+//            
+//            
+//           // auto sdp = pc1.localDescription();
+//                    //std::cout << "Description 1: " << sdp << endl;
+//                    // pc2.setRemoteDescription(string(sdp));
+//        }
+        
+        SInfo << "pc1 Gathering State: ";// << state << endl;
+        if (state == PeerConnection::GatheringState::Complete)
+        {
+          //  if(auto pc1 = wpc1.lock())
+            {
+//                json desc;
+//                desc["type"] =  description->typeString();
+//                desc[sdp] = sdp;
+//    
+
+            }
         }
     });
     
@@ -154,27 +183,40 @@ int main()
             [](PeerConnection::IceState state) {
                 std::cout << "ICE state2: " << state << endl; });
 
-    pc2.onGatheringStateChange([&pc2 ](juice_state_t state) {
-        std::cout << "Gathering state 2: " << state << endl;
-        if (state == JUICE_STATE_CONNECTED) {
-          //  auto sdp = pc1.localDescription();
-                    //std::cout << "Description 2: " << sdp << endl;
-                    // pc2.setRemoteDescription(string(sdp));
-            
-         
-            Candidate local; Candidate remote;
-            pc2.getSelectedCandidatePair( &local, &remote);
-            
-            SInfo << "getSelectedCandidatePair2 local " <<  local << " remote "  << remote;
-            
-             
-            std::string msg = "PC2 Hello world";
-            
-            pc2.send( (unsigned char *)msg.data(),  msg.size()+1);
-            
-            
-            
-        }
+    pc2.onGatheringStateChange([&pc2 ](PeerConnection::GatheringState state) {
+        //std::cout << "Gathering state 2: " << state << endl;
+//        if (state == JUICE_STATE_CONNECTED) {
+//          //  auto sdp = pc1.localDescription();
+//                    //std::cout << "Description 2: " << sdp << endl;
+//                    // pc2.setRemoteDescription(string(sdp));
+//            
+//         
+//            Candidate local; Candidate remote;
+//            pc2.getSelectedCandidatePair( &local, &remote);
+//            
+//            SInfo << "getSelectedCandidatePair2 local " <<  local << " remote "  << remote;
+//            
+//             
+//            std::string msg = "PC2 Hello world";
+//            
+//            pc2.send( (unsigned char *)msg.data(),  msg.size()+1);
+//            
+//            
+//            
+//        }
+        
+            SInfo << "pc2 Gathering State: ";
+            if (state == PeerConnection::GatheringState::Complete)
+            {
+              //  if(auto pc1 = wpc1.lock())
+                {
+    //                json desc;
+    //                desc["type"] =  description->typeString();
+    //                desc[sdp] = sdp;
+    //    
+
+                }
+            }
     });
     
     

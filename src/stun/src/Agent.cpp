@@ -2171,7 +2171,7 @@ int  Agent::agent_set_remote_description(const char *sdp) {
 		return -1;
 	}
 
-	if (remotedesp.ice_ufrag) {
+	if (remotedesp.ice_ufrag[0] != '\0'   ) {
 		// There is already a remote description
 		if (strcmp(remotedesp.ice_ufrag, remotedesp.ice_ufrag) == 0 &&
 		    strcmp(remotedesp.ice_pwd, remotedesp.ice_pwd) == 0) {
@@ -2217,7 +2217,7 @@ int  Agent::agent_set_remote_description(const char *sdp) {
 			LWarn("Failed to add candidate pair");
 	}
 
-	
+	return 0;
 
 }
 
@@ -2535,35 +2535,25 @@ std::string Agent::dump()
 
 
 
-void Agent::resolveStunServer( )
-{
-    
-    for( const IceServer &icesv:  mConfig.iceServers  )
-    {
-        SInfo << "resolve " <<  icesv.hostname << ":" << icesv.port;
-        resolve(icesv.hostname, icesv.port, Application::uvGetLoop(), (void*)&icesv);
-        //break;
-    }
-   
-}
+
 
 
 int Agent::parse_sdp_line(const char *line, ice_description_t *description)
  {
      const char *arg;
-     if (match_prefix(line, "a=ice-ufrag:", &arg)) {
+     if (match_prefix1(line, "a=ice-ufrag:", &arg)) {
              sscanf(arg, "%256s", description->ice_ufrag);
              return 0;
      }
-     if (match_prefix(line, "a=ice-pwd:", &arg)) {
+     if (match_prefix1(line, "a=ice-pwd:", &arg)) {
              sscanf(arg, "%256s", description->ice_pwd);
              return 0;
      }
-     if (match_prefix(line, "a=ice-lite", &arg)) {
+     if (match_prefix1(line, "a=ice-lite", &arg)) {
              description->ice_lite = true;
              return 0;
      }
-     if (match_prefix(line, "a=end-of-candidates", &arg)) {
+     if (match_prefix1(line, "a=end-of-candidates", &arg)) {
              description->finished = true;
              return 0;
      }
@@ -2582,7 +2572,9 @@ int Agent::parse_sdp_line(const char *line, ice_description_t *description)
  }
     
 
-int  Agent::ice_parse_sdp(const char *sdp, ice_description_t *description)
+
+
+int  Agent::ice_parse_sdp(const char *sdp, ice_description_t *description)  
 {
     memset(description, 0, sizeof(*description));
     description->ice_lite = false;
@@ -2666,7 +2658,7 @@ int  Agent::ice_parse_sdp(const char *sdp, ice_description_t *description)
 
 int  Agent::ice_parse_candidate_sdp(const char *line, Candidate *candidate) {
     const char *arg;
-    if (match_prefix(line, "a=candidate:", &arg)) {
+    if (match_prefix1(line, "a=candidate:", &arg)) {
             int ret = parse_sdp_candidate(line, candidate);
             if (ret < 0)
                     return ret;
@@ -2678,9 +2670,19 @@ int  Agent::ice_parse_candidate_sdp(const char *line, Candidate *candidate) {
     return ICE_PARSE_ERROR;
 }
 
+void Agent::resolveStunServer( )
+{
+    
+    for( const IceServer &icesv:  mConfig.iceServers  )
+    {
+        SInfo << "resolve " <<  icesv.hostname << ":" << icesv.port;
+        resolve(icesv.hostname, icesv.port, Application::uvGetLoop(), (void*)&icesv);
+        //break;
+    }
+   
+}
 
-
-void Agent::cbDnsResolve(addrinfo* res)
+void Agent::cbDnsResolve(addrinfo* res) // paired with resolveStunServer
 {
     SInfo <<   "AgentNo " << agentNo << " On Candidate Address resolved ";
     

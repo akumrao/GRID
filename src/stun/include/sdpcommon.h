@@ -31,7 +31,7 @@ namespace rtc {
     
     int ice_generate_sdp(const ice_description_t *description, char *buffer, size_t size);
     
-    bool match_prefix(const char *str, const char *prefix, const char **end);
+    bool match_prefix1(const char *str, const char *prefix, const char **end);
     
     const char *skip_prefix(const char *str, const char *prefix);
 
