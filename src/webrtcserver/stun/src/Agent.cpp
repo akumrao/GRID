@@ -63,15 +63,24 @@ namespace stun {
     
     int Agent::ice_create_local_description(ice_description_t *description) 
     {
-	memset(description, 0, sizeof(*description));
+        
+        //memset(description, 0, sizeof(ice_description_t));
 	random_str64(description->ice_ufrag, 4 + 1);
 	random_str64(description->ice_pwd, 22 + 1);
 	description->ice_lite = false;
 	description->candidates_count = 0;
 	description->finished = false;
-	("Created local description: ufrag=\"%s\", pwd=\"%s\"", description->ice_ufrag,
-	           description->ice_pwd);
+        
+//        random_str64(localDes.desc.ice_ufrag, 4 + 1);
+//        random_str64(localDes.desc.ice_pwd, 22 + 1);
+//        localDes.desc.ice_lite = false;
+//        //localDes.desc.candidates_count = 0;
+//        localDes.desc.finished = false;
+        
+//	("Created local description: ufrag=\"%s\", pwd=\"%s\"", description->ice_ufrag,
+//	           description->ice_pwd);      
 	return 0;
+
     }
     
     int Agent::gather_candidates()

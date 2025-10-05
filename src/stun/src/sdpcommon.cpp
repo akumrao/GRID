@@ -116,7 +116,7 @@ namespace rtc {
 	return strncmp(str, prefix, len) == 0 ? str + len : str;
     }
     
-    bool match_prefix(const char *str, const char *prefix, const char **end)
+    bool match_prefix1(const char *str, const char *prefix, const char **end)
     {
 	*end = skip_prefix(str, prefix);
 	return *end != str || !*prefix;

@@ -121,39 +121,7 @@ namespace rtc {
 	return *end != str || !*prefix;
     }
     
-    int parse_sdp_line(const char *line, ice_description_t *description)
-    {
-	const char *arg;
-	if (match_prefix(line, "a=ice-ufrag:", &arg)) {
-		sscanf(arg, "%256s", description->ice_ufrag);
-		return 0;
-	}
-	if (match_prefix(line, "a=ice-pwd:", &arg)) {
-		sscanf(arg, "%256s", description->ice_pwd);
-		return 0;
-	}
-	if (match_prefix(line, "a=ice-lite", &arg)) {
-		description->ice_lite = true;
-		return 0;
-	}
-	if (match_prefix(line, "a=end-of-candidates", &arg)) {
-		description->finished = true;
-		return 0;
-	}
-	Candidate candidate;
-        
-        candidate.parse(line);
-        
-//        resolveIp((Candidate *)candidate);
-//        
-//	if (ice_parse_candidate_sdp(line, &candidate) == 0) {
-//		ice_add_candidate(&candidate, description);  // arvind
-//		return 0;
-//	}
-        
-	return 0;
-    }
-    
+ 
     
     
     bool comp(Candidate a, Candidate b)
@@ -161,42 +129,4 @@ namespace rtc {
         return a.priority() > b.priority();
     }
         
-    int ice_parse_sdp(const char *sdp, ice_description_t *description)
-    {
-	memset(description, 0, sizeof(*description));
-	description->ice_lite = false;
-	description->candidates_count = 0;
-	description->finished = false;
-
-	char buffer[1024];
-	size_t size = 0;
-	while (*sdp) {
-		if (*sdp == '\n') {
-			if (size) {
-				buffer[size++] = '\0';
-				if (parse_sdp_line(buffer, description) == ICE_PARSE_ERROR)
-					return ICE_PARSE_ERROR;
-
-				size = 0;
-			}
-		} else if (*sdp != '\r' && size + 1 < 1024) {
-			buffer[size++] = *sdp;
-		}
-		++sdp;
-	}
-	//ice_sort_candidates(description);
-        
-         std::sort(description->candidates,description->candidates +description->candidates_count , comp);
-
-	STrace << "Parsed remote description: ufrag= " << description->ice_ufrag << " pwd= " << description->ice_pwd <<  " candidates= " <<  description->candidates_count;
-
-	if (*description->ice_ufrag == '\0')
-		return ICE_PARSE_MISSING_UFRAG;
-
-	if (*description->ice_pwd == '\0')
-		return ICE_PARSE_MISSING_PWD;
-
-	return 0;
-    }
-
-} // namespace rtc::impl
+}

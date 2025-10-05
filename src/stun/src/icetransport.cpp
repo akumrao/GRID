@@ -268,11 +268,16 @@ void IceTransport::processStateChange(unsigned int state) {
 
 void IceTransport::changeGatheringState(GatheringState state) {
     
-	//if (mGatheringState.exchange(state) != state)
-	//	mGatheringStateChangeCallback(mGatheringState);
+    int x = 0;
+	if (mGatheringState.exchange(state) != state)
+		mGatheringStateChangeCallback(mGatheringState);
 }
 
-void IceTransport::processGatheringDone() { changeGatheringState(GatheringState::Complete); }
+void IceTransport::processGatheringDone() { 
+    
+    changeGatheringState(GatheringState::Complete); 
+
+}
 
 
 } // namespace rtc::impl

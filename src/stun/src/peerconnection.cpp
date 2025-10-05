@@ -298,7 +298,7 @@ void PeerConnection::setLocalDescription(Description::Type type) {
 
 	changeSignalingState(newSignalingState);
 
-        if (mGatheringState == JUICE_STATE_DISCONNECTED) 
+        if (mGatheringState == GatheringState::New) 
         {
 		iceTransport->gatherLocalCandidates(localBundleMid());
 	}
@@ -800,8 +800,10 @@ void PeerConnection::onStateChange(std::function<void(State state)> callback) {
 	mStateChangeCallback = callback;
 }
 
-void PeerConnection::onGatheringStateChange(std::function<void(juice_state_t state)> callback) {
-	mGatheringStateChangeCallback = callback;
+void PeerConnection::onGatheringStateChange(std::function<void(GatheringState state)> callback) {
+
+    mGatheringStateChangeCallback = callback;
+	
 }
 
 void PeerConnection::onRecv(recv_callback callback) {
@@ -876,26 +878,65 @@ void PeerConnection::iceState(IceTransport::State state) {
 
     switch (state) {
         case IceTransport::State::Connecting:
-            //changeState(State::Connecting);
+            changeState(State::Connecting);
             break;
         case IceTransport::State::Failed:
-           // changeState(State::Failed);
+           changeState(State::Failed);
             break;
         case IceTransport::State::Connected:
          //   initDtlsTransport();
             break;
         case IceTransport::State::Disconnected:
-          //  changeState(State::Disconnected);
+           changeState(State::Disconnected);
             break;
         default:
             // Ignore
             break;
     };
 }
-void PeerConnection::iceGathering(juice_state_t state) {
+
+
+
+bool PeerConnection::changeState(State newState) 
+{
+	if(mState == newState)
+        {
+            return false;
+        }
+               
+     mState =  newState;
+   
+     
+    if(mStateChangeCallback)
+    mStateChangeCallback(newState);
+     
+                
+	return true;
+}
+
+
+bool PeerConnection::changeGatheringState(GatheringState newState) {
+	
+    
+    if (mGatheringState == newState)
+		return false;
+        
+     mGatheringState =  newState;
+   
+     
+    if(mGatheringStateChangeCallback)
+    mGatheringStateChangeCallback(newState);
+            
+	return true;
+}
+
+void PeerConnection::iceGathering(IceTransport::GatheringState state) {
     
     
-    mGatheringState =  state;
+    
+    
+    
+   
     
     #if DATACHANNEL
     
@@ -914,23 +955,21 @@ void PeerConnection::iceGathering(juice_state_t state) {
     #endif
     
     
-    if(mGatheringStateChangeCallback)
-    mGatheringStateChangeCallback(state);
-            
 
 
-//    switch (state) {
-//        case IceTransport::GatheringState::InProgress:
-//            //changeGatheringState(GatheringState::InProgress);
-//            break;
-//        case IceTransport::GatheringState::Complete:
-//           /// endLocalCandidates();
-//            //changeGatheringState(GatheringState::Complete);
-//            break;
-//        default:
-//            // Ignore
-//            break;
-//    }
+
+    switch (state) {
+        case IceTransport::GatheringState::InProgress:
+            changeGatheringState(GatheringState::InProgress);
+            break;
+        case IceTransport::GatheringState::Complete:
+           /// endLocalCandidates();
+            changeGatheringState(GatheringState::Complete);
+            break;
+        default:
+            // Ignore
+            break;
+    }
 }
 
 IceTransport* PeerConnection::initIceTransport() 

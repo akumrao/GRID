@@ -30,7 +30,7 @@ public:
 	enum class GatheringState { New = 0, InProgress = 1, Complete = 2 };
 
 	using candidate_callback = std::function<void(const Candidate candidate)>;
-	//using gathering_state_callback = std::function<void(GatheringState state)>;
+	using gathering_state_callback = std::function<void(GatheringState state)>;
         using recv_callback = std::function<void(unsigned char * data , size_t size )>;
 
         
@@ -40,7 +40,7 @@ public:
         
 
         using state_callback = std::function<void(State state)>;
-        using gathering_state_callback = std::function<void(juice_state_t state)>; 
+        //using gathering_state_callback = std::function<void(juice_state_t state)>; 
         
         IceTransport( Configuration &config,  Description &localdescription,  Description &remoteDes, candidate_callback candidateCallback,
                            state_callback stateChangeCallback,
