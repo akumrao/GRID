@@ -4,14 +4,11 @@
 #define RTC_CANDIDATE_H
 
 #include "common.h"
-#include <string>
 #include <Types.h>
 #include "net/IP.h"
 
 using namespace base::net;
-
-
-using namespace stun;
+//using namespace stun;
 
 namespace rtc {
 
@@ -74,9 +71,6 @@ public:
 	//char mAddress[50];
 	//uint16_t mPort;
         mutable addr_record_t resolved{0};
-
-  //  ice_candidate_t cand;
-        
 };
 
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, const Candidate &candidate);

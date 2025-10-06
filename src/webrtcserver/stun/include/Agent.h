@@ -216,8 +216,9 @@ typedef struct agent_stun_entry {
         
     //Remote candidate
     int ice_add_remote_candidate(const Candidate *candidate);
+    int ice_add_remote_candidate(const char *sdp);
     int  agent_add_remote_peer_reflexive_candidate( uint32_t priority, const addr_record_t *record); // peer-reflex only
-    int ice_add_candidate( Candidate *candidate, ice_description_t *description);
+    Candidate * ice_add_candidate( Candidate *candidate, ice_description_t *description);
         
     
         
@@ -326,6 +327,13 @@ typedef struct agent_stun_entry {
     bool is_stun_datagram(const void *data, size_t size);
     
     int64_t m_next_timestamp {0};
+    
+    
+    
+    int ice_parse_candidate_sdp(const char *line, Candidate *candidate); 
+    int parse_sdp_candidate(const char *line, Candidate *candidate);
+    int ice_parse_sdp(const char *sdp, ice_description_t *description);
+    int parse_sdp_line(const char *line, ice_description_t *description);
 
   };
 

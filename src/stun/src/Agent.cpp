@@ -377,20 +377,21 @@ namespace stun {
                     LInfo( "Remote description has the maximum number of peer reflexive candidates, ignoring");
                     return 0;
             }
-            if (ice_add_candidate(&candidate, &remotedesp) == nullptr) {
+            Candidate *remote =ice_add_candidate(&candidate, &remotedesp);
+            
+            if(remote== nullptr) {
                     LError("Failed to add candidate to remote description");
                     return -1;
             }
 
             SDebug << "AgentNo " << agentNo << " Obtained a new remote reflexive candidate, priority=" << (unsigned long)priority;
 
-            Candidate *remote = &remotedesp.candidates[remotedesp.candidates_count -1];
             remote->mPriority = priority;
 
             return agent_add_candidate_pairs_for_remote( remote);
     }
     
-    int Agent::ice_add_remote_candidate(const char *sdp)
+    int Agent::ice_add_remote_candidate(const char *sdpCandidate)
     {
         if (remotedesp.finished)
         {
@@ -399,17 +400,17 @@ namespace stun {
 	}
 	
         Candidate candidate;
-	int ret = ice_parse_candidate_sdp(sdp, &candidate);
+	int ret = ice_parse_candidate_sdp(sdpCandidate, &candidate);
 	if (ret < 0) 
         {
 		if (ret == ICE_PARSE_IGNORED)
                 {
-			SError << "Ignored SDP candidate:" <<  sdp;
+			SError << "Ignored SDP candidate:" <<  sdpCandidate;
 			
 			return -1;
 		}
 
-		SError << "Failed to parse remote SDP candidate: %s" <<  sdp;
+		SError << "Failed to parse remote SDP candidate: %s" <<  sdpCandidate;
 	
 		return -1;
 	}
@@ -2617,14 +2618,16 @@ int Agent::parse_sdp_line(const char *line, ice_description_t *description)
      Candidate candidate;
 
  //    candidate.parse(line);
+//    if (ice_parse_candidate_sdp(line, &candidate) == 0) {
+//            if( ice_add_candidate(&candidate, description) != nullptr);  
+//            return 0;
+//    }
 
-//        
-//        
-    if (ice_parse_candidate_sdp(line, &candidate) == 0) {
-            if( ice_add_candidate(&candidate, description) != nullptr);  
-            return 0;
-    }
-
+     if(!ice_add_remote_candidate(line) )
+     {
+          return 0;
+     }
+     
      return ICE_PARSE_IGNORED;
  }
     

@@ -1111,7 +1111,7 @@ void PeerConnection::processLocalCandidate(Candidate candidate) {
 
 	PLOG_VERBOSE << "Issuing local candidate: " << candidate;
 
-	candidate.resolve(Candidate::ResolveMode::Simple);
+	candidate.resolve();
 	mLocalDescription->addCandidate(candidate);
 
 	mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),
@@ -1165,7 +1165,7 @@ void PeerConnection::processRemoteCandidate(Candidate candidate) {
 		if (mRemoteDescription->hasCandidate(candidate))
 			return; // already in description, ignore
 
-		candidate.resolve(Candidate::ResolveMode::Simple);
+		candidate.resolve();
 		mRemoteDescription->addCandidate(candidate);
 	}
 
@@ -1178,7 +1178,7 @@ void PeerConnection::processRemoteCandidate(Candidate candidate) {
 			weak_ptr<IceTransport> weakIceTransport{iceTransport};
 			std::thread t([weakIceTransport, candidate = std::move(candidate)]() mutable {
 				utils::this_thread::set_name("RTC resolver");
-				if (candidate.resolve(Candidate::ResolveMode::Lookup))
+				if (candidate.isResolved())
 					if (auto iceTransport = weakIceTransport.lock())
 						iceTransport->addRemoteCandidate(std::move(candidate));
 			});

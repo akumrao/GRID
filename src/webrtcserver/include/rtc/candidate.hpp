@@ -6,10 +6,18 @@
 #include "common.hpp"
 #include <Types.h>
 #include "net/IP.h"
-//#include <string>
+
 using namespace base::net;
 
 namespace rtc {
+
+#define ICE_CANDIDATE_PREF_HOST 126
+#define ICE_CANDIDATE_PREF_PEER_REFLEXIVE 110
+#define ICE_CANDIDATE_PREF_SERVER_REFLEXIVE 100
+#define ICE_CANDIDATE_PREF_RELAYED 0
+
+
+
 
 class RTC_CPP_EXPORT Candidate {
 public:
@@ -26,9 +34,9 @@ public:
 //	void changeAddress(string addr, uint16_t port);
 //	void changeAddress(string addr, string service);
 
-	enum class ResolveMode { Simple, Lookup };
-	bool resolve(ResolveMode mode = ResolveMode::Simple);
-   //   void resolve();
+//	enum class ResolveMode { Simple, Lookup };
+//	bool resolve(ResolveMode mode = ResolveMode::Simple);
+        void resolve();
 
 	Type type() const;
 	TransportType transportType() const;
@@ -39,9 +47,6 @@ public:
 
 //	bool operator==(const Candidate &other) const;
 //	bool operator!=(const Candidate &other) const;
-        
-        //Candidate operator=(const Candidate &other);
-        
 
 	bool isResolved() const;
 	int family() const;
@@ -61,9 +66,6 @@ public:
         
 
 	// Extracted on resolution
-      //  Family mFamily;
-//string mAddress;
-	//uint16_t mPort;
 	//int mFamily{-1};
 	//char mAddress[50];
 	//uint16_t mPort;
