@@ -13,7 +13,6 @@
 #include "base/logger.h"
 #include <sys/types.h>
 
-using namespace base;
 
 #ifdef _WIN32
 #include <winsock2.h>
@@ -28,6 +27,7 @@ using namespace base;
 
 using std::array;
 using std::string;
+using namespace base;
 
 namespace {
 
@@ -61,11 +61,13 @@ Candidate::Candidate(string candidate) : Candidate() {
 		parse(std::move(candidate));
 }
 
-Candidate::Candidate(string candidate, string mid) : Candidate() {
+Candidate::Candidate(string candidate, string mid) : Candidate()
+{
 	if (!candidate.empty())
 		parse(std::move(candidate));
-	
-	mMid = std::move(mid);
+        
+	if(!mid.empty())
+		mMid = mid;
 }
 
 /* Candidate Candidate::operator=(const Candidate &other)
@@ -86,8 +88,7 @@ Candidate::Candidate(string candidate, string mid) : Candidate() {
     mMid =  other.mMid;
    
    
-        
- }
+}
 */
 
 void Candidate::parse(string candidate) {
@@ -147,76 +148,10 @@ void Candidate::parse(string candidate) {
 }
 
 void Candidate::hintMid(string mid) {
-	
-	mMid = std::move(mid);
-}
-/*
-void Candidate::changeAddress(string addr) { changeAddress(std::move(addr), mService); }
-
-void Candidate::changeAddress(string addr, uint16_t port) {
-	changeAddress(std::move(addr), std::to_string(port));
+	if (!mMid.length())
+		mMid = std::move(mid);
 }
 
-void Candidate::changeAddress(string addr, string service) {
-	mNode = std::move(addr);
-	mService = std::move(service);
-
-	mFamily = Family::Unresolved;
-	mAddress.clear();
-	mPort = 0;
-
-	if (!resolve(ResolveMode::Simple))
-		throw std::invalid_argument("Invalid candidate address \"" + addr + ":" + service + "\"");
-}
-
-bool Candidate::resolve(ResolveMode mode) {
-	PLOG_VERBOSE << "Resolving candidate (mode="
-	             << (mode == ResolveMode::Simple ? "simple" : "lookup") << "): " << mNode << ' '
-	             << mService;
-
-	// Try to resolve the node and service
-	struct addrinfo hints = {};
-	hints.ai_family = AF_UNSPEC;
-	hints.ai_flags = AI_ADDRCONFIG;
-	if (mTransportType == TransportType::Udp) {
-		hints.ai_socktype = SOCK_DGRAM;
-		hints.ai_protocol = IPPROTO_UDP;
-	} else if (mTransportType != TransportType::Unknown) {
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_protocol = IPPROTO_TCP;
-	}
-
-	if (mode == ResolveMode::Simple)
-		hints.ai_flags |= AI_NUMERICHOST;
-
-	struct addrinfo *result = nullptr;
-	if (getaddrinfo(mNode.c_str(), mService.c_str(), &hints, &result) == 0) {
-		for (auto p = result; p; p = p->ai_next) {
-			if (p->ai_family == AF_INET || p->ai_family == AF_INET6) {
-				char nodebuffer[MAX_NUMERICNODE_LEN];
-				char servbuffer[MAX_NUMERICSERV_LEN];
-				if (getnameinfo(p->ai_addr, socklen_t(p->ai_addrlen), nodebuffer,
-				                MAX_NUMERICNODE_LEN, servbuffer, MAX_NUMERICSERV_LEN,
-				                NI_NUMERICHOST | NI_NUMERICSERV) == 0) {
-					try {
-						mPort = uint16_t(std::stoul(servbuffer));
-					} catch (...) {
-						return false;
-					}
-					mAddress = nodebuffer;
-					mFamily = p->ai_family == AF_INET6 ? Family::Ipv6 : Family::Ipv4;
-					PLOG_VERBOSE << "Resolved candidate: " << mAddress << ' ' << mPort;
-					break;
-				}
-			}
-		}
-
-		freeaddrinfo(result);
-	}
-
-	return mFamily != Family::Unresolved;
-}
-*/
 Candidate::Type Candidate::type() const { return mType; }
 
 Candidate::TransportType Candidate::transportType() const { return mTransportType; }
@@ -258,11 +193,7 @@ string Candidate::candidate() const {
 	return oss.str();
 }
 
-string Candidate::mid() const { 
-
-    return mMid;
-
-}
+string Candidate::mid() const { return mMid;}
 
 Candidate::operator string() const {
 	std::ostringstream line;
@@ -271,7 +202,19 @@ Candidate::operator string() const {
 }
 
 //bool Candidate::operator==(const Candidate &other) const {
-//	return (mFoundation == other.mFoundation && mService == other.mService && mNode == other.mNode);
+//    
+//    if(isResolved() && other.isResolved() )
+//    {
+//
+//    	return ((mFoundation == other.mFoundation  &&  IP::addr_record_is_equal( &resolved,  &other.resolved,  true)) );
+//    }
+//    else
+//    {
+//        SError << " This is not allowed state , exiting stun";
+//        exit(0);
+//       // return (mFoundation == other.mFoundation && mService == other.mService && mNode == other.mNode);
+//    }
+//    
 //}
 //
 //bool Candidate::operator!=(const Candidate &other) const {
@@ -282,7 +225,7 @@ bool Candidate::isResolved() const {
     return resolved.len ;
 }
 
-bool Candidate::resolve(ResolveMode mode)
+void Candidate::resolve()
 {
     IP::StringToAddress(mNode.c_str(), std::stoi( mService), resolved);
 }

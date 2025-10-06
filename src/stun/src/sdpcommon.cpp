@@ -128,9 +128,4 @@ namespace rtc {
         return a.priority() > b.priority();
     }
         
- 
-    
-
-
-
-} // namespace rtc::impl
+}
