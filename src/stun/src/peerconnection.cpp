@@ -878,21 +878,46 @@ void PeerConnection::iceState(IceTransport::State state) {
 
     switch (state) {
         case IceTransport::State::Connecting:
+            changeIceState(IceState::Checking);
             changeState(State::Connecting);
             break;
-        case IceTransport::State::Failed:
-           changeState(State::Failed);
-            break;
         case IceTransport::State::Connected:
-         //   initDtlsTransport();
+            changeIceState(IceState::Connected);
+           // initDtlsTransport();
+            break;
+        case IceTransport::State::Completed:
+            changeIceState(IceState::Completed);
+            break;
+        case IceTransport::State::Failed:
+            changeIceState(IceState::Failed);
+            changeState(State::Failed);
+          //  mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
             break;
         case IceTransport::State::Disconnected:
-           changeState(State::Disconnected);
+            changeIceState(IceState::Disconnected);
+            changeState(State::Disconnected);
+            //mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
             break;
         default:
             // Ignore
             break;
     };
+       
+}
+
+
+bool PeerConnection::changeIceState(IceState newState) 
+{
+	if (mIceState == newState)
+		return false;
+
+        
+        mIceState = newState;
+        
+         if(mKIceStateChangeCallback)
+            mKIceStateChangeCallback(newState);
+	
+	return true;
 }
 
 

@@ -131,7 +131,9 @@ bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
 	if (!candidate->isResolved())
 		return false;
 
-	return agent.ice_add_remote_candidate( candidate) >= 0;
+	return agent.ice_add_remote_candidate( string(*candidate).c_str()) >= 0;
+        
+       // return agent.add_remote_candidate(mAgent.get(), string(candidate).c_str()) >= 0;
 }
 
 void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> additionalIceServers) {
@@ -232,7 +234,7 @@ void IceTransport::onGatheringDoneCallback()
 void IceTransport::onRecvCallback( unsigned char *data, size_t size)
 {
     try {
-                STrace << "Incoming size=" << size;
+                STrace << "onRecvCallback size="<<  size << " data " <<   data;
                 auto b = reinterpret_cast<const byte *>(data);
                 incoming(make_message(b, b + size));
         } catch (const std::exception &e) {

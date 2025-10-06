@@ -94,6 +94,8 @@ namespace stun {
         
         resolveStunServer( );
         
+        return 0;
+        
     }
     
     bool Agent::getInterfaces( ) {
@@ -223,7 +225,14 @@ namespace stun {
             SInfo << "Failed to create host candidate";
         }
         
-        ice_add_candidate( candidate, &localdesp   );
+       Candidate *candStored =  ice_add_candidate( candidate, &localdesp   );
+       
+       if(!candStored)
+       {
+           return -1;
+       }
+       
+       list->onCandidateCallback(candStored);
         
         return 0;
     }
@@ -256,7 +265,20 @@ namespace stun {
             return -1;
         }
         
-        return ice_add_candidate( candidate, &localdesp   );
+        
+        Candidate *candStored =  ice_add_candidate( candidate, &localdesp   );
+       
+        if(!candStored)
+        {
+            return -1;
+        }
+       
+       list->onCandidateCallback(candStored);
+
+      
+        
+        return 0;
+        
     }
 
     int Agent::ice_create_local_candidate( int component, int index,  Candidate *candidate) {
@@ -355,7 +377,7 @@ namespace stun {
                     LInfo( "Remote description has the maximum number of peer reflexive candidates, ignoring");
                     return 0;
             }
-            if (ice_add_candidate(&candidate, &remotedesp)) {
+            if (ice_add_candidate(&candidate, &remotedesp) == nullptr) {
                     LError("Failed to add candidate to remote description");
                     return -1;
             }
@@ -368,12 +390,47 @@ namespace stun {
             return agent_add_candidate_pairs_for_remote( remote);
     }
     
+    int Agent::ice_add_remote_candidate(const char *sdp)
+    {
+        if (remotedesp.finished)
+        {
+		SError<< "Remote candidate added after remote gathering done";
+		return -1;
+	}
+	
+        Candidate candidate;
+	int ret = ice_parse_candidate_sdp(sdp, &candidate);
+	if (ret < 0) 
+        {
+		if (ret == ICE_PARSE_IGNORED)
+                {
+			SError << "Ignored SDP candidate:" <<  sdp;
+			
+			return -1;
+		}
+
+		SError << "Failed to parse remote SDP candidate: %s" <<  sdp;
+	
+		return -1;
+	}
+        
+        
+        Candidate *candStored = ice_add_candidate( &candidate, &remotedesp  );
+        
+        if(candStored)
+        resolveIp(candStored);
+                    
+        
+        
+        return 0;
+         
+    }     
+        
     int Agent::ice_add_remote_candidate(const Candidate *candidate)
     {
-        
-        //ice_add_candidate( (Candidate *)candidate, &remotedesp  );
-        
-        
+               
+        //ice_add_candidate( (Candidate *)candidate, &remotedesp  );  // arvind remove this line when description and agent share same candidate storage
+                
         if (agent_add_candidate_pairs_for_remote((Candidate *)candidate)) {
          	LWarn("Failed to add candidate pair");
 		return -2;
@@ -386,7 +443,7 @@ namespace stun {
     } 
     
     
-    int Agent::ice_add_candidate( Candidate *candidate, ice_description_t *description) 
+    Candidate *Agent::ice_add_candidate( Candidate *candidate, ice_description_t *description) 
     {
         
         
@@ -403,7 +460,7 @@ namespace stun {
 
 	if (description->candidates_count  >= ICE_MAX_CANDIDATES_COUNT) {
 	        SError << "ice_description_t already has the maximum number of candidates";
-		return -1;
+		return nullptr;
 	}
         
         candidate->mMid = localMid;
@@ -426,11 +483,8 @@ namespace stun {
         
         //ice_generate_candidate_sdp(candidate, buffer, 4096);
         
-        SInfo<< "AgentNo " << agentNo << " local ice_add_candidate  " << string(*candidate);
         
-        list->onCandidateCallback(candidate);
-        
-        return 0;
+        return candidate;
 
     }
 
@@ -1773,6 +1827,9 @@ void Agent::agent_update_gathering_done()
                 // callback
 		//if (agent->config.cb_gathering_done)
 			//agent->config.cb_gathering_done(agent, agent->config.user_ptr);
+                
+                list->onGatheringDoneCallback();
+                
 	}
     
 }
@@ -2564,11 +2621,11 @@ int Agent::parse_sdp_line(const char *line, ice_description_t *description)
 //        
 //        
     if (ice_parse_candidate_sdp(line, &candidate) == 0) {
-            ice_add_candidate(&candidate, description);  // arvind
+            if( ice_add_candidate(&candidate, description) != nullptr);  
             return 0;
     }
 
-     return 0;
+     return ICE_PARSE_IGNORED;
  }
     
 
@@ -2624,13 +2681,22 @@ int  Agent::ice_parse_sdp(const char *sdp, ice_description_t *description)
 
 	char transport[32 + 1];
 	char type[32 + 1];
-	if (sscanf(line, "%32s %d %32s %u %256s %32s typ %32s", candidate->mFoundation.c_str(),
-	           &candidate->mComponent, transport, &candidate->mPriority, candidate->mNode.c_str(),
-	           candidate->mService.c_str(), type) != 7) {
+        
+        
+        char foundation[32 + 1]; // 1 to 32 characters
+	char hostname[256 + 1];
+	char service[32 + 1];
+        
+	if (sscanf(line, "%32s %d %32s %u %256s %32s typ %32s", foundation,
+	           &candidate->mComponent, transport, &candidate->mPriority, hostname,
+	           service, type) != 7) {
 		SWarn <<  "Failed to parse candidate: " <<  line;
 		return ICE_PARSE_ERROR;
 	}
 
+        candidate->mFoundation = foundation;
+        candidate->mNode = hostname;
+        candidate->mService = service;
 	for (int i = 0; transport[i]; ++i)
 		transport[i] = toupper((unsigned char)transport[i]);
 
@@ -2664,7 +2730,9 @@ int  Agent::ice_parse_candidate_sdp(const char *line, Candidate *candidate) {
                     return ret;
             //ice_resolve_candidate(candidate, ICE_RESOLVE_MODE_SIMPLE);
             
-            resolveIp(candidate);
+            candidate->resolve();
+            
+
             return 0;
     }
     return ICE_PARSE_ERROR;
@@ -2697,18 +2765,34 @@ void Agent::cbDnsResolve(addrinfo* res) // paired with resolveStunServer
    
 }
 
-void Agent::cbNameResolve(  const char* hostname, const char* service,  void* ptr)
-{
-     SInfo <<  "resoved " <<  hostname << ":" << service  ;
-}
-
- 
 void Agent::resolveIp( Candidate *cand )
 {
-   // SInfo << "resolveName " <<  icesv.hostname << ":" << icesv.port << " addd " << cand;
+    SInfo << "resolveName " <<  cand->mNode  << ":" << cand->port() << " addd " << cand;
     
    resolveIP(cand->resolved.addr,   Application::uvGetLoop(),  cand) ;
 }
+
+
+void Agent::cbNameResolve(  const char* hostname, const char* service,  void* ptr) // paired with resolveIp;
+{
+     //SInfo <<  "cbNameResolve " <<  hostname << ":" << service  ;
+     
+     
+    Candidate *cand = (Candidate *)ptr;
+     
+    STrace << "AgentNo " << agentNo << " On Candidate Name resolved " <<  hostname << ":" << service <<  " "  << string(*cand) << " " <<  cand ;
+    
+    SInfo << "AgentNo " << agentNo << " About to pair remote candidate: " << cand->address() << ":" << cand->port()  ;
+    
+       
+   // cand->bResolved = true;
+    
+    ice_add_remote_candidate(   cand  );
+     
+     
+}
+
+ 
 
 
 
