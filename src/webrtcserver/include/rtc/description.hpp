@@ -10,7 +10,9 @@
 #include <map>
 #include <vector>
 
+
 #define ICE_MAX_CANDIDATES_COUNT 20 
+
 namespace rtc {
 
 const string DEFAULT_OPUS_AUDIO_PROFILE =
@@ -50,11 +52,6 @@ typedef struct ice_description {
 	bool finished{false};
         
         
-        
-        
-        
-        
-        
     Candidate *ice_find_candidate_from_addr( const addr_record_t *record,  Candidate::Type type)
     {
 
@@ -76,16 +73,6 @@ typedef struct ice_description {
         }
             return NULL;
     }
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
         
         
 } ice_description_t;
@@ -111,9 +98,9 @@ public:
 	Role role() const;
 	string bundleMid() const;
 	std::vector<string> iceOptions() const;
-	optional<string> iceUfrag() const;
-	optional<string> icePwd() const;
-	optional<CertificateFingerprint> fingerprint() const;
+	string iceUfrag() const;
+	string icePwd() const;
+	CertificateFingerprint fingerprint() const;
 	bool ended() const;
 
 	void hintType(Type type);
@@ -125,17 +112,18 @@ public:
 	void addAttribute(string attr);
 	void removeAttribute(const string &attr);
 
-	std::vector<Candidate> candidates() const;
+	//std::vector<Candidate> mcandidates() const;
 	std::vector<Candidate> extractCandidates();
 	bool hasCandidate(const Candidate &candidate) const;
-	Candidate* ice_find_candidate_from_addr(const addr_record_t *record,  Candidate::Type type);
-	void addCandidate(Candidate candidate);
+        //bool hasRecord(const Candidate &candidate) const;
+        Candidate* ice_find_candidate_from_addr(const addr_record_t *record,  Candidate::Type type);
+	Candidate* addCandidate(Candidate candidate);
 	void addCandidates(std::vector<Candidate> candidates);
 	void endCandidates();
 
 	operator string() const;
-	string generateSdp(string_view eol = "\r\n") const;
-	string generateApplicationSdp(string_view eol = "\r\n") const;
+	string generateSdp(const string& eol = "\r\n") const;
+	string generateApplicationSdp(const string& eol = "\r\n") const;
 
 	class RTC_CPP_EXPORT Entry {
 	public:
@@ -158,12 +146,12 @@ public:
 		void addRid(string rid);
 
 		struct RTC_CPP_EXPORT ExtMap {
-			static int parseId(string_view description);
+			static int parseId(const string& description);
 
 			ExtMap(int id, string uri, Direction direction = Direction::Unknown);
-			ExtMap(string_view description);
+			ExtMap(const string& description);
 
-			void setDescription(string_view description);
+			void setDescription(const string& description);
 
 			int id;
 			string uri;
@@ -178,15 +166,15 @@ public:
 		void removeExtMap(int id);
 
 		operator string() const;
-		string generateSdp(string_view eol = "\r\n", string_view addr = "0.0.0.0",
+		string generateSdp(const string& eol = "\r\n", const string& addr = "0.0.0.0",
 		                   uint16_t port = 9) const;
 
-		virtual void parseSdpLine(string_view line);
+		virtual void parseSdpLine(const string& line);
 
 	protected:
 		Entry(const string &mline, string mid, Direction dir = Direction::Unknown);
 
-		virtual string generateSdpLines(string_view eol) const;
+		virtual string generateSdpLines(const string& eol) const;
 
 		std::vector<string> mAttributes;
 		std::map<int, ExtMap> mExtMaps;
@@ -213,16 +201,16 @@ public:
 		void hintSctpPort(uint16_t port);
 		void setMaxMessageSize(size_t size);
 
-		optional<uint16_t> sctpPort() const;
-		optional<size_t> maxMessageSize() const;
+		uint16_t sctpPort() const;
+		size_t maxMessageSize() const;
 
-		virtual void parseSdpLine(string_view line) override;
+		virtual void parseSdpLine(const string& line) override;
 
 	private:
-		virtual string generateSdpLines(string_view eol) const override;
+		virtual string generateSdpLines(const string& eol) const override;
 
-		optional<uint16_t> mSctpPort;
-		optional<size_t> mMaxMessageSize;
+		uint16_t mSctpPort;
+		size_t mMaxMessageSize;
 	};
 
 	// Media (non-data)
@@ -324,17 +312,17 @@ public:
 
 	bool hasApplication() const;
 	bool hasAudioOrVideo() const;
-	bool hasMid(string_view mid) const;
-
-	int addMedia(Media media);
+	bool hasMid(const string& mid);
+//
+//	int addMedia(Media media);
 	int addMedia(Application application);
 	int addApplication(string mid = "data");
-	int addVideo(string mid = "video", Direction dir = Direction::SendOnly);
-	int addAudio(string mid = "audio", Direction dir = Direction::SendOnly);
+//	int addVideo(string mid = "video", Direction dir = Direction::SendOnly);
+//	int addAudio(string mid = "audio", Direction dir = Direction::SendOnly);
 	void clearMedia();
-
-	variant<Media *, Application *> media(int index);
-	variant<const Media *, const Application *> media(int index) const;
+//
+//	variant<Media *, Application *> media(int index);
+//	variant<const Media *, const Application *> media(int index) const;
 	int mediaCount() const;
 
 	const Application *application() const;
@@ -344,7 +332,7 @@ public:
 	static string typeToString(Type type);
 
 private:
-	optional<Candidate> defaultCandidate() const;
+	Candidate defaultCandidate() const;
 	shared_ptr<Entry> createEntry(string mline, string mid, Direction dir);
 	void removeApplication();
 
@@ -355,20 +343,20 @@ private:
 	string mUsername;
 	string mSessionId;
 	std::vector<string> mIceOptions;
-	optional<string> mIceUfrag, mIcePwd;
-	optional<CertificateFingerprint> mFingerprint;
+	//string mIceUfrag, mIcePwd;
+	CertificateFingerprint mFingerprint;
 	std::vector<string> mAttributes; // other attributes
 
 	// Entries
 	std::vector<shared_ptr<Entry>> mEntries;
 	shared_ptr<Application> mApplication;
 
-	// Candidates
-	std::vector<Candidate> mCandidates;
 	bool mEnded = false;
+        
+public:
+    	 ice_description_t desc;
 
-	public:
-    	// ice_description_t desc; // arvind
+
 };
 
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, const Description &description);
