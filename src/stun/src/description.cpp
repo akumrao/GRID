@@ -292,27 +292,27 @@ bool Description::hasCandidate(const Candidate &cand) const {
         return false;
 }
 
-Candidate *Description::ice_find_candidate_from_addr( const addr_record_t *record,  Candidate::Type type)
-{
-     
-    for( int i =0; i < desc.candidates_count; ++i)
-    {
-    
-        Candidate *cur = & desc.candidates[i];
-    
-    
-	//Candidate *end = cur + description->candidates_count;
-	//while (cur != end) 
-        //{
-        if ((type == Candidate::Type::Unknown || cur->mType == type) &&
-            IP::addr_is_equal((struct sockaddr *)&record->addr, (struct sockaddr *)&cur->resolved.addr,
-                          true))
-                return cur;
-		//++cur;
-	//}
-    }
-	return NULL;
-}
+//Candidate *Description::ice_find_candidate_from_addr( const addr_record_t *record,  Candidate::Type type)
+//{
+//     
+//    for( int i =0; i < desc.candidates_count; ++i)
+//    {
+//    
+//        Candidate *cur = & desc.candidates[i];
+//    
+//    
+//	//Candidate *end = cur + description->candidates_count;
+//	//while (cur != end) 
+//        //{
+//        if ((type == Candidate::Type::Unknown || cur->mType == type) &&
+//            IP::addr_is_equal((struct sockaddr *)&record->addr, (struct sockaddr *)&cur->resolved.addr,
+//                          true))
+//                return cur;
+//		//++cur;
+//	//}
+//    }
+//	return NULL;
+//}
 
 Candidate* Description::addCandidate(Candidate candidate ) {
 	
@@ -336,21 +336,7 @@ Candidate* Description::addCandidate(Candidate candidate ) {
             ret= desc.candidates + desc.candidates_count -1 ;
             
         }
-        else
-        {
-            int x = 1;
-        }
-        
-/*        
-        
-        for (int i = 0; i < desc.candidates_count; ++i) 
-        {
-            Candidate *cand = desc.candidates + i;
-            STrace << "interate " <<  string(*cand) << " " <<  cand ;
-        }
-
- 
-*/        
+      
         return ret;
 }
 
@@ -557,7 +543,10 @@ int Description::addMedia(Application application) {
 	return int(mEntries.size()) - 1;
 }
 
-int Description::addApplication(string mid) { return addMedia(Application(std::move(mid))); }
+int Description::addApplication(string mid) {
+    return addMedia(Application(std::move(mid))); 
+
+}
 
 const Description::Application *Description::application() const { return mApplication.get(); }
 

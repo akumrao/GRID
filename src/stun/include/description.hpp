@@ -1,7 +1,7 @@
 
 
-#ifndef RTC_DESCRIPTION_H
-#define RTC_DESCRIPTION_H
+#ifndef RTC_DESCRIPTION_HPP
+#define RTC_DESCRIPTION_HPP
 
 #include "candidate.hpp"
 #include "common.h"
@@ -52,7 +52,6 @@ typedef struct ice_description {
 	bool finished{false};
         
         
-                
     Candidate *ice_find_candidate_from_addr( const addr_record_t *record,  Candidate::Type type)
     {
 
@@ -123,9 +122,6 @@ public:
         Candidate* ice_find_candidate_from_addr(const addr_record_t *record,  Candidate::Type type);
 	Candidate* addCandidate(Candidate candidate);
 	void addCandidates(std::vector<Candidate> candidates);
-        
-        //std::vector<Candidate> candidates();
-        
 	void endCandidates();
 
 	operator string() const;

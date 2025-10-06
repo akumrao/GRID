@@ -193,12 +193,16 @@ public:
 	std::atomic<SignalingState> mSignalingState{SignalingState::Stable};
 	std::atomic<bool> mNegotiationNeeded{false};
         
+        bool changeIceState(IceState newState);
 
 
 	//std::function<void<std::shared_ptr<DataChannel>> mDataChannelCallback;
 	std::function<void(Description)> mLocalDescriptionCallback;
 	std::function<void(Candidate)> mLocalCandidateCallback;
 	std::function<void(State)> mStateChangeCallback;
+        
+        std::function<void(IceState)> mKIceStateChangeCallback;
+        
 	std::function<void(GatheringState )> mGatheringStateChangeCallback;
 	std::function<void(SignalingState)> mSignalingStateChangeCallback;
 	//std::function<void<std::shared_ptr<Track>> mTrackCallback;
