@@ -118,7 +118,7 @@ size_t PeerConnection::remoteMaxMessageSize() const {
 				// RFC 8841: If the SDP "max-message-size" attribute contains a maximum message
 				// size value of zero, it indicates that the SCTP endpoint will handle messages
 				// of any size, subject to memory capacity, etc.
-				remoteMax = *max > 0 ? *max : std::numeric_limits<size_t>::max();
+				remoteMax = max > 0 ? max : std::numeric_limits<size_t>::max();
 			}
 
 	return std::min(remoteMax, localMax);
@@ -221,8 +221,8 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 		CertificateFingerprint::Algorithm fingerprintAlgorithm;
 		{
 			std::lock_guard lock(mRemoteDescriptionMutex);
-			if (mRemoteDescription && mRemoteDescription->fingerprint()) {
-				mRemoteFingerprintAlgorithm = mRemoteDescription->fingerprint()->algorithm;
+			if (mRemoteDescription && mRemoteDescription->fingerprint().value.size() ) {
+				mRemoteFingerprintAlgorithm = mRemoteDescription->fingerprint().algorithm;
 			}
 			fingerprintAlgorithm = mRemoteFingerprintAlgorithm;
 		}
@@ -314,8 +314,8 @@ shared_ptr<SctpTransport> PeerConnection::initSctpTransport() {
 			    "Starting SCTP transport without remote application description");
 
 		SctpTransport::Ports ports = {};
-		ports.local = local->application()->sctpPort().value_or(DEFAULT_SCTP_PORT);
-		ports.remote = remote->application()->sctpPort().value_or(DEFAULT_SCTP_PORT);
+		ports.local = local->application()->sctpPort();
+		ports.remote = remote->application()->sctpPort();
 
 		auto transport = std::make_shared<SctpTransport>(
 		    lower, config, std::move(ports), weak_bind(&PeerConnection::forwardMessage, this, _1),
@@ -436,8 +436,8 @@ bool PeerConnection::checkFingerprint(const std::string &fingerprint) {
 	std::lock_guard lock(mRemoteDescriptionMutex);
 	mRemoteFingerprint = fingerprint;
 
-	if (!mRemoteDescription || !mRemoteDescription->fingerprint()
-			|| mRemoteFingerprintAlgorithm != mRemoteDescription->fingerprint()->algorithm)
+	if (!mRemoteDescription || !mRemoteDescription->fingerprint().value.size()
+			|| mRemoteFingerprintAlgorithm != mRemoteDescription->fingerprint().algorithm)
 		return false;
 
 	if (config.disableFingerprintVerification) {
@@ -445,7 +445,7 @@ bool PeerConnection::checkFingerprint(const std::string &fingerprint) {
 		return true;
 	}
 
-	auto expectedFingerprint = mRemoteDescription->fingerprint()->value;
+	auto expectedFingerprint = mRemoteDescription->fingerprint().value;
 	if (expectedFingerprint == fingerprint) {
 		PLOG_VERBOSE << "Valid fingerprint \"" << fingerprint << "\"";
 		return true;
@@ -892,13 +892,13 @@ void PeerConnection::closeTracks() {
 }
 
 void PeerConnection::validateRemoteDescription(const Description &description) {
-	if (!description.iceUfrag())
+	if (*description.desc.ice_ufrag == '\0')
 		throw std::invalid_argument("Remote description has no ICE user fragment");
 
-	if (!description.icePwd())
+	if (*description.desc.ice_pwd == '\0' )
 		throw std::invalid_argument("Remote description has no ICE password");
 
-	if (!description.fingerprint())
+	if (!description.fingerprint().value.size())
 		throw std::invalid_argument("Remote description has no valid fingerprint");
 
 	if (description.mediaCount() == 0)

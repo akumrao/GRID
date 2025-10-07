@@ -10,9 +10,7 @@
 #include <map>
 #include <vector>
 
-
 #define ICE_MAX_CANDIDATES_COUNT 20 
-
 namespace rtc {
 
 const string DEFAULT_OPUS_AUDIO_PROFILE =
@@ -209,7 +207,7 @@ public:
 	private:
 		virtual string generateSdpLines(const string& eol) const override;
 
-		uint16_t mSctpPort;
+		uint16_t mSctpPort{5000};   // const uint16_t DEFAULT_SCTP_PORT = 5000; // SCTP port to use by default
 		size_t mMaxMessageSize;
 	};
 
@@ -268,10 +266,10 @@ public:
 
 		void addRtxCodec(int payloadType, int origPayloadType, unsigned int clockRate);
 
-		virtual void parseSdpLine(string_view line) override;
+		virtual void parseSdpLine(const string& line) override;
 
 	private:
-		virtual string generateSdpLines(string_view eol) const override;
+		virtual string generateSdpLines(const string& eol) const override;
 
 		int mBas = -1;
 
@@ -313,16 +311,16 @@ public:
 	bool hasApplication() const;
 	bool hasAudioOrVideo() const;
 	bool hasMid(const string& mid);
-//
-//	int addMedia(Media media);
+
+	int addMedia(Media media);
 	int addMedia(Application application);
 	int addApplication(string mid = "data");
-//	int addVideo(string mid = "video", Direction dir = Direction::SendOnly);
-//	int addAudio(string mid = "audio", Direction dir = Direction::SendOnly);
+	int addVideo(string mid = "video", Direction dir = Direction::SendOnly);
+	int addAudio(string mid = "audio", Direction dir = Direction::SendOnly);
 	void clearMedia();
-//
-//	variant<Media *, Application *> media(int index);
-//	variant<const Media *, const Application *> media(int index) const;
+
+	variant<Media *, Application *> media(int index);
+	variant<const Media *, const Application *> media(int index) const;
 	int mediaCount() const;
 
 	const Application *application() const;
