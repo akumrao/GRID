@@ -244,14 +244,14 @@ void Description::Entry::removeAttribute(const string &attr) {
 
 //std::vector<Candidate> Description::candidates() const { return mCandidates; }
 //
-/*
+
 std::vector<Candidate> Description::extractCandidates() {
 	std::vector<Candidate> result;
-	std::swap(mCandidates, result);
-	mEnded = false;
+//	std::swap(mCandidates, result);
+//	mEnded = false;
 	return result;
 }
-*/
+
 
 bool Description::hasCandidate(const Candidate &cand) const {
 
@@ -283,15 +283,19 @@ bool Description::hasCandidate(const Candidate &cand) const {
 
 Candidate* Description::addCandidate(Candidate candidate ) {
 	
-    
+    	Candidate *ret = nullptr; 
+
         if (!candidate.isResolved()) 
         {
-            candidate.resolve();
+
+            if(!candidate.resolve());
+            {
+            	return ret;
+            }
         }
 
         candidate.hintMid(bundleMid());
-
-        Candidate *ret = nullptr; 
+       
         
 	//if ((!matchRecord && !hasCandidate(candidate))  || (matchRecord &&  (ice_find_candidate_from_addr( &candidate.resolved, Candidate::Type::Unknown) == nullptr  )))
 	

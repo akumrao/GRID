@@ -410,7 +410,7 @@ namespace stun {
 			return -1;
 		}
 
-		SError << "Failed to parse remote SDP candidate: %s" <<  sdpCandidate;
+		//STrace << "Failed to parse remote SDP candidate: %s" <<  sdpCandidate;
 	
 		return -1;
 	}
