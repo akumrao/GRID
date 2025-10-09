@@ -1111,11 +1111,13 @@ void PeerConnection::processLocalCandidate(Candidate candidate) {
 
 	PLOG_VERBOSE << "Issuing local candidate: " << candidate;
 
-	candidate.resolve();
-	mLocalDescription->addCandidate(candidate);
+	if(candidate.resolve())
+	{
+	  mLocalDescription->addCandidate(candidate);
 
-	mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),
+	  mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),
 	                   &localCandidateCallback, std::move(candidate));
+	}
 }
 
 void PeerConnection::processRemoteDescription(Description description) {
@@ -1165,7 +1167,7 @@ void PeerConnection::processRemoteCandidate(Candidate candidate) {
 		if (mRemoteDescription->hasCandidate(candidate))
 			return; // already in description, ignore
 
-		candidate.resolve();
+		if(candidate.resolve())
 		mRemoteDescription->addCandidate(candidate);
 	}
 

@@ -225,9 +225,9 @@ bool Candidate::isResolved() const {
     return resolved.len ;
 }
 
-void Candidate::resolve()
+bool Candidate::resolve()
 {
-    IP::StringToAddress(mNode.c_str(), std::stoi( mService), resolved);
+   return IP::StringToAddress(mNode.c_str(), std::stoi( mService), resolved);
 }
 
 int Candidate::family() const { return resolved.addr.ss_family; }

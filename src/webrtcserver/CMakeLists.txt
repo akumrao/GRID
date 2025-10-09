@@ -64,7 +64,7 @@ if(WIN32)
 	endif()
 endif()
 
-add_definitions( -Wno-write-strings -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-value -Wno-deprecated-declarations -Wno-reorder -Wno-extra -Wno-switch)
+add_definitions( -Wno-write-strings -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-value -Wno-deprecated-declarations -Wno-reorder -Wno-extra -Wno-switch -Wno-unused-but-set-variable)
 
 set(LIBDATACHANNEL_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/candidate.cpp

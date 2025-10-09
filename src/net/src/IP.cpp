@@ -276,18 +276,25 @@ namespace base
         
         
         
-        void IP::StringToAddress(const char *ip,  uint16_t port, addr_record_t &mapped)
+        bool IP::StringToAddress(const char *ip,  uint16_t port, addr_record_t &mapped)
         {
+            int fam =  IP::GetFamily(ip);
 
-            if (IP::GetFamily(ip) == AF_INET6) {
+            if (fam == AF_INET6) {
           
                 ASSERT(0 == uv_ip6_addr(ip, port, (struct sockaddr_in6 *)&mapped.addr));
                 mapped.len = sizeof(struct sockaddr_in6);
             }
-            else {
+            else if(fam == AF_INET) 
+            {
                 ASSERT(0 == uv_ip4_addr(ip, port, (struct sockaddr_in *)&mapped.addr));
-                  mapped.len = sizeof(struct sockaddr_in);
+                mapped.len = sizeof(struct sockaddr_in);
             }
+            else
+            {
+                return false;
+            }
+            return true;
             
         }
         
