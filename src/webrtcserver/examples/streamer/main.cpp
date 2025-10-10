@@ -246,7 +246,7 @@ int main(int argc, char **argv)
     bool printHelp = false;
     //int c = 0;
     
-    Logger::instance().add(new ConsoleChannel("info", Level::Info));
+    Logger::instance().add(new ConsoleChannel("trace", Level::Trace));
     
      Application app;
     
