@@ -110,11 +110,11 @@ socket.on('message', function(message) {
     pc.setRemoteDescription(new RTCSessionDescription(message.desc));
   } else if (message.type === 'candidate' && isStarted) {
 
-    var myIP = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/.exec(message.candidate.candidate)[1];
+    // var myIP = /([0-9]{1,3}(\.[0-9]{1,3}){3}|[a-f0-9]{1,4}(:[a-f0-9]{1,4}){7})/.exec(message.candidate.candidate)[1];
    
-    inputF.value = "ip = "+ myIP +  " " +  inputF.value 
+    // inputF.value = "ip = "+ myIP +  " " +  inputF.value 
 
-    console.log('camera IP: ', myIP); 
+    // console.log('camera IP: ', myIP); 
 
     var candidate = new RTCIceCandidate({
       sdpMLineIndex: message.candidate.sdpMLineIndex,
@@ -242,13 +242,13 @@ function createPeerConnection() {
 
       pc = new RTCPeerConnection(
       {
-          iceServers         : [{'urls': 'stun:stun.l.google.com:19302'},
-              {
+          iceServers         : [{'urls': 'stun:stun.l.google.com:19302'}
+             // ,{
 
-              'url': 'turn:13.235.182.183:3478?transport=udp',
-              'credential': 'test123',
-              'username': 'test',
-              }
+             //  'url': 'turn:13.235.182.183:3478?transport=udp',
+             //  'credential': 'test123',
+             //  'username': 'test',
+             //  }
         ],
           iceTransportPolicy : 'all',
           bundlePolicy       : 'max-bundle',

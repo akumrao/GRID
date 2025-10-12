@@ -249,7 +249,7 @@ async function runSocketServer() {
         });
 
         socket.on('message', function(message) {
-            console.log('webrtc server message: ', message.type);
+            console.log('webrtc server message: ', message);
 
             message.from = socket.id;
 
@@ -260,7 +260,7 @@ async function runSocketServer() {
             message.from = socket.id;
 
 
-            console.log('app message: ', message.type);
+            console.log('app message: ', message);
 
             console.log( message.room );
 

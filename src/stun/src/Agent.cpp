@@ -410,7 +410,7 @@ namespace stun {
 			return -1;
 		}
 
-		SError << "Failed to parse remote SDP candidate: %s" <<  sdpCandidate;
+		//STrace << "Failed to parse remote SDP candidate: %s" <<  sdpCandidate;
 	
 		return -1;
 	}
@@ -483,7 +483,7 @@ namespace stun {
        // char buffer[4096];
         
         //ice_generate_candidate_sdp(candidate, buffer, 4096);
-        
+         STrace<< "AgentNo " << agentNo << " candidate " << *candidate;
         
         return candidate;
 

@@ -484,6 +484,8 @@ namespace stun {
         
         //ice_generate_candidate_sdp(candidate, buffer, 4096);
         
+        std::string tmp =   std::string (*candidate);
+        STrace<< "AgentNo " << agentNo << " candidate " << std::string ( *candidate);
         
         return candidate;
 

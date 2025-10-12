@@ -924,6 +924,9 @@ void PeerConnection::validateRemoteDescription(const Description &description) {
 }
 
 void PeerConnection::processLocalDescription(Description description) {
+    
+        SInfo << "processLocalDescription";
+        
 	const uint16_t localSctpPort = DEFAULT_SCTP_PORT;
 	const size_t localMaxMessageSize =
 	    config.maxMessageSize.value_or(DEFAULT_LOCAL_MAX_MESSAGE_SIZE);
@@ -1099,6 +1102,11 @@ void PeerConnection::processLocalDescription(Description description) {
 }
 
 void PeerConnection::processLocalCandidate(Candidate candidate) {
+    
+        SInfo << "processLocalCandidate" <<   std::string(candidate);
+        
+
+    
 	std::lock_guard lock(mLocalDescriptionMutex);
 	if (!mLocalDescription)
 		throw std::logic_error("Got a local candidate without local description");
@@ -1107,17 +1115,16 @@ void PeerConnection::processLocalCandidate(Candidate candidate) {
 	    candidate.type() != Candidate::Type::Relayed) {
 		PLOG_VERBOSE << "Not issuing local candidate because of transport policy: " << candidate;
 		return;
-	}
+	}   
 
-	PLOG_VERBOSE << "Issuing local candidate: " << candidate;
 
-	if(candidate.resolve())
-	{
-	  mLocalDescription->addCandidate(candidate);
-
+          
+          //SInfo << "Issuing local candidate: " <<  std::string(candidate);
+          Candidate  *cand  =  mLocalDescription->addCandidate(candidate);
+          SInfo << "Issuing local candidate: " << *cand ;
+          if(cand)
 	  mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),
-	                   &localCandidateCallback, std::move(candidate));
-	}
+	                   &localCandidateCallback, std::move(*cand));
 }
 
 void PeerConnection::processRemoteDescription(Description description) {
@@ -1152,6 +1159,8 @@ void PeerConnection::processRemoteDescription(Description description) {
 }
 
 void PeerConnection::processRemoteCandidate(Candidate candidate) {
+    
+    Candidate *cand = nullptr;
 	auto iceTransport = std::atomic_load(&mIceTransport);
 	{
 		// Set as remote candidate
@@ -1168,24 +1177,29 @@ void PeerConnection::processRemoteCandidate(Candidate candidate) {
 			return; // already in description, ignore
 
 		if(candidate.resolve())
-		mRemoteDescription->addCandidate(candidate);
+		{
+                   cand = mRemoteDescription->addCandidate(candidate);
+                }
 	}
 
 	if (candidate.isResolved()) {
-		iceTransport->addRemoteCandidate(std::move(candidate));
+            if(cand)
+		iceTransport->addRemoteCandidate(*cand);
 	} else {
 		// We might need a lookup, do it asynchronously
-		// We don't use the thread pool because we have no control on the timeout
-		if ((iceTransport = std::atomic_load(&mIceTransport))) {
-			weak_ptr<IceTransport> weakIceTransport{iceTransport};
-			std::thread t([weakIceTransport, candidate = std::move(candidate)]() mutable {
-				utils::this_thread::set_name("RTC resolver");
-				if (candidate.isResolved())
-					if (auto iceTransport = weakIceTransport.lock())
-						iceTransport->addRemoteCandidate(std::move(candidate));
-			});
-			t.detach();
-		}
+//		// We don't use the thread pool because we have no control on the timeout
+//		if ((iceTransport = std::atomic_load(&mIceTransport))) {
+//			weak_ptr<IceTransport> weakIceTransport{iceTransport};
+//			std::thread t([weakIceTransport, candidate = std::move(candidate)]() mutable {
+//				utils::this_thread::set_name("RTC resolver");
+//				if (candidate.isResolved())
+//					if (auto iceTransport = weakIceTransport.lock())
+//						iceTransport->addRemoteCandidate(std::move(candidate));
+//			});
+//			t.detach();
+//		}
+            
+            //exit(0);
 	}
 }
 

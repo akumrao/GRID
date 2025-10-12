@@ -783,6 +783,9 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 // Create and setup a PeerConnection
 shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 {
+    SInfo << "createPeerConnection" ;
+    
+    
     auto pc = make_shared<PeerConnection>(config);
     auto client = make_shared<Client>(pc);
 
@@ -824,6 +827,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 //                            {"candidate", std::string(candidate)},
 //                            {"mid", candidate.mid()}};
 
+        SInfo << std::string(candidate);
         sendCandidate( candidate.mid(), 1,  std::string(candidate)  );
 //            if (auto ws = wws.lock())
 //                    ws->send(message.dump());
