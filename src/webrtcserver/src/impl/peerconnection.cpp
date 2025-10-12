@@ -1092,8 +1092,11 @@ void PeerConnection::processLocalDescription(Description description) {
 		mLocalDescription->addCandidates(std::move(existingCandidates));
 	}
 
-	mProcessor.enqueue(&PeerConnection::trigger<Description>, shared_from_this(),
-	                   &localDescriptionCallback, std::move(description));
+//	mProcessor.enqueue(&PeerConnection::trigger<Description>, shared_from_this(),
+//	                   &localDescriptionCallback, std::move(description));
+        
+        localDescriptionCallback(description);
+        
 
 	// Reciprocated tracks might need to be open
 	if (auto dtlsTransport = std::atomic_load(&mDtlsTransport);
@@ -1121,10 +1124,13 @@ void PeerConnection::processLocalCandidate(Candidate candidate) {
           
           //SInfo << "Issuing local candidate: " <<  std::string(candidate);
           Candidate  *cand  =  mLocalDescription->addCandidate(candidate);
-          SInfo << "Issuing local candidate: " << *cand ;
           if(cand)
-	  mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),
-	                   &localCandidateCallback, std::move(*cand));
+	  {
+//              mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),
+//	                   &localCandidateCallback, std::move(*cand));
+              
+              localCandidateCallback(*cand);
+          }
 }
 
 void PeerConnection::processRemoteDescription(Description description) {
@@ -1176,13 +1182,14 @@ void PeerConnection::processRemoteCandidate(Candidate candidate) {
 		if (mRemoteDescription->hasCandidate(candidate))
 			return; // already in description, ignore
 
-		if(candidate.resolve())
-		{
+		//if(candidate.resolve())
+		//{
                    cand = mRemoteDescription->addCandidate(candidate);
-                }
+               // }
 	}
 
-	if (candidate.isResolved()) {
+	if (cand->isResolved())
+        {
             if(cand)
 		iceTransport->addRemoteCandidate(*cand);
 	} else {
@@ -1338,8 +1345,10 @@ bool PeerConnection::changeState(State newState) {
 		auto callback = std::move(stateChangeCallback); // steal the callback
 		callback(State::Closed);                        // call it synchronously
 	} else {
-		mProcessor.enqueue(&PeerConnection::trigger<State>, shared_from_this(),
-		                   &stateChangeCallback, newState);
+		//mProcessor.enqueue(&PeerConnection::trigger<State>, shared_from_this(),
+		                 //  &stateChangeCallback, newState);
+            if(stateChangeCallback)
+            stateChangeCallback(newState);
 	}
 	return true;
 }
@@ -1356,8 +1365,10 @@ bool PeerConnection::changeIceState(IceState newState) {
 		auto callback = std::move(iceStateChangeCallback); // steal the callback
 		callback(IceState::Closed);                        // call it synchronously
 	} else {
-		mProcessor.enqueue(&PeerConnection::trigger<IceState>, shared_from_this(),
-		                   &iceStateChangeCallback, newState);
+		//mProcessor.enqueue(&PeerConnection::trigger<IceState>, shared_from_this(),
+		//                   &iceStateChangeCallback, newState);
+                if(iceStateChangeCallback)            
+                iceStateChangeCallback(newState);
 	}
 	return true;
 }
@@ -1368,9 +1379,11 @@ bool PeerConnection::changeGatheringState(GatheringState newState) {
 
 	std::ostringstream s;
 	s << newState;
-	PLOG_INFO << "Changed gathering state to " << s.str();
-	mProcessor.enqueue(&PeerConnection::trigger<GatheringState>, shared_from_this(),
-	                   &gatheringStateChangeCallback, newState);
+	SInfo << "Changed gathering state to " << s.str();
+	//mProcessor.enqueue(&PeerConnection::trigger<GatheringState>, shared_from_this(),
+	                  // &gatheringStateChangeCallback, newState);
+        if(gatheringStateChangeCallback)
+        gatheringStateChangeCallback(newState);
 
 	return true;
 }
@@ -1381,9 +1394,12 @@ bool PeerConnection::changeSignalingState(SignalingState newState) {
 
 	std::ostringstream s;
 	s << newState;
-	PLOG_INFO << "Changed signaling state to " << s.str();
-	mProcessor.enqueue(&PeerConnection::trigger<SignalingState>, shared_from_this(),
-	                   &signalingStateChangeCallback, newState);
+	SInfo << "Changed signaling state to " << s.str();
+	//mProcessor.enqueue(&PeerConnection::trigger<SignalingState>, shared_from_this(),
+	//                   &signalingStateChangeCallback, newState);
+        
+        if(signalingStateChangeCallback)
+        signalingStateChangeCallback(newState);
 
 	return true;
 }
