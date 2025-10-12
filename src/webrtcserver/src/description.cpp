@@ -150,7 +150,8 @@ Description::Description(const string &sdp, Type type, Role role)
 				if (mIceOptions.empty())
 					mIceOptions = utils::explode(string(pr.second), ',');
 			} else if (pr.first == "candidate") {
-				addCandidate(Candidate(attr, bundleMid()));
+                            Candidate cad(attr, bundleMid());
+				addCandidate(cad);
 			} else if (pr.first == "end-of-candidates") {
 				mEnded = true;
 			} else if (current) {
@@ -281,14 +282,14 @@ bool Description::hasCandidate(const Candidate &cand) const {
 }
 
 
-Candidate* Description::addCandidate(Candidate candidate ) {
+Candidate* Description::addCandidate(Candidate &candidate ) {
 	
     	Candidate *ret = nullptr; 
 
         if (!candidate.isResolved()) 
         {
 
-            if(!candidate.resolve());
+            if(!candidate.resolve())
             {
             	return ret;
             }
@@ -299,7 +300,7 @@ Candidate* Description::addCandidate(Candidate candidate ) {
         
 	//if ((!matchRecord && !hasCandidate(candidate))  || (matchRecord &&  (ice_find_candidate_from_addr( &candidate.resolved, Candidate::Type::Unknown) == nullptr  )))
 	
-        if (!hasCandidate(candidate))
+        if ( !hasCandidate(candidate)    )
         {
 
             desc.candidates[desc.candidates_count] = candidate;
@@ -312,8 +313,8 @@ Candidate* Description::addCandidate(Candidate candidate ) {
 }
 
 void Description::addCandidates(std::vector<Candidate> candidates) {
-	for (Candidate candidate : candidates)
-		addCandidate(std::move(candidate));
+	//for (Candidate candidate : candidates)
+		//addCandidate(std::move(candidate));
 }
 
 void Description::endCandidates() { mEnded = true; }

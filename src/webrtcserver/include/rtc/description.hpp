@@ -115,7 +115,7 @@ public:
 	bool hasCandidate(const Candidate &candidate) const;
         //bool hasRecord(const Candidate &candidate) const;
         Candidate* ice_find_candidate_from_addr(const addr_record_t *record,  Candidate::Type type);
-	Candidate* addCandidate(Candidate candidate);
+	Candidate* addCandidate(Candidate &candidate);
 	void addCandidates(std::vector<Candidate> candidates);
 	void endCandidates();
 
