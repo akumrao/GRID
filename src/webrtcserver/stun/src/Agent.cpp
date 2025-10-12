@@ -480,6 +480,8 @@ namespace stun {
 	
         candidate = description->candidates + description->candidates_count -1;
         
+        STrace<< "AgentNo " << agentNo <<   " candidate:" <<  candidate;
+        
        // char buffer[4096];
         
         //ice_generate_candidate_sdp(candidate, buffer, 4096);
