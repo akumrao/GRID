@@ -116,13 +116,28 @@ struct PeerConnection : std::enable_shared_from_this<PeerConnection> {
 	std::mutex signalingMutex;
 
 	synchronized_callback<shared_ptr<rtc::DataChannel>> dataChannelCallback;
-	synchronized_callback<Description> localDescriptionCallback;
-	synchronized_callback<Candidate> localCandidateCallback;
-	synchronized_callback<State> stateChangeCallback;
-	synchronized_callback<IceState> iceStateChangeCallback;
-	synchronized_callback<GatheringState> gatheringStateChangeCallback;
-	synchronized_callback<SignalingState> signalingStateChangeCallback;
 	synchronized_callback<shared_ptr<rtc::Track>> trackCallback;
+
+	// synchronized_callback<Description> localDescriptionCallback;
+	// synchronized_callback<Candidate> localCandidateCallback;
+	// synchronized_callback<State> stateChangeCallback;
+	// synchronized_callback<IceState> iceStateChangeCallback;
+	// synchronized_callback<GatheringState> gatheringStateChangeCallback;
+	// synchronized_callback<SignalingState> signalingStateChangeCallback;
+
+	std::function<void(Description)> localDescriptionCallback;
+	std::function<void(Candidate)> localCandidateCallback;
+	std::function<void(State)> stateChangeCallback;
+    std::function<void(IceState)> iceStateChangeCallback;
+    std::function<void(GatheringState )> gatheringStateChangeCallback;
+	std::function<void(SignalingState)> signalingStateChangeCallback;
+
+
+
+
+
+
+	
 
 private:
 	void dispatchMedia(message_ptr message);
