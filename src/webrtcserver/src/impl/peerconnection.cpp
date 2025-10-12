@@ -1188,9 +1188,9 @@ void PeerConnection::processRemoteCandidate(Candidate candidate) {
                // }
 	}
 
-	if (cand->isResolved())
+	if (cand && cand->isResolved())
         {
-            if(cand)
+           
 		iceTransport->addRemoteCandidate(*cand);
 	} else {
 		// We might need a lookup, do it asynchronously

@@ -20,7 +20,7 @@
 //#include "ArgParser.hpp"
 #include "socketio/socketioClient.h"
 
-#define localtesting 1
+//#define localtesting 1
 
 using namespace rtc;
 using namespace std;
@@ -246,7 +246,7 @@ int main(int argc, char **argv)
     bool printHelp = false;
     //int c = 0;
     
-    Logger::instance().add(new ConsoleChannel("trace", Level::Trace));
+    Logger::instance().add(new ConsoleChannel("trace", Level::Info));
     
      Application app;
     
