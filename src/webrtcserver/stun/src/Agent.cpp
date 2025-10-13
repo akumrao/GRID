@@ -415,12 +415,16 @@ namespace stun {
 		return -1;
 	}
         
+          Candidate *candStored = ice_add_candidate( &candidate, &remotedesp  );
         
-        Candidate *candStored = ice_add_candidate( &candidate, &remotedesp  );
+        if(candStored && !candStored->resolve())
+        {
+            resolveHostname(candStored);
+        }
+        else
+            resolveIp(candStored);
+            
         
-        if(candStored)
-        resolveIp(candStored);
-                    
         
         
         return 0;
@@ -2737,12 +2741,24 @@ int  Agent::ice_parse_candidate_sdp(const char *line, Candidate *candidate) {
                     return ret;
             //ice_resolve_candidate(candidate, ICE_RESOLVE_MODE_SIMPLE);
             
-            candidate->resolve();
+          //  candidate->resolve();
             
 
             return 0;
     }
     return ICE_PARSE_ERROR;
+}
+
+void Agent::resolveHostname(Candidate *cand )
+{   
+
+ 
+      SInfo << "resolve " <<  cand->mNode  << ":" << cand->mService;
+      
+     resolve(cand->mNode, std::stoi(cand->mService), Application::uvGetLoop(), cand);
+    //break;
+
+   
 }
 
 void Agent::resolveStunServer( )
@@ -2751,13 +2767,16 @@ void Agent::resolveStunServer( )
     for( const IceServer &icesv:  mConfig.iceServers  )
     {
         SInfo << "resolve " <<  icesv.hostname << ":" << icesv.port;
-        resolve(icesv.hostname, icesv.port, Application::uvGetLoop(), (void*)&icesv);
+        resolve(icesv.hostname, icesv.port, Application::uvGetLoop(), nullptr);
         //break;
     }
    
 }
 
-void Agent::cbDnsResolve(addrinfo* res) // paired with resolveStunServer
+
+
+
+void Agent::cbDnsResolve(addrinfo* res, void* ptr) // paired with resolveStunServer
 {
     SInfo <<   "AgentNo " << agentNo << " On Candidate Address resolved ";
     
@@ -2767,8 +2786,10 @@ void Agent::cbDnsResolve(addrinfo* res) // paired with resolveStunServer
    // icesv->ip = ip;
     
    //StartAgent( icesv->ip,  icesv->port);
-    
-   agent_resolve_servers(res );
+    if(ptr)
+        agent_resolve_hostname(res,ptr );   
+    else
+      agent_resolve_servers(res );  
    
 }
 
@@ -2802,7 +2823,37 @@ void Agent::cbNameResolve(  const char* hostname, const char* service,  void* pt
  
 
 
+int Agent::agent_resolve_hostname( addrinfo* start , void *ptr)
+{
+    
 
+
+    addrinfo* res = start ;
+    int i = 0 ;
+    for (;res != NULL; res = res->ai_next) 
+    { 
+
+       // STrace << "AgentNo " << agentNo <<  " Registering STUN server request  " <<   m_entriesStun_count ;
+
+         Candidate *cand = (Candidate *)ptr;
+
+        IP::CopyAddress( res->ai_addr, cand->resolved) ;
+
+
+         STrace << "AgentNo " << agentNo << " timer Resolved hostname"  << cand->address() <<  ":" << cand->port();
+        //_timer.Start(200);
+        
+        
+ 
+       break; // Arvind remote it later
+    }
+	
+
+    
+    
+	
+    return 0;
+}
 
 
 

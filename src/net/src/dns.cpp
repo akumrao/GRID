@@ -57,7 +57,7 @@ namespace base {
 //                    obj->cbDnsResolve(res, addr, port, obj->clsPtr);
 //                }
                 
-                obj->cbDnsResolve(start);
+                obj->cbDnsResolve(start, tmp->data);
                 
                 uv_freeaddrinfo(start);
                 

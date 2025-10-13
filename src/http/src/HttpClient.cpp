@@ -147,7 +147,7 @@ namespace base {
             send(str.c_str(), str.length(), false);
         }
 
-        void HttpClient::cbDnsResolve(addrinfo* res) {
+        void HttpClient::cbDnsResolve(addrinfo* res,void* ptr) {
             if (_connect) return;
 
             if(!res)

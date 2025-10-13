@@ -179,8 +179,10 @@ typedef struct agent_stun_entry {
     using recv_callback = std::function<void(unsigned char * data , size_t size )>;
     
     void resolveStunServer();
-    void cbDnsResolve(addrinfo* res) override;
+    void resolveHostname(Candidate *cand );
+    void cbDnsResolve(addrinfo* res, void* ptr) override;
     void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
+    int agent_resolve_hostname( addrinfo* start , void *ptr);
     void resolveIp( Candidate *certificate );
     Configuration &mConfig;
         

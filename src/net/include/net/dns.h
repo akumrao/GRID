@@ -35,7 +35,7 @@ namespace base {
 //            }
             
             
-            virtual void cbDnsResolve(addrinfo* ) {
+            virtual void cbDnsResolve(addrinfo*, void* ptr ) {
                // LTrace("GetAddrInfoReq::cbDnsResolve");
             }
 
