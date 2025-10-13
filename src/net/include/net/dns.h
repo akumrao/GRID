@@ -47,6 +47,12 @@ namespace base {
             uv_getaddrinfo_t *req;
             
              //void* clsPtr{nullptr}; 
+            
+            struct stTmp
+            {
+                void* clsPtr{nullptr}; 
+                void* data{nullptr}; 
+            };
 
         };
         
