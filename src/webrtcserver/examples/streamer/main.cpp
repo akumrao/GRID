@@ -20,7 +20,7 @@
 //#include "ArgParser.hpp"
 #include "socketio/socketioClient.h"
 
-#define localtesting 1
+//#define localtesting 1
 
 using namespace rtc;
 using namespace std;
@@ -923,7 +923,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
             dc->send("Ping");
         }
     });
-    client->dataChannel = dc;
+    client->dataChannel1 = dc;
     
     
     
@@ -951,7 +951,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
 		});
 
-		 client->dataChannel = dc;
+		 client->dataChannel2 = dc;
 	});
 
     pc->setLocalDescription();
