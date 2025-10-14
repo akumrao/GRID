@@ -1336,6 +1336,15 @@ bool PeerConnection::changeIceState(IceState newState) {
 	s << newState;
 	PLOG_INFO << "Changed ICE state to " << s.str();
 
+        
+        if (newState == IceState::Connected) {
+            int x = 1;
+        }
+        
+          if (newState == IceState::Completed) {
+            int x = 1;
+        }
+        
 	if (newState == IceState::Closed) {
 		auto callback = std::move(iceStateChangeCallback); // steal the callback
 		callback(IceState::Closed);                        // call it synchronously

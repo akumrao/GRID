@@ -849,7 +849,7 @@ int agent_bookkeeping(juice_agent_t *agent, timestamp_t *next_timestamp) {
                         
                 char src_str[ADDR_MAX_STRING_LEN];
 		addr_record_to_string(&entry->record, src_str, ADDR_MAX_STRING_LEN);
-//		JLOG_INFO("arvind =%d  agent->entries_count=%d agent_bookkeeping from %s,  state = %d ", agent->agenNo, agent->entries_count, src_str, entry->state  );
+		JLOG_INFO("arvind =%d  agent->entries_count=%d agent_bookkeeping from %s,  state = %d ", agent->agenNo, agent->entries_count, src_str, entry->state  );
                
                 if(entry->pair && entry->pair->local)
                 {
@@ -1713,7 +1713,7 @@ int agent_send_stun_binding(juice_agent_t *agent, agent_stun_entry_t *entry, stu
 		return -1;
 	}
 
-#if 1        
+#if 0        
 
     static int nCount = 0;
     char fileName[256];
@@ -2421,7 +2421,7 @@ int agent_add_candidate_pair(juice_agent_t *agent, ice_candidate_t *local, // lo
         
         char src_str[ADDR_MAX_STRING_LEN];
         addr_record_to_string(&entry->record, src_str, ADDR_MAX_STRING_LEN);
-//        JLOG_INFO("add pair ravind  =%d, agent->entries_count=%d, agent_add_candidate_pair from %s, ", agent->agenNo, agent->entries_count, src_str);
+        JLOG_INFO("add pair ravind  =%d, agent->entries_count=%d, agent_add_candidate_pair from %s, ", agent->agenNo, agent->entries_count, src_str);
         
 
 	if (remote->type == ICE_CANDIDATE_TYPE_HOST)

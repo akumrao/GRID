@@ -31,7 +31,10 @@ void Transport::unregisterIncoming() {
 
 Transport::State Transport::state() const { return mState; }
 
-void Transport::onRecv(message_callback callback) { mRecvCallback = std::move(callback); }
+void Transport::onRecv(message_callback callback) 
+{
+    mRecvCallback = std::move(callback); 
+}
 
 void Transport::onStateChange(state_callback callback) {
 	mStateChangeCallback = std::move(callback);
@@ -41,7 +44,10 @@ void Transport::start() { registerIncoming(); }
 
 void Transport::stop() { unregisterIncoming(); }
 
-bool Transport::send(message_ptr message) { return outgoing(message); }
+bool Transport::send(message_ptr message) 
+{ 
+    return outgoing(message); 
+}
 
 void Transport::recv(message_ptr message) {
 	try {
@@ -60,7 +66,9 @@ void Transport::changeState(State state) {
 	}
 }
 
-void Transport::incoming(message_ptr message) { recv(message); }
+void Transport::incoming(message_ptr message) {
+    recv(message); 
+}
 
 bool Transport::outgoing(message_ptr message) {
 	if (mLower)
