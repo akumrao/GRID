@@ -413,8 +413,8 @@ namespace stun {
 		return -1;
 	}
 	
-        Candidate candidate;
-	int ret = ice_parse_candidate_sdp(sdpCandidate, &candidate);
+        Candidate *candidate = new  Candidate;
+	int ret = ice_parse_candidate_sdp(sdpCandidate, candidate);
 	if (ret < 0) 
         {
 		if (ret == ICE_PARSE_IGNORED)
@@ -429,11 +429,11 @@ namespace stun {
 		return -1;
 	}
         
-          Candidate *candStored = ice_add_candidate( &candidate, &remotedesp  );
+       
         
         //if(candStored && !candStored->resolve())
         {
-            resolveHostname(candStored);
+            resolveHostname(candidate);
         }
        // else
          //   resolveIp(candStored);
@@ -2800,8 +2800,19 @@ void Agent::cbDnsResolve(addrinfo* res, void* ptr) // paired with resolveStunSer
    // icesv->ip = ip;
     
    //StartAgent( icesv->ip,  icesv->port);
-    if(ptr)
-        agent_resolve_hostname(res,ptr );   
+    Candidate *tmp = (Candidate*)ptr;
+    if(!res)
+    {    delete tmp; 
+        return;
+    }   
+    else if (ptr)
+    {   
+       
+        Candidate *candStored = ice_add_candidate(tmp, &remotedesp  );
+        delete tmp; 
+        agent_resolve_hostname(res,candStored );  
+       
+    }
     else
       agent_resolve_servers(res );  
    
@@ -2843,7 +2854,7 @@ int Agent::agent_resolve_hostname( addrinfo* start , void *ptr)
 
 
     addrinfo* res = start ;
-    int i = 0 ;
+//    int i = 0 ;
     for (;res != NULL; res = res->ai_next) 
     { 
 
