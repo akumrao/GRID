@@ -183,7 +183,7 @@ typedef struct agent_stun_entry {
     void cbDnsResolve(addrinfo* res, void* ptr) override;
     void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
     int agent_resolve_hostname( addrinfo* start , void *ptr);
-    void resolveIp( Candidate *certificate );
+    //void resolveIp( Candidate *certificate );
     Configuration &mConfig;
         
       

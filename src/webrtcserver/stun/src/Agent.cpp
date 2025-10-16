@@ -296,6 +296,20 @@ namespace stun {
 //            printf("getnameinfo failed, errno=%d", sockerrno);
 //            return -1;
 //        }
+  #if 1       
+        char hostname[257];
+        char service[33];
+        
+        if (getnameinfo((struct sockaddr *) &candidate->resolved.addr, candidate->resolved.len, hostname , 256,
+            service , 32, NI_NUMERICHOST | NI_NUMERICSERV | NI_DGRAM)) {
+            SWarn << "getnameinfo failed " ;
+            return -1;
+        }
+        
+        candidate->mNode =hostname;
+        candidate->mService =service;
+   #endif	
+
         return 0;
     }
     
@@ -417,12 +431,12 @@ namespace stun {
         
           Candidate *candStored = ice_add_candidate( &candidate, &remotedesp  );
         
-        if(candStored && !candStored->resolve())
+        //if(candStored && !candStored->resolve())
         {
             resolveHostname(candStored);
         }
-        else
-            resolveIp(candStored);
+       // else
+         //   resolveIp(candStored);
             
         
         
@@ -2793,12 +2807,12 @@ void Agent::cbDnsResolve(addrinfo* res, void* ptr) // paired with resolveStunSer
    
 }
 
-void Agent::resolveIp( Candidate *cand )
-{
-    SInfo << "resolveName " <<  cand->mNode  << ":" << cand->port() << " addd " << cand;
-    
-   resolveIP(cand->resolved.addr,   Application::uvGetLoop(),  cand) ;
-}
+//void Agent::resolveIp( Candidate *cand )
+//{
+//    SInfo << "resolveName " <<  cand->mNode  << ":" << cand->port() << " addd " << cand;
+//    
+//   resolveIP(cand->resolved.addr,   Application::uvGetLoop(),  cand) ;
+//}
 
 
 void Agent::cbNameResolve(  const char* hostname, const char* service,  void* ptr) // paired with resolveIp;
