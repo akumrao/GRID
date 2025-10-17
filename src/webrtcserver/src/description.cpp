@@ -257,23 +257,26 @@ std::vector<Candidate> Description::extractCandidates() {
 bool Description::hasCandidate(const Candidate &cand) const {
 
    //return std::find(desc.candidates , desc.candidates + desc.candidates_count, cand) !=    desc.candidates + desc.candidates_count;
-    
-         
+
         for( int i = 0 ; i < desc.candidates_count ; ++i)
         {
             Candidate *other = (Candidate *)&desc.candidates[i];
             
-            if(cand.isResolved() && other->isResolved() )
+            /*
+            if(cand.isResolved() && other->isResolved() )  // arvind delete this condition
             {
                 if (((cand.mFoundation == other->mFoundation || cand.mType == rtc::Candidate::Type::PeerReflexive || cand.mType == rtc::Candidate::Type::ServerReflexive) &&  IP::addr_record_is_equal( &cand.resolved,  &other->resolved,  true)) )
                 {
+                     SError << " This candidate alreay exist" << std::string(cand);
                     return true;
                 }
             }
-            else
+            else \
+            */
+	    if( cand.mFoundation == other->mFoundation && cand.mService == other->mService && cand.mNode == other->mNode)
             {
-                SError << " This is not allowed state , exiting stun";
-                exit(0);
+                SError << " This candidate alreay exist" << std::string(cand);
+                return true;
             }
             
         }
@@ -286,14 +289,14 @@ Candidate* Description::addCandidate(Candidate &candidate ) {
 	
     	Candidate *ret = nullptr; 
 
-        if (!candidate.isResolved()) 
-        {
-
-            if(!candidate.resolve())
-            {
-            	return ret;
-            }
-        }
+//        if (!candidate.isResolved()) 
+//        {
+//
+//            if(!candidate.resolve())
+//            {
+//            	return ret;
+//            }
+//        }
 
         candidate.hintMid(bundleMid());
        

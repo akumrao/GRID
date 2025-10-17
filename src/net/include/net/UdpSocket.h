@@ -106,8 +106,14 @@ namespace base {
 
         protected:
             bool SetLocalAddress();
-            
-            struct sockaddr_storage localAddr;
+//        typedef struct addr_record {
+//            struct sockaddr_storage addr;
+//            socklen_t len;
+//        } addr_record_t;
+        
+        public:
+            struct addr_record localAddr;
+         protected:    
             std::string localIp;
             uint16_t localPort{ 0};
 
@@ -130,11 +136,11 @@ namespace base {
             return send(data.c_str(), data.length(), ip, port );
         }
         inline const struct sockaddr* UdpSocket::GetLocalAddress() const {
-            return reinterpret_cast<const struct sockaddr*> (&this->localAddr);
+            return reinterpret_cast<const struct sockaddr*> (&this->localAddr.addr);
         }
 
         inline int UdpSocket::GetLocalFamily() const {
-            return reinterpret_cast<const struct sockaddr*> (&this->localAddr)->sa_family;
+            return reinterpret_cast<const struct sockaddr*> (&this->localAddr.addr)->sa_family;
         }
 
         inline const std::string& UdpSocket::GetLocalIp() const {

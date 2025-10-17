@@ -128,4 +128,188 @@ namespace rtc {
         return a.priority() > b.priority();
     }
         
+    
+    
+    
+    
+    
+    
+    
+socklen_t addr_get_len(const struct sockaddr *sa) {
+	switch (sa->sa_family) {
+	case AF_INET:
+		return sizeof(struct sockaddr_in);
+	case AF_INET6:
+		return sizeof(struct sockaddr_in6);
+	default:
+		SInfo << "Unknown address family " <<  sa->sa_family;
+		return 0;
+	}
+}  
+    
+    
+    
+    
+    
+bool addr_is_any(const struct sockaddr *sa) {
+	switch (sa->sa_family) {
+	case AF_INET: {
+		const struct sockaddr_in *sin = (const struct sockaddr_in *)sa;
+		const uint8_t *b = (const uint8_t *)&sin->sin_addr;
+		for (int i = 0; i < 4; ++i)
+			if (b[i] != 0)
+				return false;
+
+		return true;
+	}
+	case AF_INET6: {
+		const struct sockaddr_in6 *sin6 = (const struct sockaddr_in6 *)sa;
+		if (IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr)) {
+			const uint8_t *b = (const uint8_t *)&sin6->sin6_addr + 12;
+			for (int i = 0; i < 4; ++i)
+				if (b[i] != 0)
+					return false;
+		} else {
+			const uint8_t *b = (const uint8_t *)&sin6->sin6_addr;
+			for (int i = 0; i < 16; ++i)
+				if (b[i] != 0)
+					return false;
+		}
+		return true;
+	}
+	default:
+		return false;
+	}
+}
+    
+
+bool addr_is_local(const struct sockaddr *sa) {
+	switch (sa->sa_family) {
+	case AF_INET: {
+		const struct sockaddr_in *sin = (const struct sockaddr_in *)sa;
+		const uint8_t *b = (const uint8_t *)&sin->sin_addr;
+		if (b[0] == 127) // loopback
+			return true;
+		if (b[0] == 169 && b[1] == 254) // link-local
+			return true;
+		return false;
+	}
+	case AF_INET6: {
+		const struct sockaddr_in6 *sin6 = (const struct sockaddr_in6 *)sa;
+		if (IN6_IS_ADDR_LOOPBACK(&sin6->sin6_addr)) {
+			return true;
+		}
+		if (IN6_IS_ADDR_LINKLOCAL(&sin6->sin6_addr)) {
+			return true;
+		}
+		if (IN6_IS_ADDR_V4MAPPED(&sin6->sin6_addr)) {
+			const uint8_t *b = (const uint8_t *)&sin6->sin6_addr + 12;
+			if (b[0] == 127) // loopback
+				return true;
+			if (b[0] == 169 && b[1] == 254) // link-local
+				return true;
+			return false;
+		}
+		return false;
+	}
+	default:
+		return false;
+	}
+}
+
+static int has_duplicate_addr(struct sockaddr *addr, const addr_record_t *records, size_t count) {
+	for (size_t i = 0; i < count; ++i) {
+		const addr_record_t *record = records + i;
+		if (record->addr.ss_family == addr->sa_family) {
+			switch (addr->sa_family) {
+			case AF_INET: {
+				// For IPv4, compare the whole address
+				const struct sockaddr_in *rsin = (const struct sockaddr_in *)&record->addr;
+				const struct sockaddr_in *asin = (const struct sockaddr_in *)addr;
+				if (memcmp(&rsin->sin_addr, &asin->sin_addr, 4) == 0)
+					return true;
+				break;
+			}
+			case AF_INET6: {
+				// For IPv6, compare the network part only
+				const struct sockaddr_in6 *rsin6 = (const struct sockaddr_in6 *)&record->addr;
+				const struct sockaddr_in6 *asin6 = (const struct sockaddr_in6 *)addr;
+				if (memcmp(&rsin6->sin6_addr, &asin6->sin6_addr, 8) == 0) // compare first 64 bits
+					return true;
+				break;
+			}
+			}
+		}
+	}
+	return false;
+}
+
+int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count)
+{
+    
+    if (!addr_is_any((struct sockaddr *)&bound.addr)) {
+            if (count > 0)
+                    records[0] = bound;
+
+            return 1;
+    }
+
+
+
+    addr_record_t *current = records;
+    addr_record_t *end = records + count;
+    int ret = 0;
+
+    
+    uv_interface_address_t *info;
+        int icount, i;
+
+        uv_interface_addresses(&info, &icount);
+        i = icount;
+
+        STrace <<  " Number of interfaces: " <<  icount;
+        while (i--) 
+        {
+            uv_interface_address_t interface_a = info[i];
+        
+
+            Candidate candidate;
+            candidate.mType = Candidate::Type::Host;
+            
+            SInfo  <<  " Name: " <<  interface_a.name;
+                       
+            if(!interface_a.is_internal)
+            {
+ 
+                struct sockaddr* sa = (struct sockaddr*)&interface_a.address;
+                
+                
+           	socklen_t len;
+		if (sa &&
+		    (sa->sa_family == AF_INET ||
+		     (sa->sa_family == AF_INET6 && bound.addr.ss_family == AF_INET6)) &&
+		    !addr_is_local(sa) && (len = addr_get_len(sa)) > 0) {
+			if (!has_duplicate_addr(sa, records, current - records)) {
+				++ret;
+				if (current != end) {
+					memcpy(&current->addr, sa, len);
+					current->len = len;
+					//addr_set_port((struct sockaddr *)&current->addr, port);
+					++current;
+				}
+			}
+		}
+               
+            }
+
+        }
+
+
+    return ret;
+}
+    
+    
+
+    
+    
 }

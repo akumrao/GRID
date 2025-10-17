@@ -108,53 +108,80 @@ namespace stun {
         
         
         agent_change_state(JUICE_STATE_GATHERING);
-
-        //char buf[512];
-        uv_interface_address_t *info;
-        int count, i;
-
-        uv_interface_addresses(&info, &count);
-        i = count;
-
-        STrace << "AgentNo " << agentNo <<  " Number of interfaces: " <<  count;
-        while (i--) {
-            uv_interface_address_t interface_a = info[i];
         
+        
+        
+        addr_record_t records[ICE_MAX_CANDIDATES_COUNT - 1];
+	int records_count = udp_get_addrs(socket->udpServer->localAddr, records, ICE_MAX_CANDIDATES_COUNT - 1);
+	if (records_count < 0) {
+		SError << "Failed to gather local host candidates";
+	      records_count = 0;
+	} else if (records_count == 0) {
+		SWarn << "No local host candidates gathered";
+	} else if (records_count > ICE_MAX_CANDIDATES_COUNT - 1)
+		records_count = ICE_MAX_CANDIDATES_COUNT - 1;
 
+
+	STrace << "Adding " << records_count <<  " local host candidates";
+	for (int i = 0; i < records_count; ++i) {
+            
             Candidate candidate;
             candidate.mType = Candidate::Type::Host;
+            candidate.resolved = records[i];
+            
+            ice_create_host_candidate(&candidate);   
+                 
         
-            if(!interface_a.is_internal)
-            {
-                STrace  << "AgentNo " << agentNo <<  " Name: " <<  interface_a.name;
-                if (interface_a.address.address4.sin_family == AF_INET) {
-                   // uv_ip4_name(&interface_a.address.address4, buf, sizeof (buf));
-                   // std::memcpy(&candidate.resolved.addr , &interface_a.address.address4, sizeof(interface_a.address.address4));
-                    interface_a.address.address4.sin_port =  htons(port);
-                    IP::CopyAddress((const struct sockaddr* )&interface_a.address.address4,  candidate.resolved);
-                } else if (interface_a.address.address4.sin_family == AF_INET6) {
-                    //uv_ip6_name(&interface_a.address.address6, buf, sizeof (buf));
-                   // std::memcpy(&candidate.resolved.addr , &interface_a.address.address6, sizeof(interface_a.address.address6));
-                    //candidate.resolved.len = sizeof(interface_a.address.address6);
-                    interface_a.address.address6.sin6_port =  htons(port);
-                    IP::CopyAddress((const struct sockaddr*) &interface_a.address.address6,  candidate.resolved);
-                   // continue;
-                }
-                 
-                char ip[40];  uint16_t port;
-                 
-                IP::AddressToString( candidate.resolved,  ip,  port);
-                
-                SInfo << "AgentNo " << agentNo <<  " getInterfaces " << "  " << ip  << ":" <<  port;
-                 
-                ice_create_host_candidate(&candidate);   
-                
-               
-            }
-
         }
+        
+        
 
-        uv_free_interface_addresses(info, count);
+//        //char buf[512];
+//        uv_interface_address_t *info;
+//        int count, i;
+//
+//        uv_interface_addresses(&info, &count);
+//        i = count;
+//
+//        STrace << "AgentNo " << agentNo <<  " Number of interfaces: " <<  count;
+//        while (i--) {
+//            uv_interface_address_t interface_a = info[i];
+//        
+//
+//            Candidate candidate;
+//            candidate.mType = Candidate::Type::Host;
+//        
+//            if(!interface_a.is_internal)
+//            {
+//                STrace  << "AgentNo " << agentNo <<  " Name: " <<  interface_a.name;
+//                if (interface_a.address.address4.sin_family == AF_INET) {
+//                   // uv_ip4_name(&interface_a.address.address4, buf, sizeof (buf));
+//                   // std::memcpy(&candidate.resolved.addr , &interface_a.address.address4, sizeof(interface_a.address.address4));
+//                    interface_a.address.address4.sin_port =  htons(port);
+//                    IP::CopyAddress((const struct sockaddr* )&interface_a.address.address4,  candidate.resolved);
+//                } else if (interface_a.address.address4.sin_family == AF_INET6) {
+//                    //uv_ip6_name(&interface_a.address.address6, buf, sizeof (buf));
+//                   // std::memcpy(&candidate.resolved.addr , &interface_a.address.address6, sizeof(interface_a.address.address6));
+//                    //candidate.resolved.len = sizeof(interface_a.address.address6);
+//                    interface_a.address.address6.sin6_port =  htons(port);
+//                    IP::CopyAddress((const struct sockaddr*) &interface_a.address.address6,  candidate.resolved);
+//                   // continue;
+//                }
+//                 
+//                char ip[40];  uint16_t port;
+//                 
+//                IP::AddressToString( candidate.resolved,  ip,  port);
+//                
+//                SInfo << "AgentNo " << agentNo <<  " getInterfaces " << "  " << ip  << ":" <<  port;
+//                 
+//                ice_create_host_candidate(&candidate);   
+//                
+//               
+//            }
+//
+//        }
+//
+//        uv_free_interface_addresses(info, count);
         
         std::sort(localdesp.candidates,localdesp.candidates +localdesp.candidates_count , comp);
         
