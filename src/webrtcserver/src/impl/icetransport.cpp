@@ -145,10 +145,11 @@ bool IceTransport::addRemoteCandidate(const Candidate &candidate) {
     SInfo << "Agent " << agent.agentNo  <<  " addRemoteCandidate " <<  std::string(candidate);
     
 	// Don't try to pass unresolved candidates for more safety
-	if (!candidate.isResolved())
-		return false;
-
-	return agent.ice_add_remote_candidate( &candidate) >= 0;
+	//if (!candidate.isResolved())
+	//	return false;
+       return agent.ice_add_remote_candidate( string(candidate).c_str()) >= 0;
+        
+	
 }
 
 void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> additionalIceServers) {
@@ -251,7 +252,7 @@ void IceTransport::onGatheringDoneCallback()
 void IceTransport::onRecvCallback( unsigned char *data, size_t size)
 {
     try {
-                PLOG_VERBOSE << "Incoming size=" << size;
+                 SInfo << "Incoming size=" << size;
                 auto b = reinterpret_cast<const byte *>(data);
                 incoming(make_message(b, b + size));
         } catch (const std::exception &e) {

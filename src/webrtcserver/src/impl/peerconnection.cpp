@@ -1188,10 +1188,10 @@ void PeerConnection::processRemoteCandidate(Candidate candidate) {
                // }
 	}
 
-	if (cand && cand->isResolved())
+	if (cand )
         {
            
-		iceTransport->addRemoteCandidate(*cand);
+	     iceTransport->addRemoteCandidate(candidate);
 	} else {
 		// We might need a lookup, do it asynchronously
 //		// We don't use the thread pool because we have no control on the timeout

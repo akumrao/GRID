@@ -244,6 +244,32 @@ static int has_duplicate_addr(struct sockaddr *addr, const addr_record_t *record
 	return false;
 }
 
+uint16_t addr_get_port(const struct sockaddr *sa) {
+	switch (sa->sa_family) {
+	case AF_INET:
+		return ntohs(((struct sockaddr_in *)sa)->sin_port);
+	case AF_INET6:
+		return ntohs(((struct sockaddr_in6 *)sa)->sin6_port);
+	default:
+		SWarn <<  "Unknown address family " <<   sa->sa_family;
+		return 0;
+	}
+}
+
+int addr_set_port(struct sockaddr *sa, uint16_t port) {
+	switch (sa->sa_family) {
+	case AF_INET:
+		((struct sockaddr_in *)sa)->sin_port = htons(port);
+		return 0;
+	case AF_INET6:
+		((struct sockaddr_in6 *)sa)->sin6_port = htons(port);
+		return 0;
+	default:
+		SWarn <<  "Unknown address family "<<   sa->sa_family;
+		return -1;
+	}
+}
+
 int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count)
 {
     
@@ -255,7 +281,8 @@ int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count)
     }
 
 
-
+    uint16_t port = addr_get_port((struct sockaddr *)&bound.addr);
+    
     addr_record_t *current = records;
     addr_record_t *end = records + count;
     int ret = 0;
@@ -294,7 +321,7 @@ int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count)
 				if (current != end) {
 					memcpy(&current->addr, sa, len);
 					current->len = len;
-					//addr_set_port((struct sockaddr *)&current->addr, port);
+					addr_set_port((struct sockaddr *)&current->addr, port);
 					++current;
 				}
 			}

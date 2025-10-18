@@ -267,7 +267,7 @@ namespace stun {
     
     int Agent::ice_create_local_reflexive_candidate( Candidate *candidate) {
 
-        SInfo <<  "AgentNo " << agentNo << " ice_create_local_reflexive_candidate";
+        SInfo <<  "AgentNo " << agentNo << " ice_create_local_reflexive_candidate " << candidate->mType;
        
         if (candidate->mType !=  Candidate::Type::ServerReflexive && candidate->mType  !=  Candidate::Type::PeerReflexive) {
 		LError("Invalid type for local reflexive candidate");
@@ -327,9 +327,15 @@ namespace stun {
         char hostname[257];
         char service[33];
         
+   
+          
         if (getnameinfo((struct sockaddr *) &candidate->resolved.addr, candidate->resolved.len, hostname , 256,
             service , 32, NI_NUMERICHOST | NI_NUMERICSERV | NI_DGRAM)) {
-            SWarn << "getnameinfo failed " ;
+            
+            char ip[40];  uint16_t port;
+            IP::AddressToString(candidate->resolved, ip, port) ;
+        
+            SWarn << "getnameinfo failed " << ip <<  ":" << port;
             return -1;
         }
         
@@ -1434,7 +1440,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
             
                         
 			if (ice_create_local_reflexive_candidate( &candidate)) {
-				LWarn("Failed to add local peer reflexive candidate from STUN mapped address");
+				SWarn << "Failed to add local " <<   candidate.mType << " reflexive candidate from STUN mapped address" ;
 			}
 		}
 
@@ -2817,7 +2823,7 @@ void Agent::resolveStunServer( )
 
 
 
-void Agent::cbDnsResolve(addrinfo* res, void* ptr) // paired with resolveStunServer
+void Agent::cbDnsResolve(addrinfo* res, void* ptr) // paired with resolveStunServer and resolveHostname
 {
     SInfo <<   "AgentNo " << agentNo << " On Candidate Address resolved ";
     
@@ -2827,14 +2833,19 @@ void Agent::cbDnsResolve(addrinfo* res, void* ptr) // paired with resolveStunSer
    // icesv->ip = ip;
     
    //StartAgent( icesv->ip,  icesv->port);
-    Candidate *tmp = (Candidate*)ptr;
-    if(!res)
-    {    delete tmp; 
+    
+   Candidate *tmp = (Candidate*)ptr; 
+       
+
+    if(!res && tmp )
+    {
+        SInfo << "AgentNo " << agentNo << " Failed to : " << tmp->mNode <<  ":"  <<tmp->mService  ;
+        delete tmp; 
         return;
     }   
-    else if (ptr)
+    else if (tmp)
     {   
-       
+        SInfo << "AgentNo " << agentNo << " Failed to : " << tmp->mNode <<  ":"  <<tmp->mService  ;
         Candidate *candStored = ice_add_candidate(tmp, &remotedesp  );
         delete tmp; 
         agent_resolve_hostname(res,candStored );  
@@ -2853,24 +2864,23 @@ void Agent::cbDnsResolve(addrinfo* res, void* ptr) // paired with resolveStunSer
 //}
 
 
-void Agent::cbNameResolve(  const char* hostname, const char* service,  void* ptr) // paired with resolveIp;
-{
-     //SInfo <<  "cbNameResolve " <<  hostname << ":" << service  ;
-     
-     
-    Candidate *cand = (Candidate *)ptr;
-     
-    STrace << "AgentNo " << agentNo << " On Candidate Name resolved " <<  hostname << ":" << service <<  " "  << string(*cand) << " " <<  cand ;
-    
-    SInfo << "AgentNo " << agentNo << " About to pair remote candidate: " << cand->address() << ":" << cand->port()  ;
-    
-       
-   // cand->bResolved = true;
-    
-    ice_add_remote_candidate(   cand  );
-     
-     
-}
+//void Agent::cbNameResolve(  const char* hostname, const char* service,  void* ptr) // paired with resolveIp;
+//{
+//     //SInfo <<  "cbNameResolve " <<  hostname << ":" << service  ;
+//     
+//     
+//    Candidate *cand = (Candidate *)ptr;
+//     
+//   // STrace << "AgentNo " << agentNo << " On Candidate Name resolved " <<  hostname << ":" << service <<  " "  << string(*cand) << " " <<  cand ;
+//    
+//    SInfo << "AgentNo " << agentNo << " About to pair remote candidate: " << cand->address() << ":" << cand->port()  ;
+//    
+//       
+//   // cand->bResolved = true;
+//    
+//    
+//     
+//}
 
  
 
@@ -2887,15 +2897,15 @@ int Agent::agent_resolve_hostname( addrinfo* start , void *ptr)
 
        // STrace << "AgentNo " << agentNo <<  " Registering STUN server request  " <<   m_entriesStun_count ;
 
-         Candidate *cand = (Candidate *)ptr;
+        Candidate *cand = (Candidate *)ptr;
 
         IP::CopyAddress( res->ai_addr, cand->resolved) ;
 
 
-         STrace << "AgentNo " << agentNo << " timer Resolved hostname"  << cand->address() <<  ":" << cand->port();
+         STrace << "AgentNo " << agentNo << " Resolved hostname"  << cand->mNode  << " ->" <<  cand->address() <<  ":" << cand->port();
         //_timer.Start(200);
         
-        
+         ice_add_remote_candidate(   cand  );
  
        break; // Arvind remote it later
     }

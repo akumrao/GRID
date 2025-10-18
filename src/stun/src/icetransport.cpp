@@ -128,8 +128,8 @@ void IceTransport::setRemoteDescription(const Description &description) {
 
 bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
 	// Don't try to pass unresolved candidates for more safety
-	if (!candidate->isResolved())
-		return false;
+	//if (!candidate->isResolved())
+		//return false;
 
 	return agent.ice_add_remote_candidate( string(*candidate).c_str()) >= 0;
         

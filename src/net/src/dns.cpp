@@ -22,11 +22,11 @@ namespace base {
                     delete tmp;
                     delete handle;
                     
-                    obj->cbDnsResolve(nullptr, nullptr);
+                    obj->cbDnsResolve(nullptr, tmp->data);
                     return;
                 }
                 
-                char addr[40] = {'\0'};
+               // char addr[40] = {'\0'};
 //                int port =0; 
 
                 struct addrinfo* start =  res;
@@ -109,7 +109,7 @@ namespace base {
                     LError(  "getnameinfo callback error ", uv_err_name(status));
                     delete tmp;
                     delete handle;
-                    obj->cbNameResolve(nullptr, nullptr, nullptr);
+                    obj->cbNameResolve(nullptr, nullptr,  tmp->data);
                     return;
                 }
                     STrace << "Reolved Hostname:" <<  hostname << " cls obj ptr " << tmp->data;
