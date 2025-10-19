@@ -823,8 +823,102 @@ int agent_input(juice_agent_t *agent, char *buf, size_t len, const addr_record_t
 	return -1;
 }
 
+
+
+void dump( agent_stun_entry_t *entry)
+{
+
+    printf(" state ");
+
+    switch(entry->state)
+    {
+        case AGENT_STUN_ENTRY_STATE_PENDING:
+            printf("pending");
+        break;
+
+        case AGENT_STUN_ENTRY_STATE_CANCELLED:
+            printf("canceled");
+        break;
+
+        case AGENT_STUN_ENTRY_STATE_FAILED:
+            printf("failed");
+        break;
+
+        case AGENT_STUN_ENTRY_STATE_SUCCEEDED:
+            printf("succeded");
+        break;
+
+        case AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE:
+            printf("succeded keep live");
+        break;
+
+        case AGENT_STUN_ENTRY_STATE_IDLE:
+            printf("idle");
+        break;
+    };
+    
+    
+     printf(" type ");
+    switch(entry->type)
+    {
+
+        case AGENT_STUN_ENTRY_TYPE_EMPTY:
+            printf("empty");
+        break;
+
+        case AGENT_STUN_ENTRY_TYPE_SERVER:
+            printf("server");
+        break;
+
+        case AGENT_STUN_ENTRY_TYPE_RELAY:
+            printf("relay");
+        break;
+
+        case AGENT_STUN_ENTRY_TYPE_CHECK:
+            printf("check");
+        break;
+
+    
+    };
+    
+       printf(" mode ");
+
+    switch(entry->mode)
+    {
+        case AGENT_MODE_UNKNOWN:
+            printf("unknown");
+        break;
+
+        case AGENT_MODE_CONTROLLED:
+            printf("controlled");
+        break;
+
+        case AGENT_MODE_CONTROLLING:
+            printf("controlling");
+        break;
+    
+    };
+    
+       printf(" \n");
+/*
+    
+    char ip[40];
+    uint16_t port;
+    IP::AddressToString(record, ip, port);
+    
+    ret +=  ip + std::string(":") + std::to_string(port);
+        
+    
+    if(pair)
+    ret +=  " pair dump " +  pair->dump();
+
+    return ret;
+    */
+        
+}
+
 int agent_bookkeeping(juice_agent_t *agent, timestamp_t *next_timestamp) {
-	JLOG_VERBOSE("Bookkeeping...");
+	JLOG_INFO("Bookkeeping...");
 
         
         static timestamp_t prev = 0;
@@ -832,7 +926,7 @@ int agent_bookkeeping(juice_agent_t *agent, timestamp_t *next_timestamp) {
         
 	timestamp_t now = current_timestamp();
         
-        //printf("Rashmi is: %" PRId64 " -  %" PRId64 " \n", now, now - prev );
+       printf("Millsec diff is: %" PRId64 " -  %" PRId64 " \n", now, now - prev );
          
          prev = now;
         
@@ -849,8 +943,10 @@ int agent_bookkeeping(juice_agent_t *agent, timestamp_t *next_timestamp) {
                         
                 char src_str[ADDR_MAX_STRING_LEN];
 		addr_record_to_string(&entry->record, src_str, ADDR_MAX_STRING_LEN);
-		JLOG_INFO("arvind =%d  agent->entries_count=%d agent_bookkeeping from %s,  state = %d ", agent->agenNo, agent->entries_count, src_str, entry->state  );
+		JLOG_INFO("Agent no =%d, entry no =%d/%d agent_bookkeeping from %s,  state = %d ", agent->agenNo, i, agent->entries_count, src_str, entry->state  );
                
+               dump(entry);
+
                 if(entry->pair && entry->pair->local)
                 {
                     char src_str1[ADDR_MAX_STRING_LEN];
