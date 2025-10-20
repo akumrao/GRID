@@ -313,8 +313,9 @@ int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count)
                 
            	socklen_t len;
 		if (sa &&
-		    (sa->sa_family == AF_INET ||
-		     (sa->sa_family == AF_INET6 && bound.addr.ss_family == AF_INET6)) &&
+		    (sa->sa_family == AF_INET
+                    ||  (sa->sa_family == AF_INET6 && bound.addr.ss_family == AF_INET6)   // arvind to disable ipv6
+                    ) &&
 		    !addr_is_local(sa) && (len = addr_get_len(sa)) > 0) {
 			if (!has_duplicate_addr(sa, records, current - records)) {
 				++ret;

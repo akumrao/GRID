@@ -353,6 +353,7 @@ namespace stun {
 
         default: {
           PrintDebug("stun::Reader - error: unhandled STUN attribute %s of length: %u, this will result in incorrect message integrity\n", attribute_type_to_string(attr_type).c_str(), attr_length);
+          skip(attr_length);
           break;
         }
       }

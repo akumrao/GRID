@@ -92,7 +92,7 @@ namespace stun {
          
         getInterfaces();
         
-        resolveStunServer( );
+        resolveStunServer( ); // arvind if you wish to disable public ip comment this line
         
         return 0;
         
@@ -358,10 +358,10 @@ namespace stun {
 		p += ICE_CANDIDATE_PREF_HOST;
 		break;
 	case Candidate::Type::ServerReflexive:
-		p += ICE_CANDIDATE_PREF_PEER_REFLEXIVE;
+		p += ICE_CANDIDATE_PREF_SERVER_REFLEXIVE ;
 		break;
 	case Candidate::Type::PeerReflexive:
-		p += ICE_CANDIDATE_PREF_SERVER_REFLEXIVE;
+		p += ICE_CANDIDATE_PREF_PEER_REFLEXIVE;
 		break;
 	case Candidate::Type::Relayed:
 		p += ICE_CANDIDATE_PREF_RELAYED;
@@ -707,12 +707,12 @@ namespace stun {
 		for (int i = 0; i < m_candidate_pairs_count; ++i) {
 			ice_candidate_pair_t *ordered_pair = m_ordered_pairs[i];
 			if (ordered_pair == pos) {
-				STrace << "AgentNo " << agentNo << " Candidate pair has priority";
+				SInfo << "AgentNo " << agentNo << " Candidate pair has priority";
 				break;
 			}
 			if (ordered_pair->state == ICE_CANDIDATE_PAIR_STATE_SUCCEEDED) {
 				// We found a succeeded pair with higher priority, ignore this one
-				STrace << "AgentNo " << agentNo << " Candidate pair doesn't have priority, keeping it frozen";
+				SInfo << "AgentNo " << agentNo << " Candidate pair doesn't have priority, keeping it frozen";
 				return 0;
 			}
 		}
@@ -721,7 +721,7 @@ namespace stun {
 //	// There is only one component, therefore we can unfreeze if no pair is nominated
 	if (*remotedesp.ice_ufrag != '\0' &&
 	    (!m_selected_pair || !m_selected_pair->nominated)) {
-		STrace << "AgentNo " << agentNo << " Unfreezing the new candidate pair";
+		SInfo << "AgentNo " << agentNo << " Unfreezing the new candidate pair";
 		agent_unfreeze_candidate_pair( pos);
 	}
 
@@ -746,13 +746,13 @@ namespace stun {
                             entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
                             agent_arm_transmission( entry, 0); // transmit now
                           
-                            STrace << "AgentNo " << agentNo  << " ent " << i <<   entry->dump() <<  " agent_unfreeze_candidate_pair " <<   pair->dump();
+                            SInfo << "AgentNo " << agentNo  << " ent " << i <<   entry->dump() <<  " agent_unfreeze_candidate_pair " <<   pair->dump();
 
                             return 0;
                     }
             }
 
-            SWarn << "AgentNo " << agentNo << "Unable to unfreeze the pair: no matching entry";
+            SInfo << "AgentNo " << agentNo << "Unable to unfreeze the pair: no matching entry";
             return -1;
     }
 
@@ -858,7 +858,7 @@ namespace stun {
     
     int Agent::onStunMessage( unsigned char *buf, size_t len, const addr_record_t *src,  const addr_record_t *relayed)
     {
-	STrace << "AgentNo " << agentNo << " Received datagram, size "<<  len;
+	SInfo << "AgentNo " << agentNo << " Received datagram, size "<<  len;
 
 	if(m_state == JUICE_STATE_DISCONNECTED || m_state == JUICE_STATE_GATHERING)
 		return 0;
@@ -872,8 +872,34 @@ namespace stun {
                     SError << "AgentNo " << agentNo << " STUN message reading failed";
 		    return -1;
                 }
+                
+             
+                /* do not enable this code,  it is moved inside agent_verify_stun_binding
+                SInfo << "local password:" <<  localdesp.ice_pwd;
+                   
+                
+                bool ret = reader.computeMessageIntegrity(&msg, localdesp.ice_pwd);
+                if(ret)
+                {
+                    SInfo << "check_integrity passed";
+                }
+                else
+                {
+                    SWarn << "check_integrity failed";
+                }
+                */
   
-  
+                bool  ret = reader.computeFingerprint(&msg);  
+                if(!ret)
+                {
+                    SWarn << "STUN Fingerprint check failed";
+                    return -1;
+                }
+                else
+                {
+                     SInfo << "STUN Fingerprint check passed";
+                }
+                
 		agent_dispatch_stun( buf, len, &msg, src, relayed);
                 
               
@@ -905,7 +931,7 @@ namespace stun {
 		break;
 
 	case AGENT_STUN_ENTRY_TYPE_CHECK:
-		//LDebug("Received application datagram");
+		SInfo << "Received application datagram ";
 		
 	        list->onRecvCallback(buf, len);
 		return 0;
@@ -1102,22 +1128,14 @@ int Agent::agent_verify_stun_binding( unsigned char *buf, size_t size, stun::Mes
                 SWarn << "STUN integrity check failed, password= " <<  password;
                 return -1;
             }
+            else
+            {
+                 STrace << "STUN integrity check passed, password= " <<  password;
+            }
 
         }
         
         
-//        stun::Message rmsg;
-//        stun::Reader reader;
-//        int r = reader.process((uint8_t*) buf, size , &rmsg);  // // TBD:  No need to reparse the buffer// Use compute_message_integrity function directly
-//        if( r == 0)
-//        {
-//            bool ret = reader.computeMessageIntegrity(&rmsg, password);  
-//            if(!ret)
-//            {
-//               SWarn << "STUN integrity check failed, password= " <<  password;
-//		return -1;
-//            }
-//        }
         
         
 	return 0;
@@ -1375,7 +1393,11 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 				pair->nomination_requested = true;
 			}
 		}
-		// Response
+		// Response 
+                //// this will send back stun response(ie XORED ip to peer who requesed to STUN request
+                
+               //STUN request are priodic are sent from record keeper
+                        
 		if (agent_send_stun_binding( entry, STUN_CLASS_RESP_SUCCESS, 0, msg->transaction_id, src))
                 {
 			LError("Failed to send STUN Binding response");
@@ -1395,7 +1417,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
 		break;
 	}
 	case STUN_CLASS_RESP_SUCCESS: {
-		SDebug<< "Received STUN Binding success response from " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer" : "server");
+		SInfo<< "Received STUN Binding success response from " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer" : "server");
 
 		if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER)
 			LInfo("STUN server binding successful");
@@ -1776,7 +1798,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
            
         if(password)
         {
-            SInfo << " MessageIntegrity(20) " << " with password " << password;
+            STrace << " MessageIntegrity(20) " << " with password " << password;
             
            msg.addAttribute(new stun::MessageIntegrity(20));
         }
@@ -1788,19 +1810,12 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 	     )) {
 		// TBD
             
-            
-              msg.addAttribute(new stun::Fingerprint());
-              
             if(msg.msg_class == STUN_CLASS_RESP_ERROR )  
             SError << " TBD not yet implemented nounce and password";
 	}
-        
-        
-     
-     
-        
+                       
 
-        //msg.addAttribute(new stun::Fingerprint());
+        msg.addAttribute(new stun::Fingerprint());
 
         stun::Writer writer;
         if( writer.writeMessage(&msg, (password ? password: "")) < 0)
@@ -1832,7 +1847,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
         
        /* and read it again. */
         
-        /*
+         #if PRINTDEBUG
         stun::Message msgTmp;
   
         stun::Reader reader;
@@ -1847,7 +1862,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
                 SWarn << "STUN integrity check failed, password";
             }
         }
-        */ 
+        #endif
         
         if( socket->agent_direct_send(&writer.buffer[0], writer.buffer.size(), entry->record) < 0)
         {
@@ -1908,7 +1923,17 @@ int Agent::agent_bookkeeping( int64_t &now)
         if (m_state == JUICE_STATE_DISCONNECTED || m_state == JUICE_STATE_GATHERING)
             return 0;
 
-        STrace << "AgentNo " << agentNo << " Bookkeeping...";
+       
+        #if 0
+        static int64_t prev = 0;
+        
+        
+        SInfo << "AgentNo " << agentNo << " Bookkeeping... " << now -prev ;
+        
+      
+       
+        prev = now;
+        #endif 
 
         for (int i = 0; i < m_entriesStun_count; ++i) 
         {
@@ -1916,7 +1941,7 @@ int Agent::agent_bookkeeping( int64_t &now)
 
 
 
-            STrace << "AgentNo " << agentNo << " ent " << i << entry->dump();
+            SInfo << "AgentNo " << agentNo << " ent " << i << entry->dump();
             // STUN requests transmission or retransmission
             if (entry->state == AGENT_STUN_ENTRY_STATE_PENDING) {
                 if (entry->next_transmission > now)
@@ -1954,7 +1979,7 @@ int Agent::agent_bookkeeping( int64_t &now)
                 }
 
                 // Failure sending or end of retransmissions
-                SDebug << "AgentNo " << agentNo << "STUN entry " << i << " Failed";
+                SInfo << "AgentNo " << agentNo << "STUN entry " << i << " Failed";
                 entry->state = AGENT_STUN_ENTRY_STATE_FAILED;
                 entry->next_transmission = 0;
 
@@ -2083,7 +2108,7 @@ int Agent::agent_bookkeeping( int64_t &now)
                 ice_candidate_pair_t *pair = m_ordered_pairs[i];
                 if (pair != nominated_pair && pair->state == ICE_CANDIDATE_PAIR_STATE_PENDING) {
                     // Entries will be synchronized after the current loop.
-                    STrace << "AgentNo " << agentNo << " Cancelling check for non-nominated pair";
+                    SInfo << "AgentNo " << agentNo << " Cancelling check for non-nominated pair";
                     pair->state = ICE_CANDIDATE_PAIR_STATE_FROZEN;
                 }
             }
@@ -2096,7 +2121,7 @@ int Agent::agent_bookkeeping( int64_t &now)
             if (entry->pair && entry->pair->state == ICE_CANDIDATE_PAIR_STATE_FROZEN &&
                     entry->state != AGENT_STUN_ENTRY_STATE_IDLE &&
                     entry->state != AGENT_STUN_ENTRY_STATE_CANCELLED) {
-                SDebug << "AgentNo " << agentNo << "STUN entry " << i << " Cancelled";
+                SInfo << "AgentNo " << agentNo << "STUN entry " << i << " Cancelled";
                 entry->state = AGENT_STUN_ENTRY_STATE_CANCELLED;
                 entry->next_transmission = 0;
             }
@@ -2107,7 +2132,7 @@ int Agent::agent_bookkeeping( int64_t &now)
             agent_change_state(JUICE_STATE_FAILED);
             //atomic_store(&selected_entry, NULL); // disallow sending
             m_selected_entry = NULL;
-            STrace << "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now);
+            SInfo << "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now);
             _timer.Start(m_next_timestamp - now);
             return 0;
         }
@@ -2115,7 +2140,7 @@ int Agent::agent_bookkeeping( int64_t &now)
         if (selected_pair) {
             // Change selected entry if this is a new selected pair
             if (m_selected_pair != selected_pair) {
-                LDebug(selected_pair->nominated ? "New selected and nominated pair"
+                LInfo(selected_pair->nominated ? "New selected and nominated pair"
                         : "New selected pair");
                 m_selected_pair = selected_pair;
 
@@ -2184,7 +2209,7 @@ int Agent::agent_bookkeeping( int64_t &now)
                     if (pending_count == 0 ||
                             (nomination_timestamp && now >= nomination_timestamp)) {
                         // Nominate selected
-                        SDebug << "AgentNo " << agentNo << " Requesting pair nomination (controlling)";
+                        SInfo << "AgentNo " << agentNo << " Requesting pair nomination (controlling)";
                         selected_pair->nomination_requested = true;
                         for (int i = 0; i < m_entriesStun_count; ++i) {
                             agent_stun_entry_t *entry = m_entriesStun + i;
@@ -2211,7 +2236,7 @@ int Agent::agent_bookkeeping( int64_t &now)
                 agent_change_state(JUICE_STATE_FAILED);
                 //atomic_store(&selected_entry, NULL); // disallow sending
                 m_selected_entry = NULL;
-                STrace << "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now);
+                SInfo << "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now);
                 _timer.Start(m_next_timestamp - now);
                 return 0;
             } else if (m_next_timestamp > pac_timestamp) {
@@ -2233,7 +2258,7 @@ int Agent::agent_bookkeeping( int64_t &now)
 #endif
         }
 
-        STrace << "AgentNo " << agentNo << " Bookkeeping end timer " << (m_next_timestamp - now);
+        SInfo << "AgentNo " << agentNo << " Bookkeeping end timer " << (m_next_timestamp - now);
         _timer.Start(m_next_timestamp - now);
         return 0;
 }
@@ -2330,6 +2355,7 @@ int  Agent::agent_set_remote_description(const char *sdp) {
 			LWarn("Failed to add candidate pair");
 	}
 
+        _timer.Start(0);
 	return 0;
 
 }
@@ -2392,49 +2418,6 @@ int Agent::agent_resolve_servers( addrinfo* start)
 }
 
 
-
-void Agent::StartAgent( std::string &stunip , uint16_t &stunport)
-{
-    
-
-        /* write */
-    stun::Message msg(stun::STUN_BINDING_REQUEST);
-    msg.setTransactionID();
-    msg.addAttribute(new stun::Software("libjuice"));
-    msg.addAttribute(new stun::Fingerprint());
-
-
-    stun::Writer writer;
-    writer.writeMessage(&msg, "");
-
-
-#if PRINTDEBUG
-    printf("---------------\n");
-    for (size_t i = 0; i < writer.buffer.size(); ++i) {
-        if (i == 0 || i % 4 == 0) {
-            printf("\n");
-        }
-        printf("%02X ", writer.buffer[i]);
-    }
-    printf("\n---------------\n");
-
-#endif
-
-   // socket->send(&writer.buffer[0], writer.buffer.size(), stunip, stunport);
-
-//
-
-    //    tesTcpServer tsvsocket;
-    //    tsvsocket.start("0.0.0.0", 6000);
-    //    
-    //    
-    //    tesTcpClient socket;
-    //    socket.start(STUN_SERVER_IP , STUN_SERVER_PORT);
-    //    
-    //    socket.sendit( &writer.buffer[0], writer.buffer.size());    
-
-    
-}
 
 
 int Agent::agent_get_selected_candidate_pair( Candidate *local, Candidate *remote) 
@@ -2564,7 +2547,7 @@ std::string agent_stun_entry::dump()
     
     };
     
-    ret += " ";
+    ret += " to ";
     
     char ip[40];
     uint16_t port;

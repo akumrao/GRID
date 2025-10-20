@@ -40,7 +40,7 @@ void testUdpServer::OnUdpSocketPacketReceived(UdpServer* socket, const char* dat
 
   //  on_udp_data(data ,len );
 
-    STrace  <<  " OnUdpSocketPacketReceived ip " << peerIp << ":" << peerPort ;
+    SInfo  <<  " OnUdpSocketPacketReceived ip " << peerIp << ":" << peerPort ;
     
     addr_record_t remotesrc;
     

@@ -252,7 +252,7 @@ void IceTransport::onGatheringDoneCallback()
 void IceTransport::onRecvCallback( unsigned char *data, size_t size)
 {
     try {
-                 SInfo << "Incoming size=" << size;
+//                 SInfo << "Incoming size=" << size;
                 auto b = reinterpret_cast<const byte *>(data);
                 incoming(make_message(b, b + size));
         } catch (const std::exception &e) {
