@@ -889,15 +889,18 @@ namespace stun {
                 }
                 */
   
-                bool  ret = reader.computeFingerprint(&msg);  
-                if(!ret)
+                if (msg.hasAttribute(stun::STUN_ATTR_FINGERPRINT )) 
                 {
-                    SWarn << "STUN Fingerprint check failed";
-                    return -1;
-                }
-                else
-                {
-                     SInfo << "STUN Fingerprint check passed";
+                    bool  ret = reader.computeFingerprint(&msg);  
+                    if(!ret)
+                    {
+                        SWarn << "STUN Fingerprint check failed";
+                        return -1;
+                    }
+                    else
+                    {
+                         SInfo << "STUN Fingerprint check passed";
+                    }
                 }
                 
 		agent_dispatch_stun( buf, len, &msg, src, relayed);
@@ -2828,14 +2831,13 @@ void Agent::cbDnsResolve(addrinfo* res, void* ptr) // paired with resolveStunSer
     }   
     else if (tmp)
     {   
-        SInfo << "AgentNo " << agentNo << " Failed to : " << tmp->mNode <<  ":"  <<tmp->mService  ;
         Candidate *candStored = ice_add_candidate(tmp, &remotedesp  );
         delete tmp; 
         agent_resolve_hostname(res,candStored );  
        
     }
     else
-      agent_resolve_servers(res );  
+      agent_resolve_servers(res );  // google stun://google server resolve
    
 }
 

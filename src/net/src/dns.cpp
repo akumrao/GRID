@@ -17,12 +17,13 @@ namespace base {
                 if (status < 0 || !res) {
                     LError(  "getaddrinfo callback error ", uv_err_name(status));
                     
+                    obj->cbDnsResolve(nullptr, tmp->data);
+                    
                     if(res)
                     uv_freeaddrinfo(res);
                     delete tmp;
                     delete handle;
                     
-                    obj->cbDnsResolve(nullptr, tmp->data);
                     return;
                 }
                 
