@@ -1,4 +1,10 @@
-cmake_minimum_required(VERSION 3.7)
+
+cmake_minimum_required(VERSION 3.12) # Or a more recent version
+if(POLICY CMP0074)
+    cmake_policy(SET CMP0074 NEW)
+endif()
+
+
 project(libdatachannel
 	VERSION 0.21.2
 	LANGUAGES CXX)
@@ -28,6 +34,20 @@ SET(SSL_ROOT "${WORKSPACE}/src/openssl/buildx64")
 SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
 
 #SET(WEBRTC_REPO "${CMAKE_SOURCE_DIR}/webrtc/src")
+
+ 
+set(MbedTLS_ROOT /workspace/MagicAI/src/mbedtls/build/)
+set(MbedTLS_DIR /workspace/MagicAI/src/mbedtls/build/)
+set(MBEDTLS_INCLUDE_DIRS /workspace/MagicAI/src/mbedtls/build/library)
+set(MBEDTLS_LIBRARIES /workspace/MagicAI/src/mbedtls/build/include)
+
+set(MbedTLS_LIBRARY /workspace/MagicAI/src/mbedtls/build/library)
+set(MbedTLS_INCLUDE_DIR /workspace/MagicAI/src/mbedtls/build/include)
+
+set(MbedCrypto_LIBRARY /workspace/MagicAI/src/mbedtls/build/library)
+set(MbedX509_LIBRARY /workspace/MagicAI/src/mbedtls/build/library)
+
+
 
 
 if (USE_GNUTLS AND USE_MBEDTLS)
@@ -355,13 +375,13 @@ else()
 	target_compile_definitions(datachannel-static PUBLIC RTC_ENABLE_MEDIA=1)
 	if(USE_SYSTEM_SRTP)
 		target_compile_definitions(datachannel-static PRIVATE RTC_SYSTEM_SRTP=1)
-		target_link_libraries(datachannel-static PRIVATE srtp)
+		target_link_libraries(datachannel-static PRIVATE srtp2)
 	else()
 		if(NOT TARGET srtp2)
 			#add_subdirectory(deps/libsrtp)
 		endif()
 		target_compile_definitions(datachannel-static PRIVATE RTC_SYSTEM_SRTP=0)
-		target_link_libraries(datachannel-static PRIVATE srtp)
+		target_link_libraries(datachannel-static PRIVATE srtp2)
 	endif()
 endif()
 
