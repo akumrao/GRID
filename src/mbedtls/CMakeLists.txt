@@ -267,6 +267,9 @@ add_subdirectory(library)
 # target. This library of objects is used by tests and programs CMake files
 # to define the test executables.
 #
+
+add_compile_options(-Wno-free-nonheap-object)
+
 if(ENABLE_TESTING OR ENABLE_PROGRAMS)
     file(GLOB MBEDTLS_TEST_FILES ${CMAKE_CURRENT_SOURCE_DIR}/tests/src/*.c ${CMAKE_CURRENT_SOURCE_DIR}/tests/src/drivers/*.c)
     add_library(mbedtls_test OBJECT ${MBEDTLS_TEST_FILES})
