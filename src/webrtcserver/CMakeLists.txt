@@ -36,19 +36,19 @@ SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
 #SET(WEBRTC_REPO "${CMAKE_SOURCE_DIR}/webrtc/src")
 
  
-set(MbedTLS_ROOT /workspace/MagicAI/src/mbedtls/build/)
-set(MbedTLS_DIR /workspace/MagicAI/src/mbedtls/build/)
-set(MBEDTLS_INCLUDE_DIRS /workspace/MagicAI/src/mbedtls/build/library)
-set(MBEDTLS_LIBRARIES /workspace/MagicAI/src/mbedtls/build/include)
+set(MbedTLS_ROOT ${WORKSPACE}/src/mbedtls/build/)
+set(MbedTLS_DIR ${WORKSPACE}/src/mbedtls/build/)
+#set(MBEDTLS_INCLUDE_DIRS ${WORKSPACE}/src/mbedtls/build/library)
+#set(MBEDTLS_LIBRARIES ${WORKSPACE}/src/mbedtls/build/include)
 
-set(MbedTLS_LIBRARY /workspace/MagicAI/src/mbedtls/build/library)
-set(MbedTLS_INCLUDE_DIR /workspace/MagicAI/src/mbedtls/build/include)
+#set(MbedTLS_LIBRARY ${WORKSPACE}/src/mbedtls/build/library)
+#set(MbedTLS_INCLUDE_DIR ${WORKSPACE}/src/mbedtls/build/include)
 
-set(MbedCrypto_LIBRARY /workspace/MagicAI/src/mbedtls/build/library)
-set(MbedX509_LIBRARY /workspace/MagicAI/src/mbedtls/build/library)
+#set(MbedCrypto_LIBRARY ${WORKSPACE}/src/mbedtls/build/library)
+#set(MbedX509_LIBRARY ${WORKSPACE}/src/mbedtls/build/library)
 
 
-
+set(USE_MBEDTLS 1)
 
 if (USE_GNUTLS AND USE_MBEDTLS)
 	message(FATAL_ERROR "Both USE_MBEDTLS and USE_GNUTLS cannot be enabled at the same time")
@@ -388,7 +388,8 @@ endif()
 
 if(USE_MBEDTLS)
 	if(NOT TARGET MbedTLS::MbedTLS)
-		find_package(MbedTLS 3 REQUIRED)
+	    set(MbedTLS_DEBUG 1)
+		find_package(MbedTLS REQUIRED)
 	endif()
 	target_compile_definitions(datachannel-static PRIVATE USE_MBEDTLS=1)
 	target_link_libraries(datachannel-static PRIVATE MbedTLS::MbedTLS)
