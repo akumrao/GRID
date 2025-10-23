@@ -35,13 +35,13 @@ public:
 
     void on_close( ) {
 
-        std::cout << "TCP server closing, LocalIP" << connection->GetLocalIp() << " PeerIP" << connection->GetPeerIp() << std::endl << std::flush;
+        std::cout << "TCP server closing, LocalIP" << this->GetLocalIp() << " PeerIP" << this->GetPeerIp() << std::endl << std::flush;
 
     }
 
     
     void on_read(const char* data, size_t len) {
-        std::cout << "TCP server send data: " << data << "len: " << len << std::endl << std::flush;
+        std::cout << "on_read  data: " << data << "len: " << len << std::endl << std::flush;
         std::string send = "12345";
         SslConnection::send((const char*) send.c_str(), 5);
 
@@ -113,7 +113,7 @@ int main(int argc, char** argv) {
      //  net::SSLManager::initNoVerifyServer();
 
         Application app;
-        SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true);
+        SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true); //5001 4433
    
 
         app.waitForShutdown([&](void*) {

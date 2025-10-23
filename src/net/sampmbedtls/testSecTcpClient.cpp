@@ -30,6 +30,7 @@ public:
     tesTcpClient(): SslConnection()
     {
         Connect("127.0.0.1", 5001);
+       // Connect("127.0.0.1", 1234);
     }
 
 
@@ -42,7 +43,7 @@ public:
 
     void on_read( const char* data, size_t len) {
         
-      std::cout << " on_read " << this->GetLocalIp() << " PeerIP " << this->GetPeerIp() << std::endl << std::flush;
+        std::cout << " on_read " << this->GetLocalIp() << " PeerIP " << this->GetPeerIp() << std::endl << std::flush;
 
         std::cout << "data: " << data << " len: " << len << std::endl << std::flush;
         std::string send = "12345";
@@ -50,20 +51,17 @@ public:
 
     }
     
-    void on_connect() {
-        
-       SslConnection::on_connect();
-        
-       std::cout << " on_read " << this->GetLocalIp() << " PeerIP " << this->GetPeerIp() << std::endl << std::flush;
+    void on_connect() 
+    {
+        SslConnection::on_connect();
+        std::cout << " on_read " << this->GetLocalIp() << " PeerIP " << this->GetPeerIp() << std::endl << std::flush;
 
      
-       std::string send = "12345";
-       SslConnection::send((const char*) send.c_str(), 5);
+      std::string send = "Hello world2!\n";
+       SslConnection::send((const char*) send.c_str(), send.size());
        std::cout << "TCP Client send data: " << send << "len: " << strlen((const char*) send.c_str()) << std::endl << std::flush;
-
     }
     
-  
 
 };
 
@@ -77,9 +75,6 @@ int main(int argc, char** argv) {
         tesTcpClient socket;
 
         app.run();
-
-        
-
 
 
 

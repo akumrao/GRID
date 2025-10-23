@@ -1,14 +1,14 @@
 ################################################################################
 ### CUSTOMIZE BELOW HERE #######################################################
-
+workpace="/workspace/MagicAI/src"
 CC	= gcc
 CXX     = g++
-TARGET=runtestSecTcpServer # define the name of the executable
-SOURCES=$(wildcard testSecTcpServer.cpp ../srcmbedtls/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp  ../../base/src/*.cpp )
+TARGET=runtestSecTcpClient # define the name of the executable
+SOURCES=$(wildcard *.cpp  )
 
-CXXFLAGS   := -g -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL
+CXXFLAGS   := -g  -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized
 
-              
+
 CPPFLAGS   := -I../../json/include/  -I../../base/include/ -I../../mbedtls/include -I../../net/incmbedtls/  -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
 
               
@@ -16,8 +16,7 @@ LDFLAGS   := -L/data/sound/lib -L/usr/lib/x86_64-linux-gnu
 
 LDLIBS    := -lpthread -lm -ldl 
 
-SLIBS     := ../../mbedtls/build/library/libmbedtls.a ../../mbedtls/build/library/libmbedx509.a ../../mbedtls/build/library/libmbedcrypto.a
-
+SLIBS     := $(workpace)/mbedtls/build/library/libmbedtls.a $(workpace)/mbedtls/build/library/libmbedx509.a $(workpace)/mbedtls/build/library/libmbedcrypto.a
 
 
 
@@ -43,3 +42,4 @@ clean:
 
 ################################################################################
 ################################################################################
+

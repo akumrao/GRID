@@ -129,15 +129,28 @@ const char defaultCertificate[]
 SSLAdapter::SSLAdapter(SslConnection *socket)
     : _socket(socket)
 {
+    
+    ssl_bio_ = 0;
+    app_bio_ = 0;
+//    oprn_state = STATE_INIT;
+    
 }
 
 SSLAdapter::~SSLAdapter()
 {
+    
+    if (app_bio_) {
+        TLS_BIO_free_all(app_bio_);
+    }
+    if (ssl_bio_) {
+        TLS_BIO_free_all(ssl_bio_);
+    }
+    
     LTrace("Destroy")
 
 }
 
-void SSLAdapter::initClient()
+void SSLAdapter::initSSL()
 {
     mbedtls_ssl_init(&_ssl);
     
@@ -145,86 +158,185 @@ void SSLAdapter::initClient()
     mbedtls_ctr_drbg_init(&_ctr_drbg);
     mbedtls_x509_crt_init(&_cacert);
     mbedtls_ssl_config_init(&_ssl_conf);
+    
+    
+    if(server)
+    {
+       mbedtls_pk_init( &pkey );
+
+    }
         
     const char *DRBG_PERS = "mbed TLS helloword client";
     
     
   
     if (mbedtls_ctr_drbg_seed(&_ctr_drbg, mbedtls_entropy_func, &_entropy,
-                       (const unsigned char *) DRBG_PERS,
-                       sizeof (DRBG_PERS)) != 0)
+                       nullptr, 0) != 0)
 
     {
 
         SError << " Failed mbedtls_ctr_drbg_seed ";
     }
+
+
+
+//    if (TLS_ANY_VERSION != ssl->version) {
+//        if (TLS1_2_VERSION == ssl->version)
+//            version = MBEDTLS_SSL_MINOR_VERSION_3;
+//        else if (TLS1_1_VERSION == ssl->version)
+//            version = MBEDTLS_SSL_MINOR_VERSION_2;
+//        else
+//            version = MBEDTLS_SSL_MINOR_VERSION_1;
+//
+//        mbedtls_ssl_conf_max_version(&ssl_pm->conf, MBEDTLS_SSL_MAJOR_VERSION_3, version);
+//        mbedtls_ssl_conf_min_version(&ssl_pm->conf, MBEDTLS_SSL_MAJOR_VERSION_3, version);
+//    } else {
+    
+    
+    if(server)
+    { 
+       
+        if( ( mbedtls_ssl_config_defaults( &_ssl_conf,
+                    MBEDTLS_SSL_IS_SERVER,
+                    MBEDTLS_SSL_TRANSPORT_STREAM,
+                    MBEDTLS_SSL_PRESET_DEFAULT ) ) != 0 )
+        {
+             SError << "mbedtls_ssl_config_defaults failed";
+             exit(0);
+        }
+        
+ 
+    }
+    else
+    {
+         
+        if( mbedtls_ssl_config_defaults(&_ssl_conf,
+                    MBEDTLS_SSL_IS_CLIENT,
+                    MBEDTLS_SSL_TRANSPORT_STREAM,
+                    MBEDTLS_SSL_PRESET_DEFAULT) != 0) 
+        {
+          SError << "mbedtls_ssl_config_defaults failed";
+          exit(0);
+        }
+               
+        
+    }
+    
+    
+        
+          
+    
+        //mbedtls_ssl_conf_max_version(&_ssl_conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3);
+        //mbedtls_ssl_conf_min_version(&_ssl_conf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_1);
+   // }
+     
+    
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if FROMFILE
 
     std::string CertFile = "/mnt/key/certificate.crt";
   
-    mbedtls_x509_crt cacert;
 
-    mbedtls_x509_crt_init( &cacert );
     
     int ret = 0;
 
-    if( ( ret = mbedtls_x509_crt_parse_file( &cacert, CertFile.c_str() ) ) != 0 )
+    if( ( ret = mbedtls_x509_crt_parse_file( &_cacert, CertFile.c_str() ) ) != 0 )
     {
         //mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret );
         //goto exit;
         
         SError << "mbedtls_x509_crt_parse returned " << ret ;
         
+        
+          exit(0);
     }
 
 
-// remove the following line
-// mbedtls_ssl_conf_authmode( &conf, MBEDTLS_SSL_VERIFY_NONE );
-   
     
-    
-    if( mbedtls_ssl_config_defaults(&_ssl_conf,
-                    MBEDTLS_SSL_IS_CLIENT,
-                    MBEDTLS_SSL_TRANSPORT_STREAM,
-                    MBEDTLS_SSL_PRESET_DEFAULT) != 0) 
+    if(server)
     {
-      SError << "mbedtls_ssl_config_defaults failed";
-    }
-            
+       const char * KeyFile = "/mnt/key/private_key.pem";
+       const char *pwd = "12345678";
+
+        ret =  mbedtls_pk_parse_keyfile( &pkey,  KeyFile ,pwd );
+        if( ret != 0 )
+        {
+             SError << "mbedtls_x509_crt_parse returned " << ret ;
+             exit(0);
+        }
+
+
+    }   
+   
             
             
    
-        mbedtls_ssl_conf_ca_chain(&_ssl_conf, &_cacert, NULL);
-        mbedtls_ssl_conf_rng(&_ssl_conf, mbedtls_ctr_drbg_random, &_ctr_drbg);
-
+       
        
             
     
 #else
 
- if (           mbedtls_x509_crt_parse(&_cacert, (const unsigned char *) SSL_CA_PEM,
-                    sizeof (SSL_CA_PEM)) != 0 ||
-                mbedtls_ssl_config_defaults(&_ssl_conf,
-                    MBEDTLS_SSL_IS_CLIENT,
-                    MBEDTLS_SSL_TRANSPORT_STREAM,
-                    MBEDTLS_SSL_PRESET_DEFAULT) != 0) {
-            _error = true;
-            return;
-        }
+    
+    
+    int ret = mbedtls_x509_crt_parse( &_cacert, (const unsigned char *) mbedtls_test_srv_crt,
+                          mbedtls_test_srv_crt_len );
+    if( ret != 0 )
+    {
+        SError << "mbedtls_x509_crt_parse returned " << ret ;
+        exit(0);
+    }
 
+    ret = mbedtls_x509_crt_parse( &_cacert, (const unsigned char *) mbedtls_test_cas_pem,
+                          mbedtls_test_cas_pem_len );
+    if( ret != 0 )
+    {
+        SError << "mbedtls_x509_crt_parse returned " << ret ;
+        exit(0);
+    }
+
+    ret =  mbedtls_pk_parse_key( &pkey, (const unsigned char *) mbedtls_test_srv_key,
+                         mbedtls_test_srv_key_len, NULL, 0 );
+    if( ret != 0 )
+    {
+         SError << "mbedtls_x509_crt_parse returned " << ret ;
+         exit(0);
+    }
+    
+    
+    
+    
+    
+
+
+#endif
+
+     
+
+ 
         mbedtls_ssl_conf_ca_chain(&_ssl_conf, &_cacert, NULL);
-        mbedtls_ssl_conf_rng(&_ssl_conf, mbedtls_ctr_drbg_random, &_ctr_drbg);
+        
+        if(server)
+        if( (  mbedtls_ssl_conf_own_cert( &_ssl_conf, &_cacert, &pkey ) ) != 0 )
+        {
+            SError << "failed\n  ! mbedtls_ssl_conf_own_cert returned ";
+            exit(0);
+        }
+         
+        #if UNSAFE
+        mbedtls_ssl_conf_authmode(&_ssl_conf, MBEDTLS_SSL_VERIFY_OPTIONAL ); //MBEDTLS_SSL_VERIFY_OPTIONAL); MBEDTLS_SSL_VERIFY_NONE
+        #endif
+         mbedtls_ssl_conf_rng(&_ssl_conf, mbedtls_ctr_drbg_random, &_ctr_drbg); 
+      
 
+       // mbedtls_ssl_conf_own_cert(&_ssl_conf, &_cacert, NULL);
+      
+        //static const auto host = "127.0.0.1";
+        setup(&_ssl_conf, nullptr);
 
-
-
-
-#endif
-
-    #if UNSAFE
-        mbedtls_ssl_conf_authmode(&_ssl_conf, MBEDTLS_SSL_VERIFY_OPTIONAL);
-#endif
+        
+        if(server)
+            mbedtls_ssl_session_reset( &_ssl );
 
         
    #if DEBUG_LEVEL > 0
@@ -233,10 +345,7 @@ void SSLAdapter::initClient()
         mbedtls_debug_set_threshold(DEBUG_LEVEL);
  #endif     
 
-        
-        
 
-    setup(&_ssl_conf, nullptr);
         
         
     //
@@ -247,31 +356,6 @@ void SSLAdapter::initClient()
 //    }
     
 }
-
-
-
-
-int SSLAdapter::ssl_recv(void *ctx, unsigned char *buf, size_t len) {
-   
-    SSLAdapter *stream = static_cast<SSLAdapter *>(ctx);
-    stream->_socket->on_read((const char*) buf, len);
-    
-    stream->_socket->on_read((const char*) buf, len);
-    
-    return len;
-   
-}
-
-int SSLAdapter::ssl_send(void *ctx, const unsigned char *buf, size_t len) {
-    
-    SSLAdapter *stream = static_cast<SSLAdapter *>(ctx);
-    
-     int ret = stream->_socket->Write((const char*)buf, len, stream->cb);
-    stream->cb = nullptr;
-    
-    return ret;
-}
-
 
 
 
@@ -295,18 +379,25 @@ bool SSLAdapter::setup(const mbedtls_ssl_config *conf, const char *hostname)
             return false;
         }
     }
+    
+    
+    ssl_bio_ = SSL_BIO_new(BIO_BIO);
+    app_bio_ = SSL_BIO_new(BIO_BIO);
+    TLS_BIO_make_bio_pair(ssl_bio_, app_bio_);
 
-    mbedtls_ssl_set_bio(&_ssl, this, ssl_send, ssl_recv, NULL );
+    
+
+    mbedtls_ssl_set_bio(&_ssl, ssl_bio_, TLS_BIO_net_send, TLS_BIO_net_recv, NULL);
 
     return true;
 }
 
 
-void SSLAdapter::initServer()  //(SSL* ssl)
-{
-    LTrace("Init server")
-
-}
+//void SSLAdapter::initServer()  //(SSL* ssl)
+//{
+//    server =true;
+//
+//}
 
 void SSLAdapter::shutdown()
 {
@@ -322,7 +413,22 @@ void SSLAdapter::shutdown()
     }
     /* Ignore other errors, the connection may be closed or unusable */
 
+   
+    mbedtls_ctr_drbg_free(&_ctr_drbg);
+    mbedtls_entropy_free(&_entropy);
+    mbedtls_ssl_config_free(&_ssl_conf);
+    mbedtls_x509_crt_free(& _cacert );
+    
+    if(server)
+    {
+        mbedtls_pk_free( &pkey );
+    }
+        
+    
     mbedtls_ssl_free(&_ssl);
+
+
+
     
     
 }
@@ -348,49 +454,59 @@ void SSLAdapter::shutdown()
 //}
 
 
-void SSLAdapter::handshake()
+int SSLAdapter::handshake()
 {
-    int ret = 0;
     
-    while( ( ret = mbedtls_ssl_handshake( &_ssl ) ) != 0 )
-    {
-        if( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE )
-        {
 
-            SError << " failed\n  ! mbedtls_ssl_handshake returned "  << getTLSError(ret);
-            return;
-        }
+  if (handshake_state == STATE_HANDSHAKE_DONE) {
+    return STATE_HANDSHAKE_DONE;
+  }
+  handshake_state = STATE_HANDSHAKING;
+
+  int rv = 0;
+  rv = mbedtls_ssl_handshake(&_ssl); 
+  rv = swrap_error_handler( rv);
+  if (rv == 0) {
+    handshake_state = STATE_HANDSHAKE_DONE;
+
+    int verify_status = (int)mbedtls_ssl_get_verify_result(&_ssl);
+    if (verify_status) {
+      char buf[512];
+      mbedtls_x509_crt_verify_info(buf, sizeof(buf), "::", (uint32_t)verify_status);
+      //mbedtls_printf("%s\n", buf);
+       SError << " Failed ssl cert verification " << buf;
     }
-
-
-
-    /*
-     * 5. Verify the server certificate
-     */
-
-    uint32_t flags;
-    /* In real life, we probably want to bail out when ret != 0 */
-    if( ( flags = mbedtls_ssl_get_verify_result( &_ssl ) ) != 0 )
+    
+    SInfo << "SSL Handshake over";
+    
+    if (_bufferOut.size() > 0)
     {
-        char vrfy_buf[512];
-
-       
-
-        mbedtls_x509_crt_verify_info( vrfy_buf, sizeof( vrfy_buf ), "  ! ", flags );
-        
-         SError << " Failed ssl cert verification " << vrfy_buf;
-
+    
+        addOutgoingData( &_bufferOut[0],  _bufferOut.size());
+        _bufferOut.clear();
     }
+    
+    
+  //  _socket->on_tls_connect();
+
+    // notify to the JS layer "onhandshakedone".
+   // jerry_value_t fn = iotjs_jval_get_property(jthis, "onhandshakedone");
+
+  }
+  return handshake_state;
+    
+    
 
     
 }
 
 
 
-bool SSLAdapter::isConnected() const {
+//bool SSLAdapter::isConnected() const {
+//
+//   _ssl.state == MBEDTLS_SSL_HANDSHAKE_OVER;
+//}
 
-   _ssl.state == MBEDTLS_SSL_HANDSHAKE_OVER;
-}
 
 std::string SSLAdapter::getTLSError(int err)  {
     
@@ -408,7 +524,160 @@ std::string SSLAdapter::getTLSError(int err)  {
 */
 
 
+void  SSLAdapter::addOutgoingData(const char* data, size_t len)
+{
 
+        // SInfo << "Send " <<  data   << " len "  << len;
+
+    if (len > MBEDTLS_SSL_MAX_CONTENT_LEN) 
+    {
+        SError <<  "encode data is too large, change the values in config.h to increase the size" ;
+      //  return;
+    }
+
+    
+
+    if( handshake_state == STATE_HANDSHAKING )
+    {  // handshake();
+        std::copy(data, data + len, std::back_inserter(_bufferOut));
+        return;
+    }    
+    
+    size_t rv;
+    
+
+    rv = (size_t)mbedtls_ssl_write( &_ssl, (const unsigned char *) data,  len);
+    // if (r <= 0) { handleError(r); }  // we are not sure why Mbedtls does not handle error, though openssl does it 
+    // I have refered https://github.com/yodaos-project/ShadowNode.git
+    
+    
+    size_t pending = 0;
+
+    char *encoded_data = nullptr;
+
+
+    if( (pending = TLS_BIO_ctrl_pending(app_bio_) ) > 0 ) {
+
+        encoded_data = (char*)malloc(pending);
+       // encoded_data.len = pending;
+
+        rv = TLS_BIO_read(app_bio_, encoded_data , pending);
+       // data2encode->len = rv;
+        //assert(rv == len);
+        _socket->Write(  encoded_data, rv , cb);
+        cb = nullptr;
+        free(encoded_data);
+    }
+    else
+    {
+        SError <<  "SSL Error Encoding" ;
+    }
+
+}
+   
+
+void SSLAdapter::addIncomingData(const char *data, size_t len)
+{
+   
+     TLS_BIO_write( app_bio_,data , len);
+     
+     
+       
+    if( handshake_state == STATE_HANDSHAKING )
+    {   handshake();
+        return;
+    }    
+ 
+
+
+    while (true)
+    {
+    
+        memset((void*) data, 0, len);
+    
+        int rv = -1;
+        rv = mbedtls_ssl_read(&_ssl, (unsigned char *)data, len);
+        rv =swrap_error_handler( rv);
+
+        if (rv > 0) {
+
+            _socket->on_read(data,  rv) ; 
+
+        } else if (rv == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+         // jerry_value_t fn = iotjs_jval_get_property(jthis, "onclose");
+            SInfo << "MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY";
+          break;
+        } else if (rv == MBEDTLS_ERR_SSL_WANT_READ ||
+                   rv == MBEDTLS_ERR_SSL_WANT_WRITE) {
+          break;
+        } else {
+            //SError << getTLSError(rv);
+          break;
+        }
+   }
+   
+}
+
+//handle only non fatal error currently
+int SSLAdapter::swrap_error_handler( const int code)
+{
+    
+    
+    if (code == MBEDTLS_ERR_SSL_WANT_WRITE || code == MBEDTLS_ERR_SSL_WANT_READ) {
+        stay_uptodate();
+    } 
+    else if (code == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+        return code;
+    }
+    
+    
+    return code;
+    
+}
+
+
+
+void SSLAdapter::stay_uptodate( )
+{
+ 
+
+    size_t pending = TLS_BIO_ctrl_pending(app_bio_);
+    if( pending > 0) {
+
+        //Need to free the memory
+        char *mybuf;
+        
+        mybuf = (char*)malloc(pending);
+
+        int rv = TLS_BIO_read(app_bio_, mybuf, pending);
+        assert( rv == pending );
+
+        _socket->Write( mybuf, rv, cb);
+        
+        //SInfo << "stay_uptodate "  <<  rv ;
+        
+        
+        //assert(rv == pending);
+
+        free(mybuf);
+        mybuf = 0;
+    }
+    
+    
+    
+
+  }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
 
 
