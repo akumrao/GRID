@@ -333,7 +333,7 @@ namespace stun {
             service , 32, NI_NUMERICHOST | NI_NUMERICSERV | NI_DGRAM)) {
             
             char ip[40];  uint16_t port;
-            IP::AddressToString(candidate->resolved, ip, port) ;
+            IP::AddressToString(candidate->resolved, ip, 40, port) ;
         
             SWarn << "getnameinfo failed " << ip <<  ":" << port;
             return -1;
@@ -2554,7 +2554,7 @@ std::string agent_stun_entry::dump()
     
     char ip[40];
     uint16_t port;
-    IP::AddressToString(record, ip, port);
+    IP::AddressToString(record, ip, 40, port);
     
     ret +=  ip + std::string(":") + std::to_string(port);
         

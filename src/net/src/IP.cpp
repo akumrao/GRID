@@ -253,18 +253,18 @@ namespace base
         //          char ip[40];  uint16_t port;
         //          IP::AddressToString(mapped, ip, port) ;
         //     
-        void IP::AddressToString( addr_record_t &mapped,  char *ip,  uint16_t &port)
+        void IP::AddressToString( addr_record_t &mapped,  char *ip, int sizeofbuf,  uint16_t &port)
         {
 
               if(mapped.addr.ss_family == AF_INET6)
               {
-                  uv_ip6_name((sockaddr_in6* )&mapped.addr, ip, 39);
+                  uv_ip6_name((sockaddr_in6* )&mapped.addr, ip, sizeofbuf);
                   port = ntohs( ((sockaddr_in6 *)&mapped.addr)->sin6_port);
 
               }
               else if(mapped.addr.ss_family  == AF_INET )
               {
-                   uv_ip4_name((sockaddr_in*)&mapped.addr, ip, 16);
+                   uv_ip4_name((sockaddr_in*)&mapped.addr, ip, sizeofbuf);
                    port =  ntohs( ((sockaddr_in *)&mapped.addr)->sin_port); 
               }
 

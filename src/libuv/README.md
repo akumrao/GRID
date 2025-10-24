@@ -1,4 +1,14 @@
+
 Version details of libuv
+
+for i in *.c; do mv -- "$i" "${i%.c}.cpp"; done
+
+
+
+Android getifaddrs fail issue:
+for android sdk older than 23 libuv/src/unix/android-ifaddrs.cpp required otherwise remove it
+
+better use android skd and ndk above 23 because getifaddrs is not implemented correctly below 23, it use ioctrl some complex way 
 
 
 #./configure --host=mips-linux-gnu --disable-database --disable-db-install --with-fallbacks=vt100,vt102,vt300,screen,xterm,xterm-256color,tmux-256color,screen-256color --without-manpages --without-normal --without-progs --without-debug --without-test --enable-widec --prefix=${INSTALLPATH}/_install

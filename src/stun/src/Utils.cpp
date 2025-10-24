@@ -56,7 +56,7 @@ static int random_bytes(void *buf, size_t size) {
 }
 
 #else
-static int random_bytes(void *buf, size_t size) {
+ int random_bytes(void *buf, size_t size) {
 	(void)buf;
 	(void)size;
 	return -1;
