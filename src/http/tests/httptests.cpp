@@ -9,6 +9,7 @@
  */
 
 #include "http/HTTPResponder.h"
+#include "http/HttpServer.h"
 //#include "base/test.h"
 #include "base/logger.h"
 #include "base/application.h"
@@ -19,11 +20,11 @@ using namespace base::net;
 
 
 
-class testwebscoket: public net::HttpServer 
+class testwebscoket: public net::HttpsServer 
 {
 public:
     
-     testwebscoket( std::string ip, int port, ServerConnectionFactory *factory = nullptr,  bool multithreaded =false) : net::HttpServer(  ip, port,  factory, multithreaded)
+     testwebscoket( std::string ip, int port, ServerConnectionFactory *factory = nullptr,  bool multithreaded =false) : net::HttpsServer(  ip, port,  factory, multithreaded)
      {
          
      }
@@ -50,7 +51,7 @@ public:
             
 #if HTTPSSL
                     
-             WebSocketConnection *con = ((HttpConnection*)connection)->getWebSocketCon();
+             WebSocketConnection *con = ((HttpsConnection*)connection)->getWebSocketCon();
 #else
              WebSocketConnection *con = ((HttpConnection*)connection)->getWebSocketCon();
 #endif
@@ -70,7 +71,7 @@ public:
 
 int main(int argc, char** argv) {
 
-   ConsoleChannel *ch =  new ConsoleChannel("debug", Level::Trace);
+   ConsoleChannel *ch =  new ConsoleChannel("debug", Level::Info);
             
    Logger::instance().add(ch);
     //test::init();
