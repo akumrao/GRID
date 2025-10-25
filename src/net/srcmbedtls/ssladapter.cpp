@@ -258,7 +258,8 @@ void SSLAdapter::initSSL()
        const char * KeyFile = "/mnt/key/private_key.pem";
        const char *pwd = "12345678";
 
-        ret =  mbedtls_pk_parse_keyfile( &pkey,  KeyFile ,pwd );
+        //ret =  mbedtls_pk_parse_keyfile( &pkey,  KeyFile ,pwd );// mbedtls
+        ret = mbedtls_pk_parse_keyfile(&pkey, KeyFile, pwd, mbedtls_ctr_drbg_random, &_ctr_drbg); 
         if( ret != 0 )
         {
              SError << "mbedtls_x509_crt_parse returned " << ret ;
@@ -528,8 +529,8 @@ void  SSLAdapter::addOutgoingData(const char* data, size_t len)
 {
 
         // SInfo << "Send " <<  data   << " len "  << len;
-
-    if (len > MBEDTLS_SSL_MAX_CONTENT_LEN) 
+    //if (len > MBEDTLS_SSL_MAX_CONTENT_LEN) // mbedtld2.5    
+    if (len > MBEDTLS_SSL_OUT_CONTENT_LEN) 
     {
         SError <<  "encode data is too large, change the values in config.h to increase the size" ;
       //  return;

@@ -9,7 +9,7 @@ SOURCES=$(wildcard *.cpp ../src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix
 CXXFLAGS   := -g  -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized
  
 
-CPPFLAGS   := -I../../mbedtls/include -I../../json/include/  -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/incmbedtls/ -I../../net/uv_multiplex/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
+CPPFLAGS   := -I../../mbedtls/build/include -I../../mbedtls/build/ -I../../json/include/  -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/incmbedtls/ -I../../net/uv_multiplex/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
 -DHTTPSSL=1  
               
 LDFLAGS   := -L/data/sound/lib -L/usr/lib/x86_64-linux-gnu

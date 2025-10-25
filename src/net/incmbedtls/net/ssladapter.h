@@ -14,7 +14,8 @@
 
 
 #if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
+//#include "mbedtls/config.h"  //mbedtls 2.5
+#include "mbedtls/mbedtls_config.h"
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
@@ -36,9 +37,14 @@
 #if !defined(MBEDTLS_BIGNUM_C) || !defined(MBEDTLS_ENTROPY_C) ||  \
     !defined(MBEDTLS_SSL_TLS_C) || !defined(MBEDTLS_SSL_CLI_C) || \
     !defined(MBEDTLS_NET_C) || !defined(MBEDTLS_RSA_C) ||         \
-    !defined(MBEDTLS_CERTS_C) || !defined(MBEDTLS_PEM_PARSE_C) || \
+    !defined(MBEDTLS_PEM_PARSE_C) || \
     !defined(MBEDTLS_CTR_DRBG_C) || !defined(MBEDTLS_X509_CRT_PARSE_C)
-    
+   
+
+//required oly for mbedtls 2.5 
+ // !defined(MBEDTLS_CERTS_C) || //mbedtls 2.5 
+
+
 int main( void )
 {
     mbedtls_printf("MBEDTLS_BIGNUM_C and/or MBEDTLS_ENTROPY_C and/or "
@@ -56,7 +62,7 @@ int main( void )
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
-#include "mbedtls/certs.h"
+//#include "mbedtls/certs.h"  //mbedtls 2.5
 #endif
 
 
