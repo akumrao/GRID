@@ -181,7 +181,7 @@ optional<string> IceTransport::getLocalAddress()  {
             return nullopt;
 
     char ip[40];  uint16_t port;
-    base::net::IP::AddressToString(local_cand.resolved, ip, port);
+    base::net::IP::AddressToString(local_cand.resolved, ip, 40, port);
     return ip;
 
 }
@@ -194,7 +194,7 @@ optional<string> IceTransport::getRemoteAddress()  {
    
     
         char ip[40];  uint16_t port;
-        base::net::IP::AddressToString(remote_cand.resolved, ip, port);
+        base::net::IP::AddressToString(remote_cand.resolved, ip, 40, port);
         return ip;
 
 }

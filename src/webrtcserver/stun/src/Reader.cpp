@@ -157,7 +157,7 @@ namespace stun {
             msg->mapped = &address->mapped;
             
             char buf[40];  uint16_t port;
-            IP::AddressToString(address->mapped, buf, port);
+            IP::AddressToString(address->mapped, buf, 40, port);
             
             SInfo << " Stune read STUN_ATTR_XOR_MAPPED_ADDRESS " << buf << ":" << " port ";
             

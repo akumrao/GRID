@@ -79,8 +79,8 @@ namespace base
             void Close();
             void Connect( std::string ip, int port,  addrinfo *addrs = nullptr);
             virtual void on_connect() { }
-            virtual void on_read(const char* data, size_t len) {}
-            virtual void on_tls_read(const char* data, size_t len){}
+            virtual void on_read(const char* , size_t ) {}
+            virtual void on_tls_read(const char* , size_t ){}
             virtual void on_close();
             virtual void Dump() const;
             void Setup(
