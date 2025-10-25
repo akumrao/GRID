@@ -19,7 +19,7 @@ option(USE_MBEDTLS "Use Mbed TLS instead of OpenSSL" OFF)
 option(PREFER_SYSTEM_LIB "Prefer system libraries over deps folder" OFF)
 option(USE_SYSTEM_SRTP "Use system libSRTP" ${PREFER_SYSTEM_LIB})
 #option(USE_SYSTEM_JUICE "Use system libjuice" ${PREFER_SYSTEM_LIB})
-#option(USE_SYSTEM_USRSCTP "Use system libusrsctp" ${PREFER_SYSTEM_LIB})
+option(USE_SYSTEM_USRSCTP "Use system libusrsctp" ${PREFER_SYSTEM_LIB})
 option(NO_WEBSOCKET "Disable WebSocket support" OFF)
 option(NO_MEDIA "Disable media transport support" OFF)
 option(NO_EXAMPLES "Disable examples" OFF)
@@ -48,7 +48,7 @@ set(MbedTLS_DIR ${WORKSPACE}/src/mbedtls/build/)
 #set(MbedX509_LIBRARY ${WORKSPACE}/src/mbedtls/build/library)
 
 
-set(USE_MBEDTLS 1)
+#set(USE_MBEDTLS 1)
 
 if (USE_GNUTLS AND USE_MBEDTLS)
 	message(FATAL_ERROR "Both USE_MBEDTLS and USE_GNUTLS cannot be enabled at the same time")
@@ -291,19 +291,28 @@ if(SCTP_DEBUG)
 endif()
 
 if(USE_SYSTEM_USRSCTP)
-	#find_package(Usrsctp REQUIRED)
+	find_package(Usrsctp REQUIRED)
 else()
-	#option(sctp_build_shared_lib OFF)
-	#option(sctp_build_programs OFF)
-	#option(sctp_inet OFF)
-	#option(sctp_inet6 OFF)
-	#option(sctp_werror OFF)
-	#set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-	add_subdirectory(deps/usrsctp)
+	option(sctp_build_shared_lib OFF)
+	option(sctp_build_programs OFF)
+	option(sctp_inet OFF)
+	option(sctp_inet6 OFF)
+	option(sctp_werror OFF)
+	set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+	add_subdirectory(deps/usrsctp EXCLUDE_FROM_ALL)
 	if (MSYS OR MINGW)
-		#target_compile_definitions(usrsctp PUBLIC -DSCTP_STDINT_INCLUDE=<stdint.h>)
+		target_compile_definitions(usrsctp PUBLIC -DSCTP_STDINT_INCLUDE=<stdint.h>)
 	endif()
-	#add_library(usrsctp)
+	add_library(Usrsctp::Usrsctp ALIAS usrsctp)
+
+	if(INSTALL_DEPS_LIBS)
+		install(TARGETS usrsctp EXPORT LibDataChannelTargets)
+		# Fix directories
+		set_target_properties(usrsctp PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "")
+		target_include_directories(usrsctp INTERFACE
+			$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/deps/usrsctp/usrsctplib>
+			$<INSTALL_INTERFACE:>)
+	endif()
 endif()
 
 if(RTC_UPDATE_VERSION_HEADER)
@@ -314,6 +323,10 @@ if(RTC_UPDATE_VERSION_HEADER)
 endif()
 
 
+
+
+if(USE_MBEDTLS) 
+
 include_directories(
     #${WEBRTC_REPO}/deps/libjuice/include
     ${WEBRTC_REPO}/stun/include
@@ -322,14 +335,32 @@ include_directories(
     ${WEBRTC_REPO}/deps/libsrtp/include
     ${WEBRTC_REPO}/deps/json/include
     ${WEBRTC_REPO}/deps/usrsctp/usrsctplib
-
-    ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/ ../net/include/ ../libuv/include ../libuv/src ../build/ ../http_parser/  
-   
+    ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/  ../libuv/include ../libuv/src ../build/ ../http_parser/ ../net/incmbedtls/
 )
+
+else()
+include_directories(
+    #${WEBRTC_REPO}/deps/libjuice/include
+    ${WEBRTC_REPO}/stun/include
+    ${WEBRTC_REPO}/deps/libsrtp/config
+    ${WEBRTC_REPO}/deps/libsrtp/crypto/include
+    ${WEBRTC_REPO}/deps/libsrtp/include
+    ${WEBRTC_REPO}/deps/json/include
+    ${WEBRTC_REPO}/deps/usrsctp/usrsctplib
+    ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/ ../net/include/ ../libuv/include ../libuv/src ../build/ ../http_parser/  
+) 
+endif()   
+
+
 
 add_subdirectory(deps/libsrtp)
 
+if(USE_MBEDTLS)  
+file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"   "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" "../net/srcmbedtls/*.cpp")
+else()
 file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"  "../net/src/*.cpp" "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" )
+endif()   
+
 
 
 
@@ -357,7 +388,7 @@ target_include_directories(datachannel-static PUBLIC
 target_include_directories(datachannel-static PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/rtc)
 target_include_directories(datachannel-static PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 target_link_libraries(datachannel-static PRIVATE Threads::Threads)
-target_link_libraries(datachannel-static PRIVATE usrsctp )
+target_link_libraries(datachannel-static PRIVATE Usrsctp::Usrsctp )
 
 if(WIN32)
 	target_link_libraries(datachannel-static PUBLIC ws2_32) # winsock2
