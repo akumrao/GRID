@@ -918,7 +918,7 @@ void dump( agent_stun_entry_t *entry)
 }
 
 int agent_bookkeeping(juice_agent_t *agent, timestamp_t *next_timestamp) {
-	JLOG_INFO("Bookkeeping...");
+	JLOG_INFO("\n\nBookkeeping...............................................................................................................................\n");
 
         
         static timestamp_t prev = 0;
@@ -967,10 +967,10 @@ int agent_bookkeeping(juice_agent_t *agent, timestamp_t *next_timestamp) {
 				continue;
 
 			if (entry->retransmissions >= 0) {
-				if (JLOG_DEBUG_ENABLED) {
+				if (1) {
 					char record_str[ADDR_MAX_STRING_LEN];
 					addr_record_to_string(&entry->record, record_str, ADDR_MAX_STRING_LEN);
-					JLOG_DEBUG("STUN entry %d: Sending request to %s (%d retransmission%s left)", i,
+					JLOG_INFO("STUN entry %d: Sending request to %s (%d retransmission%s left)", i,
 					           record_str, entry->retransmissions,
 					           entry->retransmissions >= 2 ? "s" : "");
 				}
@@ -978,6 +978,10 @@ int agent_bookkeeping(juice_agent_t *agent, timestamp_t *next_timestamp) {
 					juice_random(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
 					entry->transaction_id_expired = false;
 				}
+                                
+                                
+                                JLOG_INFO("STUN entry %d: Sending Stun packet first time ", i);
+                                
 				int ret;
 				switch (entry->type) {
 				case AGENT_STUN_ENTRY_TYPE_RELAY:
@@ -1043,7 +1047,7 @@ int agent_bookkeeping(juice_agent_t *agent, timestamp_t *next_timestamp) {
 			if (entry->next_transmission > now)
 				continue;
 
-			JLOG_DEBUG("STUN entry %d: Sending keepalive", i);
+			JLOG_INFO("STUN entry %d: Sending Stun  keepalive", i);
 
 			juice_random(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
 			entry->transaction_id_expired = false;
@@ -1528,7 +1532,13 @@ int agent_process_stun_binding(juice_agent_t *agent, const stun_message_t *msg,
 				pair->nomination_requested = true;
 			}
 		}
+                
+                
+                //
+			
 		// Response
+                JLOG_INFO("STUN Binding response send Xored address");
+		                           
 		if (agent_send_stun_binding(agent, entry, STUN_CLASS_RESP_SUCCESS, 0, msg->transaction_id,
 		                            src)) {
 			JLOG_ERROR("Failed to send STUN Binding response");
