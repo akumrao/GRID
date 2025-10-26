@@ -1400,7 +1400,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
                 //// this will send back stun response(ie XORED ip to peer who requesed to STUN request
                 
                //STUN request are priodic are sent from record keeper
-                        
+                 SInfo << "STUN Binding response send Xored address";        
 		if (agent_send_stun_binding( entry, STUN_CLASS_RESP_SUCCESS, 0, msg->transaction_id, src))
                 {
 			LError("Failed to send STUN Binding response");

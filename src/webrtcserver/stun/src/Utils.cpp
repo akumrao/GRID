@@ -96,6 +96,13 @@ void random_str64(char *buf, size_t size) {
   buf[i] = '\0';
 }
 
+uint32_t rand32(void)
+{
+	uint32_t r = 0;
+	random_bytes(&r, sizeof(r));
+        return r;
+}
+
 bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz, uint8_t* output) {
 
     if (!message) { 

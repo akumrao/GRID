@@ -90,6 +90,9 @@ namespace base {
                 hints.ai_protocol = IPPROTO_UDP;
                 hints.ai_flags = AI_ADDRCONFIG;
 
+                //if (mode != ICE_RESOLVE_MODE_LOOKUP)
+                hints.ai_flags |= AI_NUMERICHOST | AI_NUMERICSERV;  // for simple simple lookup for deep looup remove this line
+
                 r = uv_getaddrinfo(loop,
                         req,
                         on_resolved,

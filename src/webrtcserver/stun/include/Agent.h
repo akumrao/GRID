@@ -211,7 +211,7 @@ typedef struct agent_stun_entry {
     int set_local_ice_attributes(const char *ufrag, const char *pwd);
     int get_local_description( char *buffer, int size) ;
     int ice_create_host_candidate( Candidate *candidate);
-    int ice_create_local_reflexive_candidate( Candidate *candidate );
+    int agent_add_local_reflexive_candidate( Candidate *candidate );
     int ice_create_local_candidate(int component, int index, Candidate *candidate);
     uint32_t ice_compute_priority(Candidate::Type type, int family, int component, int index);
         

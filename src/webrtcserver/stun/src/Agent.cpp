@@ -265,9 +265,9 @@ namespace stun {
     }
     
     
-    int Agent::ice_create_local_reflexive_candidate( Candidate *candidate) {
+    int Agent::agent_add_local_reflexive_candidate( Candidate *candidate) {
 
-        SInfo <<  "AgentNo " << agentNo << " ice_create_local_reflexive_candidate " << candidate->mType;
+        STrace <<  "AgentNo " << agentNo << " agent_add_local_reflexive_candidate " << candidate->mType;
        
         if (candidate->mType !=  Candidate::Type::ServerReflexive && candidate->mType  !=  Candidate::Type::PeerReflexive) {
 		LError("Invalid type for local reflexive candidate");
@@ -1401,6 +1401,9 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
                 
                //STUN request are priodic are sent from record keeper
                         
+                
+                SInfo << "STUN Binding response send Xored address";
+                        
 		if (agent_send_stun_binding( entry, STUN_CLASS_RESP_SUCCESS, 0, msg->transaction_id, src))
                 {
 			LError("Failed to send STUN Binding response");
@@ -1464,7 +1467,7 @@ int Agent::agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t 
                         }
             
                         
-			if (ice_create_local_reflexive_candidate( &candidate)) {
+			if (agent_add_local_reflexive_candidate( &candidate)) {
 				SWarn << "Failed to add local " <<   candidate.mType << " reflexive candidate from STUN mapped address" ;
 			}
 		}
@@ -1603,6 +1606,13 @@ void Agent::agent_update_candidate_pairs()
 // use a value smaller than 15 seconds.
 #define STUN_KEEPALIVE_PERIOD 15000 // msecs
 
+// RFC 7675: To prevent synchronization of consent checks, each interval MUST be randomized from
+// between 0.8 and 1.2 times the basic period. Implementations SHOULD set a default interval of 5
+// seconds, resulting in a period between checks of 4 to 6 seconds. Implementations MUST NOT set the
+// period between checks to less than 4 seconds.
+#define MIN_CONSENT_CHECK_PERIOD 4000 // msecs
+#define MAX_CONSENT_CHECK_PERIOD 6000 // msecs
+
 void Agent::agent_arm_keepalive(agent_stun_entry_t *entry) 
 {
 	if (entry->state == AGENT_STUN_ENTRY_STATE_SUCCEEDED)
@@ -1620,10 +1630,16 @@ void Agent::agent_arm_keepalive(agent_stun_entry_t *entry)
 		period = STUN_KEEPALIVE_PERIOD;
 		break;
 	default:
+		#if JUICE_DISABLE_CONSENT_FRESHNESS
 		period = STUN_KEEPALIVE_PERIOD;
-
+                #else
+                                period = MIN_CONSENT_CHECK_PERIOD +
+                                         rand32() % (MAX_CONSENT_CHECK_PERIOD - MIN_CONSENT_CHECK_PERIOD + 1);
+                #endif
 		break;
 	}
+        
+        
 
 	entry->transaction_id_expired = true;
 	agent_arm_transmission( entry, period);
@@ -1927,15 +1943,18 @@ int Agent::agent_bookkeeping( int64_t &now)
             return 0;
 
        
-        #if 0
+        #if 1
         static int64_t prev = 0;
         
         
-        SInfo << "AgentNo " << agentNo << " Bookkeeping... " << now -prev ;
+        SInfo << "AgentNo " << agentNo << " Bookkeeping " << now -prev <<   " ........................................................" ;
         
       
        
         prev = now;
+
+        #else
+        SInfo << "AgentNo " << agentNo << " Bookkeeping................................................................................." ;
         #endif 
 
         for (int i = 0; i < m_entriesStun_count; ++i) 
@@ -2022,7 +2041,7 @@ int Agent::agent_bookkeeping( int64_t &now)
                 if (entry->next_transmission > now)
                     continue;
 
-                SDebug << "AgentNo " << agentNo << "STUN entry " << i << " Sending keepalive";
+                SInfo << "AgentNo " << agentNo << "STUN entry " << i << " Sending keepalive";
 
                 random_bytes(entry->transaction_id, STUN_TRANSACTION_ID_SIZE);
                 entry->transaction_id_expired = false;
