@@ -1263,15 +1263,21 @@ int agent_bookkeeping(juice_agent_t *agent, timestamp_t *next_timestamp) {
 		}
 	}
 
-	for (int i = 0; i < agent->entries_count; ++i) {
-		agent_stun_entry_t *entry = agent->entries + i;
-		if (entry->next_transmission && *next_timestamp > entry->next_transmission)
-			*next_timestamp = entry->next_transmission;
 
-		if (entry->state == AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE && entry->pair &&
-		    *next_timestamp > entry->pair->consent_expiry)
-			*next_timestamp = selected_pair->consent_expiry;
-	}
+	for (int i = 0; i < agent->entries_count; ++i) {
+	agent_stun_entry_t *entry = agent->entries + i;
+	if (entry->next_transmission && *next_timestamp > entry->next_transmission)
+		*next_timestamp = entry->next_transmission;
+
+	#if JUICE_DISABLE_CONSENT_FRESHNESS
+			// No expiration
+	#else
+			if (entry->state == AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE && entry->pair &&
+			    *next_timestamp > entry->pair->consent_expiry)
+				*next_timestamp = selected_pair->consent_expiry;
+	#endif
+        }
+
 
 	return 0;
 }
