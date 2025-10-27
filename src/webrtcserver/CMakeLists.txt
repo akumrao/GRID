@@ -36,8 +36,8 @@ SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
 #SET(WEBRTC_REPO "${CMAKE_SOURCE_DIR}/webrtc/src")
 
  
-set(MbedTLS_ROOT ${WORKSPACE}/src/mbedtls/build/)
-set(MbedTLS_DIR ${WORKSPACE}/src/mbedtls/build/)
+set(MbedTLS_ROOT ${WORKSPACE}/src/webrtcserver/deps/mbedtls/build/)
+#set(MbedTLS_DIR ${WORKSPACE}/src/mbedtls/build/)
 #set(MBEDTLS_INCLUDE_DIRS ${WORKSPACE}/src/mbedtls/build/library)
 #set(MBEDTLS_LIBRARIES ${WORKSPACE}/src/mbedtls/build/include)
 
@@ -418,10 +418,13 @@ endif()
 
 
 if(USE_MBEDTLS)
-	if(NOT TARGET MbedTLS::MbedTLS)
-	    set(MbedTLS_DEBUG 1)
-		find_package(MbedTLS REQUIRED)
-	endif()
+	#if(NOT TARGET MbedTLS::MbedTLS)
+	#    set(MbedTLS_DEBUG 1)
+	#	find_package(MbedTLS REQUIRED)
+	#endif()
+
+	add_subdirectory(deps/mbedtls)
+
 	target_compile_definitions(datachannel-static PRIVATE USE_MBEDTLS=1)
 	target_include_directories(datachannel-static PUBLIC ${MbedTLS_ROOT}/include)
 	target_link_libraries(datachannel-static PRIVATE ${MbedTLS_ROOT}/library/libmbedtls.a ${MbedTLS_ROOT}library/libmbedx509.a ${MbedTLS_ROOT}/library/libmbedcrypto.a -lz)

@@ -7,7 +7,7 @@
 
 #include "common.h"
 
-#include <certs.h>
+#include <mbedtls/certs.h>
 
 #include "mbedtls/build_info.h"
 

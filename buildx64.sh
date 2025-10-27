@@ -68,9 +68,12 @@ make clean
 make -j$(nproc)
 make -j$(nproc) install
 
- cd ../../
+cd ../../../
 
+cd src/webrtcserver/deps/mbedtls
+./buildx64.sh
 
+cd ../../../../
 
 # mkdir -p 3rdparty
 

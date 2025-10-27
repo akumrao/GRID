@@ -57,5 +57,9 @@ cd ffmpeg
 make -j$(nproc)
 make install
 
-cd ../../
+cd ../../../
 
+cd src/webrtcserver/deps/mbedtls
+./buildx64.sh
+
+cd ../../../../
