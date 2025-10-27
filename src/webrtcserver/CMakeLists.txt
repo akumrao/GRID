@@ -423,7 +423,12 @@ if(USE_MBEDTLS)
 	#	find_package(MbedTLS REQUIRED)
 	#endif()
 
-	add_subdirectory(deps/mbedtls)
+ 
+ 	option(ENABLE_TESTING OFF)
+	option(ENABLE_PROGRAMS OFF)
+	set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+	add_subdirectory(deps/mbedtls EXCLUDE_FROM_ALL)
 
 	target_compile_definitions(datachannel-static PRIVATE USE_MBEDTLS=1)
 	target_include_directories(datachannel-static PUBLIC ${MbedTLS_ROOT}/include)
