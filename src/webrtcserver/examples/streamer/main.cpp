@@ -144,6 +144,7 @@ void wsOnMessage(json const &m ) {
     if (m.find("from") != m.end())
     {
         from = m["from"].get<std::string>();
+        id =from;
     }
     else
     {
