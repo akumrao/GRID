@@ -36,7 +36,7 @@ SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
 #SET(WEBRTC_REPO "${CMAKE_SOURCE_DIR}/webrtc/src")
 
  
-set(MbedTLS_ROOT ${WORKSPACE}/src/webrtcserver/deps/mbedtls/build/)
+#set(MbedTLS_ROOT ${WORKSPACE}/src/webrtcserver/deps/mbedtls/)
 #set(MbedTLS_DIR ${WORKSPACE}/src/mbedtls/build/)
 #set(MBEDTLS_INCLUDE_DIRS ${WORKSPACE}/src/mbedtls/build/library)
 #set(MBEDTLS_LIBRARIES ${WORKSPACE}/src/mbedtls/build/include)
@@ -84,7 +84,7 @@ if(WIN32)
 	endif()
 endif()
 
-add_definitions( -Wno-write-strings -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-value -Wno-deprecated-declarations -Wno-reorder -Wno-extra -Wno-switch -Wno-unused-but-set-variable)
+add_definitions( -Wno-write-strings -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-value -Wno-deprecated-declarations  -Wno-extra -Wno-switch -Wno-unused-but-set-variable)
 
 set(LIBDATACHANNEL_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/candidate.cpp
@@ -325,31 +325,6 @@ endif()
 
 
 
-if(USE_MBEDTLS) 
-
-include_directories(
-    #${WEBRTC_REPO}/deps/libjuice/include
-    ${WEBRTC_REPO}/stun/include
-    ${WEBRTC_REPO}/deps/libsrtp/config
-    ${WEBRTC_REPO}/deps/libsrtp/crypto/include
-    ${WEBRTC_REPO}/deps/libsrtp/include
-    ${WEBRTC_REPO}/deps/json/include
-    ${WEBRTC_REPO}/deps/usrsctp/usrsctplib
-    ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/  ../libuv/include ../libuv/src ../build/ ../http_parser/ ../net/incmbedtls/
-)
-
-else()
-include_directories(
-    #${WEBRTC_REPO}/deps/libjuice/include
-    ${WEBRTC_REPO}/stun/include
-    ${WEBRTC_REPO}/deps/libsrtp/config
-    ${WEBRTC_REPO}/deps/libsrtp/crypto/include
-    ${WEBRTC_REPO}/deps/libsrtp/include
-    ${WEBRTC_REPO}/deps/json/include
-    ${WEBRTC_REPO}/deps/usrsctp/usrsctplib
-    ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/ ../net/include/ ../libuv/include ../libuv/src ../build/ ../http_parser/  
-) 
-endif()   
 
 
 
@@ -387,8 +362,34 @@ target_include_directories(datachannel-static PUBLIC
     $<INSTALL_INTERFACE:include>)
 target_include_directories(datachannel-static PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/rtc)
 target_include_directories(datachannel-static PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+target_include_directories(datachannel-static PUBLIC 
+    #${WEBRTC_REPO}/deps/libjuice/include
+    ${WEBRTC_REPO}/stun/include
+    ${WEBRTC_REPO}/deps/libsrtp/config
+    ${WEBRTC_REPO}/deps/libsrtp/crypto/include
+    ${WEBRTC_REPO}/deps/libsrtp/include
+    ${WEBRTC_REPO}/deps/json/include
+    ${WEBRTC_REPO}/deps/usrsctp/usrsctplib
+    ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/  ../libuv/include ../libuv/src ../build/ ../http_parser/ 
+)
+
+
+
+if(USE_MBEDTLS) 
+target_include_directories(datachannel-static PUBLIC 
+../net/incmbedtls/)
+else()
+target_include_directories(datachannel-static PUBLIC 
+../net/include/
+)
+endif()   
+
+
 target_link_libraries(datachannel-static PRIVATE Threads::Threads)
 target_link_libraries(datachannel-static PRIVATE Usrsctp::Usrsctp )
+
+
 
 if(WIN32)
 	target_link_libraries(datachannel-static PUBLIC ws2_32) # winsock2
@@ -431,8 +432,10 @@ if(USE_MBEDTLS)
 	add_subdirectory(deps/mbedtls EXCLUDE_FROM_ALL)
 
 	target_compile_definitions(datachannel-static PRIVATE USE_MBEDTLS=1)
-	target_include_directories(datachannel-static PUBLIC ${MbedTLS_ROOT}/include)
-	target_link_libraries(datachannel-static PRIVATE ${MbedTLS_ROOT}/library/libmbedtls.a ${MbedTLS_ROOT}library/libmbedx509.a ${MbedTLS_ROOT}/library/libmbedcrypto.a -lz)
+
+	target_include_directories(datachannel-static PRIVATE ${CMAKE_SOURCE_DIR}/deps/mbedtls/include)
+	target_link_libraries(datachannel-static  PRIVATE mbedtls mbedx509 mbedcrypto -lz)
+	
 else()
 	if(APPLE)
 		# This is a bug in CMake that causes it to prefer the system version over
