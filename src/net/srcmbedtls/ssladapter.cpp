@@ -276,7 +276,7 @@ void SSLAdapter::initSSL()
     }
 
     ret =  mbedtls_pk_parse_key( &pkey, (const unsigned char *) mbedtls_test_srv_key,
-                         mbedtls_test_srv_key_len, NULL, 0, NULL, NULL );
+                         mbedtls_test_srv_key_len, NULL, 0,  mbedtls_ctr_drbg_random, &_ctr_drbg );
     if( ret != 0 )
     {
          SError << "mbedtls_x509_crt_parse returned " << ret ;

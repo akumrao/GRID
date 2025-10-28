@@ -1,23 +1,22 @@
 ################################################################################
 ### CUSTOMIZE BELOW HERE #######################################################
-workpace="/workspace/MagicAI/src"
+
 CC	= gcc
 CXX     = g++
 TARGET=runtestSecTcpClient # define the name of the executable
 SOURCES=$(wildcard *.cpp  )
 
-CXXFLAGS   := -g  -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized
+CXXFLAGS   := -g  -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL -DFROMFILE=1
 
 
-CPPFLAGS   := -I../../json/include/  -I../../base/include/ -I../../mbedtls/include -I../../net/incmbedtls/  -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
+CPPFLAGS   := -I../../json/include/  -I../../base/include/ -I../../mbedtls/include -I../../net/incmbedtls/  -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/  -I../../webrtcserver/deps/mbedtls/include
 
               
 LDFLAGS   := -L/data/sound/lib -L/usr/lib/x86_64-linux-gnu
 
 LDLIBS    := -lpthread -lm -ldl 
 
-SLIBS     := $(workpace)/mbedtls/build/library/libmbedtls.a $(workpace)/mbedtls/build/library/libmbedx509.a $(workpace)/mbedtls/build/library/libmbedcrypto.a
-
+SLIBS     := ../../webrtcserver/deps/mbedtls/build/library/libmbedtls.a ../../webrtcserver/deps/mbedtls/build/library/libmbedx509.a ../../webrtcserver/deps/mbedtls/build/library/libmbedcrypto.a
 
 
 ################################################################################
