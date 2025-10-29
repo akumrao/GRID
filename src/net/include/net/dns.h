@@ -35,7 +35,7 @@ namespace base {
 //            }
             
             
-            virtual void cbDnsResolve(addrinfo* ) {
+            virtual void cbDnsResolve(addrinfo*, void* ptr ) {
                // LTrace("GetAddrInfoReq::cbDnsResolve");
             }
 
@@ -47,6 +47,12 @@ namespace base {
             uv_getaddrinfo_t *req;
             
              //void* clsPtr{nullptr}; 
+            
+            struct stTmp
+            {
+                void* clsPtr{nullptr}; 
+                void* data{nullptr}; 
+            };
 
         };
         

@@ -60,14 +60,16 @@ namespace base {
            // SInfo << "onClose " <<  obj->IsClosed(); // this will not fix the close crash problem. This issue only happens when you are debugging browser
            
             if (obj)
-              obj->on_close();
+            {
+                obj->on_close();
             
-            if(obj->listenerClose)
-             obj->listenerClose->OnTcpConnectionClosed(obj);
+                if(obj->listenerClose)
+                obj->listenerClose->OnTcpConnectionClosed(obj);
+            }
                     
             
-             // delete handle;
-             // handle = nullptr;
+//            delete handle;
+//              handle = nullptr;
         }
 
         inline static void onShutdown(uv_shutdown_t* req, int /*status*/) {
@@ -203,12 +205,18 @@ namespace base {
             this->localPort = localPort;
         }
 
-        inline void onconnect(uv_connect_t* req, int /*status*/) {
+        inline void onconnect(uv_connect_t* req, int status) {
             TcpConnectionBase *obj = (TcpConnectionBase *) req->data;
-            if(obj->Start())
-             obj->on_connect();
-            else
-               obj->Close();
+            if(!status)
+            {
+                obj->Start();
+                obj->on_connect();
+                
+            }else
+            {
+                SWarn << "onconnect failed ";
+                obj->Close();
+            }
 
             delete req;
         }

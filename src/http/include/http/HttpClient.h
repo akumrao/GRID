@@ -48,7 +48,7 @@ namespace base {
             void on_connect() override;
             void on_close() override;
 
-            virtual void cbDnsResolve(addrinfo* res) override;
+            virtual void cbDnsResolve(addrinfo* res, void* ptr) override;
 
             /* Pure virtual methods inherited from ::TcpHTTPConnection. */
         public:

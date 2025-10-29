@@ -167,7 +167,7 @@ string Candidate::candidate() const {
         {
 
             char ip[40];  uint16_t port;
-            base::net::IP::AddressToString(resolved, ip, port);
+            base::net::IP::AddressToString(resolved, ip,40, port);
 	    oss << ip << sp << port;
         }
 	else
@@ -238,7 +238,7 @@ string Candidate::address()
     if(isResolved())
     {
         char ip[40];  uint16_t port;
-        base::net::IP::AddressToString(resolved, ip, port);
+        base::net::IP::AddressToString(resolved, ip, 40, port);
         return ip;
     }
     else
@@ -249,7 +249,7 @@ uint16_t Candidate::port() const {
     if(isResolved())
     {
         char ip[40];  uint16_t port;
-        base::net::IP::AddressToString(resolved, ip, port);
+        base::net::IP::AddressToString(resolved, ip, 40, port);
         return port;
     }
     else

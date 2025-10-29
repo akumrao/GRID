@@ -241,13 +241,13 @@ void v128_set_bit_to(v128_t *x, int i, int y);
 #endif /* DATATYPES_USE_MACROS */
 
 /*
- * octet_string_is_eq(a, b, len) returns 1 if the length len strings a
- * and b are not equal. It returns 0 otherwise. The running time of the
+ * srtp_octet_string_is_eq(a, b, len) returns 1 if the length len strings
+ * a and b are not equal. It returns 0 otherwise. The running time of the
  * comparison depends only on len, making this safe to use for (e.g.)
  * verifying authentication tags.
  */
 
-int octet_string_is_eq(uint8_t *a, uint8_t *b, int len);
+int srtp_octet_string_is_eq(uint8_t *a, uint8_t *b, int len);
 
 /*
  * A portable way to zero out memory as recommended by
@@ -278,7 +278,7 @@ void octet_string_set_to_zero(void *s, size_t len);
 #define be64_to_cpu(x) bswap_64((x))
 #else /* WORDS_BIGENDIAN */
 
-#if defined(__GNUC__) && defined(HAVE_X86)
+#if defined(__GNUC__) && (defined(HAVE_X86) || defined(__x86_64__))
 /* Fall back. */
 static inline uint32_t be32_to_cpu(uint32_t v)
 {

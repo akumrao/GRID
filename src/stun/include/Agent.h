@@ -179,9 +179,11 @@ typedef struct agent_stun_entry {
     using recv_callback = std::function<void(unsigned char * data , size_t size )>;
     
     void resolveStunServer();
-    void cbDnsResolve(addrinfo* res) override;
-    void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
-    void resolveIp( Candidate *certificate );
+    void resolveHostname(Candidate *cand );
+    void cbDnsResolve(addrinfo* res, void* ptr) override;
+    //void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
+    int agent_resolve_hostname( addrinfo* start , void *ptr);
+    //void resolveIp( Candidate *certificate );
     Configuration &mConfig;
         
       
@@ -218,8 +220,6 @@ typedef struct agent_stun_entry {
     int ice_add_remote_candidate(const Candidate *candidate);
     int ice_add_remote_candidate(const char *sdp);
     int  agent_add_remote_peer_reflexive_candidate( uint32_t priority, const addr_record_t *record); // peer-reflex only
-    
-    
     Candidate * ice_add_candidate( Candidate *candidate, ice_description_t *description);
         
     

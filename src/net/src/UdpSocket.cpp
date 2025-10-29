@@ -280,10 +280,11 @@ namespace base {
 
 
             int err;
-            int len = sizeof (this->localAddr);
+            int len = 0;
+            sockaddr_storage addr;
 
             err =
-                    uv_udp_getsockname(this->uvHandle, reinterpret_cast<struct sockaddr*> (&this->localAddr), &len);
+                    uv_udp_getsockname(this->uvHandle, reinterpret_cast<struct sockaddr*> (&addr), &len);
 
             if (err != 0) {
                 LError("uv_udp_getsockname() failed: %s", uv_strerror(err));
@@ -291,10 +292,10 @@ namespace base {
                 return false;
             }
 
-            int family;
-
-            IP::GetAddressInfo(
-                    reinterpret_cast<struct sockaddr*> (&this->localAddr), family, this->localIp, this->localPort);
+//            int family;
+//
+//            IP::GetAddressInfo(
+//                    reinterpret_cast<struct sockaddr*> (&this->localAddr.addr), family, this->localIp, this->localPort);
 
             return true;
         }
@@ -376,10 +377,17 @@ namespace base {
                 ASSERT(0 == uv_ip6_addr(localIp.c_str(), localPort, &addr6));
                 r = uv_udp_bind(uvHandle, (const struct sockaddr*) &addr6, bind_flags);
                 ASSERT(r == 0);
+                memcpy(reinterpret_cast<char *>(&localAddr.addr),  reinterpret_cast<char *>(&addr6), sizeof(addr6));
+                localAddr.len =  sizeof(addr6);
+                
+                
             } else {
                 ASSERT(0 == uv_ip4_addr(localIp.c_str(), localPort, &addr));
                 r = uv_udp_bind(uvHandle, (const struct sockaddr*) &addr, bind_flags);
                 ASSERT(r == 0);
+                
+                memcpy(reinterpret_cast<char *>(&localAddr.addr),  reinterpret_cast<char *>(&addr), sizeof(addr));
+                localAddr.len =  sizeof(addr);
 
             }
 
@@ -408,15 +416,16 @@ namespace base {
                 r = uv_udp_connect(uvHandle, (const struct sockaddr*) &addr6);
                 
                 ASSERT(r == 0);
-                memcpy(reinterpret_cast<char *>(&localAddr),  reinterpret_cast<char *>(&addr6), sizeof(addr6));
-                
+                memcpy(reinterpret_cast<char *>(&localAddr.addr),  reinterpret_cast<char *>(&addr6), sizeof(addr6));
+                localAddr.len =  sizeof(addr6);
                 ASSERT(r == 0);
             } else {
                 ASSERT(0 == uv_ip4_addr(localIp.c_str(), localPort, &addr));
                 r = uv_udp_connect(uvHandle, (const struct sockaddr*) &addr);
                // ASSERT(r == 0);
                   
-                memcpy(reinterpret_cast<char *>(&localAddr),  reinterpret_cast<char *>(&addr), sizeof(addr));
+                memcpy(reinterpret_cast<char *>(&localAddr.addr),  reinterpret_cast<char *>(&addr), sizeof(addr));
+                localAddr.len =  sizeof(addr);
             }
 
         }

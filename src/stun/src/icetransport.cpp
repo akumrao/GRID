@@ -128,8 +128,8 @@ void IceTransport::setRemoteDescription(const Description &description) {
 
 bool IceTransport::addRemoteCandidate(const Candidate *candidate) {
 	// Don't try to pass unresolved candidates for more safety
-	if (!candidate->isResolved())
-		return false;
+	//if (!candidate->isResolved())
+		//return false;
 
 	return agent.ice_add_remote_candidate( string(*candidate).c_str()) >= 0;
         
@@ -163,7 +163,7 @@ optional<string> IceTransport::getLocalAddress()  {
             return nullopt;
 
     char ip[40];  uint16_t port;
-    base::net::IP::AddressToString(local_cand.resolved, ip, port);
+    base::net::IP::AddressToString(local_cand.resolved, ip, 40, port);
     return ip;
 
 }
@@ -176,7 +176,7 @@ optional<string> IceTransport::getRemoteAddress()  {
    
     
         char ip[40];  uint16_t port;
-        base::net::IP::AddressToString(remote_cand.resolved, ip, port);
+        base::net::IP::AddressToString(remote_cand.resolved, ip, 40, port);
         return ip;
 
 }

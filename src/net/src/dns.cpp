@@ -11,20 +11,23 @@ namespace base {
                void GetAddrInfoReq::on_resolved(uv_getaddrinfo_t* handle, int status, struct addrinfo* res) {
                 //struct getaddrinfo_req* req;
                 
-                GetAddrInfoReq *obj = (GetAddrInfoReq*) handle->data;
+                stTmp *tmp=(stTmp * )handle->data;
+                GetAddrInfoReq *obj = (GetAddrInfoReq*) tmp->clsPtr;
                
                 if (status < 0 || !res) {
                     LError(  "getaddrinfo callback error ", uv_err_name(status));
                     
+                    obj->cbDnsResolve(nullptr, tmp->data);
+                    
                     if(res)
                     uv_freeaddrinfo(res);
+                    delete tmp;
                     delete handle;
                     
-                    //obj->cbDnsResolve(nullptr, "",0);
                     return;
                 }
                 
-                char addr[40] = {'\0'};
+               // char addr[40] = {'\0'};
 //                int port =0; 
 
                 struct addrinfo* start =  res;
@@ -55,22 +58,29 @@ namespace base {
 //                    obj->cbDnsResolve(res, addr, port, obj->clsPtr);
 //                }
                 
-                obj->cbDnsResolve(start);
+                obj->cbDnsResolve(start, tmp->data);
                 
                 uv_freeaddrinfo(start);
                 
+                delete tmp;
                 delete handle;
 
             }
 
-            void GetAddrInfoReq::resolve(const std::string& host, int port, uv_loop_t * loop, void* ) {
+            void GetAddrInfoReq::resolve(const std::string& host, int port, uv_loop_t * loop, void* ptr ) {
 
                 req = new uv_getaddrinfo_t; 
+                stTmp *tmp = new stTmp;
+                tmp->clsPtr = this ;
+                tmp->data = ptr;
+                
+                
                 //this->clsPtr =ptr;
-                req->data = this;
+                req->data = tmp;
                 int r;
 
                 struct addrinfo hints;
+                memset(&hints, 0, sizeof (hints));
 //                hints.ai_family = PF_INET;
 //                hints.ai_socktype = SOCK_STREAM;
 //                hints.ai_protocol = IPPROTO_TCP;
@@ -79,6 +89,9 @@ namespace base {
                 hints.ai_socktype = SOCK_DGRAM;
                 hints.ai_protocol = IPPROTO_UDP;
                 hints.ai_flags = AI_ADDRCONFIG;
+
+                //if (mode != ICE_RESOLVE_MODE_LOOKUP)
+                hints.ai_flags |= AI_NUMERICHOST | AI_NUMERICSERV;  // for simple simple lookup for deep looup remove this line
 
                 r = uv_getaddrinfo(loop,
                         req,
@@ -93,7 +106,7 @@ namespace base {
             // resolve ip to hostname and service number
             void  GetNameInfoReq::on_resolvedIP(uv_getnameinfo_t* handle, int status, const char* hostname, const char* service) 
             {
-                  stTmp *tmp       =(stTmp * )handle->data;
+                stTmp *tmp       =(stTmp * )handle->data;
                  
                 GetNameInfoReq *obj = (GetNameInfoReq*) tmp->clsPtr;
                
@@ -101,7 +114,7 @@ namespace base {
                     LError(  "getnameinfo callback error ", uv_err_name(status));
                     delete tmp;
                     delete handle;
-                    //obj->cbDnsResolve(nullptr, "",0);
+                    obj->cbNameResolve(nullptr, nullptr,  tmp->data);
                     return;
                 }
                     STrace << "Reolved Hostname:" <<  hostname << " cls obj ptr " << tmp->data;

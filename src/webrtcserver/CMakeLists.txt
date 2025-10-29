@@ -1,4 +1,10 @@
-cmake_minimum_required(VERSION 3.7)
+
+cmake_minimum_required(VERSION 3.12) # Or a more recent version
+if(POLICY CMP0074)
+    cmake_policy(SET CMP0074 NEW)
+endif()
+
+
 project(libdatachannel
 	VERSION 0.21.2
 	LANGUAGES CXX)
@@ -13,7 +19,7 @@ option(USE_MBEDTLS "Use Mbed TLS instead of OpenSSL" OFF)
 option(PREFER_SYSTEM_LIB "Prefer system libraries over deps folder" OFF)
 option(USE_SYSTEM_SRTP "Use system libSRTP" ${PREFER_SYSTEM_LIB})
 #option(USE_SYSTEM_JUICE "Use system libjuice" ${PREFER_SYSTEM_LIB})
-#option(USE_SYSTEM_USRSCTP "Use system libusrsctp" ${PREFER_SYSTEM_LIB})
+option(USE_SYSTEM_USRSCTP "Use system libusrsctp" ${PREFER_SYSTEM_LIB})
 option(NO_WEBSOCKET "Disable WebSocket support" OFF)
 option(NO_MEDIA "Disable media transport support" OFF)
 option(NO_EXAMPLES "Disable examples" OFF)
@@ -29,6 +35,20 @@ SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
 
 #SET(WEBRTC_REPO "${CMAKE_SOURCE_DIR}/webrtc/src")
 
+ 
+#set(MbedTLS_ROOT ${WORKSPACE}/src/webrtcserver/deps/mbedtls/)
+#set(MbedTLS_DIR ${WORKSPACE}/src/mbedtls/build/)
+#set(MBEDTLS_INCLUDE_DIRS ${WORKSPACE}/src/mbedtls/build/library)
+#set(MBEDTLS_LIBRARIES ${WORKSPACE}/src/mbedtls/build/include)
+
+#set(MbedTLS_LIBRARY ${WORKSPACE}/src/mbedtls/build/library)
+#set(MbedTLS_INCLUDE_DIR ${WORKSPACE}/src/mbedtls/build/include)
+
+#set(MbedCrypto_LIBRARY ${WORKSPACE}/src/mbedtls/build/library)
+#set(MbedX509_LIBRARY ${WORKSPACE}/src/mbedtls/build/library)
+
+
+#set(USE_MBEDTLS 1)
 
 if (USE_GNUTLS AND USE_MBEDTLS)
 	message(FATAL_ERROR "Both USE_MBEDTLS and USE_GNUTLS cannot be enabled at the same time")
@@ -64,7 +84,7 @@ if(WIN32)
 	endif()
 endif()
 
-add_definitions( -Wno-write-strings -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-value -Wno-deprecated-declarations -Wno-reorder -Wno-extra -Wno-switch -Wno-unused-but-set-variable)
+add_definitions( -Wno-write-strings -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-value -Wno-deprecated-declarations  -Wno-extra -Wno-switch -Wno-unused-but-set-variable)
 
 set(LIBDATACHANNEL_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/candidate.cpp
@@ -271,19 +291,28 @@ if(SCTP_DEBUG)
 endif()
 
 if(USE_SYSTEM_USRSCTP)
-	#find_package(Usrsctp REQUIRED)
+	find_package(Usrsctp REQUIRED)
 else()
-	#option(sctp_build_shared_lib OFF)
-	#option(sctp_build_programs OFF)
-	#option(sctp_inet OFF)
-	#option(sctp_inet6 OFF)
-	#option(sctp_werror OFF)
-	#set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-	add_subdirectory(deps/usrsctp)
+	option(sctp_build_shared_lib OFF)
+	option(sctp_build_programs OFF)
+	option(sctp_inet OFF)
+	option(sctp_inet6 OFF)
+	option(sctp_werror OFF)
+	set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+	add_subdirectory(deps/usrsctp EXCLUDE_FROM_ALL)
 	if (MSYS OR MINGW)
-		#target_compile_definitions(usrsctp PUBLIC -DSCTP_STDINT_INCLUDE=<stdint.h>)
+		target_compile_definitions(usrsctp PUBLIC -DSCTP_STDINT_INCLUDE=<stdint.h>)
 	endif()
-	#add_library(usrsctp)
+	add_library(Usrsctp::Usrsctp ALIAS usrsctp)
+
+	if(INSTALL_DEPS_LIBS)
+		install(TARGETS usrsctp EXPORT LibDataChannelTargets)
+		# Fix directories
+		set_target_properties(usrsctp PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "")
+		target_include_directories(usrsctp INTERFACE
+			$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/deps/usrsctp/usrsctplib>
+			$<INSTALL_INTERFACE:>)
+	endif()
 endif()
 
 if(RTC_UPDATE_VERSION_HEADER)
@@ -294,22 +323,19 @@ if(RTC_UPDATE_VERSION_HEADER)
 endif()
 
 
-include_directories(
-    #${WEBRTC_REPO}/deps/libjuice/include
-    ${WEBRTC_REPO}/stun/include
-    ${WEBRTC_REPO}/deps/libsrtp/config
-    ${WEBRTC_REPO}/deps/libsrtp/crypto/include
-    ${WEBRTC_REPO}/deps/libsrtp/include
-    ${WEBRTC_REPO}/deps/json/include
-    ${WEBRTC_REPO}/deps/usrsctp/usrsctplib
 
-    ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/ ../net/include/ ../libuv/include ../libuv/src ../build/ ../http_parser/  
-   
-)
+
+
+
 
 add_subdirectory(deps/libsrtp)
 
+if(USE_MBEDTLS)  
+file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"   "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" "../net/srcmbedtls/*.cpp")
+else()
 file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"  "../net/src/*.cpp" "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" )
+endif()   
+
 
 
 
@@ -336,8 +362,34 @@ target_include_directories(datachannel-static PUBLIC
     $<INSTALL_INTERFACE:include>)
 target_include_directories(datachannel-static PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include/rtc)
 target_include_directories(datachannel-static PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
+
+target_include_directories(datachannel-static PUBLIC 
+    #${WEBRTC_REPO}/deps/libjuice/include
+    ${WEBRTC_REPO}/stun/include
+    ${WEBRTC_REPO}/deps/libsrtp/config
+    ${WEBRTC_REPO}/deps/libsrtp/crypto/include
+    ${WEBRTC_REPO}/deps/libsrtp/include
+    ${WEBRTC_REPO}/deps/json/include
+    ${WEBRTC_REPO}/deps/usrsctp/usrsctplib
+    ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/  ../libuv/include ../libuv/src ../build/ ../http_parser/ 
+)
+
+
+
+if(USE_MBEDTLS) 
+target_include_directories(datachannel-static PUBLIC 
+../net/incmbedtls/)
+else()
+target_include_directories(datachannel-static PUBLIC 
+../net/include/
+)
+endif()   
+
+
 target_link_libraries(datachannel-static PRIVATE Threads::Threads)
-target_link_libraries(datachannel-static PRIVATE usrsctp )
+target_link_libraries(datachannel-static PRIVATE Usrsctp::Usrsctp )
+
+
 
 if(WIN32)
 	target_link_libraries(datachannel-static PUBLIC ws2_32) # winsock2
@@ -355,23 +407,35 @@ else()
 	target_compile_definitions(datachannel-static PUBLIC RTC_ENABLE_MEDIA=1)
 	if(USE_SYSTEM_SRTP)
 		target_compile_definitions(datachannel-static PRIVATE RTC_SYSTEM_SRTP=1)
-		target_link_libraries(datachannel-static PRIVATE srtp)
+		target_link_libraries(datachannel-static PRIVATE srtp2)
 	else()
 		if(NOT TARGET srtp2)
 			#add_subdirectory(deps/libsrtp)
 		endif()
 		target_compile_definitions(datachannel-static PRIVATE RTC_SYSTEM_SRTP=0)
-		target_link_libraries(datachannel-static PRIVATE srtp)
+		target_link_libraries(datachannel-static PRIVATE srtp2)
 	endif()
 endif()
 
 
 if(USE_MBEDTLS)
-	if(NOT TARGET MbedTLS::MbedTLS)
-		find_package(MbedTLS 3 REQUIRED)
-	endif()
+	#if(NOT TARGET MbedTLS::MbedTLS)
+	#    set(MbedTLS_DEBUG 1)
+	#	find_package(MbedTLS REQUIRED)
+	#endif()
+
+ 
+ 	option(ENABLE_TESTING OFF)
+	option(ENABLE_PROGRAMS OFF)
+	set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+	add_subdirectory(deps/mbedtls EXCLUDE_FROM_ALL)
+
 	target_compile_definitions(datachannel-static PRIVATE USE_MBEDTLS=1)
-	target_link_libraries(datachannel-static PRIVATE MbedTLS::MbedTLS)
+
+	target_include_directories(datachannel-static PRIVATE ${CMAKE_SOURCE_DIR}/deps/mbedtls/include)
+	target_link_libraries(datachannel-static  PRIVATE mbedtls mbedx509 mbedcrypto -lz)
+	
 else()
 	if(APPLE)
 		# This is a bug in CMake that causes it to prefer the system version over

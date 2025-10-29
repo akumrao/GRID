@@ -1,20 +1,27 @@
 #include <stdio.h>
-#include <openssl/engine.h>
-#include <openssl/hmac.h>
-#include <openssl/evp.h>
+
 #include <zlib.h>  /* for crc */
 #include <netinet/in.h>
 
 #include <Types.h>
 #include <Utils.h>
 
-#include <openssl/sha.h>
 #include <iomanip>
 #include <iostream>
 #include <string>
 #include <sstream>
 #include <uv.h>
 #include <base/logger.h>
+
+#if USE_MBEDTLS
+#include "mbedtls/md.h"
+#include "mbedtls/sha256.h"
+#else
+#include <openssl/engine.h>
+#include <openssl/hmac.h>
+#include <openssl/evp.h>
+#include <openssl/sha.h>
+#endif
 
 using namespace base;
 
@@ -89,6 +96,13 @@ void random_str64(char *buf, size_t size) {
   buf[i] = '\0';
 }
 
+uint32_t rand32(void)
+{
+	uint32_t r = 0;
+	random_bytes(&r, sizeof(r));
+        return r;
+}
+
 bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz, uint8_t* output) {
 
     if (!message) { 
@@ -115,7 +129,65 @@ bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz
     // HMAC_CTX ctx;
     // HMAC_CTX_init(&ctx);
 
-     HMAC_CTX *ctx = HMAC_CTX_new();
+#if USE_MBEDTLS
+
+    
+   // const char* key_data = "my_secret_key";
+   // const char* message_data = "Hello, world!";
+
+    mbedtls_md_context_t ctx;
+    mbedtls_md_type_t md_type =  sz == 20 ? MBEDTLS_MD_SHA1:MBEDTLS_MD_SHA256 ;
+ //   unsigned char hmac_result[MBEDTLS_MD_MAX_SIZE];
+    int ret;
+
+    // 1. Initialize the MD context
+    mbedtls_md_init(&ctx);
+
+    // 2. Setup the HMAC algorithm (SHA256)
+    ret = mbedtls_md_setup(&ctx, mbedtls_md_info_from_type(md_type), 1);
+    if (ret != 0) {
+        SError << "mbedtls_md_setup failed with error " <<  ret;
+        return false;
+    }
+
+    // 3. Start the HMAC process with the key
+    ret = mbedtls_md_hmac_starts(&ctx, (const unsigned char*)key.c_str(), key.length());
+    if (ret != 0) {
+        SError << "mbedtls_md_hmac_starts failed with error " <<  ret;
+        goto exit;
+    }
+
+    // 4. Update the HMAC with the message data
+    ret = mbedtls_md_hmac_update(&ctx, (const unsigned char*)message, nbytes);
+    if (ret != 0) {
+        SError << "mbedtls_md_hmac_update failed with error " <<  ret;
+        goto exit;
+    }
+
+    // 5. Finish the HMAC and get the result
+    ret = mbedtls_md_hmac_finish(&ctx, output);
+    if (ret != 0) {
+        SError << "mbedtls_md_hmac_finish failed with error " << ret;
+        goto exit;
+    }
+
+//    printf("HMAC-SHA256 result: ");
+//    for (int i = 0; i < mbedtls_md_get_size(mbedtls_md_info_from_type(md_type)); i++) {
+//        printf("%02x", hmac_result[i]);
+//    }
+//    printf("\n");
+
+exit:
+    // 6. Free the MD context
+    mbedtls_md_free(&ctx);
+
+    return true;
+            
+
+#else
+    
+    
+    HMAC_CTX *ctx = HMAC_CTX_new();
 
     if (!HMAC_Init_ex(ctx, (const unsigned char*)key.c_str(), key.size(), sz == 20 ? EVP_sha1():EVP_sha256(), NULL)) {
       printf("Error: cannot init the HMAC context in compute_hmac_sha1().\n");
@@ -125,7 +197,13 @@ bool compute_hmac_sha(uint8_t* message, uint32_t nbytes, std::string key, int sz
     HMAC_Final(ctx, output, &len);
 
     HMAC_CTX_free(ctx);
-
+    
+#endif
+    
+    
+        
+    
+    
 #if PRINTDEBUG
     printf("stun::compute_hmac_sha1 - verbose: computing hash over %u bytes, using key `%s`:\n", nbytes, key.c_str());
     printf("-----------------------------------\n\t0: ");
@@ -413,24 +491,46 @@ bool compute_message_integrity(unsigned char *buf, size_t size, std::string key,
   
   
 void sha256(const std::string& str , std::string& key) {
-    unsigned char hash[SHA256_DIGEST_LENGTH];
+  
+    unsigned char hash[32];  
+    
+#if USE_MBEDTLS
+ 
+    mbedtls_sha256_context ctx;
+ // 1. Initialize the SHA-256 context
+    mbedtls_sha256_init(&ctx);
+    // 2. Update the context with the input data
+    mbedtls_sha256_update(&ctx, (const unsigned char*)str.c_str(), str.size());
+    // 3. Finish the hash calculation and get the result
+    mbedtls_sha256_finish(&ctx, hash);
+    
+    
+#else
+    
+
     SHA256_CTX sha256;
     SHA256_Init(&sha256);
     SHA256_Update(&sha256, str.c_str(), str.size());
     SHA256_Final(hash, &sha256);
+    
+#endif
+    
+    
 //    std::stringstream ss;
 //    for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
 //        ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
 //    }
   
-    key= std::string(reinterpret_cast<char*>(hash), SHA256_DIGEST_LENGTH);
+    key= std::string(reinterpret_cast<char*>(hash), 32);
     
-    printf("key = ");
+//    printf("key = ");
+//    
+//    for (int k = 0; k < 32; ++k) {
+//         printf("%02X ", hash[k]);
+//    }
+//    printf("\n");
     
-    for (int k = 0; k < SHA256_DIGEST_LENGTH; ++k) {
-         printf("%02X ", hash[k]);
-    }
-    printf("\n");
+    
     return  ;
 }
        

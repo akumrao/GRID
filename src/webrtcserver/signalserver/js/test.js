@@ -274,6 +274,8 @@ function createPeerConnection() {
      channelSnd.onmessage = function(event)
      {
          console.log("event.data " + event.data);
+
+         channelSnd.send('Hi you!');
      }
         
 

@@ -20,7 +20,7 @@
 //#include "ArgParser.hpp"
 #include "socketio/socketioClient.h"
 
-#define localtesting 1
+//#define localtesting 1
 
 using namespace rtc;
 using namespace std;
@@ -144,6 +144,7 @@ void wsOnMessage(json const &m ) {
     if (m.find("from") != m.end())
     {
         from = m["from"].get<std::string>();
+        id =from;
     }
     else
     {
@@ -917,7 +918,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 
 		dc->onClosed([id]() { std::cout << "DataChannel from " << id << " closed" << std::endl; });
 
-		dc->onMessage([id](auto data) {
+		dc->onMessage([id, dc](auto data) {
 			// data holds either std::string or rtc::binary
 			if (std::holds_alternative<std::string>(data))
 				SInfo << "Message from " << id << " received: " << std::get<std::string>(data)
@@ -925,6 +926,9 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 			else
 				SInfo << "Binary message from " << id
 				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+                        
+                        sleep(500);
+                        dc->send("Send to web");
 		});
 
 		 client->dataChannel2 = dc;

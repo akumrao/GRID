@@ -29,7 +29,7 @@ SslConnection::SslConnection()
   
 {
     LTrace("Create")
-     _sslAdapter.initClient();
+     _sslAdapter.initSSL();
  
 }
 
@@ -41,7 +41,8 @@ SslConnection::SslConnection( bool server)
     ,serverMode(server)
 {
     if(server)
-        _sslAdapter.initServer();
+        _sslAdapter.server = server;
+        _sslAdapter.initSSL();
     LTrace("Create")
 }
 
@@ -65,42 +66,10 @@ SslConnection::~SslConnection()
 
 
 
-
-
-
 void SslConnection::send(const char* data, size_t len)
 {
- 
-    int ret;
-    
-    do
-    {
-        
-        ret = mbedtls_ssl_read( &_sslAdapter._ssl, (unsigned char*) data, len );
-
-        if( ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE )
-            continue;
-
-        if( ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY )
-            break;
-
-        if( ret < 0 )
-        {
-            SError <<  "failed\n  ! mbedtls_ssl_read returned "  <<  ret;
-            break;
-        }
-
-        if( ret == 0 )
-        {
-         
-            break;
-        }
-
-     
-    }
-    while( 1 );
-    
-    return ;
+   _sslAdapter.addOutgoingData( data, len);
+   return ;
 }
 
 
@@ -116,17 +85,21 @@ void SslConnection::tcpsend(const char* data, size_t len, onSendCallback _cb)
 
 void SslConnection::on_tls_read(const char* data, size_t len)
 {
-    SInfo << "On SSL read: " << len << " data"  <<  data ; 
+   // SInfo << "on_tls_read: " << len ;
 
-    int ret =0;
-    while( ( ret = mbedtls_ssl_write( & _sslAdapter._ssl, (const unsigned char*) data, len ) ) <= 0 )
-    {
-        if( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE )
-        {
-            SError <<  " failed\n  ! mbedtls_ssl_write failed " <<  ret ;
-            break;
-        }
-    }
+   
+    _sslAdapter.addIncomingData(data, len);
+    
+    
+//    int ret =0;
+//    while( ( ret = mbedtls_ssl_write( & _sslAdapter._ssl, (const unsigned char*) data, len ) ) <= 0 )
+//    {
+//        if( ret != MBEDTLS_ERR_SSL_WANT_READ && ret != MBEDTLS_ERR_SSL_WANT_WRITE )
+//        {
+//            SError <<  " failed\n  ! mbedtls_ssl_write failed " <<  ret ;
+//            break;
+//        }
+//    }
     
 }
 

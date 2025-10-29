@@ -14,7 +14,8 @@
 
 
 #if !defined(MBEDTLS_CONFIG_FILE)
-#include "mbedtls/config.h"
+//#include "mbedtls/config.h"  //mbedtls 2.5
+#include "mbedtls/mbedtls_config.h"
 #else
 #include MBEDTLS_CONFIG_FILE
 #endif
@@ -36,9 +37,14 @@
 #if !defined(MBEDTLS_BIGNUM_C) || !defined(MBEDTLS_ENTROPY_C) ||  \
     !defined(MBEDTLS_SSL_TLS_C) || !defined(MBEDTLS_SSL_CLI_C) || \
     !defined(MBEDTLS_NET_C) || !defined(MBEDTLS_RSA_C) ||         \
-    !defined(MBEDTLS_CERTS_C) || !defined(MBEDTLS_PEM_PARSE_C) || \
+    !defined(MBEDTLS_PEM_PARSE_C) || \
     !defined(MBEDTLS_CTR_DRBG_C) || !defined(MBEDTLS_X509_CRT_PARSE_C)
-    
+   
+
+//required oly for mbedtls 2.5 
+ // !defined(MBEDTLS_CERTS_C) || //mbedtls 2.5 
+
+
 int main( void )
 {
     mbedtls_printf("MBEDTLS_BIGNUM_C and/or MBEDTLS_ENTROPY_C and/or "
@@ -56,7 +62,7 @@ int main( void )
 #include "mbedtls/entropy.h"
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/error.h"
-#include "mbedtls/certs.h"
+#include "mbedtls/certs.h"  //mbedtls 2.5
 #endif
 
 
@@ -69,8 +75,7 @@ int main( void )
 #include <string>
 #include <vector>
 
-
-
+#include "bio.h"
 
 
 #include <functional>
@@ -94,10 +99,10 @@ public:
     ~SSLAdapter();
 
     /// Initializes the SSL context as a client.
-    void initClient();
+    void initSSL();
 
     /// Initializes the SSL context as a server.
-    void initServer();
+    //void initServer();
 
     /// Returns true when SSL context has been initialized.
    // bool initialized() const;
@@ -105,7 +110,7 @@ public:
     /// Returns true when the handshake is complete.
 
     /// Start/continue the SSL handshake process.
-    void handshake();
+    int handshake();
 
     /// Returns the number of bytes available in
     /// the SSL buffer for immediate reading.
@@ -115,33 +120,46 @@ public:
     void shutdown();
     
     
-    bool isConnected() const ;
+    //bool isConnected() const ;
 
-    std::string getTLSError(int )  ;
+    std::string getTLSError(int );
 
+    void stay_uptodate( );
+    int swrap_error_handler( const int err_code);
+    
+    void addIncomingData(const char *data, size_t len);
+    void addOutgoingData(const char *data, size_t len);
     
     static void my_debug(void *ctx, int level, const char *file, int line,   const char *str);
     static int my_verify(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *flags);
-    
-    static int ssl_recv(void *ctx, unsigned char *buf, size_t len);
 
-    static int ssl_send(void *ctx, const unsigned char *buf, size_t len);
-    
     
     bool setup(const mbedtls_ssl_config *conf, const char *hostname);
     
     onSendCallback  cb{nullptr};
+    
+    bool server{false};
 
 protected:
     
     
 
 
+ BIO     *app_bio_; //Our BIO, All IO should be through this
+ BIO     *ssl_bio_; //the ssl BIO used only by openSSL
 
 
 
 
+enum uv_tls_state {
+    STATE_INIT         = 0x0
+    ,STATE_HANDSHAKING = 0x1
+    ,STATE_HANDSHAKE_DONE  = 0x2 //read or write mode
+    ,STATE_CLOSING     = 0x4 // This means closed state also
+};
 
+
+int  handshake_state{STATE_INIT};
     
 protected:
     friend class SslConnection;
@@ -149,7 +167,7 @@ protected:
     SslConnection* _socket;
      
     
-    //std::vector<char> _bufferOut; ///<  The outgoing payload to be encrypted and sent
+    std::vector<char> _bufferOut; ///<  The outgoing payload to be encrypted and sent
     
     
     
@@ -162,6 +180,9 @@ protected:
     mbedtls_ctr_drbg_context _ctr_drbg;
     mbedtls_x509_crt _cacert;
     mbedtls_ssl_config _ssl_conf;
+    
+    
+    mbedtls_pk_context pkey;
     
 };
 

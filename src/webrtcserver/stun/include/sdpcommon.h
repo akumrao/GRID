@@ -37,6 +37,7 @@ namespace rtc {
 
     bool comp(Candidate a, Candidate b);
      
+    int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count);
 
 
 }
