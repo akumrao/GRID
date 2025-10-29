@@ -60,8 +60,8 @@ socket.on('joined', function(msg) {
   console.log('joined: %o %o %o ', msg , socket.id, msg.from  );
   isChannelReady = true;
 
-  if(socket.id != msg.from)
-  isInitiator = true;
+  // if(socket.id != msg.from)
+  // isInitiator = true;
 
   maybeStart();
 });

@@ -80,8 +80,11 @@ uint16_t port = defaultPort;
 
 sockio::Socket *mysocket = nullptr;
 std::string from;
-
+std::string room;
 Configuration config;
+
+std::string id ="server";
+  
 
 void sendCandidate( const std::string &mid, int mlineindex, const std::string &sdp )
 {
@@ -93,9 +96,14 @@ void sendCandidate( const std::string &mid, int mlineindex, const std::string &s
     json m;
     m["type"] = "candidate";
     m["candidate"] = desc;
-    m["from"] = from;
-    m["to"] = from;
-
+    
+    if(!from.empty())
+    {
+        m["from"] = from;
+        m["to"] = from;
+    }
+    
+    m["room"] = room;
     SInfo << "send:"  <<  sdp << "candidate to: "<< from<< std::endl;
     
     mysocket->emit("message", m);
@@ -112,9 +120,17 @@ void sendSdp( const std::string &sdp, const std::string &type   )
 
     json m;
     m["type"] = type;
+    
     m["desc"] = desc;
-    m["from"] =from;
-    m["to"] = from;
+    
+    
+    if(!from.empty())
+    {
+        m["from"] = from;
+        m["to"] = from;
+    }
+     
+    m["room"] = room;
     
     // smpl::Message m({ type, {
 
@@ -134,16 +150,31 @@ void wsOnMessage(json const &m ) {
     
     
     std::string type;
-    std::string room;
+   
     std::string to;
     std::string user;
-    std::string id ="server";
+  
+     if (m.find("room") != m.end())
+    {
+        room = m["room"].get<std::string>();
+    }
+    else
+    {
+        SError << " On Peer message is missing room id ";
+        return;
+    }
 
 
+    
+    if (m.find("type") != m.end())
+    {
+      type = m["type"].get<string>();
+
+    }
+     
     if (type == "joined") {
-     clients.emplace(id, createPeerConnection(config,  id));
-
-}
+        clients.emplace(id, createPeerConnection(config,  id));
+    }
     
     if (m.find("to") != m.end()) { to = m["to"].get<std::string>(); }
 
@@ -164,16 +195,7 @@ void wsOnMessage(json const &m ) {
         SError << " On Peer message is missing SDP type";
     }
 
-    if (m.find("room") != m.end())
-    {
-        room = m["room"].get<std::string>();
-
-    }
-    else
-    {
-        SError << " On Peer message is missing room id ";
-        return;
-    }
+   
 
     
     if (m.find("cam") != m.end())
@@ -196,11 +218,7 @@ void wsOnMessage(json const &m ) {
     
     
      
-    if (m.find("type") != m.end())
-    {
-      type = m["type"].get<string>();
 
-    }
      
     
 

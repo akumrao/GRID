@@ -259,8 +259,34 @@ async function runSocketServer() {
             console.log('webrtc server message: ', message);
 
             message.from = socket.id;
-
+            if(message.to && message.to.length != 0)
             socket.to(message.to).emit('message', message);
+            else
+            {
+                var clientsInRoom = io.sockets.adapter.rooms[message.room];
+                if(!clientsInRoom)
+                    return;
+
+                //console.log( clientsInRoom );
+
+             //   var numClients = clientsInRoom.length; //For socket.io versions >= 1.4:
+                Object.keys(clientsInRoom.sockets).forEach(function(scid){
+
+                    console.log('webrtc server message1: ', message);
+                 
+                 let sc = io.sockets.connected[scid];
+                     
+                 if(!sc.isclient)
+                 {
+                        console.log('webrtc server message2: ', message);
+
+                    sc.emit('message', message);
+                 }
+
+
+                });
+
+            }
         });
 
         socket.on('messageToWebrtc', function(message) {
@@ -271,24 +297,28 @@ async function runSocketServer() {
 
             console.log( message.room );
 
-            var clientsInRoom = io.sockets.adapter.rooms[message.room];
-            if(!clientsInRoom)
-                return;
+             if(message.to && message.to.length != 0)
+            socket.to(message.to).emit('message', message);
+            else
+            {
 
-            //console.log( clientsInRoom );
+                var clientsInRoom = io.sockets.adapter.rooms[message.room];
+                if(!clientsInRoom)
+                    return;
 
-         //   var numClients = clientsInRoom.length; //For socket.io versions >= 1.4:
-            Object.keys(clientsInRoom.sockets).forEach(function(scid){
-             
-             let sc = io.sockets.connected[scid];
+                //console.log( clientsInRoom );
+
+             //   var numClients = clientsInRoom.length; //For socket.io versions >= 1.4:
+                Object.keys(clientsInRoom.sockets).forEach(function(scid){
                  
-             if(!sc.isclient)
-             {
-                sc.emit('message', message);
-             }
-
-
-            });
+                 let sc = io.sockets.connected[scid];
+                     
+                 if(sc.isclient)
+                 {
+                    sc.emit('message', message);
+                 }
+                });
+            }
 
 
         });
