@@ -225,7 +225,7 @@ async function runSocketServer() {
                // socket.emit('created', roomId, socket.id);
                 socket.emit('join', roomId, socket.id, numClients);
             } else if (numClients > 1) {
-                //log('Client ID ' + socket.id + ' joined room ' + roomId);
+                log('Client ID ' + socket.id + ' joined room ' + roomId);
                 //if already client connections are there then we send event Joined event.
                 
                 // when all the users in room need get joining event
@@ -239,9 +239,13 @@ async function runSocketServer() {
                  
                  if(!sc.isclient)
                  {
-                    console.log('joined room: ', roomId);
+                    console.log('joined roomid: ', roomId);
+                    var message={};
+                    //message.from = sc.id;
+                    message.type = "joined";
+                    message.room = roomId;
 
-                    io.sockets.in(roomId).emit('joined', roomId, socket.id, numClients);
+                    io.sockets.in(roomId).emit('joined',  message );
                  }
 
                 });

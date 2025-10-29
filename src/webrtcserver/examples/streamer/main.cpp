@@ -139,12 +139,18 @@ void wsOnMessage(json const &m ) {
     std::string user;
     std::string id ="server";
 
+
+    if (type == "joined") {
+     clients.emplace(id, createPeerConnection(config,  id));
+
+}
+    
     if (m.find("to") != m.end()) { to = m["to"].get<std::string>(); }
 
     if (m.find("from") != m.end())
     {
         from = m["from"].get<std::string>();
-        id =from;
+      //  id =from;
     }
     else
     {
@@ -196,6 +202,8 @@ void wsOnMessage(json const &m ) {
 
     }
      
+    
+
     if (type == "offer") {
          clients.emplace(id, createPeerConnection(config,  id));
          
@@ -262,7 +270,7 @@ int main(int argc, char **argv)
     bool printHelp = false;
     //int c = 0;
     
-    Logger::instance().add(new ConsoleChannel("trace", Level::Trace));
+    Logger::instance().add(new ConsoleChannel("trace", Level::Info));
     
      Application app;
     
@@ -319,8 +327,8 @@ int main(int argc, char **argv)
                     sockio::Socket::event_listener_aux(
                         [&](string const &name, json const &data, bool isAck, json &ack_resp)
                         {
-                            STrace << cnfg::stringify(data);
-                            STrace << "Created room " << data[0] << "- my client ID is " << data[1];
+                            SInfo << cnfg::stringify(data);
+                            SInfo << "ws: Created room " << data[0] << "- my client ID is " << data[1];
                             //isInitiator = true;
                             // grabWebCamVideo();
                         }));
@@ -330,7 +338,7 @@ int main(int argc, char **argv)
                     sockio::Socket::event_listener_aux(
                         [&](string const &name, json const &data, bool isAck, json &ack_resp)
                         {
-                            STrace << cnfg::stringify(data);
+                            SInfo << "ws::full " << cnfg::stringify(data);
                             // LTrace("Room " + room + " is full.")
                         }));
 
@@ -340,7 +348,7 @@ int main(int argc, char **argv)
                     sockio::Socket::event_listener_aux(
                         [&](string const &name, json const &data, bool isAck, json &ack_resp)
                         {
-                            STrace << cnfg::stringify(data);
+                            SInfo << "ws join " << cnfg::stringify(data);
                             // LTrace("Another peer made a request to join room " + room)
                             // LTrace("This peer is the initiator of room " + room + "!")
                             //isChannelReady = true;
@@ -348,14 +356,15 @@ int main(int argc, char **argv)
 
                 
                 mysocket->on(
-                    "join",
+                    "joined",
                     sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+                        [&](string const &name, json const &m, bool isAck, json &ack_resp)
                         {
-                            STrace << cnfg::stringify(data);
+                            SInfo << "ws joined "  <<  cnfg::stringify(m);
                             // LTrace("Another peer made a request to join room " + room)
                             // LTrace("This peer is the initiator of room " + room + "!")
                             //isChannelReady = true;
+                              wsOnMessage(m);
                         }));
                         
                         
