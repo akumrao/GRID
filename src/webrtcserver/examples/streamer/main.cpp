@@ -196,8 +196,23 @@ void wsOnMessage(json const &m ) {
 
     }
      
-    if (type == "request") {
+    if (type == "offer") {
          clients.emplace(id, createPeerConnection(config,  id));
+         
+         //clients.emplace(id, createPeerConnection(config,  id));
+        if (auto jt = clients.find(id); jt != clients.end()) {
+            auto pc = jt->second->peerConnection;
+           
+            auto sdp = m["desc"]["sdp"].get<string>();
+            
+            SInfo << "setRemoteDescription " << type ;
+            
+            auto description = Description(sdp, type);
+            pc->setRemoteDescription(description);
+           // pc->setLocalDescription( Description::Type::Answer);
+        }
+         
+         
     } else if (type == "answer") {
         
        //clients.emplace(id, createPeerConnection(config,  id));
@@ -247,7 +262,7 @@ int main(int argc, char **argv)
     bool printHelp = false;
     //int c = 0;
     
-    Logger::instance().add(new ConsoleChannel("trace", Level::Info));
+    Logger::instance().add(new ConsoleChannel("trace", Level::Trace));
     
      Application app;
     
@@ -331,6 +346,19 @@ int main(int argc, char **argv)
                             //isChannelReady = true;
                         }));
 
+                
+                mysocket->on(
+                    "join",
+                    sockio::Socket::event_listener_aux(
+                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
+                        {
+                            STrace << cnfg::stringify(data);
+                            // LTrace("Another peer made a request to join room " + room)
+                            // LTrace("This peer is the initiator of room " + room + "!")
+                            //isChannelReady = true;
+                        }));
+                        
+                        
                 /// for webrtc messages
                 mysocket->on(
                     "message",
@@ -338,7 +366,7 @@ int main(int argc, char **argv)
                         [&](string const &name, json const &m, bool isAck, json &ack_resp)
                         {
                             //LTrace(cnfg::stringify(m));
-                            // LTrace('SocketioClient received message:', cnfg::stringify(m));
+                             LTrace('SocketioClient received message:', cnfg::stringify(m));
 
                             //onPeerMessage((string &) name, m); //arvind
                             // signalingMessageCallback(message);

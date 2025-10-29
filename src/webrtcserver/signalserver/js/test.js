@@ -215,14 +215,15 @@ async function maybeStart() {
 
    // pc.addStream(localStream);
     isStarted = true;
-    console.log('isInitiator', isInitiator);
-    if (isInitiator) {
-      //doCall();
-      sendMessage({
-      room: roomId,
-      type: 'request'
-    });
-    }
+    // console.log('isInitiator', isInitiator);
+    // if (isInitiator) {
+    doCall();
+    
+    //   sendMessage({
+    //   room: roomId,
+    //   type: 'request'
+    // });
+    // }
   }
 }
 
