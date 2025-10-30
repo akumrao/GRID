@@ -382,7 +382,7 @@ int main(int argc, char **argv)
                             // LTrace("Another peer made a request to join room " + room)
                             // LTrace("This peer is the initiator of room " + room + "!")
                             //isChannelReady = true;
-                              wsOnMessage(m);
+                              //wsOnMessage(m);
                         }));
                         
                         
@@ -989,7 +989,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 		 client->dataChannel2 = dc;
 	});
 
-    pc->setLocalDescription();
+    //pc->setLocalDescription();
     return client;
 };
 #endif

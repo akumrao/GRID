@@ -272,14 +272,11 @@ async function runSocketServer() {
              //   var numClients = clientsInRoom.length; //For socket.io versions >= 1.4:
                 Object.keys(clientsInRoom.sockets).forEach(function(scid){
 
-                    console.log('webrtc server message1: ', message);
                  
                  let sc = io.sockets.connected[scid];
                      
-                 if(!sc.isclient)
+                 if(sc.isclient)
                  {
-                        console.log('webrtc server message2: ', message);
-
                     sc.emit('message', message);
                  }
 
@@ -297,7 +294,7 @@ async function runSocketServer() {
 
             console.log( message.room );
 
-             if(message.to && message.to.length != 0)
+            if(message.to && message.to.length != 0)
             socket.to(message.to).emit('message', message);
             else
             {
@@ -313,7 +310,7 @@ async function runSocketServer() {
                  
                  let sc = io.sockets.connected[scid];
                      
-                 if(sc.isclient)
+                 if(!sc.isclient)
                  {
                     sc.emit('message', message);
                  }
