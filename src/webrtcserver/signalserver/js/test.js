@@ -54,6 +54,13 @@ socket.on('created', function(room) {
 socket.on('join', function(room, id, numClients) {
     console.log('New peer joins, room: ' + room + ', ' + " client id: " + id);
     isChannelReady = true;
+
+
+    if(numClients > 1)
+    isInitiator = true;
+
+    maybeStart();
+
 });
 
 socket.on('joined', function(msg) {
@@ -61,9 +68,7 @@ socket.on('joined', function(msg) {
   isChannelReady = true;
 
   // if(socket.id != msg.from)
-  // isInitiator = true;
 
-  maybeStart();
 });
 
 socket.emit('createorjoin', roomId , true);
@@ -88,7 +93,7 @@ socket.on('log', function(array) {
 function sendMessage(message) {
     console.log('Client sending message: ', message);
     //log('Client sending message: ', message);
-    socket.emit('messageToWebrtc', message);
+    socket.emit('message', message);
 }
 
 

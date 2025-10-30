@@ -255,44 +255,16 @@ async function runSocketServer() {
             }
         });
 
+     
         socket.on('message', function(message) {
-            console.log('webrtc server message: ', message);
-
             message.from = socket.id;
-            if(message.to && message.to.length != 0)
-            socket.to(message.to).emit('message', message);
+
+            if(socket.isclient)
+                console.log('app message: ', message);
             else
-            {
-                var clientsInRoom = io.sockets.adapter.rooms[message.room];
-                if(!clientsInRoom)
-                    return;
+                console.log('server message: ', message);
 
-                //console.log( clientsInRoom );
-
-             //   var numClients = clientsInRoom.length; //For socket.io versions >= 1.4:
-                Object.keys(clientsInRoom.sockets).forEach(function(scid){
-
-                 
-                 let sc = io.sockets.connected[scid];
-                     
-                 if(sc.isclient)
-                 {
-                    sc.emit('message', message);
-                 }
-
-
-                });
-
-            }
-        });
-
-        socket.on('messageToWebrtc', function(message) {
-            message.from = socket.id;
-
-
-            console.log('app message: ', message);
-
-            console.log( message.room );
+            //console.log( message.room );
 
             if(message.to && message.to.length != 0)
             socket.to(message.to).emit('message', message);
@@ -308,13 +280,14 @@ async function runSocketServer() {
              //   var numClients = clientsInRoom.length; //For socket.io versions >= 1.4:
                 Object.keys(clientsInRoom.sockets).forEach(function(scid){
                  
-                 let sc = io.sockets.connected[scid];
+                let sc = io.sockets.connected[scid];
                      
-                 if(!sc.isclient)
-                 {
+                if(sc.isclient !=  socket.isclient  &&  socket.id != sc.id )
+                {
                     sc.emit('message', message);
-                 }
+                }
                 });
+
             }
 
 

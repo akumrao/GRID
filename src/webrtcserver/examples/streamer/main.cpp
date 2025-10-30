@@ -42,9 +42,7 @@ unordered_map<string, shared_ptr<Client>> clients{};
 /// @param wws Websocket for signaling
 /// @param id Client ID
 /// @returns Client
-shared_ptr<Client> createPeerConnection(const Configuration &config,
-                                         
-                                        string id);
+shared_ptr<Client> createPeerConnection(const Configuration &config, string id, bool isClient);
 
 /// Creates stream
 /// @param h264Samples Directory with H264 samples
@@ -83,7 +81,7 @@ std::string from;
 std::string room;
 Configuration config;
 
-std::string id ="server";
+std::string id ="client";
   
 
 void sendCandidate( const std::string &mid, int mlineindex, const std::string &sdp )
@@ -172,16 +170,14 @@ void wsOnMessage(json const &m ) {
 
     }
      
-    if (type == "joined") {
-        clients.emplace(id, createPeerConnection(config,  id));
-    }
+ 
     
     if (m.find("to") != m.end()) { to = m["to"].get<std::string>(); }
 
     if (m.find("from") != m.end())
     {
         from = m["from"].get<std::string>();
-      //  id =from;
+        id =from;
     }
     else
     {
@@ -223,7 +219,7 @@ void wsOnMessage(json const &m ) {
     
 
     if (type == "offer") {
-         clients.emplace(id, createPeerConnection(config,  id));
+         clients.emplace(id, createPeerConnection(config,  id, false));
          
          //clients.emplace(id, createPeerConnection(config,  id));
         if (auto jt = clients.find(id); jt != clients.end()) {
@@ -235,7 +231,7 @@ void wsOnMessage(json const &m ) {
             
             auto description = Description(sdp, type);
             pc->setRemoteDescription(description);
-           // pc->setLocalDescription( Description::Type::Answer);
+            pc->setLocalDescription( );
         }
          
          
@@ -278,6 +274,17 @@ void wsOnMessage(json const &m ) {
     }
     
 }
+
+
+void initiate(std::string rm)
+{
+
+    room = rm;
+
+    clients.emplace(id, createPeerConnection(config,  id, true));
+}
+
+
 
 int main(int argc, char **argv) 
 
@@ -351,15 +358,6 @@ int main(int argc, char **argv)
                             // grabWebCamVideo();
                         }));
 
-                mysocket->on(
-                    "full",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-                        {
-                            SInfo << "ws::full " << cnfg::stringify(data);
-                            // LTrace("Room " + room + " is full.")
-                        }));
-
 
                 mysocket->on(
                     "join",
@@ -367,6 +365,16 @@ int main(int argc, char **argv)
                         [&](string const &name, json const &data, bool isAck, json &ack_resp)
                         {
                             SInfo << "ws join " << cnfg::stringify(data);
+                             SInfo << "ws: Created room " << data[0] << "- my client ID is " << data[1] << " noClientInRoom: " << data[2];
+                           
+                            std::string room1 = data[0];
+                            
+                            int noClientInRoom = data[2].get<int>();
+                            
+                            if(noClientInRoom > 1)
+                             initiate(room1 );
+
+                             
                             // LTrace("Another peer made a request to join room " + room)
                             // LTrace("This peer is the initiator of room " + room + "!")
                             //isChannelReady = true;
@@ -839,7 +847,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 
 
 // Create and setup a PeerConnection
-shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
+shared_ptr<Client> createPeerConnection(const Configuration &config,  string id, bool isClient)
 {
     SInfo << "createPeerConnection" ;
     
@@ -988,8 +996,9 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 
 		 client->dataChannel2 = dc;
 	});
-
-    //pc->setLocalDescription();
+        
+    if(isClient)    
+    pc->setLocalDescription();
     return client;
 };
 #endif
