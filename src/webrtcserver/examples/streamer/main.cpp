@@ -20,7 +20,7 @@
 //#include "ArgParser.hpp"
 #include "socketio/socketioClient.h"
 
-//#define localtesting 1
+#define localtesting 1
 
 using namespace rtc;
 using namespace std;
@@ -43,6 +43,8 @@ unordered_map<string, shared_ptr<Client>> clients{};
 /// @param id Client ID
 /// @returns Client
 shared_ptr<Client> createPeerConnection(const Configuration &config, string id, bool isClient);
+shared_ptr<Client> createPeerConnection_lc(const Configuration &config, string id);
+
 
 /// Creates stream
 /// @param h264Samples Directory with H264 samples
@@ -81,7 +83,7 @@ std::string from;
 std::string room;
 Configuration config;
 
-std::string id ="client";
+std::string id;
   
 
 void sendCandidate( const std::string &mid, int mlineindex, const std::string &sdp )
@@ -144,6 +146,8 @@ void sendSdp( const std::string &sdp, const std::string &type   )
 /// @param ws Websocket
 
 
+#ifndef localtesting
+
 void wsOnMessage(json const &m ) {
     
     
@@ -177,6 +181,7 @@ void wsOnMessage(json const &m ) {
     if (m.find("from") != m.end())
     {
         from = m["from"].get<std::string>();
+        if(id.empty())
         id =from;
     }
     else
@@ -280,11 +285,12 @@ void initiate(std::string rm)
 {
 
     room = rm;
+    id = "client"; /// hard coded the id for client(second participant), since it will have only one instance. Second instance should only have one instance, otherwise throw error. TBD 
 
     clients.emplace(id, createPeerConnection(config,  id, true));
 }
 
-
+#endif
 
 int main(int argc, char **argv) 
 
@@ -327,7 +333,7 @@ int main(int argc, char **argv)
 #if localtesting 
     std::string id ="server";
 
-   clients.emplace(id, createPeerConnection(config,  id));
+   clients.emplace(id, createPeerConnection_lc(config,  id));
 #else
 
     std::string room = "65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0";
@@ -522,7 +528,7 @@ shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const 
 
 #if localtesting 
 // Create and setup a PeerConnection
-shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
+shared_ptr<Client> createPeerConnection_lc(const Configuration &config,  string id)
 {
     auto pc1 = make_shared<PeerConnection>(config);
     auto pc2 = make_shared<PeerConnection>(config); 
@@ -838,7 +844,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
     		 client->dataChannel22 = dc;
     	});
 
-        pc2->setLocalDescription();
+        pc2->setLocalDescription();  // this will create offfer
         return client;
     }
 };

@@ -260,9 +260,9 @@ async function runSocketServer() {
             message.from = socket.id;
 
             if(socket.isclient)
-                console.log('app message: ', message);
+                console.log('Second participant: ', message);
             else
-                console.log('server message: ', message);
+                console.log('First participant: ', message);
 
             //console.log( message.room );
 
