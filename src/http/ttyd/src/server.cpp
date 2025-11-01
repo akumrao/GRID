@@ -789,20 +789,6 @@ int main(int argc, char **argv) {
 
 
 
-#if defined(LWS_OPENSSL_SUPPORT) || defined(LWS_WITH_TLS)
-    if (ssl) {
-        info.ssl_cert_filepath = cert_path;
-        info.ssl_private_key_filepath = key_path;
-#ifndef LWS_WITH_MBEDTLS
-        info.ssl_options_set = SSL_OP_NO_TLSv1 | SSL_OP_NO_TLSv1_1;
-#endif
-        if (strlen(ca_path) > 0) {
-            info.ssl_ca_filepath = ca_path;
-            info.options |= LWS_SERVER_OPTION_REQUIRE_VALID_OPENSSL_CLIENT_CERT;
-        }
-        info.options |= LWS_SERVER_OPTION_ALLOW_NON_SSL_ON_SSL_PORT | LWS_SERVER_OPTION_REDIRECT_HTTP_TO_HTTPS;
-    }
-#endif
 
     printf("ttyd %s)\n", TTYD_VERSION );
     print_config();
