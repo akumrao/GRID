@@ -82,7 +82,9 @@ uint16_t port = defaultPort;
 
 sockio::Socket *mysocket = nullptr;
 std::string from;
-
+std::string room;
+std::string id ="client";
+ 
 Configuration config;
 
 void sendCandidate( const std::string &mid, int mlineindex, const std::string &sdp )
@@ -95,9 +97,14 @@ void sendCandidate( const std::string &mid, int mlineindex, const std::string &s
     json m;
     m["type"] = "candidate";
     m["candidate"] = desc;
-    m["from"] = from;
-    m["to"] = from;
-
+    
+    if(!from.empty())
+    {
+        m["from"] = from;
+        m["to"] = from;
+    }
+    
+    m["room"] = room;
     SInfo << "send:"  <<  sdp << "candidate to: "<< from<< std::endl;
     
     mysocket->emit("message", m);
@@ -114,9 +121,17 @@ void sendSdp( const std::string &sdp, const std::string &type   )
 
     json m;
     m["type"] = type;
+    
     m["desc"] = desc;
-    m["from"] =from;
-    m["to"] = from;
+    
+    
+    if(!from.empty())
+    {
+        m["from"] = from;
+        m["to"] = from;
+    }
+     
+    m["room"] = room;
     
     // smpl::Message m({ type, {
 
@@ -132,14 +147,16 @@ void sendSdp( const std::string &sdp, const std::string &type   )
 /// @param ws Websocket
 
 
+#ifndef localtesting
+
 void wsOnMessage(json const &m ) {
     
     
     std::string type;
-    std::string room;
+  //  std::string room;
     std::string to;
     std::string user;
-    std::string id ="server";
+   
 
     if (m.find("to") != m.end()) { to = m["to"].get<std::string>(); }
 
@@ -239,6 +256,18 @@ void wsOnMessage(json const &m ) {
     }
     
 }
+
+
+void initiate(std::string rm)
+{
+
+    room = rm;
+    id = "client"; /// hard coded the id for client(second participant), since it will have only one instance. Second instance should only have one instance, otherwise throw error. TBD 
+
+    clients.emplace(id, createPeerConnection(config,  id));
+}
+
+#endif
 
 int main(int argc, char **argv) 
 
