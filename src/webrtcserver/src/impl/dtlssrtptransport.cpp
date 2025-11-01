@@ -314,8 +314,11 @@ void DtlsSrtpTransport::postHandshake() {
 	// returns 1 on success, 0 or -1 on failure (OpenSSL API is a complete mess...)
 	if (SSL_export_keying_material(mSsl, material.data(), materialLen, label.c_str(), label.size(),
 	                               nullptr, 0, 0) <= 0)
+        {
+              PLOG_ERROR << "Failed to derive SRTP keys " << openssl::error_string(ERR_get_error());
 		throw std::runtime_error("Failed to derive SRTP keys: " +
 		                         openssl::error_string(ERR_get_error()));
+        }
 
 	// Order is client key, server key, client salt, and server salt
 	const unsigned char *clientKey = material.data();
@@ -345,12 +348,19 @@ void DtlsSrtpTransport::postHandshake() {
 	inbound.next = nullptr;
 
 	if (srtp_err_status_t err = srtp_add_stream(mSrtpIn, &inbound))
+        {
+                 PLOG_ERROR << " SRTP add inbound stream failed, status= " <<     to_string(static_cast<int>(err))  ;
+           
 		throw std::runtime_error("SRTP add inbound stream failed, status=" +
 		                         to_string(static_cast<int>(err)));
+        }
 
 	srtp_policy_t outbound = {};
 	if (srtp_crypto_policy_set_from_profile_for_rtp(&outbound.rtp, srtpProfile))
+        {       SError << "SRTP profile is not supported";
+                exit(0);
 		throw std::runtime_error("SRTP profile is not supported");
+         }
 	if (srtp_crypto_policy_set_from_profile_for_rtcp(&outbound.rtcp, srtpProfile))
 		throw std::runtime_error("SRTP profile is not supported");
 
@@ -361,8 +371,12 @@ void DtlsSrtpTransport::postHandshake() {
 	outbound.next = nullptr;
 
 	if (srtp_err_status_t err = srtp_add_stream(mSrtpOut, &outbound))
+        {
+               PLOG_ERROR << " SRTP add outbound stream failed, status= " <<     to_string(static_cast<int>(err))  ;
+             
 		throw std::runtime_error("SRTP add outbound stream failed, status=" +
 		                         to_string(static_cast<int>(err)));
+        }
 
 	mInitDone = true;
 }

@@ -14,7 +14,10 @@ size_t Channel::maxMessageSize() const { return 0; }
 
 size_t Channel::bufferedAmount() const { return impl()->bufferedAmount; }
 
-void Channel::onOpen(std::function<void()> callback) { impl()->openCallback = callback; }
+void Channel::onOpen(std::function<void()> callback) {
+    impl()->openCallback = callback; 
+
+}
 
 void Channel::onClosed(std::function<void()> callback) { impl()->closedCallback = callback; }
 

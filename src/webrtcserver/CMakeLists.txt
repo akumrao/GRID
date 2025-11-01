@@ -48,7 +48,8 @@ SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
 #set(MbedX509_LIBRARY ${WORKSPACE}/src/mbedtls/build/library)
 
 
-#set(USE_MBEDTLS 1)
+# set(ENABLE_OPENSSL 1) make sure ssl or mbedtl is set otherwise it will not work
+# set(USE_MBEDTLS 1) make sure ssl or mbedtl is set otherwise it will not work
 
 if (USE_GNUTLS AND USE_MBEDTLS)
 	message(FATAL_ERROR "Both USE_MBEDTLS and USE_GNUTLS cannot be enabled at the same time")
