@@ -1,9 +1,6 @@
 #ifndef TTYD_UTIL_H
 #define TTYD_UTIL_H
 
-#define lwsl_err printf
-#define lwsl_notice printf
-#define lwsl_warn printf
 
 #define container_of(ptr, type, member)                \
   ({                                                   \

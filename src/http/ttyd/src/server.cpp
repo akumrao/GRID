@@ -79,7 +79,7 @@ static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:f:6aSC:K:A:Wt:T:Om:oqBd
 static void print_help() {
     // clang-format off
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
-            "USAGE:\n"
+            "USAGE:  ./ttyd -W bash  then browse    http://localhost:8000/ \n"
             "    ttyd [options] <command> [<arguments...>]\n\n"
             "VERSION:\n"
             "    %s\n\n"
@@ -127,27 +127,27 @@ static void print_help() {
 }
 
 static void print_config() {
-    lwsl_notice("tty configuration:\n");
-    if (server->credential != NULL) lwsl_notice("  credential: %s\n", server->credential);
-    lwsl_notice("  start command: %s\n", server->command);
-    lwsl_notice("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
-    lwsl_notice("  terminal type: %s\n", server->terminal_type);
+    printf("tty configuration:\n");
+    if (server->credential != NULL) printf("  credential: %s\n", server->credential);
+    printf("  start command: %s\n", server->command);
+    printf("  close signal: %s (%d)\n", server->sig_name, server->sig_code);
+    printf("  terminal type: %s\n", server->terminal_type);
 //    if (endpoints.parent[0]) {
-//        lwsl_notice("endpoints:\n");
-//        lwsl_notice("  base-path: %s\n", endpoints.parent);
-//        lwsl_notice("  index    : %s\n", endpoints.index);
-//        lwsl_notice("  token    : %s\n", endpoints.token);
-//        lwsl_notice("  websocket: %s\n", endpoints.ws);
+//        printf("endpoints:\n");
+//        printf("  base-path: %s\n", endpoints.parent);
+//        printf("  index    : %s\n", endpoints.index);
+//        printf("  token    : %s\n", endpoints.token);
+//        printf("  websocket: %s\n", endpoints.ws);
 //    }
-    if (server->auth_header != NULL) lwsl_notice("  auth header: %s\n", server->auth_header);
-    if (server->check_origin) lwsl_notice("  check origin: true\n");
-    if (server->url_arg) lwsl_notice("  allow url arg: true\n");
-    if (server->max_clients > 0) lwsl_notice("  max clients: %d\n", server->max_clients);
-    if (server->once) lwsl_notice("  once: true\n");
-    if (server->exit_no_conn) lwsl_notice("  exit_no_conn: true\n");
-    if (server->index != NULL) lwsl_notice("  custom index.html: %s\n", server->index);
-    if (server->cwd != NULL) lwsl_notice("  working directory: %s\n", server->cwd);
-    if (!server->writable) lwsl_warn("The --writable option is not set, will start in readonly mode\n");
+    if (server->auth_header != NULL) printf("  auth header: %s\n", server->auth_header);
+    if (server->check_origin) printf("  check origin: true\n");
+    if (server->url_arg) printf("  allow url arg: true\n");
+    if (server->max_clients > 0) printf("  max clients: %d\n", server->max_clients);
+    if (server->once) printf("  once: true\n");
+    if (server->exit_no_conn) printf("  exit_no_conn: true\n");
+    if (server->index != NULL) printf("  custom index.html: %s\n", server->index);
+    if (server->cwd != NULL) printf("  working directory: %s\n", server->cwd);
+    if (!server->writable) printf("The --writable option is not set, will start in readonly mode\n");
 }
 
 static struct server *server_new(int argc, char **argv, int start) {
@@ -229,7 +229,7 @@ static void signal_cb(uv_signal_t *watcher, int signum) {
         case SIGINT:
         case SIGTERM:
             get_sig_name(watcher->signum, sig_name, sizeof (sig_name));
-            lwsl_notice("received signal: %s (%d), exiting...\n", sig_name, watcher->signum);
+            printf("received signal: %s (%d), exiting...\n", sig_name, watcher->signum);
             break;
         default:
             signal(SIGABRT, SIG_DFL);
@@ -243,7 +243,7 @@ static void signal_cb(uv_signal_t *watcher, int signum) {
 
     uv_stop(server->loop);
 
-    lwsl_notice("send ^C to force exit.\n");
+    printf("send ^C to force exit.\n");
 }
 
 static int parse_int(char *name, char *str) {
@@ -338,7 +338,7 @@ public:
 
         // check auth
         if (server->credential != NULL && !pss->authenticated && command != JSON_DATA) {
-            lwsl_warn("WS client not authenticated\n");
+            printf("WS client not authenticated\n");
             return;
         }
 
@@ -353,7 +353,7 @@ public:
                 if (!server->writable) break;
                 int err = pty_write(pss->process, pty_buf_init(pss->buffer + 1, pss->len - 1));
                 if (err) {
-                    lwsl_err("uv_write: %s (%s)\n", uv_err_name(err), uv_strerror(err));
+                    printf("uv_write: %s (%s)\n", uv_err_name(err), uv_strerror(err));
                     return;
                 }
                 break;
@@ -388,7 +388,7 @@ public:
 //                        if (token != NULL && !strcmp(token, server->credential))
 //                            pss->authenticated = true;
 //                        else
-//                            lwsl_warn("WS authentication failed with token: %s\n", token);
+//                            printf("WS authentication failed with token: %s\n", token);
 //                    }
 //                    if (!pss->authenticated) {
 //                        json_object_put(obj);
@@ -402,7 +402,7 @@ public:
             }
             default:
             {
-                lwsl_warn("ignored unknown message type: %c\n", command);
+                printf("ignored unknown message type: %c\n", command);
                 break;
             }
         }
@@ -440,7 +440,7 @@ public:
         if (pss->con == NULL) return;
 
         server->client_count--;
-        lwsl_notice("WS closed from %s, clients: %d\n", pss->address, server->client_count);
+        printf("WS closed from %s, clients: %d\n", pss->address, server->client_count);
         if (pss->buffer != NULL) free(pss->buffer);
         if (pss->pty_buf != NULL) pty_buf_free(pss->pty_buf);
         for (int i = 0; i < pss->argc; i++) {
@@ -451,13 +451,13 @@ public:
             ((pty_ctx_t *) pss->process->ctx)->ws_closed = true;
             if (process_running(pss->process)) {
                 pty_pause(pss->process);
-                lwsl_notice("killing process, pid: %d\n", pss->process->pid);
+                printf("killing process, pid: %d\n", pss->process->pid);
                 pty_kill(pss->process, server->sig_code);
             }
         }
 
         if ((server->once || server->exit_no_conn) && server->client_count == 0) {
-            lwsl_notice("exiting due to the --once/--exit-no-conn option.\n");
+            printf("exiting due to the --once/--exit-no-conn option.\n");
             force_exit = true;
             // lws_cancel_service(context);
             exit(0);
@@ -784,31 +784,10 @@ int main(int argc, char **argv) {
     //  lws_set_log_level(debug_level, NULL);
 
     char server_hdr[128] = "";
-    sprintf(server_hdr, "ttyd/%s (libwebsockets/%s)", TTYD_VERSION, "3.2.3");
+    sprintf(server_hdr, "ttyd/%s /%s)", TTYD_VERSION, "3.2.3");
     //  info.server_string = server_hdr; //arvind
 
-    //#if LWS_LIBRARY_VERSION_NUMBER < 4000000
-    //  info.ws_ping_pong_interval = 5;
-    //#else
-    //  info.retry_and_idle_policy = &retry;
-    //#endif
 
-    //  if (strlen(iface) > 0) {
-    //    info.iface = iface;
-    //    if (endswith(info.iface, ".sock") || endswith(info.iface, ".socket")) {
-    //#if defined(LWS_USE_UNIX_SOCK) || defined(LWS_WITH_UNIX_SOCK)
-    //      info.options |= LWS_SERVER_OPTION_UNIX_SOCK;
-    //      info.port = 0;  // warmcat/libwebsockets#1985
-    //      strncpy(server->socket_path, info.iface, sizeof(server->socket_path) - 1);
-    //      if (strlen(socket_owner) > 0) {
-    //        info.unix_socket_perms = socket_owner;
-    //      }
-    //#else
-    //      fprintf(stderr, "libwebsockets is not compiled with UNIX domain socket support");
-    //      return -1;
-    //#endif
-    //    }
-    //  }
 
 #if defined(LWS_OPENSSL_SUPPORT) || defined(LWS_WITH_TLS)
     if (ssl) {
@@ -825,7 +804,7 @@ int main(int argc, char **argv) {
     }
 #endif
 
-    lwsl_notice("ttyd %s (libwebsockets %s)\n", TTYD_VERSION, "3.2.3");
+    printf("ttyd %s)\n", TTYD_VERSION );
     print_config();
 
     // lws custom header requires lower case name, and terminating :
@@ -842,29 +821,7 @@ int main(int argc, char **argv) {
     // info.options |= LWS_SERVER_OPTION_EXPLICIT_VHOSTS;
 
 
-#if 0 
-    // arvind
-    context = lws_create_context(&info);
-    if (context == NULL) {
-        lwsl_err("libwebsockets context creation failed\n");
-        return 1;
-    }
 
-    struct lws_vhost *vhost = lws_create_vhost(context, &info);
-    if (vhost == NULL) {
-        lwsl_err("libwebsockets vhost creation failed\n");
-        return 1;
-    }
-    int port = lws_get_vhost_listen_port(vhost);
-    lwsl_notice(" Listening on port: %d\n", port);
-
-    if (browser) {
-        char url[30];
-        sprintf(url, "%s://localhost:%d", ssl ? "https" : "http", port);
-        open_uri(url);
-    }
-
-#endif
 
 #define sig_count 2
     int sig_nums[] = {SIGINT, SIGTERM};
@@ -895,7 +852,7 @@ int main(int argc, char **argv) {
     //    
     //     if (process_running(pss->process)) {
     //          pty_pause(pss->process);
-    //          lwsl_notice("killing process, pid: %d\n", pss->process->pid);
+    //          printf("killing process, pid: %d\n", pss->process->pid);
     //          pty_kill(pss->process, server->sig_code);
     //        }
     //    

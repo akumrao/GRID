@@ -1,6 +1,4 @@
 #include <errno.h>
-//#include <json.h>
-//#include <libwebsockets.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,7 +7,6 @@
 #include "pty.h"
 #include "server.h"
 #include "utils.h"
-//#include  <sys/socket.h>
 #include <unistd.h>
 
 #include "http/websocket.h"
@@ -67,7 +64,7 @@ static void wsi_output(base::net::Listener* con, pty_buf_t *buf) {
 
   if (lws_write(con, (unsigned char *)ptr, n, LWS_WRITE_BINARY) < n) 
   {
-//    lwsl_err("write OUTPUT to WS\n");
+//    printf("write OUTPUT to WS\n");
   }
   // arvind
 
@@ -104,7 +101,7 @@ int lws_callback_on_writable(	base::net::Listener* conn)
             return 0;
         }
         if (send_initial_message(con, pss->initial_cmd_index) < 0) {
-            lwsl_err("failed to send initial message, index: %d\n", pss->initial_cmd_index);
+            printf("failed to send initial message, index: %d\n", pss->initial_cmd_index);
             lws_close_reason(con, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION);
             return -1;
         }
@@ -260,11 +257,11 @@ extern bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows)
   if (columns > 0) process->columns = columns;
   if (rows > 0) process->rows = rows;
   if (pty_spawn(process, process_read_cb, process_exit_cb) != 0) {
-    lwsl_err("pty_spawn: %d (%s)\n", errno, strerror(errno));
+    printf("pty_spawn: %d (%s)\n", errno, strerror(errno));
     process_free(process);
     return false;
   }
-  lwsl_notice("started process, pid: %d\n", process->pid);
+  printf("started process, pid: %d\n", process->pid);
   pss->process = process;
   lws_callback_on_writable(pss->con); // arvind
 
@@ -297,11 +294,11 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
   switch (reason) {
     case LWS_CALLBACK_FILTER_PROTOCOL_CONNECTION:
       if (server->once && server->client_count > 0) {
-        lwsl_warn("refuse to serve WS client due to the --once option.\n");
+        printf("refuse to serve WS client due to the --once option.\n");
         return 1;
       }
       if (server->max_clients > 0 && server->client_count == server->max_clients) {
-        lwsl_warn("refuse to serve WS client due to the --max-clients option.\n");
+        printf("refuse to serve WS client due to the --max-clients option.\n");
         return 1;
       }
       if (!check_auth(wsi, pss)) return 1;
@@ -311,12 +308,12 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       if (n <= 0) n = lws_hdr_copy(wsi, pss->path, sizeof(pss->path), WSI_TOKEN_HTTP_COLON_PATH);
 #endif
       if (strncmp(pss->path, endpoints.ws, n) != 0) {
-        lwsl_warn("refuse to serve WS client for illegal ws path: %s\n", pss->path);
+        printf("refuse to serve WS client for illegal ws path: %s\n", pss->path);
         return 1;
       }
 
       if (server->check_origin && !check_host_origin(wsi)) {
-        lwsl_warn(
+        printf(
             "refuse to serve WS client from different origin due to the "
             "--check-origin option.\n");
         return 1;
@@ -342,7 +339,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       server->client_count++;
 
       lws_get_peer_simple(lws_get_network_wsi(wsi), pss->address, sizeof(pss->address));
-      lwsl_notice("WS   %s - %s, clients: %d\n", pss->path, pss->address, server->client_count);
+      printf("WS   %s - %s, clients: %d\n", pss->path, pss->address, server->client_count);
       break;
 
     case LWS_CALLBACK_SERVER_WRITEABLE:
@@ -353,7 +350,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           break;
         }
         if (send_initial_message(wsi, pss->initial_cmd_index) < 0) {
-          lwsl_err("failed to send initial message, index: %d\n", pss->initial_cmd_index);
+          printf("failed to send initial message, index: %d\n", pss->initial_cmd_index);
           lws_close_reason(wsi, LWS_CLOSE_STATUS_UNEXPECTED_CONDITION, NULL, 0);
           return -1;
         }
@@ -390,7 +387,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
 
       // check auth
       if (server->credential != NULL && !pss->authenticated && command != JSON_DATA) {
-        lwsl_warn("WS client not authenticated\n");
+        printf("WS client not authenticated\n");
         return 1;
       }
 
@@ -404,7 +401,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           if (!server->writable) break;
           int err = pty_write(pss->process, pty_buf_init(pss->buffer + 1, pss->len - 1));
           if (err) {
-            lwsl_err("uv_write: %s (%s)\n", uv_err_name(err), uv_strerror(err));
+            printf("uv_write: %s (%s)\n", uv_err_name(err), uv_strerror(err));
             return -1;
           }
           break;
@@ -432,7 +429,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
               if (token != NULL && !strcmp(token, server->credential))
                 pss->authenticated = true;
               else
-                lwsl_warn("WS authentication failed with token: %s\n", token);
+                printf("WS authentication failed with token: %s\n", token);
             }
             if (!pss->authenticated) {
               json_object_put(obj);
@@ -444,7 +441,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
           if (!spawn_process(pss, columns, rows)) return 1;
           break;
         default:
-          lwsl_warn("ignored unknown message type: %c\n", command);
+          printf("ignored unknown message type: %c\n", command);
           break;
       }
 
@@ -458,7 +455,7 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
       if (pss->wsi == NULL) break;
 
       server->client_count--;
-      lwsl_notice("WS closed from %s, clients: %d\n", pss->address, server->client_count);
+      printf("WS closed from %s, clients: %d\n", pss->address, server->client_count);
       if (pss->buffer != NULL) free(pss->buffer);
       if (pss->pty_buf != NULL) pty_buf_free(pss->pty_buf);
       for (int i = 0; i < pss->argc; i++) {
@@ -469,13 +466,13 @@ int callback_tty(struct lws *wsi, enum lws_callback_reasons reason, void *user, 
         ((pty_ctx_t *)pss->process->ctx)->ws_closed = true;
         if (process_running(pss->process)) {
           pty_pause(pss->process);
-          lwsl_notice("killing process, pid: %d\n", pss->process->pid);
+          printf("killing process, pid: %d\n", pss->process->pid);
           pty_kill(pss->process, server->sig_code);
         }
       }
 
       if ((server->once || server->exit_no_conn) && server->client_count == 0) {
-        lwsl_notice("exiting due to the --once/--exit-no-conn option.\n");
+        printf("exiting due to the --once/--exit-no-conn option.\n");
         force_exit = true;
         lws_cancel_service(context);
         exit(0);

@@ -11409,7 +11409,7 @@
                             return (e.returnValue = t), t;
                         }
                         openTerminal() {
-                            this.terminal && this.terminal.dispose(), (this.socket = new WebSocket(this.props.url, ["tty"])), (this.terminal = new s.Terminal(this.props.options));
+                            this.terminal && this.terminal.dispose(), (this.socket = new WebSocket(this.props.url)), (this.terminal = new s.Terminal(this.props.options));
                             const { socket: e, terminal: t, container: r, fitAddon: i, overlayAddon: n } = this;
                             (window.term = t),
                                 (window.term.fit = () => {

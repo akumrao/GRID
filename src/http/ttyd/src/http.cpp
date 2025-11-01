@@ -1,4 +1,4 @@
-//#include <libwebsockets.h>
+
 #include <string.h>
 #include <zlib.h>
 
@@ -90,7 +90,7 @@ static size_t html_cache_len = 0;
 //  char rip[50];
 //
 //  lws_get_peer_simple(lws_get_network_wsi(wsi), rip, sizeof(rip));
-//  lwsl_notice("HTTP %s - %s\n", path, rip);
+//  printf("HTTP %s - %s\n", path, rip);
 //}
 #if 0
 int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
@@ -227,7 +227,7 @@ int callback_http(struct lws *wsi, enum lws_callback_reasons reason, void *user,
         int err = X509_STORE_CTX_get_error((X509_STORE_CTX *)user);
         int depth = X509_STORE_CTX_get_error_depth((X509_STORE_CTX *)user);
         const char *msg = X509_verify_cert_error_string(err);
-        lwsl_err("client certificate verification error: %s (%d), depth: %d\n", msg, err, depth);
+        printf("client certificate verification error: %s (%d), depth: %d\n", msg, err, depth);
         return 1;
       }
       break;
