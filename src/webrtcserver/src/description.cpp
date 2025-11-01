@@ -739,32 +739,32 @@ void Description::Entry::parseSdpLine(const string& line) {
 		const string& attr = line.substr(2);
 		std::pair<const string&, const string&> pr = parse_pair(attr);
 
-//		if (key == "mid") {
-//			mMid = value;
-//		} else if (key == "extmap") {
-//			auto id = Description::Media::ExtMap::parseId(value);
-//			auto it = mExtMaps.find(id);
-//			if (it == mExtMaps.end())
-//				it = mExtMaps.insert(std::make_pair(id, Description::Media::ExtMap(value))).first;
-//			else
-//				it->second.setDescription(value);
-//
-//		} else if (attr == "sendonly")
-//			mDirection = Direction::SendOnly;
-//		else if (attr == "recvonly")
-//			mDirection = Direction::RecvOnly;
-//		else if (pr.first == "sendrecv")
-//			mDirection = Direction::SendRecv;
-//		else if (pr.first == "inactive")
-//			mDirection = Direction::Inactive;
-//		else if (pr.first == "bundle-only") {
-//			// RFC 8843: When an offerer generates a subsequent offer, in which it wants to disable
-//			// a bundled "m=" section from a BUNDLE group, the offerer [...] MUST NOT assign an SDP
-//			// 'bundle-only' attribute to the "m=" section.
-//			mIsRemoved = false;
-//		} else {
-//			mAttributes.emplace_back(attr);
-//		}
+		if (pr.first  == "mid") {
+			mMid = pr.second;
+		} else if (pr.first == "extmap") {
+			auto id = Description::Media::ExtMap::parseId(pr.second);
+			auto it = mExtMaps.find(id);
+			if (it == mExtMaps.end())
+				it = mExtMaps.insert(std::make_pair(id, Description::Media::ExtMap(pr.second))).first;
+			else
+				it->second.setDescription(pr.second);
+
+		} else if (attr == "sendonly")
+			mDirection = Direction::SendOnly;
+		else if (attr == "recvonly")
+			mDirection = Direction::RecvOnly;
+		else if (pr.first == "sendrecv")
+			mDirection = Direction::SendRecv;
+		else if (pr.first == "inactive")
+			mDirection = Direction::Inactive;
+		else if (pr.first == "bundle-only") {
+			// RFC 8843: When an offerer generates a subsequent offer, in which it wants to disable
+			// a bundled "m=" section from a BUNDLE group, the offerer [...] MUST NOT assign an SDP
+			// 'bundle-only' attribute to the "m=" section.
+			mIsRemoved = false;
+		} else {
+			mAttributes.emplace_back(attr);
+		}
 	}
 }
 
@@ -786,25 +786,25 @@ void Description::Entry::ExtMap::setDescription(const string& description) {
 	if (uriStart == string::npos)
 		throw std::invalid_argument("Invalid description for extmap");
 
-	const string_view idAndDirection = description.substr(0, uriStart);
+	const string idAndDirection = description.substr(0, uriStart);
 	const size_t idSplit = idAndDirection.find('/');
-//	if (idSplit == string::npos) {
-//		this->id = to_integer<int>(idAndDirection);
-//	} else {
-//		this->id = to_integer<int>(idAndDirection.substr(0, idSplit));
-//
-//		const string_view directionStr = idAndDirection.substr(idSplit + 1);
-//		if (directionStr == "sendonly")
-//			this->direction = Direction::SendOnly;
-//		else if (directionStr == "recvonly")
-//			this->direction = Direction::RecvOnly;
-//		else if (directionStr == "sendrecv")
-//			this->direction = Direction::SendRecv;
-//		else if (directionStr == "inactive")
-//			this->direction = Direction::Inactive;
-//		else
-//			throw std::invalid_argument("Invalid direction for extmap");
-//	}
+	if (idSplit == string::npos) {
+		this->id = to_integer<int>(idAndDirection);
+	} else {
+		this->id = to_integer<int>(idAndDirection.substr(0, idSplit));
+
+		const string_view directionStr = idAndDirection.substr(idSplit + 1);
+		if (directionStr == "sendonly")
+			this->direction = Direction::SendOnly;
+		else if (directionStr == "recvonly")
+			this->direction = Direction::RecvOnly;
+		else if (directionStr == "sendrecv")
+			this->direction = Direction::SendRecv;
+		else if (directionStr == "inactive")
+			this->direction = Direction::Inactive;
+		else
+			throw std::invalid_argument("Invalid direction for extmap");
+	}
 
 	const string_view uriAndAttributes = description.substr(uriStart + 1);
 	const size_t attributeSplit = uriAndAttributes.find(' ');
@@ -1114,60 +1114,60 @@ string Description::Media::generateSdpLines(const string& eol) const {
 }
 
 void Description::Media::parseSdpLine(const string& line) {
-//	if (match_prefix(line, "a=")) {
-//		string_view attr = line.substr(2);
-//		auto [key, value] = parse_pair(attr);
-//
-//		if (key == "rtpmap") {
-//			auto pt = Description::Media::RtpMap::parsePayloadType(value);
-//			auto it = mRtpMaps.find(pt);
-//			if (it == mRtpMaps.end())
-//				it = mRtpMaps.insert(std::make_pair(pt, Description::Media::RtpMap(value))).first;
-//			else
-//				it->second.setDescription(value);
-//
-//		} else if (key == "rtcp-fb") {
-//			size_t p = value.find(' ');
-//			int pt = to_integer<int>(value.substr(0, p));
-//			auto it = mRtpMaps.find(pt);
-//			if (it == mRtpMaps.end())
-//				it = mRtpMaps.insert(std::make_pair(pt, Description::Media::RtpMap(pt))).first;
-//
-//			it->second.rtcpFbs.emplace_back(value.substr(p + 1));
-//
-//		} else if (key == "fmtp") {
-//			size_t p = value.find(' ');
-//			int pt = to_integer<int>(value.substr(0, p));
-//			auto it = mRtpMaps.find(pt);
-//			if (it == mRtpMaps.end())
-//				it = mRtpMaps.insert(std::make_pair(pt, Description::Media::RtpMap(pt))).first;
-//
-//			it->second.fmtps.emplace_back(value.substr(p + 1));
-//
-//		} else if (key == "rtcp-mux") {
-//			// always added
-//
-//		} else if (key == "ssrc") {
-//			auto ssrc = to_integer<uint32_t>(value);
-//			if (!hasSSRC(ssrc))
-//				mSsrcs.emplace_back(ssrc);
-//
-//			auto cnamePos = value.find("cname:");
-//			if (cnamePos != string::npos) {
-//				auto cname = value.substr(cnamePos + 6);
-//				mCNameMap.emplace(ssrc, cname);
-//			}
-//			mAttributes.emplace_back(attr);
-//
-//		} else {
-//			Entry::parseSdpLine(line);
-//		}
-//
-//	} else if (match_prefix(line, "b=AS")) {
-//		mBas = to_integer<int>(line.substr(line.find(':') + 1));
-//	} else {
-//		Entry::parseSdpLine(line);
-//	}
+	if (match_prefix(line, "a=")) {
+		string  attr = line.substr(2);
+		std::pair<const string, const string> pr = parse_pair(attr);
+
+		if (pr.first == "rtpmap") {
+			auto pt = Description::Media::RtpMap::parsePayloadType(pr.second);
+			auto it = mRtpMaps.find(pt);
+			if (it == mRtpMaps.end())
+				it = mRtpMaps.insert(std::make_pair(pt, Description::Media::RtpMap(pr.second))).first;
+			else
+				it->second.setDescription(pr.second);
+
+		} else if (pr.first== "rtcp-fb") {
+			size_t p = pr.second.find(' ');
+			int pt = to_integer<int>(pr.second.substr(0, p));
+			auto it = mRtpMaps.find(pt);
+			if (it == mRtpMaps.end())
+				it = mRtpMaps.insert(std::make_pair(pt, Description::Media::RtpMap(pt))).first;
+
+			it->second.rtcpFbs.emplace_back(pr.second.substr(p + 1));
+
+		} else if (pr.first == "fmtp") {
+			size_t p = pr.second.find(' ');
+			int pt = to_integer<int>(pr.second.substr(0, p));
+			auto it = mRtpMaps.find(pt);
+			if (it == mRtpMaps.end())
+				it = mRtpMaps.insert(std::make_pair(pt, Description::Media::RtpMap(pt))).first;
+
+			it->second.fmtps.emplace_back(pr.second.substr(p + 1));
+
+		} else if (pr.first == "rtcp-mux") {
+			// always added
+
+		} else if (pr.first == "ssrc") {
+			auto ssrc = to_integer<uint32_t>(pr.second);
+			if (!hasSSRC(ssrc))
+				mSsrcs.emplace_back(ssrc);
+
+			auto cnamePos = pr.second.find("cname:");
+			if (cnamePos != string::npos) {
+				auto cname = pr.second.substr(cnamePos + 6);
+				mCNameMap.emplace(ssrc, cname);
+			}
+			mAttributes.emplace_back(attr);
+
+		} else {
+			Entry::parseSdpLine(line);
+		}
+
+	} else if (match_prefix(line, "b=AS")) {
+		mBas = to_integer<int>(line.substr(line.find(':') + 1));
+	} else {
+		Entry::parseSdpLine(line);
+	}
 }
 
 Description::Media::RtpMap::RtpMap(int payloadType) {
@@ -1175,38 +1175,38 @@ Description::Media::RtpMap::RtpMap(int payloadType) {
 	this->clockRate = 0;
 }
 
-//int Description::Media::RtpMap::parsePayloadType(string_view mline) {
-//	size_t p = mline.find(' ');
-//	return to_integer<int>(mline.substr(0, p));
-//}
+int Description::Media::RtpMap::parsePayloadType(string mline) {
+	size_t p = mline.find(' ');
+	return to_integer<int>(mline.substr(0, p));
+}
 
-Description::Media::RtpMap::RtpMap(string_view description) { setDescription(description); }
+Description::Media::RtpMap::RtpMap(string description) { setDescription(description); }
 
-void Description::Media::RtpMap::setDescription(string_view description) {
+void Description::Media::RtpMap::setDescription(string description) {
 	size_t p = description.find(' ');
 	if (p == string::npos)
 		throw std::invalid_argument("Invalid format description for rtpmap");
 
-//	this->payloadType = to_integer<int>(description.substr(0, p));
-//
-//	string_view line = description.substr(p + 1);
-//	size_t spl = line.find('/');
-//	if (spl == string::npos)
-//		throw std::invalid_argument("Invalid format description for rtpmap");
-//
-//	this->format = line.substr(0, spl);
-//
-//	line = line.substr(spl + 1);
-//	spl = line.find('/');
-//	if (spl == string::npos) {
-//		spl = line.find(' ');
-//	}
-//	if (spl == string::npos)
-//		this->clockRate = to_integer<int>(line);
-//	else {
-//		this->clockRate = to_integer<int>(line.substr(0, spl));
-//		this->encParams = line.substr(spl + 1);
-//	}
+	this->payloadType = to_integer<int>(description.substr(0, p));
+
+	string line = description.substr(p + 1);
+	size_t spl = line.find('/');
+	if (spl == string::npos)
+		throw std::invalid_argument("Invalid format description for rtpmap");
+
+	this->format = line.substr(0, spl);
+
+	line = line.substr(spl + 1);
+	spl = line.find('/');
+	if (spl == string::npos) {
+		spl = line.find(' ');
+	}
+	if (spl == string::npos)
+		this->clockRate = to_integer<int>(line);
+	else {
+		this->clockRate = to_integer<int>(line.substr(0, spl));
+		this->encParams = line.substr(spl + 1);
+	}
 }
 
 void Description::Media::RtpMap::addFeedback(string fb) {
