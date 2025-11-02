@@ -494,11 +494,11 @@ int uv_sem_trywait(uv_sem_t* sem) {
 static uv_once_t glibc_version_check_once = UV_ONCE_INIT;
 static int platform_needs_custom_semaphore = 0;
 
-static void glibc_version_check(void) { //risky code changes
-  // const char* version = gnu_get_libc_version();
-  // platform_needs_custom_semaphore =
-  //     version[0] == '2' && version[1] == '.' &&
-  //     atoi(version + 2) < 21;
+static void glibc_version_check(void) { // risky code changes
+  const char* version = gnu_get_libc_version();
+  platform_needs_custom_semaphore =
+      version[0] == '2' && version[1] == '.' &&
+      atoi(version + 2) < 21;
 }
 
 #elif defined(__MVS__)

@@ -40,18 +40,53 @@ using namespace base::net;
 #define SET_WINDOW_TITLE '1'
 #define SET_PREFERENCES '2'
 
+uv_tty_t tty;
 
+void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
+    buf->base = (char*) malloc(suggested_size);
+    buf->len = suggested_size;
+}
+
+void on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
+    if (nread > 0) {
+        // Process the received character(s)
+        printf("Received: %s\n", buf->base);
+        // If you want to stop reading after one character:
+        // uv_read_stop(stream);
+        // uv_close((uv_handle_t*) stream, NULL);
+    } else if (nread < 0) {
+        if (nread != UV_EOF) {
+            fprintf(stderr, "Read error: %s\n", uv_strerror(nread));
+        }
+        uv_close((uv_handle_t*) stream, NULL);
+    }
+    // Free the buffer if it was allocated by the allocator callback
+    if (buf->base) {
+        free(buf->base);
+    }
+}
 
 int main(int argc, char** argv) {
 
     //Logger::instance().add(new RemoteChannel("Remote", Level::Remote, "127.0.0.1", 6000));
 
-    Logger::instance().add(new ConsoleChannel("Trace", Level::Trace));
+    Logger::instance().add(new RotatingFileChannel("test", "/tmp/test", Level::Trace, "log", 10));
+    
+    //Logger::instance().add(new ConsoleChannel("Trace", Level::Trace));
   
 
 
  {
         Application app;
+        
+        
+        uv_tty_init(app.uvGetLoop(), &tty, STDIN_FILENO, 1); // 1 for readable
+        uv_tty_set_mode(&tty, UV_TTY_MODE_RAW); // Set raw mode for unbuffered input
+
+        uv_read_start((uv_stream_t*)&tty, alloc_buffer, on_read);
+
+        printf("Press a key (Ctrl+C to exit):\n");
+    
 
         // ClientConnecton *conn = new HttpClient("ws", "desk", 8000, "");
 
@@ -125,7 +160,7 @@ int main(int argc, char** argv) {
                 switch (command) {
                 case OUTPUT:
                 {
-                    printf("%s", data+1 );
+                    printf("%s", &data[1] );
                     break;
                 }
                 case SET_WINDOW_TITLE:
@@ -187,6 +222,9 @@ int main(int argc, char** argv) {
 
 
         app.run();
+        
+        uv_tty_reset_mode(); // Reset TTY mode before exiting
+          
     }
 
 
