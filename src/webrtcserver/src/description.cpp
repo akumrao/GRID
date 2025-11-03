@@ -199,7 +199,9 @@ std::vector<string> Description::iceOptions() const { return mIceOptions; }
 
 string Description::icePwd() const { return desc.ice_pwd; }
 
-CertificateFingerprint Description::fingerprint() const { return mFingerprint; }
+CertificateFingerprint Description::fingerprint() const {
+    return mFingerprint;
+}
 
 bool Description::ended() const { return mEnded; }
 

@@ -22,7 +22,7 @@
 
 //#define localtesting 1
 
-#define VIDEOMEDIA 1
+//#define VIDEOMEDIA 1
 
 using namespace rtc;
 using namespace std;
