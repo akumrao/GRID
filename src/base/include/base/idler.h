@@ -47,8 +47,8 @@ protected:
 };
 
 
-} // namespace scy
+} 
 
 
-#endif // SCY_Idler_H
+#endif // Idler_H
 
