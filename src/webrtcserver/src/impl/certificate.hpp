@@ -37,10 +37,8 @@ public:
 private:
 	const init_token mInitToken = Init::Instance().token();
 
-#if USE_GNUTLS
-	Certificate(shared_ptr<gnutls_certificate_credentials_t> creds);
-	const shared_ptr<gnutls_certificate_credentials_t> mCredentials;
-#elif USE_MBEDTLS
+
+#if USE_MBEDTLS
 	const shared_ptr<mbedtls_x509_crt> mCrt;
 	const shared_ptr<mbedtls_pk_context> mPk;
 #else

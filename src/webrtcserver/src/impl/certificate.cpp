@@ -13,161 +13,9 @@
 
 namespace rtc::impl {
 
-#if USE_GNUTLS
 
-Certificate Certificate::FromString(string crt_pem, string key_pem) {
-	PLOG_DEBUG << "Importing certificate from PEM string (GnuTLS)";
 
-	shared_ptr<gnutls_certificate_credentials_t> creds(gnutls::new_credentials(),
-	                                                   gnutls::free_credentials);
-	gnutls_datum_t crt_datum = gnutls::make_datum(crt_pem.data(), crt_pem.size());
-	gnutls_datum_t key_datum = gnutls::make_datum(key_pem.data(), key_pem.size());
-	gnutls::check(
-	    gnutls_certificate_set_x509_key_mem(*creds, &crt_datum, &key_datum, GNUTLS_X509_FMT_PEM),
-	    "Unable to import PEM certificate and key");
-
-	return Certificate(std::move(creds));
-}
-
-Certificate Certificate::FromFile(const string &crt_pem_file, const string &key_pem_file,
-                                  const string &pass) {
-	PLOG_DEBUG << "Importing certificate from PEM file (GnuTLS): " << crt_pem_file;
-
-	shared_ptr<gnutls_certificate_credentials_t> creds(gnutls::new_credentials(),
-	                                                   gnutls::free_credentials);
-	gnutls::check(gnutls_certificate_set_x509_key_file2(*creds, crt_pem_file.c_str(),
-	                                                    key_pem_file.c_str(), GNUTLS_X509_FMT_PEM,
-	                                                    pass.c_str(), 0),
-	              "Unable to import PEM certificate and key from file");
-
-	return Certificate(std::move(creds));
-}
-
-Certificate Certificate::Generate(CertificateType type, const string &commonName) {
-	PLOG_DEBUG << "Generating certificate (GnuTLS)";
-
-	using namespace gnutls;
-	unique_ptr<gnutls_x509_crt_t, decltype(&free_crt)> crt(new_crt(), free_crt);
-	unique_ptr<gnutls_x509_privkey_t, decltype(&free_privkey)> privkey(new_privkey(), free_privkey);
-
-	switch (type) {
-	// RFC 8827 WebRTC Security Architecture 6.5. Communications Security
-	// All implementations MUST support DTLS 1.2 with the TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
-	// cipher suite and the P-256 curve
-	// See https://www.rfc-editor.org/rfc/rfc8827.html#section-6.5
-	case CertificateType::Default:
-	case CertificateType::Ecdsa: {
-		gnutls::check(gnutls_x509_privkey_generate(*privkey, GNUTLS_PK_ECDSA,
-		                                           GNUTLS_CURVE_TO_BITS(GNUTLS_ECC_CURVE_SECP256R1),
-		                                           0),
-		              "Unable to generate ECDSA P-256 key pair");
-		break;
-	}
-	case CertificateType::Rsa: {
-		const unsigned int bits = 2048;
-		gnutls::check(gnutls_x509_privkey_generate(*privkey, GNUTLS_PK_RSA, bits, 0),
-		              "Unable to generate RSA key pair");
-		break;
-	}
-	default:
-		throw std::invalid_argument("Unknown certificate type");
-	}
-
-	using namespace std::chrono;
-	auto now = time_point_cast<seconds>(system_clock::now());
-	gnutls_x509_crt_set_activation_time(*crt, (now - hours(1)).time_since_epoch().count());
-	gnutls_x509_crt_set_expiration_time(*crt, (now + hours(24 * 365)).time_since_epoch().count());
-	gnutls_x509_crt_set_version(*crt, 1);
-	gnutls_x509_crt_set_key(*crt, *privkey);
-	gnutls_x509_crt_set_dn_by_oid(*crt, GNUTLS_OID_X520_COMMON_NAME, 0, commonName.data(),
-	                              commonName.size());
-
-	const size_t serialSize = 16;
-	char serial[serialSize];
-	gnutls_rnd(GNUTLS_RND_NONCE, serial, serialSize);
-	gnutls_x509_crt_set_serial(*crt, serial, serialSize);
-
-	gnutls::check(gnutls_x509_crt_sign2(*crt, *crt, *privkey, GNUTLS_DIG_SHA256, 0),
-	              "Unable to auto-sign certificate");
-
-	return Certificate(*crt, *privkey);
-}
-
-Certificate::Certificate(gnutls_x509_crt_t crt, gnutls_x509_privkey_t privkey)
-    : mCredentials(gnutls::new_credentials(), gnutls::free_credentials),
-      mFingerprint(make_fingerprint(crt, CertificateFingerprint::Algorithm::Sha256)) {
-
-	gnutls::check(gnutls_certificate_set_x509_key(*mCredentials, &crt, 1, privkey),
-	              "Unable to set certificate and key pair in credentials");
-}
-
-Certificate::Certificate(shared_ptr<gnutls_certificate_credentials_t> creds)
-    : mCredentials(std::move(creds)),
-      mFingerprint(make_fingerprint(*mCredentials, CertificateFingerprint::Algorithm::Sha256)) {}
-
-gnutls_certificate_credentials_t Certificate::credentials() const { return *mCredentials; }
-
-string make_fingerprint(gnutls_certificate_credentials_t credentials,
-                        CertificateFingerprint::Algorithm fingerprintAlgorithm) {
-	auto new_crt_list = [credentials]() -> gnutls_x509_crt_t * {
-		gnutls_x509_crt_t *crt_list = nullptr;
-		unsigned int crt_list_size = 0;
-		gnutls::check(gnutls_certificate_get_x509_crt(credentials, 0, &crt_list, &crt_list_size));
-		assert(crt_list_size == 1);
-		return crt_list;
-	};
-
-	auto free_crt_list = [](gnutls_x509_crt_t *crt_list) {
-		gnutls_x509_crt_deinit(crt_list[0]);
-		gnutls_free(crt_list);
-	};
-
-	unique_ptr<gnutls_x509_crt_t, decltype(free_crt_list)> crt_list(new_crt_list(), free_crt_list);
-
-	return make_fingerprint(*crt_list, fingerprintAlgorithm);
-}
-
-string make_fingerprint(gnutls_x509_crt_t crt,
-                        CertificateFingerprint::Algorithm fingerprintAlgorithm) {
-	const size_t size = CertificateFingerprint::AlgorithmSize(fingerprintAlgorithm);
-	std::vector<unsigned char> buffer(size);
-	size_t len = size;
-
-	gnutls_digest_algorithm_t hashFunc;
-	switch (fingerprintAlgorithm) {
-	case CertificateFingerprint::Algorithm::Sha1:
-		hashFunc = GNUTLS_DIG_SHA1;
-		break;
-	case CertificateFingerprint::Algorithm::Sha224:
-		hashFunc = GNUTLS_DIG_SHA224;
-		break;
-	case CertificateFingerprint::Algorithm::Sha256:
-		hashFunc = GNUTLS_DIG_SHA256;
-		break;
-	case CertificateFingerprint::Algorithm::Sha384:
-		hashFunc = GNUTLS_DIG_SHA384;
-		break;
-	case CertificateFingerprint::Algorithm::Sha512:
-		hashFunc = GNUTLS_DIG_SHA512;
-		break;
-	default:
-		throw std::invalid_argument("Unknown fingerprint algorithm");
-	}
-
-	gnutls::check(gnutls_x509_crt_get_fingerprint(crt, hashFunc, buffer.data(), &len),
-	              "X509 fingerprint error");
-
-	std::ostringstream oss;
-	oss << std::hex << std::uppercase << std::setfill('0');
-	for (size_t i = 0; i < len; ++i) {
-		if (i)
-			oss << std::setw(1) << ':';
-		oss << std::setw(2) << unsigned(buffer.at(i));
-	}
-	return oss.str();
-}
-
-#elif USE_MBEDTLS
+#if USE_MBEDTLS
 string make_fingerprint(mbedtls_x509_crt *crt,
                         CertificateFingerprint::Algorithm fingerprintAlgorithm) {
 	const int size = CertificateFingerprint::AlgorithmSize(fingerprintAlgorithm);
@@ -581,11 +429,11 @@ string make_fingerprint(X509 *x509, CertificateFingerprint::Algorithm fingerprin
 
 #endif
 
-// Common for GnuTLS, Mbed TLS, and OpenSSL
+// Common for  Mbed TLS, and OpenSSL
 
 future_certificate_ptr make_certificate(CertificateType type) {
 	return ThreadPool::Instance().enqueue([type, token = Init::Instance().token()]() {
-		return std::make_shared<Certificate>(Certificate::Generate(type, "libdatachannel"));
+		return std::make_shared<Certificate>(Certificate::Generate(type, "datachannel"));
 	});
 }
 
