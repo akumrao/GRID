@@ -42,38 +42,6 @@ using namespace base::net;
 
 ClientConnecton *m_client = nullptr;
 
-void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
-    buf->base = (char*) malloc(suggested_size);
-    buf->len = suggested_size;
-}
-
-void on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
-    if (nread > 0) {
-        // Process the received character(s)
-        //printf("Received: %s\n", buf->base);
-        
-        
-        char tmp[30]={'0'};
-        
-      //sprintf(tmp,"%c%s", '0', buf->base );
-
-        memcpy(&tmp[1],buf->base, nread );
-        m_client->send(tmp, nread+1, false);
-        
-        // If you want to stop reading after one character:
-        // uv_read_stop(stream);
-        // uv_close((uv_handle_t*) stream, NULL);
-    } else if (nread < 0) {
-        if (nread != UV_EOF) {
-            fprintf(stderr, "Read error: %s\n", uv_strerror(nread));
-        }
-        uv_close((uv_handle_t*) stream, NULL);
-    }
-    // Free the buffer if it was allocated by the allocator callback
-    if (buf->base) {
-        free(buf->base);
-    }
-}
 
 
 uv_signal_t sigint_watcher;
@@ -85,6 +53,14 @@ void on_signal(uv_signal_t *handle, int signum) {
 }
 
 
+void set_terminal_title(const char *title) {
+    // Escape sequence to set the window title: ESC]0;TitleBEL
+    // \033 is the escape character, ]0; means set title and icon name, \007 is the bell character
+    printf("\033]0;%s\007", title);
+    fflush(stdout); // Flush stdout to ensure the title is set immediately
+}
+
+
 int main(int argc, char** argv) {
 
     //Logger::instance().add(new RemoteChannel("Remote", Level::Remote, "127.0.0.1", 6000));
@@ -93,146 +69,132 @@ int main(int argc, char** argv) {
     
       
       
- {
+    {
        
         
         Application app;
         
       
-        uv_signal_init(app.uvGetLoop(), &sigint_watcher);
-        uv_signal_start(&sigint_watcher, on_signal, SIGINT);
+      //  set_terminal_title("My C Program Title");
+                
+       // uv_signal_init(app.uvGetLoop(), &sigint_watcher);
+       // uv_signal_start(&sigint_watcher, on_signal, SIGINT);
     
     
-        TTY rtc([m_client]( char* buf , int nread) {
+        TTY rtc([m_client]( char* buf , int nread) 
+        {
             
-        char tmp[30] = {'0'};
-        memcpy(&tmp[1], buf, nread);
-        
-        //sprintf(tmp,"%c%s", '0', buf );
-        
-        //rtcthread->ProcessMessages(3);
-       // LTrace(" rtcthread->ProcessMessages")
-       // base::sleep(1000);
-               
-           
-//        m_client->send(tmp, nread+1, false);
+            char tmp[30] = {'0'};
+            memcpy(&tmp[1], buf, nread);
+ 
+            if( !nread && !buf &&  m_client)
+            {
+                m_client->Close();
+                delete m_client;
+                m_client = nullptr;
+            }
+            else
+                m_client->send(tmp, nread+1, false);
             
-               int x = 1;
          });
 
-//      //bool ssl = false;
-//        std::ostringstream url;
-//        bool ssl = false;
-//        std::string host = SERVER_HOST;
-//        int port = SERVER_PORT;
-//
-//        url << "/";
-//
-//
-//        if(!ssl)
-//        {
-//            m_client = new HttpClient("ws", host, port, url.str());
-//        }
-//        else
-//        {
-//             m_client = new HttpsClient("wss", host, port, url.str());
-//        }
-//
-//        // conn->Complete += sdelegate(&context, &CallbackContext::onClientConnectionComplete);
-//        m_client->fnComplete = [&](const Response & response) {
-//            std::string reason = response.getReason();
-//            StatusCode statuscode = response.getStatus();
-//            std::string body = m_client->readStream() ? m_client->readStream()->str():"";
-//            STrace << "SocketIO handshake response:" << "Reason: " << reason << " Response: " << body;
-//        };
-//        
-//        m_client->fnConnect = [&](HttpBase * con ) {
-//            
-//            STrace << "client->fnConnect "  ;
-//          //  m_con_state = con_opened;
-//           // m_reconn_timer.Stop();
-//            
-//            char tmp[3] = "{}";
-//            
-//            con->send(tmp, 2);
-//         };
-//        
-//
-//        m_client->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
-//            STrace << "client->fnPayload " << std::string(data,sz) ;
-//
-//            if(sz > 0)
-//            {
-//                const char command = data[0];
-//                
-//                
-//                switch (command) {
-//                case OUTPUT:
-//                {
-//                    printf("%.*s",sz, &data[1] );
-//                    fflush(stdout);
-//                    break;
-//                }
-//                case SET_WINDOW_TITLE:
-//                {
-//                   
-//                    break;
-//                }
-//                case SET_PREFERENCES:
-//                {
-//              
-//                    break;
-//                }
-//                default:
-//                {
-//                    printf("ignored unknown message type: %c\n", command);
-//                    break;
-//                }
-//                
-//            };
-//            
-//        }
-//           
-//        };
-//        
-//        m_client->fnClose = [&](HttpBase * con, std::string str) {
-//            STrace << "client->fnClose " << str ;
-//           // close(0,"exit");
-//            //on_close();
-////            delete m_client;
-////            m_client = nullptr;
-////            m_con_state = con_closed;
-//        };
-//        
-//        //  conn->_request.setKeepAlive(false);
-//        m_client->setReadStream(new std::stringstream);
-//        m_client->send();
-//        LTrace("sendHandshakeRequest over")
-//
+      //bool ssl = false;
+        std::ostringstream url;
+        bool ssl = false;
+        std::string host = SERVER_HOST;
+        int port = SERVER_PORT;
+
+        url << "/";
 
 
+        if(!ssl)
+        {
+            m_client = new HttpClient("ws", host, port, url.str());
+        }
+        else
+        {
+             m_client = new HttpsClient("wss", host, port, url.str());
+        }
 
+        // conn->Complete += sdelegate(&context, &CallbackContext::onClientConnectionComplete);
+        m_client->fnComplete = [&](const Response & response) {
+            std::string reason = response.getReason();
+            StatusCode statuscode = response.getStatus();
+            std::string body = m_client->readStream() ? m_client->readStream()->str():"";
+            STrace << "SocketIO handshake response:" << "Reason: " << reason << " Response: " << body;
+        };
+        
+        m_client->fnConnect = [&](HttpBase * con ) {
+            
+            STrace << "client->fnConnect "  ;
+          //  m_con_state = con_opened;
+           // m_reconn_timer.Stop();
+            
+            char tmp[3] = "{}";
+            
+            con->send(tmp, 2);
+         };
+        
 
+        m_client->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
+            STrace << "client->fnPayload " << std::string(data,sz) ;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+            if(sz > 0)
+            {
+                const char command = data[0];
+                
+                
+                switch (command) {
+                case OUTPUT:
+                {
+                    printf("%.*s",sz, &data[1] );
+                    fflush(stdout);
+                    break;
+                }
+                case SET_WINDOW_TITLE:
+                {   
+                   // printf("%.*s",sz, &data[1] );
+                    set_terminal_title( &data[1] );
+                    fflush(stdout);
+                   
+                    break;
+                }
+                case SET_PREFERENCES:
+                {
+                     
+                    break;
+                }
+                default:
+                {
+                    printf("ignored unknown message type: %c\n", command);
+                    break;
+                }
+                
+            };
+            
+        }
+           
+        };
+        
+        m_client->fnClose = [&](HttpBase * con, std::string str) {
+            STrace << "client->fnClose " << str ;
+           // close(0,"exit");
+             //on_close();
+ 
+//            m_con_state = con_closed;
+        };
+        
+        //  conn->_request.setKeepAlive(false);
+        m_client->setReadStream(new std::stringstream);
+        m_client->send();
+        LTrace("sendHandshakeRequest over")
 
 
 
 
         app.run();
         
+        set_terminal_title("");
        
           
     }

@@ -32,18 +32,23 @@ namespace base {
     void on_read(uv_stream_t *stream, ssize_t nread, const uv_buf_t *buf) {
         if (nread > 0) {
             // Process the received character(s)
-            printf("Received: %s\n", buf->base);
+           // printf("Received: %s\n", buf->base);
 
             TTY *idler = (TTY*) stream->data;
 
             char c = buf->base[0];
 
             if (c == 3) {
-                uv_read_stop(stream);
-                uv_close((uv_handle_t*) stream, NULL);
+
+                if (idler->cbfun)
+                idler->cbfun(nullptr, 0 );
+                   
                 if (buf->base) {
                     free(buf->base);
                 }
+                uv_read_stop(stream);
+                uv_close((uv_handle_t*) stream, NULL);
+                
                 return;
             }
 
@@ -87,8 +92,12 @@ namespace base {
 
         printf("Press a key (Ctrl+C to exit):\n");
 
+    }
 
 
+    int TTY::getWinSize(int *width, int *height) {
+
+        return uv_tty_get_winsize(&tty, width, height);
     }
 
     TTY::~TTY() {

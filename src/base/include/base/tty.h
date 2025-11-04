@@ -43,6 +43,8 @@ namespace base {
 
     protected:
 
+        int getWinSize(int *width, int *height);
+
         uv_tty_t tty;
     };
 
