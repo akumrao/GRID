@@ -10,7 +10,7 @@ set(TTYD_VERSION "${PROJECT_VERSION}")
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
-set(SOURCE_FILES src/utils.cpp src/pty.cpp src/protocol.cpp src/http.cpp src/server.cpp)
+set(SOURCE_FILES src/utils.cpp src/pty.cpp src/protocol.cpp src/server.cpp)
 
 SET(SSL_ROOT "${WORKSPACE}/src/openssl/buildx64")
 SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")

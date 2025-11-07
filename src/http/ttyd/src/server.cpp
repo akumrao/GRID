@@ -31,23 +31,11 @@ using namespace base::net;
 
 
 volatile bool force_exit = false;
-struct lws_context *context;
+
 struct server *server{nullptr};
-//struct endpoints endpoints = {"/ws", "/", "/token", ""};
 
 
 
-#if LWS_LIBRARY_VERSION_NUMBER >= 4000000
-static const uint32_t backoff_ms[] = {1000, 2000, 3000, 4000, 5000};
-static lws_retry_bo_t retry = {
-    .retry_ms_table = backoff_ms,
-    .retry_ms_table_count = LWS_ARRAY_SIZE(backoff_ms),
-    .conceal_count = LWS_ARRAY_SIZE(backoff_ms),
-    .secs_since_valid_ping = 5,
-    .secs_since_valid_hangup = 10,
-    .jitter_percent = 0,
-};
-#endif
 
 // command line options
 static const struct option options[] = {
@@ -551,23 +539,6 @@ int main(int argc, char **argv) {
     testwebscoket *socket = new testwebscoket("0.0.0.0", 8000, stream, false);
 
 
-
-    //  struct lws_context_creation_info info;
-    //  memset(&info, 0, sizeof(info));
-    //  info.port = 7681;
-    //  info.iface = NULL;
-    //  info.protocols = protocols;
-    //  info.gid = -1;
-    //  info.uid = -1;
-    //  info.max_http_header_pool = 16;
-    //  info.options = LWS_SERVER_OPTION_LIBUV | LWS_SERVER_OPTION_VALIDATE_UTF8 | LWS_SERVER_OPTION_DISABLE_IPV6;
-    //#ifndef LWS_WITHOUT_EXTENSIONS
-    //  info.extensions = extensions;
-    //#endif
-    //  info.max_http_header_data = 65535;
-
-    //arvind
-
     //int debug_level =   LLL_NOTICE ;//LLL_ERR | LLL_WARN | LLL_NOTICE;
     char iface[128] = "";
     char socket_owner[128] = "";
@@ -700,47 +671,11 @@ int main(int argc, char **argv) {
 //#undef sc
             }
             break;
-#if LWS_LIBRARY_VERSION_NUMBER >= 4000000
-            case 'P':
-            {
-                int interval = parse_int("ping-interval", optarg);
-                if (interval < 0) {
-                    fprintf(stderr, "ttyd: invalid ping interval: %s\n", optarg);
-                    return -1;
-                }
-                retry.secs_since_valid_ping = interval;
-                retry.secs_since_valid_hangup = interval + 7;
-            }
-            break;
-#endif
-                //      case 'f': {
-                //        int serv_buf_size = parse_int("srv-buf-size", optarg);
-                //        if (serv_buf_size < 0) {
-                //          fprintf(stderr, "ttyd: invalid srv-buf-size: %s\n", optarg);
-                //          return -1;
-                //        }
-                //        info.pt_serv_buf_size = serv_buf_size;
-                //      } break;
+
             case '6':
                 //        info.options &= ~(LWS_SERVER_OPTION_DISABLE_IPV6);
                 break;
-#if defined(LWS_OPENSSL_SUPPORT) || defined(LWS_WITH_TLS)
-            case 'S':
-                ssl = true;
-                break;
-            case 'C':
-                strncpy(cert_path, optarg, sizeof (cert_path) - 1);
-                cert_path[sizeof (cert_path) - 1] = '\0';
-                break;
-            case 'K':
-                strncpy(key_path, optarg, sizeof (key_path) - 1);
-                key_path[sizeof (key_path) - 1] = '\0';
-                break;
-            case 'A':
-                strncpy(ca_path, optarg, sizeof (ca_path) - 1);
-                ca_path[sizeof (ca_path) - 1] = '\0';
-                break;
-#endif
+
             case 'T':
                 strncpy(server->terminal_type, optarg, sizeof (server->terminal_type) - 1);
                 server->terminal_type[sizeof (server->terminal_type) - 1] = '\0';
@@ -818,55 +753,6 @@ int main(int argc, char **argv) {
     }
 
 
-
-
-
-    //   pss->initialized = false;
-    //   pss->authenticated = false;
-    //      
-    //  uint16_t columns =0;
-    //  uint16_t rows =0;
-    //  
-    //   if (!spawn_process(pss, columns, rows)) return 1;
-    //  
-    //  
-    //    pss->process->columns = 300;
-    //    pss->process->rows = 75;
-    //    
-    //    pty_resize(pss->process);
-    //    
-    //    
-    //     if (process_running(pss->process)) {
-    //          pty_pause(pss->process);
-    //          printf("killing process, pid: %d\n", pss->process->pid);
-    //          pty_kill(pss->process, server->sig_code);
-    //        }
-    //    
-    //     if (!spawn_process(pss, columns, rows)) return 1;
-    //  
-    //  
-    //    pss->process->columns = 300;
-    //    pss->process->rows = 75;
-    //    
-    //    pty_resize(pss->process);
-    //    
-    //    pss->initialized = true;
-    //    pty_resume(pss->process);
-
-
-    //    char in[]="ls\r\t";
-    //    int len = strlen(in)+1;
-    //    
-    //    if (pss->buffer == NULL) {
-    //    pss->buffer = xmalloc(len);
-    //    pss->len = len;
-    //    memcpy(pss->buffer, in, len);
-    //    } else {
-    //    pss->buffer = xrealloc(pss->buffer, pss->len + len);
-    //    memcpy(pss->buffer + pss->len, in, len);
-    //    pss->len += len;
-    //    }
-    //    int err = pty_write(pss->process, pty_buf_init(pss->buffer , pss->len));
 
 
 
