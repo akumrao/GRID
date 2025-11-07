@@ -28,13 +28,13 @@ namespace base {
 //#include <iostream>
 //#include <memory>
 
-class AsyncWorker {
+class Async {
 public:
     // Define the types for the work and after callbacks
     using WorkCallback = std::function<void()>;
     using AfterWorkCallback = std::function<void(int status)>;
 
-    AsyncWorker() ;
+    Async() ;
 
     // Method to queue work with custom callbacks
     int queueWork(WorkCallback work_cb, AfterWorkCallback after_work_cb) ;

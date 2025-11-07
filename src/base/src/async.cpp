@@ -23,13 +23,13 @@ namespace base {
 
     
         
-    AsyncWorker::AsyncWorker() 
+    Async::Async() 
     {
      
     }
      
      
-    int AsyncWorker::queueWork(WorkCallback work_cb, AfterWorkCallback after_work_cb) {
+    int Async::queueWork(WorkCallback work_cb, AfterWorkCallback after_work_cb) {
         // Create a new request object
         // Use std::unique_ptr for memory management in the callbacks
         auto req = new uv_work_t();
@@ -42,7 +42,7 @@ namespace base {
         req->data = callbacks;
 
         // Queue the work using static C-style function wrappers
-        return uv_queue_work(Application::uvGetLoop(), req, AsyncWorker::workCallbackStatic, AsyncWorker::afterWorkCallbackStatic);
+        return uv_queue_work(Application::uvGetLoop(), req, Async::workCallbackStatic, Async::afterWorkCallbackStatic);
     } 
      
      
