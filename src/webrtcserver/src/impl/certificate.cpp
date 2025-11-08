@@ -221,35 +221,34 @@ int dummy_pass_cb(char *buf, int size, int /*rwflag*/, void *u) {
 
 } // namespace
 
-Certificate Certificate::FromString(string crt_pem, string key_pem) {
+Certificate* Certificate::FromString(string crt_pem, string key_pem) {
 	PLOG_DEBUG << "Importing certificate from PEM string (OpenSSL)";
 
 	BIO *bio = BIO_new(BIO_s_mem());
 	BIO_write(bio, crt_pem.data(), int(crt_pem.size()));
-	auto x509 = shared_ptr<X509>(PEM_read_bio_X509(bio, nullptr, nullptr, nullptr), X509_free);
+	X509 *x509 = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
 	if (!x509) {
 		BIO_free(bio);
 		throw std::invalid_argument("Unable to import PEM certificate");
 	}
-	std::vector<shared_ptr<X509>> chain;
-	while (auto extra =
-	           shared_ptr<X509>(PEM_read_bio_X509(bio, nullptr, nullptr, nullptr), X509_free)) {
-		chain.push_back(std::move(extra));
+	std::vector<X509*> chain;
+	while (X509 * extra =
+	           PEM_read_bio_X509(bio, nullptr, nullptr, nullptr)) {
+		chain.push_back(extra);
 	}
 	BIO_free(bio);
 
 	bio = BIO_new(BIO_s_mem());
 	BIO_write(bio, key_pem.data(), int(key_pem.size()));
-	auto pkey = shared_ptr<EVP_PKEY>(PEM_read_bio_PrivateKey(bio, nullptr, nullptr, nullptr),
-	                                 EVP_PKEY_free);
+	EVP_PKEY* pkey = PEM_read_bio_PrivateKey(bio, nullptr, nullptr, nullptr);
 	BIO_free(bio);
 	if (!pkey)
 		throw std::invalid_argument("Unable to import PEM key");
 
-	return Certificate(x509, pkey, std::move(chain));
+	return new Certificate(x509, pkey, chain);
 }
 
-Certificate Certificate::FromFile(const string &crt_pem_file, const string &key_pem_file,
+Certificate* Certificate::FromFile(const string &crt_pem_file, const string &key_pem_file,
                                   const string &pass) {
 	PLOG_DEBUG << "Importing certificate from PEM file (OpenSSL): " << crt_pem_file;
 
@@ -257,15 +256,15 @@ Certificate Certificate::FromFile(const string &crt_pem_file, const string &key_
 	if (!bio)
 		throw std::invalid_argument("Unable to open PEM certificate file");
 
-	auto x509 = shared_ptr<X509>(PEM_read_bio_X509(bio, nullptr, nullptr, nullptr), X509_free);
+	X509* x509 = PEM_read_bio_X509(bio, nullptr, nullptr, nullptr);
 	if (!x509) {
 		BIO_free(bio);
 		throw std::invalid_argument("Unable to import PEM certificate from file");
 	}
-	std::vector<shared_ptr<X509>> chain;
-	while (auto extra =
-	           shared_ptr<X509>(PEM_read_bio_X509(bio, nullptr, nullptr, nullptr), X509_free)) {
-		chain.push_back(std::move(extra));
+	std::vector<X509*> chain;
+	while (X509* extra =
+	           PEM_read_bio_X509(bio, nullptr, nullptr, nullptr)) {
+		chain.push_back(extra);
 	}
 	BIO_free(bio);
 
@@ -273,26 +272,29 @@ Certificate Certificate::FromFile(const string &crt_pem_file, const string &key_
 	if (!bio)
 		throw std::invalid_argument("Unable to open PEM key file");
 
-	auto pkey = shared_ptr<EVP_PKEY>(
-	    PEM_read_bio_PrivateKey(bio, nullptr, dummy_pass_cb, const_cast<char *>(pass.c_str())),
-	    EVP_PKEY_free);
+	EVP_PKEY* pkey =  PEM_read_bio_PrivateKey(bio, nullptr, dummy_pass_cb, const_cast<char *>(pass.c_str()));
 	BIO_free(bio);
 	if (!pkey)
 		throw std::invalid_argument("Unable to import PEM key from file");
 
-	return Certificate(x509, pkey, std::move(chain));
+	return new Certificate(x509, pkey, chain);
 }
 
-Certificate Certificate::Generate(CertificateType type, const string &commonName) {
+Certificate* Certificate::Generate(CertificateType type, const string &commonName) {
 	PLOG_DEBUG << "Generating certificate (OpenSSL)";
 
-	shared_ptr<X509> x509(X509_new(), X509_free);
-	unique_ptr<BIGNUM, decltype(&BN_free)> serial_number(BN_new(), BN_free);
-	unique_ptr<X509_NAME, decltype(&X509_NAME_free)> name(X509_NAME_new(), X509_NAME_free);
+	X509 *x509 = X509_new();
+        
+        BIGNUM* serial_number = nullptr;
+        X509_NAME* name = nullptr;
+
+        
+	serial_number = BN_new();
+	name = X509_NAME_new();
 	if (!x509 || !serial_number || !name)
 		throw std::runtime_error("Unable to allocate structures for certificate generation");
 
-	shared_ptr<EVP_PKEY> pkey;
+	EVP_PKEY *pkey;
 	switch (type) {
 	// RFC 8827 WebRTC Security Architecture 6.5. Communications Security
 	// All implementations MUST support DTLS 1.2 with the TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
@@ -302,21 +304,21 @@ Certificate Certificate::Generate(CertificateType type, const string &commonName
 	case CertificateType::Ecdsa: {
 		PLOG_VERBOSE << "Generating ECDSA P-256 key pair";
 #if OPENSSL_VERSION_NUMBER >= 0x30000000
-		pkey = shared_ptr<EVP_PKEY>(EVP_EC_gen("prime256v1"), EVP_PKEY_free);
+		pkey = EVP_EC_gen("prime256v1");
 		if (!pkey)
 			throw std::runtime_error("Unable to generate ECDSA P-256 key pair");
 #else
-		pkey = shared_ptr<EVP_PKEY>(EVP_PKEY_new(), EVP_PKEY_free);
-		unique_ptr<EC_KEY, decltype(&EC_KEY_free)> ecc(
-		    EC_KEY_new_by_curve_name(NID_X9_62_prime256v1), EC_KEY_free);
+		pkey = EVP_PKEY_new();
+		EC_KEY* ecc( EC_KEY_new_by_curve_name(NID_X9_62_prime256v1));
 		if (!pkey || !ecc)
 			throw std::runtime_error("Unable to allocate structure for ECDSA P-256 key pair");
 
-		EC_KEY_set_asn1_flag(ecc.get(), OPENSSL_EC_NAMED_CURVE); // Set ASN1 OID
-		if (!EC_KEY_generate_key(ecc.get()) || !EVP_PKEY_assign_EC_KEY(pkey.get(), ecc.get()))
+		EC_KEY_set_asn1_flag(ecc, OPENSSL_EC_NAMED_CURVE); // Set ASN1 OID
+		if (!EC_KEY_generate_key(ecc) || !EVP_PKEY_assign_EC_KEY(pkey, ecc))
 			throw std::runtime_error("Unable to generate ECDSA P-256 key pair");
 
-		ecc.release(); // the key will be freed when pkey is freed
+
+               // EC_KEY_free(ecc);   EVP_PKEY_free() on your EVP_PKEY will correctly manage the deallocation of the contained EC key.     
 #endif
 		break;
 	}
@@ -324,24 +326,27 @@ Certificate Certificate::Generate(CertificateType type, const string &commonName
 		PLOG_VERBOSE << "Generating RSA key pair";
 		const unsigned int bits = 2048;
 #if OPENSSL_VERSION_NUMBER >= 0x30000000
-		pkey = shared_ptr<EVP_PKEY>(EVP_RSA_gen(bits), EVP_PKEY_free);
+		pkey = EVP_RSA_gen(bits);
 		if (!pkey)
 			throw std::runtime_error("Unable to generate RSA key pair");
 #else
-		pkey = shared_ptr<EVP_PKEY>(EVP_PKEY_new(), EVP_PKEY_free);
-		unique_ptr<RSA, decltype(&RSA_free)> rsa(RSA_new(), RSA_free);
-		unique_ptr<BIGNUM, decltype(&BN_free)> exponent(BN_new(), BN_free);
+		pkey = EVP_PKEY_new();
+                RSA *rsa = NULL;
+		rsa = RSA_new();
+                BIGNUM* exponent = NULL; 
+		exponent = BN_new();
 		if (!pkey || !rsa || !exponent)
 			throw std::runtime_error("Unable to allocate structures for RSA key pair");
 
 		const unsigned int e = 65537; // 2^16 + 1
-		if (!BN_set_word(exponent.get(), e) ||
-		    !RSA_generate_key_ex(rsa.get(), bits, exponent.get(), NULL) ||
-		    !EVP_PKEY_assign_RSA(pkey.get(), rsa.get()))
+		if (!BN_set_word(exponent, e) ||
+		    !RSA_generate_key_ex(rsa, bits, exponent, NULL) ||
+		    !EVP_PKEY_assign_RSA(pkey, rsa))
 			throw std::runtime_error("Unable to generate RSA key pair");
 
-		rsa.release(); // the key will be freed when pkey is freed
-#endif
+                BN_free(exponent); // arvind not sure if we this will be free from 
+               // RSA_free(rsa); EVP_PKEY_free() on your EVP_PKEY will correctly manage the deallocation of the contained rsa key.
+#endif          
 		break;
 	}
 	default:
@@ -352,40 +357,44 @@ Certificate Certificate::Generate(CertificateType type, const string &commonName
 	auto *commonNameBytes =
 	    reinterpret_cast<unsigned char *>(const_cast<char *>(commonName.c_str()));
 
-	if (!X509_set_pubkey(x509.get(), pkey.get()))
+	if (!X509_set_pubkey(x509, pkey))
 		throw std::runtime_error("Unable to set certificate public key");
 
-	if (!X509_gmtime_adj(X509_getm_notBefore(x509.get()), 3600 * -1) ||
-	    !X509_gmtime_adj(X509_getm_notAfter(x509.get()), 3600 * 24 * 365) ||
-	    !X509_set_version(x509.get(), 1) || !BN_rand(serial_number.get(), serialSize, 0, 0) ||
-	    !BN_to_ASN1_INTEGER(serial_number.get(), X509_get_serialNumber(x509.get())) ||
-	    !X509_NAME_add_entry_by_NID(name.get(), NID_commonName, MBSTRING_UTF8, commonNameBytes, -1,
+	if (!X509_gmtime_adj(X509_getm_notBefore(x509), 3600 * -1) ||
+	    !X509_gmtime_adj(X509_getm_notAfter(x509), 3600 * 24 * 365) ||
+	    !X509_set_version(x509, 1) || !BN_rand(serial_number, serialSize, 0, 0) ||
+	    !BN_to_ASN1_INTEGER(serial_number, X509_get_serialNumber(x509)) ||
+	    !X509_NAME_add_entry_by_NID(name, NID_commonName, MBSTRING_UTF8, commonNameBytes, -1,
 	                                -1, 0) ||
-	    !X509_set_subject_name(x509.get(), name.get()) ||
-	    !X509_set_issuer_name(x509.get(), name.get()))
+	    !X509_set_subject_name(x509, name) ||
+	    !X509_set_issuer_name(x509, name))
 		throw std::runtime_error("Unable to set certificate properties");
 
-	if (!X509_sign(x509.get(), pkey.get(), EVP_sha256()))
+	if (!X509_sign(x509, pkey, EVP_sha256()))
 		throw std::runtime_error("Unable to auto-sign certificate");
 
-	return Certificate(x509, pkey);
+        
+        BN_free(serial_number);
+        X509_NAME_free(name);
+  
+	return new Certificate(x509, pkey);
 }
 
-Certificate::Certificate(shared_ptr<X509> x509, shared_ptr<EVP_PKEY> pkey,
-                         std::vector<shared_ptr<X509>> chain)
-    : mX509(std::move(x509)), mPKey(std::move(pkey)), mChain(std::move(chain)),
-      mFingerprint(make_fingerprint(mX509.get(), CertificateFingerprint::Algorithm::Sha256)) {}
+Certificate::Certificate(X509* x509, EVP_PKEY* pkey,
+                         std::vector<X509*> chain)
+    : mX509(x509), mPKey(pkey), mChain(chain),
+      mFingerprint(make_fingerprint(mX509, CertificateFingerprint::Algorithm::Sha256)) {}
 
 std::tuple<X509 *, EVP_PKEY *> Certificate::credentials() const {
-	return {mX509.get(), mPKey.get()};
+	return {mX509, mPKey};
 }
 
 std::vector<X509 *> Certificate::chain() const {
-	std::vector<X509 *> v;
-	v.reserve(mChain.size());
-	std::transform(mChain.begin(), mChain.end(), std::back_inserter(v),
-	               [](const auto &c) { return c.get(); });
-	return v;
+//	std::vector<X509 *> v;
+//	v.reserve(mChain.size());
+//	std::transform(mChain.begin(), mChain.end(), std::back_inserter(v),
+//	               [](const auto &c) { return c.get(); });
+	return mChain;
 }
 
 string make_fingerprint(X509 *x509, CertificateFingerprint::Algorithm fingerprintAlgorithm) {
@@ -431,9 +440,9 @@ string make_fingerprint(X509 *x509, CertificateFingerprint::Algorithm fingerprin
 
 // Common for  Mbed TLS, and OpenSSL
 
-shared_ptr<Certificate> make_certificate(CertificateType type) {
+Certificate* make_certificate(CertificateType type) {
 
-  return std::make_shared<Certificate>(Certificate::Generate(type, "datachannel"));
+  return Certificate::Generate(type, "datachannel");
 
 }
 

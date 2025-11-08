@@ -15,10 +15,10 @@ namespace rtc::impl {
 
 class Certificate {
 public:
-	static Certificate FromString(string crt_pem, string key_pem);
-	static Certificate FromFile(const string &crt_pem_file, const string &key_pem_file,
+	static Certificate* FromString(string crt_pem, string key_pem);
+	static Certificate* FromFile(const string &crt_pem_file, const string &key_pem_file,
 	                            const string &pass = "");
-	static Certificate Generate(CertificateType type, const string &commonName);
+	static Certificate* Generate(CertificateType type, const string &commonName);
 
 #if USE_GNUTLS
 	Certificate(gnutls_x509_crt_t crt, gnutls_x509_privkey_t privkey);
@@ -27,24 +27,37 @@ public:
 	Certificate(shared_ptr<mbedtls_x509_crt> crt, shared_ptr<mbedtls_pk_context> pk);
 	std::tuple<shared_ptr<mbedtls_x509_crt>, shared_ptr<mbedtls_pk_context>> credentials() const;
 #else // OPENSSL
-	Certificate(shared_ptr<X509> x509, shared_ptr<EVP_PKEY> pkey, std::vector<shared_ptr<X509>> chain = {});
+	Certificate(X509 *x509, EVP_PKEY *pkey, std::vector<X509*> chain = {});
 	std::tuple<X509 *, EVP_PKEY *> credentials() const;
 	std::vector<X509 *> chain() const;
+        
+        ~Certificate()
+        {
+            X509_free(mX509);
+            
+            for (X509* tmp : mChain) {
+                 X509_free(tmp);
+            }
+           mChain.clear();
+    
+            EVP_PKEY_free(mPKey);
+            
+        }
 #endif
 
 	CertificateFingerprint fingerprint() const;
 
 private:
-	const init_token mInitToken = Init::Instance().token();
+	//const init_token mInitToken = Init::Instance().token();
 
 
 #if USE_MBEDTLS
-	const shared_ptr<mbedtls_x509_crt> mCrt;
-	const shared_ptr<mbedtls_pk_context> mPk;
+	const mbedtls_x509_crt *mCrt;
+	const mbedtls_pk_context *mPk;
 #else
-	const shared_ptr<X509> mX509;
-	const shared_ptr<EVP_PKEY> mPKey;
-	const std::vector<shared_ptr<X509>> mChain;
+	X509 *mX509{nullptr};
+	EVP_PKEY *mPKey{nullptr};
+	std::vector<X509*> mChain;
 #endif
 
 	const string mFingerprint;
@@ -59,10 +72,10 @@ string make_fingerprint(mbedtls_x509_crt *crt, CertificateFingerprint::Algorithm
 string make_fingerprint(X509 *x509, CertificateFingerprint::Algorithm fingerprintAlgorithm);
 #endif
 
-using certificate_ptr = shared_ptr<Certificate>;
+//using certificate_ptr = shared_ptr<Certificate>;
 //using future_certificate_ptr = std::shared_future<certificate_ptr>;
 
-shared_ptr<Certificate> make_certificate(CertificateType type = CertificateType::Default);
+Certificate* make_certificate(CertificateType type = CertificateType::Default);
 
 } // namespace rtc::impl
 

@@ -14,8 +14,8 @@
 #if RTC_ENABLE_WEBSOCKET
 
 // WebSocket
-#include "websocket.hpp"
-#include "websocketserver.hpp"
+//#include "websocket.hpp"
+//#include "websocketserver.hpp"
 
 #endif // RTC_ENABLE_WEBSOCKET
 

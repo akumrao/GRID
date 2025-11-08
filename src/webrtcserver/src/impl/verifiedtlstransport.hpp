@@ -11,7 +11,7 @@ namespace rtc::impl {
 class VerifiedTlsTransport final : public TlsTransport {
 public:
 	VerifiedTlsTransport(variant<shared_ptr<TcpTransport>, shared_ptr<HttpProxyTransport>> lower,
-	                     string host, certificate_ptr certificate, state_callback callback,
+	                     string host, Certificate* certificate, state_callback callback,
 	                     optional<string> cacert);
 	~VerifiedTlsTransport();
 

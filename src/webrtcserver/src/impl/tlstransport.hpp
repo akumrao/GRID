@@ -25,7 +25,7 @@ public:
 	static void Cleanup();
 
 	TlsTransport(variant<shared_ptr<TcpTransport>, shared_ptr<HttpProxyTransport>> lower,
-	             optional<string> host, certificate_ptr certificate, state_callback callback);
+	             optional<string> host, Certificate* certificate, state_callback callback);
 	virtual ~TlsTransport();
 
 	void start() override;

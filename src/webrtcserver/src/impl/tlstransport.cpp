@@ -563,7 +563,7 @@ void TlsTransport::Cleanup() {
 }
 
 TlsTransport::TlsTransport(variant<shared_ptr<TcpTransport>, shared_ptr<HttpProxyTransport>> lower,
-                           optional<string> host, certificate_ptr certificate,
+                           optional<string> host, Certificate* certificate,
                            state_callback callback)
     : Transport(std::visit([](auto l) { return std::static_pointer_cast<Transport>(l); }, lower),
                 std::move(callback)),

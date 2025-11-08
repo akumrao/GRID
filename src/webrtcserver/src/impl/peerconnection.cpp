@@ -42,11 +42,11 @@ PeerConnection::PeerConnection(Configuration config_) : config(std::move(config_
 	PLOG_VERBOSE << "Creating PeerConnection";
 
 	if (config.certificatePemFile && config.keyPemFile) {
-           mCertificate =  std::make_shared<Certificate>(
+           mCertificate =  
 		    config.certificatePemFile->find(PemBeginCertificateTag) != string::npos
 		        ? Certificate::FromString(*config.certificatePemFile, *config.keyPemFile)
 		        : Certificate::FromFile(*config.certificatePemFile, *config.keyPemFile,
-		                                config.keyPemPass.value_or("")));
+		                                config.keyPemPass.value_or(""));
 	} else if (!config.certificatePemFile && !config.keyPemFile) {
 		mCertificate = make_certificate(config.certificateType);
 	} else {
@@ -229,7 +229,7 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 		if (!lower)
 			throw std::logic_error("No underlying ICE transport for DTLS transport");
 
-		auto certificate = mCertificate.get();
+		auto certificate = mCertificate;
 		auto verifierCallback = weak_bind(&PeerConnection::checkFingerprint, this, _1);
 		auto dtlsStateChangeCallback =
 		    [this, weak_this = weak_from_this()](DtlsTransport::State transportState) {
@@ -1067,7 +1067,7 @@ void PeerConnection::processLocalDescription(Description description) {
 	}
 
 	// Set local fingerprint (wait for certificate if necessary)
-	description.setFingerprint(mCertificate.get()->fingerprint());
+	description.setFingerprint(mCertificate->fingerprint());
 
 	PLOG_VERBOSE << "Issuing local description: " << description;
 
