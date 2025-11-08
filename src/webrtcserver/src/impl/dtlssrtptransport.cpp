@@ -51,7 +51,7 @@ bool DtlsSrtpTransport::IsGcmSupported() {
 }
 
 DtlsSrtpTransport::DtlsSrtpTransport(shared_ptr<IceTransport> lower,
-                                     shared_ptr<Certificate> certificate, optional<size_t> mtu,
+                                     Certificate* certificate, optional<size_t> mtu,
                                      CertificateFingerprint::Algorithm fingerprintAlgorithm,
                                      verifier_callback verifierCallback,
                                      message_callback srtpRecvCallback,

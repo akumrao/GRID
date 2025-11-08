@@ -24,7 +24,7 @@ public:
 	static void Cleanup();
 	static bool IsGcmSupported();
 
-	DtlsSrtpTransport(shared_ptr<IceTransport> lower, certificate_ptr certificate,
+	DtlsSrtpTransport(shared_ptr<IceTransport> lower, Certificate* certificate,
 	                  optional<size_t> mtu, CertificateFingerprint::Algorithm fingerprintAlgorithm,
 	                  verifier_callback verifierCallback, message_callback srtpRecvCallback,
 	                  state_callback stateChangeCallback);

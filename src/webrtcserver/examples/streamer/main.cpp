@@ -21,8 +21,8 @@
 #include "socketio/socketioClient.h"
 
 //#define localtesting 1
-
 //#define VIDEOMEDIA 1
+#define CERTFROMFILE 1
 
 using namespace rtc;
 using namespace std;
@@ -327,6 +327,12 @@ int main(int argc, char **argv)
     cout << "STUN server is " << stunServer << endl;
     config.iceServers.emplace_back(stunServer);
     config.disableAutoNegotiation = true;
+    // read cert from file
+#if CERTFROMFILE
+    config.keyPemFile = "/var/tmp/key/private_key.pem";
+    config.certificatePemFile = "/var/tmp/key/certificate.crt";  
+    config.keyPemPass = "12345678";
+#endif
 
     string localId = "server";
     cout << "The local ID is: " << localId << endl;

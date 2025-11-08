@@ -42,7 +42,7 @@ const mbedtls_ssl_srtp_profile srtpSupportedProtectionProfiles[] = {
     MBEDTLS_TLS_SRTP_UNSET,
 };
 
-DtlsTransport::DtlsTransport(shared_ptr<IceTransport> lower, certificate_ptr certificate,
+DtlsTransport::DtlsTransport(shared_ptr<IceTransport> lower, Certificate * certificate,
                              optional<size_t> mtu,
                              CertificateFingerprint::Algorithm fingerprintAlgorithm,
                              verifier_callback verifierCallback, state_callback stateChangeCallback)
@@ -50,7 +50,7 @@ DtlsTransport::DtlsTransport(shared_ptr<IceTransport> lower, certificate_ptr cer
       mFingerprintAlgorithm(fingerprintAlgorithm), mVerifierCallback(std::move(verifierCallback)),
       mIsClient(lower->role() == Description::Role::Active) {
 
-	PLOG_DEBUG << "Initializing DTLS transport (MbedTLS)";
+	SDebug << "Initializing DTLS transport (MbedTLS)";
 
 	if (!mCertificate)
 		throw std::invalid_argument("DTLS certificate is null");
@@ -101,7 +101,7 @@ DtlsTransport::DtlsTransport(shared_ptr<IceTransport> lower, certificate_ptr cer
 DtlsTransport::~DtlsTransport() {
 	stop();
 
-	PLOG_DEBUG << "Destroying DTLS transport";
+	SDebug << "Destroying DTLS transport";
 	mbedtls_entropy_free(&mEntropy);
 	mbedtls_ctr_drbg_free(&mDrbg);
 	mbedtls_ssl_free(&mSsl);
@@ -117,7 +117,7 @@ void DtlsTransport::Cleanup() {
 }
 
 void DtlsTransport::start() {
-	PLOG_DEBUG << "Starting DTLS transport";
+	SDebug << "Starting DTLS transport";
 	registerIncoming();
 	changeState(State::Connecting);
 
@@ -125,14 +125,14 @@ void DtlsTransport::start() {
 		std::lock_guard lock(mSslMutex);
 		size_t mtu = mMtu.value_or(DEFAULT_MTU) - 8 - 40; // UDP/IPv6
 		mbedtls_ssl_set_mtu(&mSsl, static_cast<unsigned int>(mtu));
-		PLOG_VERBOSE << "DTLS MTU set to " << mtu;
+		STrace << "DTLS MTU set to " << mtu;
 	}
 
 	enqueueRecv(); // to initiate the handshake
 }
 
 void DtlsTransport::stop() {
-	PLOG_DEBUG << "Stopping DTLS transport";
+	SDebug << "Stopping DTLS transport";
 	unregisterIncoming();
 	mIncomingQueue.stop();
 	enqueueRecv();
@@ -142,7 +142,7 @@ bool DtlsTransport::send(message_ptr message) {
 	if (!message || state() != State::Connected)
 		return false;
 
-	PLOG_VERBOSE << "Send size=" << message->size();
+	STrace << "Send size=" << message->size();
 
 	int ret;
 	do {
@@ -164,7 +164,7 @@ void DtlsTransport::incoming(message_ptr message) {
 		return;
 	}
 
-	PLOG_VERBOSE << "Incoming size=" << message->size();
+	STrace << "Incoming size=" << message->size();
 	mIncomingQueue.push(message);
 	enqueueRecv();
 }
@@ -223,7 +223,7 @@ void DtlsTransport::doRecv() {
 						mbedtls_ssl_set_mtu(&mSsl, static_cast<unsigned int>(bufferSize + 1));
 					}
 
-					PLOG_INFO << "DTLS handshake finished";
+					SInfo << "DTLS handshake finished";
 					changeState(State::Connected);
 					postHandshake();
 					break;
@@ -245,13 +245,13 @@ void DtlsTransport::doRecv() {
 				}
 
 				if (ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
-					PLOG_DEBUG << "DTLS connection cleanly closed";
+					SDebug << "DTLS connection cleanly closed";
 					break;
 				}
 
 				if (mbedtls::check(ret)) {
 					if (ret == 0) {
-						PLOG_DEBUG << "DTLS connection terminated";
+						SDebug << "DTLS connection terminated";
 						break;
 					}
 					auto *b = reinterpret_cast<byte *>(buffer);
@@ -260,15 +260,15 @@ void DtlsTransport::doRecv() {
 			}
 		}
 	} catch (const std::exception &e) {
-		PLOG_ERROR << "DTLS recv: " << e.what();
+		SError << "DTLS recv: " << e.what();
 	}
 
 	if (state() == State::Connected) {
-		PLOG_INFO << "DTLS closed";
+		SInfo << "DTLS closed";
 		changeState(State::Disconnected);
 		recv(nullptr);
 	} else {
-		PLOG_ERROR << "DTLS handshake failed";
+		SError << "DTLS handshake failed";
 		changeState(State::Failed);
 	}
 }
@@ -391,14 +391,14 @@ void DtlsTransport::Cleanup() {
 	// Nothing to do
 }
 
-DtlsTransport::DtlsTransport(shared_ptr<IceTransport> lower, certificate_ptr certificate,
+DtlsTransport::DtlsTransport(shared_ptr<IceTransport> lower, Certificate* certificate,
                              optional<size_t> mtu,
                              CertificateFingerprint::Algorithm fingerprintAlgorithm,
                              verifier_callback verifierCallback, state_callback stateChangeCallback)
     : Transport(lower, std::move(stateChangeCallback)), mMtu(mtu), mCertificate(certificate),
       mFingerprintAlgorithm(fingerprintAlgorithm), mVerifierCallback(std::move(verifierCallback)),
       mIsClient(lower->role() == Description::Role::Active) {
-	PLOG_DEBUG << "Initializing DTLS transport (OpenSSL)";
+	SDebug << "Initializing DTLS transport (OpenSSL)";
 
 	if (!mCertificate)
 		throw std::invalid_argument("DTLS certificate is null");
@@ -495,13 +495,13 @@ DtlsTransport::DtlsTransport(shared_ptr<IceTransport> lower, certificate_ptr cer
 DtlsTransport::~DtlsTransport() {
 	stop();
 
-	PLOG_DEBUG << "Destroying DTLS transport";
+	SDebug << "Destroying DTLS transport";
 	SSL_free(mSsl);
 	SSL_CTX_free(mCtx);
 }
 
 void DtlsTransport::start() {
-	PLOG_DEBUG << "Starting DTLS transport";
+	SDebug << "Starting DTLS transport";
 	registerIncoming();
 	changeState(State::Connecting);
 
@@ -511,7 +511,7 @@ void DtlsTransport::start() {
 
 		size_t mtu = mMtu.value_or(DEFAULT_MTU) - 8 - 40; // UDP/IPv6
 		SSL_set_mtu(mSsl, static_cast<unsigned int>(mtu));
-		PLOG_VERBOSE << "DTLS MTU set to " << mtu;
+		STrace << "DTLS MTU set to " << mtu;
 
 		// Initiate the handshake
 		ret = SSL_do_handshake(mSsl);
@@ -524,7 +524,7 @@ void DtlsTransport::start() {
 }
 
 void DtlsTransport::stop() {
-	PLOG_DEBUG << "Stopping DTLS transport";
+	SDebug << "Stopping DTLS transport";
 	unregisterIncoming();
 	mIncomingQueue.stop();
 	enqueueRecv();
@@ -534,7 +534,7 @@ bool DtlsTransport::send(message_ptr message) {
 	if (!message || state() != State::Connected)
 		return false;
 
-	PLOG_VERBOSE << "Send size=" << message->size();
+	STrace << "Send size=" << message->size();
 
 	int ret, err;
 	{
@@ -557,7 +557,7 @@ void DtlsTransport::incoming(message_ptr message) {
 		return;
 	}
 
-	PLOG_VERBOSE << "Incoming size=" << message->size();
+	STrace << "Incoming size=" << message->size();
 	mIncomingQueue.push(message);
 	enqueueRecv();
 }
@@ -624,7 +624,7 @@ void DtlsTransport::doRecv() {
 						SSL_set_mtu(mSsl, bufferSize + 1);
 					}
 
-					PLOG_INFO << "DTLS handshake finished";
+					SInfo << "DTLS handshake finished";
 					postHandshake();
 					changeState(State::Connected);
 				}
@@ -639,7 +639,7 @@ void DtlsTransport::doRecv() {
 				}
 
 				if (err == SSL_ERROR_ZERO_RETURN) {
-					PLOG_DEBUG << "TLS connection cleanly closed";
+					SDebug << "TLS connection cleanly closed";
 					break;
 				}
 
@@ -652,15 +652,15 @@ void DtlsTransport::doRecv() {
 		SSL_shutdown(mSsl);
 
 	} catch (const std::exception &e) {
-		PLOG_ERROR << "DTLS recv: " << e.what();
+		SError << "DTLS recv: " << e.what();
 	}
 
 	if (state() == State::Connected) {
-		PLOG_INFO << "DTLS closed";
+		SInfo << "DTLS closed";
 		changeState(State::Disconnected);
 		recv(nullptr);
 	} else {
-		PLOG_ERROR << "DTLS handshake failed";
+		SError << "DTLS handshake failed";
 		changeState(State::Failed);
 	}
 }
@@ -673,7 +673,7 @@ void DtlsTransport::handleTimeout() {
 	if (ret < 0) {
 		throw std::runtime_error("Handshake timeout"); // write BIO can't fail
 	} else if (ret > 0) {
-		LOG_VERBOSE << "DTLS retransmit done";
+		STrace << "DTLS retransmit done";
 	}
 
 	struct timeval tv = {};
@@ -686,7 +686,7 @@ void DtlsTransport::handleTimeout() {
 		if (timeout > 30s)
 			throw std::runtime_error("Handshake timeout");
 
-		LOG_VERBOSE << "DTLS retransmit timeout is " << timeout.count() << "ms";
+		STrace << "DTLS retransmit timeout is " << timeout.count() << "ms";
 		ThreadPool::Instance().schedule(timeout, [weak_this = weak_from_this()]() {
 			if (auto locked = weak_this.lock())
 				locked->doRecv();
@@ -712,7 +712,7 @@ void DtlsTransport::InfoCallback(const SSL *ssl, int where, int ret) {
 
 	if (where & SSL_CB_ALERT) {
 		if (ret != 256) { // Close Notify
-			PLOG_ERROR << "DTLS alert: " << SSL_alert_desc_string_long(ret);
+			SError << "DTLS alert: " << SSL_alert_desc_string_long(ret);
 		}
 		t->mIncomingQueue.stop(); // Close the connection
 	}

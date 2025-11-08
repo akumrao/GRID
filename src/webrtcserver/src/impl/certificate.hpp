@@ -60,9 +60,9 @@ string make_fingerprint(X509 *x509, CertificateFingerprint::Algorithm fingerprin
 #endif
 
 using certificate_ptr = shared_ptr<Certificate>;
-using future_certificate_ptr = std::shared_future<certificate_ptr>;
+//using future_certificate_ptr = std::shared_future<certificate_ptr>;
 
-future_certificate_ptr make_certificate(CertificateType type = CertificateType::Default);
+shared_ptr<Certificate> make_certificate(CertificateType type = CertificateType::Default);
 
 } // namespace rtc::impl
 

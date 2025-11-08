@@ -431,10 +431,10 @@ string make_fingerprint(X509 *x509, CertificateFingerprint::Algorithm fingerprin
 
 // Common for  Mbed TLS, and OpenSSL
 
-future_certificate_ptr make_certificate(CertificateType type) {
-	return ThreadPool::Instance().enqueue([type, token = Init::Instance().token()]() {
-		return std::make_shared<Certificate>(Certificate::Generate(type, "datachannel"));
-	});
+shared_ptr<Certificate> make_certificate(CertificateType type) {
+
+  return std::make_shared<Certificate>(Certificate::Generate(type, "datachannel"));
+
 }
 
 CertificateFingerprint Certificate::fingerprint() const {

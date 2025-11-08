@@ -42,13 +42,11 @@ PeerConnection::PeerConnection(Configuration config_) : config(std::move(config_
 	PLOG_VERBOSE << "Creating PeerConnection";
 
 	if (config.certificatePemFile && config.keyPemFile) {
-		std::promise<certificate_ptr> cert;
-		cert.set_value(std::make_shared<Certificate>(
+           mCertificate =  std::make_shared<Certificate>(
 		    config.certificatePemFile->find(PemBeginCertificateTag) != string::npos
 		        ? Certificate::FromString(*config.certificatePemFile, *config.keyPemFile)
 		        : Certificate::FromFile(*config.certificatePemFile, *config.keyPemFile,
-		                                config.keyPemPass.value_or(""))));
-		mCertificate = cert.get_future();
+		                                config.keyPemPass.value_or("")));
 	} else if (!config.certificatePemFile && !config.keyPemFile) {
 		mCertificate = make_certificate(config.certificateType);
 	} else {

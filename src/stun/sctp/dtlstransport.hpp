@@ -17,16 +17,7 @@
 
 namespace rtc {
 
-//class IceTransport: public Transport
-//{
-//public:
-//
-//    Description::Role role()
-//    {
-//        return Description::Role::ActPass;
-//    }
-//    
-//};
+
 
 class DtlsTransport : public Transport, public std::enable_shared_from_this<DtlsTransport> {
 public:
