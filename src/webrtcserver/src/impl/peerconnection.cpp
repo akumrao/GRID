@@ -70,13 +70,15 @@ PeerConnection::PeerConnection(Configuration config_) : config(std::move(config_
 }
 
 PeerConnection::~PeerConnection() {
-	PLOG_VERBOSE << "Destroying PeerConnection";
+	SInfo << "Destroying PeerConnection";
 	mProcessor.join();
+        
+        delete mCertificate;
 }
 
 void PeerConnection::close() {
 	if (!closing.exchange(true)) {
-		PLOG_VERBOSE << "Closing PeerConnection";
+		SInfo << "Closing PeerConnection";
 		if (auto transport = std::atomic_load(&mSctpTransport))
 			transport->stop();
 		else
@@ -87,7 +89,7 @@ void PeerConnection::close() {
 void PeerConnection::remoteClose() {
 	close();
 	if (state.load() != State::Closed) {
-		// Close data channels and tracks asynchronously
+		 SInfo << "Closing remoteClose";
 		mProcessor.enqueue(&PeerConnection::closeDataChannels, shared_from_this());
 		mProcessor.enqueue(&PeerConnection::closeTracks, shared_from_this());
 

@@ -74,7 +74,7 @@ DtlsTransport::DtlsTransport(shared_ptr<IceTransport> lower, Certificate * certi
 		mbedtls_ssl_conf_rng(&mConf, mbedtls_ctr_drbg_random, &mDrbg);
 
 		auto [crt, pk] = mCertificate->credentials();
-		mbedtls::check(mbedtls_ssl_conf_own_cert(&mConf, crt.get(), pk.get()));
+		mbedtls::check(mbedtls_ssl_conf_own_cert(&mConf, crt, pk));
 
 		mbedtls_ssl_conf_dtls_cookies(&mConf, NULL, NULL, NULL);
 		mbedtls_ssl_conf_dtls_srtp_protection_profiles(&mConf, srtpSupportedProtectionProfiles);

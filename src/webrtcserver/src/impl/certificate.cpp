@@ -59,44 +59,44 @@ string make_fingerprint(mbedtls_x509_crt *crt,
 	return fingerprint.str();
 }
 
-Certificate::Certificate(shared_ptr<mbedtls_x509_crt> crt, shared_ptr<mbedtls_pk_context> pk)
+Certificate::Certificate(mbedtls_x509_crt *crt, mbedtls_pk_context* pk)
     : mCrt(crt), mPk(pk),
-      mFingerprint(make_fingerprint(crt.get(), CertificateFingerprint::Algorithm::Sha256)) {}
+      mFingerprint(make_fingerprint(crt, CertificateFingerprint::Algorithm::Sha256)) {}
 
-Certificate Certificate::FromString(string crt_pem, string key_pem) {
+Certificate* Certificate::FromString(string crt_pem, string key_pem) {
 	PLOG_DEBUG << "Importing certificate from PEM string (MbedTLS)";
 
 	auto crt = mbedtls::new_x509_crt();
 	auto pk = mbedtls::new_pk_context();
 
-	mbedtls::check(mbedtls_x509_crt_parse(crt.get(),
+	mbedtls::check(mbedtls_x509_crt_parse(crt,
 	                                      reinterpret_cast<const unsigned char *>(crt_pem.c_str()),
 	                                      crt_pem.size() + 1),
 	               "Failed to parse certificate");
-	mbedtls::check(mbedtls_pk_parse_key(pk.get(),
+	mbedtls::check(mbedtls_pk_parse_key(pk,
 	                                    reinterpret_cast<const unsigned char *>(key_pem.c_str()),
 	                                    key_pem.size() + 1, NULL, 0, NULL, 0),
 	               "Failed to parse key");
 
-	return Certificate(std::move(crt), std::move(pk));
+	return new Certificate(crt, pk);
 }
 
-Certificate Certificate::FromFile(const string &crt_pem_file, const string &key_pem_file,
+Certificate* Certificate::FromFile(const string &crt_pem_file, const string &key_pem_file,
                                   const string &pass) {
 	PLOG_DEBUG << "Importing certificate from PEM file (MbedTLS): " << crt_pem_file;
 
 	auto crt = mbedtls::new_x509_crt();
 	auto pk = mbedtls::new_pk_context();
 
-	mbedtls::check(mbedtls_x509_crt_parse_file(crt.get(), crt_pem_file.c_str()),
+	mbedtls::check(mbedtls_x509_crt_parse_file(crt, crt_pem_file.c_str()),
 	               "Failed to parse certificate");
-	mbedtls::check(mbedtls_pk_parse_keyfile(pk.get(), key_pem_file.c_str(), pass.c_str(), 0, NULL),
+	mbedtls::check(mbedtls_pk_parse_keyfile(pk, key_pem_file.c_str(), pass.c_str(), 0, NULL),
 	               "Failed to parse key");
 
-	return Certificate(std::move(crt), std::move(pk));
+	return new Certificate(crt, pk);
 }
 
-Certificate Certificate::Generate(CertificateType type, const string &commonName) {
+Certificate* Certificate::Generate(CertificateType type, const string &commonName) {
 	PLOG_DEBUG << "Generating certificate (MbedTLS)";
 
 	mbedtls_entropy_context entropy;
@@ -124,8 +124,8 @@ Certificate Certificate::Generate(CertificateType type, const string &commonName
 		// See https://www.rfc-editor.org/rfc/rfc8827.html#section-6.5
 		case CertificateType::Default:
 		case CertificateType::Ecdsa: {
-			mbedtls::check(mbedtls_pk_setup(pk.get(), mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY)));
-			mbedtls::check(mbedtls_ecp_gen_key(MBEDTLS_ECP_DP_SECP256R1, mbedtls_pk_ec(*pk.get()),
+			mbedtls::check(mbedtls_pk_setup(pk, mbedtls_pk_info_from_type(MBEDTLS_PK_ECKEY)));
+			mbedtls::check(mbedtls_ecp_gen_key(MBEDTLS_ECP_DP_SECP256R1, mbedtls_pk_ec(*pk),
 			                                   mbedtls_ctr_drbg_random, &drbg),
 			               "Unable to generate ECDSA P-256 key pair");
 			break;
@@ -134,8 +134,8 @@ Certificate Certificate::Generate(CertificateType type, const string &commonName
 			const unsigned int nbits = 2048;
 			const int exponent = 65537;
 
-			mbedtls::check(mbedtls_pk_setup(pk.get(), mbedtls_pk_info_from_type(MBEDTLS_PK_RSA)));
-			mbedtls::check(mbedtls_rsa_gen_key(mbedtls_pk_rsa(*pk.get()), mbedtls_ctr_drbg_random,
+			mbedtls::check(mbedtls_pk_setup(pk, mbedtls_pk_info_from_type(MBEDTLS_PK_RSA)));
+			mbedtls::check(mbedtls_rsa_gen_key(mbedtls_pk_rsa(*pk), mbedtls_ctr_drbg_random,
 			                                   &drbg, nbits, exponent),
 			               "Unable to generate RSA key pair");
 			break;
@@ -167,8 +167,8 @@ Certificate Certificate::Generate(CertificateType type, const string &commonName
 		    "Failed to generate certificate");
 
 		mbedtls_x509write_crt_set_version(&wcrt, MBEDTLS_X509_CRT_VERSION_3);
-		mbedtls_x509write_crt_set_subject_key(&wcrt, pk.get());
-		mbedtls_x509write_crt_set_issuer_key(&wcrt, pk.get());
+		mbedtls_x509write_crt_set_subject_key(&wcrt, pk);
+		mbedtls_x509write_crt_set_issuer_key(&wcrt, pk);
 		mbedtls_x509write_crt_set_md_alg(&wcrt, MBEDTLS_MD_SHA256);
 
 		const size_t certificateBufferSize = 4096;
@@ -182,7 +182,7 @@ Certificate Certificate::Generate(CertificateType type, const string &commonName
 		}
 
 		mbedtls::check(mbedtls_x509_crt_parse_der(
-		                   crt.get(), (certificateBuffer + certificateBufferSize - certificateLen),
+		                   crt, (certificateBuffer + certificateBufferSize - certificateLen),
 		                   certificateLen),
 		               "Failed to generate certificate");
 	} catch (...) {
@@ -197,10 +197,10 @@ Certificate Certificate::Generate(CertificateType type, const string &commonName
 	mbedtls_ctr_drbg_free(&drbg);
 	mbedtls_x509write_crt_free(&wcrt);
 	mbedtls_mpi_free(&serial);
-	return Certificate(std::move(crt), std::move(pk));
+	return new Certificate(std::move(crt), std::move(pk));
 }
 
-std::tuple<shared_ptr<mbedtls_x509_crt>, shared_ptr<mbedtls_pk_context>>
+std::tuple< mbedtls_x509_crt*, mbedtls_pk_context* >
 Certificate::credentials() const {
 	return {mCrt, mPk};
 }

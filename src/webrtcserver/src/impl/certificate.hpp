@@ -20,12 +20,17 @@ public:
 	                            const string &pass = "");
 	static Certificate* Generate(CertificateType type, const string &commonName);
 
-#if USE_GNUTLS
-	Certificate(gnutls_x509_crt_t crt, gnutls_x509_privkey_t privkey);
-	gnutls_certificate_credentials_t credentials() const;
-#elif USE_MBEDTLS
-	Certificate(shared_ptr<mbedtls_x509_crt> crt, shared_ptr<mbedtls_pk_context> pk);
-	std::tuple<shared_ptr<mbedtls_x509_crt>, shared_ptr<mbedtls_pk_context>> credentials() const;
+
+#if USE_MBEDTLS
+	Certificate(mbedtls_x509_crt *crt, mbedtls_pk_context *pk);
+	std::tuple< mbedtls_x509_crt*, mbedtls_pk_context*  > credentials() const;
+        
+        ~Certificate()
+        {
+           mbedtls::pk_free(mPk);
+           mbedtls::crt_free(mCrt); 
+        }
+                
 #else // OPENSSL
 	Certificate(X509 *x509, EVP_PKEY *pkey, std::vector<X509*> chain = {});
 	std::tuple<X509 *, EVP_PKEY *> credentials() const;
@@ -34,14 +39,11 @@ public:
         ~Certificate()
         {
             X509_free(mX509);
-            
             for (X509* tmp : mChain) {
                  X509_free(tmp);
             }
-           mChain.clear();
-    
+            mChain.clear();
             EVP_PKEY_free(mPKey);
-            
         }
 #endif
 
@@ -52,8 +54,8 @@ private:
 
 
 #if USE_MBEDTLS
-	const mbedtls_x509_crt *mCrt;
-	const mbedtls_pk_context *mPk;
+	mbedtls_x509_crt *mCrt;
+	mbedtls_pk_context *mPk;
 #else
 	X509 *mX509{nullptr};
 	EVP_PKEY *mPKey{nullptr};
@@ -63,10 +65,8 @@ private:
 	const string mFingerprint;
 };
 
-#if USE_GNUTLS
-string make_fingerprint(gnutls_certificate_credentials_t credentials, CertificateFingerprint::Algorithm fingerprintAlgorithm);
-string make_fingerprint(gnutls_x509_crt_t crt, CertificateFingerprint::Algorithm fingerprintAlgorithm);
-#elif USE_MBEDTLS
+
+#if USE_MBEDTLS
 string make_fingerprint(mbedtls_x509_crt *crt, CertificateFingerprint::Algorithm fingerprintAlgorithm);
 #else
 string make_fingerprint(X509 *x509, CertificateFingerprint::Algorithm fingerprintAlgorithm);

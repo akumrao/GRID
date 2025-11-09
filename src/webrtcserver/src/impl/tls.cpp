@@ -114,31 +114,40 @@ string format_time(const std::chrono::system_clock::time_point &tp) {
 		throw std::runtime_error("Time conversion failed");
 
 	return string(buffer);
-};
-
-std::shared_ptr<mbedtls_pk_context> new_pk_context() {
-	return std::shared_ptr<mbedtls_pk_context>{[]() {
-		                                           auto p = new mbedtls_pk_context;
-		                                           mbedtls_pk_init(p);
-		                                           return p;
-	                                           }(),
-	                                           [](mbedtls_pk_context *p) {
-		                                           mbedtls_pk_free(p);
-		                                           delete p;
-	                                           }};
 }
 
-std::shared_ptr<mbedtls_x509_crt> new_x509_crt() {
-	return std::shared_ptr<mbedtls_x509_crt>{[]() {
-		                                         auto p = new mbedtls_x509_crt;
-		                                         mbedtls_x509_crt_init(p);
-		                                         return p;
-	                                         }(),
-	                                         [](mbedtls_x509_crt *crt) {
-		                                         mbedtls_x509_crt_free(crt);
-		                                         delete crt;
-	                                         }};
+mbedtls_pk_context* new_pk_context() 
+{
+
+	auto p = new mbedtls_pk_context;
+	mbedtls_pk_init(p);
+	return p;
+	                                          
 }
+
+mbedtls_x509_crt* new_x509_crt() 
+{
+	
+	auto p = new mbedtls_x509_crt;
+	mbedtls_x509_crt_init(p);
+	return p;
+}
+
+
+void pk_free(mbedtls_pk_context *p) 
+{
+	mbedtls_pk_free(p);
+	delete p;
+}
+
+
+void crt_free(mbedtls_x509_crt *crt) 
+{
+	mbedtls_x509_crt_free(crt);
+	delete crt;
+}
+
+
 
 } // namespace rtc::mbedtls
 

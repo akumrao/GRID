@@ -22,7 +22,7 @@
 
 //#define localtesting 1
 //#define VIDEOMEDIA 1
-//#define CERTFROMFILE 1
+#define CERTFROMFILE 2
 
 using namespace rtc;
 using namespace std;
@@ -328,10 +328,23 @@ int main(int argc, char **argv)
     config.iceServers.emplace_back(stunServer);
     config.disableAutoNegotiation = true;
     // read cert from file
-#if CERTFROMFILE
+#if CERTFROMFILE == 1
     config.keyPemFile = "/var/tmp/key/private_key.pem";
     config.certificatePemFile = "/var/tmp/key/certificate.crt";  
     config.keyPemPass = "12345678";
+    
+#elif CERTFROMFILE == 2
+
+    /* convert pem to single line
+     * # awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' certificate.crt  
+    */
+
+    config.keyPemFile = "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQDAPJVsM+7tQxKy\n2IBp+8i2aCuv3xl1wftDxXqG7GYuatDid8rwHBH68JcnTU09T8RHi+Ezj+0YPYV4\nIDGTUDufxK1snv5V6wdKESZM2ZYvzDIDuHCiXrtl5Tee+tnh1XYk4CXk9h+SsB/X\n70FXIW98XqR+2iVl1ezwjEeu7X1ET9wh1UHOiLB0do5+dSDo/nNIP+K+QnG/YC9v\nYUViozWO1JvZ0KgEybOrTbRKWsHKRyRNOyZtXNUMcLt2vJLCm5dmDfPCeqbEagyN\nZLPpucd+HRoZ1U1aXvZ36l30sJlvIjnkeLkccd3Bv85fhAvzK5WoAqSsB0nFOAYm\nDIVcyDcfAgMBAAECggEBALOfqGtLd4SBONaeUBc36kruuWuDRnHvCM5BlwS9nZjf\nvEDweFK1l+NnrYVOyM5yW1ATFyGr6XnN+onNYyVoQd4+02F8iuBTVSNTNPt4EMqm\nvVEWpUBCzk4eyUMm2DIZ2GQKgb4YcFYLdiW57M7ycg6/DGtvgKRQKS53lX+Rb4xE\nhYrhhfDuKJf1qYy4h/IKYBEruRjrinLjYACIdQ5Wi1A/Bjci5+rN9tsjVBmlXrND\nwCu2cyitsrvKDm3/jZFScP4Ydv+78qlHC6EqL3XZacJ+BqCaRmv4UC4x+VhSt85L\nE0V5RlgJzwmbr0f26bJ/scq0qzJ+mdUhXkhvmsfVBhkCgYEA+HNOO42Jj1yoXRqH\nkEDAGCM5c/uUTDZT6FrMT254okjPMkDj6SRFwCjc7v7a3yKBI4DzLfoySvlLXyBa\nhQe9BJo6MNPElAmeJKj1UmzQz8uBGhWuAoFfkgySe7WtThRCxEAtZ3wF06/6Y3Q+\nMoDUFsIYq68UMdbXDwGTZfnVdpsCgYEAxhP9176Bt4XZ7wtm3gO7ZdxwuoQ0Wu03\nl5FKwTnrVZ7ljzq3mVVV0i++5Py7sayZmsehPbHdl3vVmbTmSLRaHiiZNZKqaHDr\nmTK3H6MKa+C2bKOgat+O0ulTWH+EdDK9pCsP7XPkE8mL0tsG1ZLkvpgp2cnaOPIO\nh1++k4BuB80CgYAUkt/QmKjigUbD5vWA4YvGs+wHCbc/FGSgYhx3G2vL7IGT5MG6\nxbEs93VMKTiQr7fH6963WPefM8OlDfXQ/FIPtoHJF1A4/g7ldERUXgRwoKaBNXhi\nZro2Suo6alH+nDjnLXVVE3UcEX+HitG3tulZNRt75BSlB+hpKrU9BZJCrwKBgQCQ\ndsgub50/8nmOJKyzw9kLY4k8H2vn3RcsjiUNZGbFHYyjt9lsFZbwIy6A5+sknJOz\nFWH+ExlggEq7PfqukAsh784+CmgKoEDUjO6OPmU9ZLjn5zb6e245WT8WTnqWHOO/\nNkD5mAqCe/5knKYRYn8+ms/7LYLhAXmjNitSfNrDCQKBgQDdhcjA4aGenydX49pU\n7TnizzXPaU449hQvXL5DLHOXMifnxntQdXv87yyZy5WmX3GSkobV7gu9y7EGOryZ\n7h4irr7ecphOI2/7Qgfpd0b+MaI8TcHK8BkpMCC5iKfpNNfzXQrXYfXHKvdhlbi2\n5yXcrRZxBSvWu+IDiGqFBdL+ig==\n-----END PRIVATE KEY-----\n";
+    config.certificatePemFile = "-----BEGIN CERTIFICATE-----\nMIICwjCCAaqgAwIBAgIJAOKZBPq4tcY7MA0GCSqGSIb3DQEBCwUAMBkxFzAVBgNV\nBAMTDkFydmluZFNjb3BlQXBwMB4XDTIwMDYxMzA0MjE0N1oXDTMwMDYxMTA0MjE0\nN1owGTEXMBUGA1UEAxMOQXJ2aW5kU2NvcGVBcHAwggEiMA0GCSqGSIb3DQEBAQUA\nA4IBDwAwggEKAoIBAQDAPJVsM+7tQxKy2IBp+8i2aCuv3xl1wftDxXqG7GYuatDi\nd8rwHBH68JcnTU09T8RHi+Ezj+0YPYV4IDGTUDufxK1snv5V6wdKESZM2ZYvzDID\nuHCiXrtl5Tee+tnh1XYk4CXk9h+SsB/X70FXIW98XqR+2iVl1ezwjEeu7X1ET9wh\n1UHOiLB0do5+dSDo/nNIP+K+QnG/YC9vYUViozWO1JvZ0KgEybOrTbRKWsHKRyRN\nOyZtXNUMcLt2vJLCm5dmDfPCeqbEagyNZLPpucd+HRoZ1U1aXvZ36l30sJlvIjnk\neLkccd3Bv85fhAvzK5WoAqSsB0nFOAYmDIVcyDcfAgMBAAGjDTALMAkGA1UdEwQC\nMAAwDQYJKoZIhvcNAQELBQADggEBAC5KyEK9/Z4VM2CSNbFm6IzND0AACqYT2e8d\nHsT5/cLo+Zc7NWvMagq+myAAYEptarbvHNVWS/gsYWSg5+pHhrs1VPCXZTLjelGG\nnSqEZSXl4ANV9yNP/KdG8z8zruHKsqwJ0LDLem2KOnA0WzcEO1IRH59EnVsV4CkT\nCs1DH2i20NCZklwFREd3AOgkPR7pruxITN6hQ6MH/MHC6FyQbbvJEl7ceV1adON/\nXJNYomKwCVkxLss8PV/TcyPA9CWJA/c9blh/GPRAerqbBF7OwPVKmt3RxBr02tGT\nTFTokCgkm2d9DYtf0rtQOOL82zZB/YmgQytMYxaiUCf31xJTR/I=\n-----END CERTIFICATE-----\n";  
+   // config.keyPemPass = "12345678";
+    
+#else
+    
 #endif
 
     string localId = "server";
@@ -552,7 +565,7 @@ shared_ptr<Client> createPeerConnection_lc(const Configuration &config,  string 
                 // remove disconnected client
                 //MainThread.dispatch([id]() 
                 {
-                  //  clients.erase(id);
+                    clients.erase(id);
 
                     int x = 1; //arvind
                 }
@@ -715,7 +728,7 @@ shared_ptr<Client> createPeerConnection_lc(const Configuration &config,  string 
                 // remove disconnected client
                 //MainThread.dispatch([id]() 
                 {
-                  //  clients.erase(id);
+                    clients.erase(id);
 
                     int x = 1; //arvind
                 }
@@ -877,7 +890,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id,
             // remove disconnected client
             //MainThread.dispatch([id]() 
             {
-              //  clients.erase(id);
+                clients.erase(id);
                 
                 int x = 1; //arvind
             }

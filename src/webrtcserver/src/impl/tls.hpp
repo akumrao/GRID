@@ -49,8 +49,12 @@ bool check(int ret, const string &message = "MbedTLS error");
 
 string format_time(const std::chrono::system_clock::time_point &tp);
 
-std::shared_ptr<mbedtls_pk_context> new_pk_context();
-std::shared_ptr<mbedtls_x509_crt> new_x509_crt();
+mbedtls_pk_context* new_pk_context();
+mbedtls_x509_crt* new_x509_crt();
+
+void pk_free(mbedtls_pk_context *p);
+void crt_free(mbedtls_x509_crt *crt);
+
 
 } // namespace rtc::mbedtls
 
