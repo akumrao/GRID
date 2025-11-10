@@ -116,6 +116,7 @@ static void print_help() {
 
 static void print_config() {
     printf("tty configuration:\n");
+    printf("http://localhost:8000\n");
     if (server->credential != NULL) printf("  credential: %s\n", server->credential);
     printf("  start command: %s\n", server->command);
     printf("  close signal: %s (%d)\n", server->sig_name, server->sig_code);

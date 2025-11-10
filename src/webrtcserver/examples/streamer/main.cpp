@@ -295,10 +295,34 @@ void initiate(std::string rm)
 #endif
 
 int main(int argc, char **argv) 
-
-
-//try 
 {
+
+/////////////////////////////////////////////////
+    base::cnfg::Configuration config;
+
+    config.load("/configs/config.js");
+
+    try {
+        Settings::SetConfiguration(config.root);
+    } catch (const std::exception& error) {
+
+        std::_Exit(-1);
+    } 
+  
+    if (!base::fs::exists(Settings::configuration.log))
+    {
+        base::fs::mkdir(Settings::configuration.log);
+    }
+
+
+    if(!config.loaded())
+    {
+       
+
+    }
+
+////////////////////////////////////////////////////    
+
 
     bool printHelp = false;
     //int c = 0;

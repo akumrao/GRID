@@ -76,7 +76,8 @@ int close_reason(base::net::Listener* conn, uint16_t statusCode  )
 {
         
     base::net::WebSocketConnection *con = (base::net::WebSocketConnection*)conn;
-    con->shutdown( statusCode, nullptr);
+    std::string reason= "close";
+    con->shutdown( statusCode, reason);
 }
 
 int callback_on_writable(	base::net::Listener* conn)
