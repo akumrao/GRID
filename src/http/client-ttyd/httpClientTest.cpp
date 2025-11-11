@@ -44,13 +44,13 @@ ClientConnecton *m_client = nullptr;
 
 
 
-uv_signal_t sigint_watcher;
-
-void on_signal(uv_signal_t *handle, int signum) {
-    fprintf(stderr, "Caught signal %d, stopping loop...\n", signum);
-    uv_stop(handle->loop);
-    uv_close((uv_handle_t*)handle, NULL); // Close the signal watcher
-}
+//uv_signal_t sigint_watcher;
+//
+//void on_signal(uv_signal_t *handle, int signum) {
+//    fprintf(stderr, "Caught signal %d, stopping loop...\n", signum);
+//    uv_stop(handle->loop);
+//    uv_close((uv_handle_t*)handle, NULL); // Close the signal watcher
+//}
 
 
 void set_terminal_title(const char *title) {
@@ -63,9 +63,9 @@ void set_terminal_title(const char *title) {
 
 int main(int argc, char** argv) {
 
-    //Logger::instance().add(new RemoteChannel("Remote", Level::Remote, "127.0.0.1", 6000));
+    Logger::instance().add(new ConsoleChannel("debug", Level::Trace) );
 
-      Logger::instance().add(new RotatingFileChannel("tty", "/tmp/tty.txt", Level::Trace, "log", 100));
+    //Logger::instance().add(new RotatingFileChannel("tty", "/tmp/tty.txt", Level::Trace, "log", 100));
     
       
       
@@ -180,7 +180,13 @@ int main(int argc, char** argv) {
             STrace << "client->fnClose " << str ;
            // close(0,"exit");
              //on_close();
- 
+            
+            rtc.stop();
+            m_client->Close();
+            delete m_client;
+            m_client = nullptr; 
+             
+            
 //            m_con_state = con_closed;
         };
         

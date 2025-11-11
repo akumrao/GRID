@@ -109,6 +109,8 @@ namespace base {
     //    }
 
     void TTY::stop() {
+        uv_read_stop((uv_stream_t*) &tty);
+        uv_close((uv_handle_t*) &tty, NULL);
         uv_tty_reset_mode(); // Reset TTY mode before exiting
     }
 

@@ -328,7 +328,7 @@ namespace base {
                         listener->on_wsclose(this);
 
                          if(_connection)
-                        _connection->Close();
+                        _connection->fnClose(_connection,"remoteclose");
                          
                          return;
                     }
@@ -426,7 +426,13 @@ namespace base {
             framer._headerState = 0;
             framer._frameFlags = 0;
 
+            if(listener)
             this->listener->on_wsclose( this);
+            
+            if(_connection)
+                _connection->fnClose(_connection, "close");
+            
+            
             // Emit closed event
             //net::SocketEmitter::onSocketClose(*socket.get());
         }
