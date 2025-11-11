@@ -45,14 +45,21 @@ namespace base {
         }
 
         bool WebSocketConnection::shutdown(uint16_t statusCode, const std::string& statusMessage) {
-            char buffer[256];
-            BitWriter writer(buffer, 256);
-            writer.putU16(statusCode);
-            writer.put(statusMessage);
+            //char buffer[2];
+           // BitWriter writer(buffer, 2);
+            //writer.putU8(unsigned(FrameFlags::Fin) | unsigned(Opcode::Close));
+           // writer.putU16(statusCode);
+            //writer.put(statusMessage);
 
-            assert(socket);
-             send(buffer, writer.position(),
-                    unsigned(FrameFlags::Fin) | unsigned(Opcode::Close));
+             Buffer buffer;
+            buffer.reserve(2 + WebSocketFramer::MAX_HEADER_LENGTH);
+            BitWriter writer(buffer);
+            framer.writeFrame(statusMessage.data(), 2, int( unsigned(FrameFlags::Fin) | unsigned(Opcode::Close)), writer);
+
+            _connection->tcpsend((const char*) writer.begin(), writer.position(), nullptr);
+           
+           
+           
             
             return true;
         }
@@ -579,7 +586,7 @@ namespace base {
         }
 
         size_t WebSocketFramer::writeFrame(const char* data, size_t len, int flags, BitWriter& frame) {
-            assert(flags == SendFlags::Text || flags == SendFlags::Binary);
+          //  assert(flags == SendFlags::Text || flags == SendFlags::Binary);
             assert(frame.position() == 0);
             // assert(frame.limit() >= size_t(len + MAX_HEADER_LENGTH));
 
