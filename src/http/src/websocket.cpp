@@ -60,6 +60,8 @@ namespace base {
         
         bool WebSocketConnection::pong() {
 
+            STrace << "Send pong";
+            
             Buffer buffer;
             buffer.reserve(2 + WebSocketFramer::MAX_HEADER_LENGTH);
             BitWriter writer(buffer);
@@ -72,6 +74,24 @@ namespace base {
             return true;
         }
 
+        
+        bool WebSocketConnection::ping() {
+
+            STrace << "Send ping";
+            
+            
+            Buffer buffer;
+            buffer.reserve(2 + WebSocketFramer::MAX_HEADER_LENGTH);
+            BitWriter writer(buffer);
+            framer.writeFrame("pong", 2, int( unsigned(FrameFlags::Fin) | unsigned(Opcode::Ping)), writer);
+
+            _connection->tcpsend((const char*) writer.begin(), writer.position(), nullptr);
+           
+
+            
+            return true;
+        }
+            
         void WebSocketConnection::send(const char* data, size_t len, bool binary , onSendCallback cb) {
            // LTrace("Send: ", len, ": ", std::string(data, len))
             assert(framer.handshakeComplete());
@@ -332,7 +352,7 @@ namespace base {
                     case 0x9:
                     {
                         wsFrameTyp= PING_FRAME; 
-                        SInfo << "Ping "  << this;
+                        SInfo << "Received Ping "  << this;
                         pong();
                         return;
                     }
@@ -341,7 +361,7 @@ namespace base {
                     {
                       
                         wsFrameTyp= PONG_FRAME;
-                        SInfo << "Pong "  << this;
+                        SInfo << "Received Pong "  << this;
                     }
                     break;
                     default:

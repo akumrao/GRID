@@ -239,7 +239,7 @@ namespace base {
 
             bool shutdown(uint16_t statusCode, const std::string& statusMessage);
             bool pong();
-            
+            bool ping();
             void dummy_timer_cb();
             
             void push( const char* data, size_t len, bool binary, int frametype);
