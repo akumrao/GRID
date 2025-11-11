@@ -53,19 +53,19 @@ ClientConnecton *m_client = nullptr;
 //}
 
 
-void set_terminal_title(const char *title) {
+void set_terminal_title(int sz, const char *title) {
     // Escape sequence to set the window title: ESC]0;TitleBEL
     // \033 is the escape character, ]0; means set title and icon name, \007 is the bell character
-    printf("\033]0;%s\007", title);
+    printf("\033]0;%.*s\007", sz, title);
     fflush(stdout); // Flush stdout to ensure the title is set immediately
 }
 
 
 int main(int argc, char** argv) {
 
-    Logger::instance().add(new ConsoleChannel("debug", Level::Trace) );
+    //Logger::instance().add(new ConsoleChannel("debug", Level::Trace) );
 
-    //Logger::instance().add(new RotatingFileChannel("tty", "/tmp/tty.txt", Level::Trace, "log", 100));
+    Logger::instance().add(new RotatingFileChannel("tty", "/tmp/tty.txt", Level::Trace, "log", 100));
     
       
       
@@ -147,14 +147,14 @@ int main(int argc, char** argv) {
                 switch (command) {
                 case OUTPUT:
                 {
-                    printf("%.*s",sz, &data[1] );
+                    printf("%.*s",sz-1, &data[1] );
                     fflush(stdout);
                     break;
                 }
                 case SET_WINDOW_TITLE:
                 {   
                    // printf("%.*s",sz, &data[1] );
-                    set_terminal_title( &data[1] );
+                    set_terminal_title(sz-1, &data[1] );
                     fflush(stdout);
                    
                     break;
@@ -200,8 +200,11 @@ int main(int argc, char** argv) {
 
         app.run();
         
-        set_terminal_title("");
-       
+        SInfo << "app run over" ;
+          
+        set_terminal_title(0, "");
+      
+      
           
     }
 

@@ -45,13 +45,8 @@ namespace base {
         }
 
         bool WebSocketConnection::shutdown(uint16_t statusCode, const std::string& statusMessage) {
-            //char buffer[2];
-           // BitWriter writer(buffer, 2);
-            //writer.putU8(unsigned(FrameFlags::Fin) | unsigned(Opcode::Close));
-           // writer.putU16(statusCode);
-            //writer.put(statusMessage);
-
-             Buffer buffer;
+            
+            Buffer buffer;
             buffer.reserve(2 + WebSocketFramer::MAX_HEADER_LENGTH);
             BitWriter writer(buffer);
             framer.writeFrame(statusMessage.data(), 2, int( unsigned(FrameFlags::Fin) | unsigned(Opcode::Close)), writer);
@@ -59,20 +54,20 @@ namespace base {
             _connection->tcpsend((const char*) writer.begin(), writer.position(), nullptr);
            
            
-           
             
             return true;
         }
         
         bool WebSocketConnection::pong() {
-            char buffer[2];
-            BitWriter writer(buffer, 2);
-            //writer.putU16(statusCode);
-            //writer.put(statusMessage);
 
-            assert(socket);
-             send(buffer, writer.position(),
-                    unsigned(FrameFlags::Fin) | unsigned(Opcode::Pong));
+            Buffer buffer;
+            buffer.reserve(2 + WebSocketFramer::MAX_HEADER_LENGTH);
+            BitWriter writer(buffer);
+            framer.writeFrame("pong", 2, int( unsigned(FrameFlags::Fin) | unsigned(Opcode::Pong)), writer);
+
+            _connection->tcpsend((const char*) writer.begin(), writer.position(), nullptr);
+           
+
             
             return true;
         }
@@ -327,7 +322,7 @@ namespace base {
                          if(listener)
                         listener->on_wsclose(this);
 
-                         if(_connection)
+                         if(_connection && _connection->fnClose)
                         _connection->fnClose(_connection,"remoteclose");
                          
                          return;
@@ -429,7 +424,7 @@ namespace base {
             if(listener)
             this->listener->on_wsclose( this);
             
-            if(_connection)
+            if(_connection && _connection->fnClose)
                 _connection->fnClose(_connection, "close");
             
             

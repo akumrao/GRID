@@ -38,7 +38,7 @@ namespace base {
 
             char c = buf->base[0];
 
-            if (c == 3) {
+  /*          if (c == 3) { // Ctrl -C for exit
 
                 if (idler->cbfun)
                 idler->cbfun(nullptr, 0 );
@@ -51,7 +51,7 @@ namespace base {
                 
                 return;
             }
-
+*/
 
             if (idler->cbfun)
                 idler->cbfun(buf->base, nread );
@@ -90,7 +90,7 @@ namespace base {
         uv_read_start((uv_stream_t*) & tty, alloc_buffer, on_read);
 
 
-        printf("Press a key (Ctrl+C to exit):\n");
+       // printf("Press a key (Ctrl+C to exit):\n");
 
     }
 
@@ -101,7 +101,7 @@ namespace base {
     }
 
     TTY::~TTY() {
-        stop();
+       
     }
 
     //    void TTY::run() {
@@ -109,9 +109,9 @@ namespace base {
     //    }
 
     void TTY::stop() {
-        uv_read_stop((uv_stream_t*) &tty);
+        //uv_read_stop((uv_stream_t*) &tty);
+        uv_tty_reset_mode();
         uv_close((uv_handle_t*) &tty, NULL);
-        uv_tty_reset_mode(); // Reset TTY mode before exiting
     }
 
 
