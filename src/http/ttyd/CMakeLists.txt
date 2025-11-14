@@ -18,23 +18,21 @@ set(SOURCE_FILES src/utils.cpp src/pty.cpp src/protocol.cpp src/server.cpp)
 
 file(GLOB src_HTTP
 
-    ./src/url.cpp
-    ./src/response.cpp
-    ./src/request.cpp
-    ./src/parser.cpp
-    ./src/message.cpp
-    ./src/httputil.cpp
- #   ./src/HttpsConn.cpp
-    ./src/HttpConn.cpp
-    ./src/cookie.cpp
-    ./src/packetizers.cpp
-    ./src/HTTPResponder.cpp
-    ./src/form.cpp
-    ./src/HttpServer.cpp
-    ./src/client.cpp
-  #  ./src/HttpsClient.cpp
-    ./src/HttpClient.cpp
-    ./src/websocket.cpp
+    ../src/url.cpp
+    ../src/response.cpp
+    ../src/request.cpp
+    ../src/parser.cpp
+    ../src/message.cpp
+    ../src/httputil.cpp
+    ../src/HttpConn.cpp
+    ../src/cookie.cpp
+    ../src/packetizers.cpp
+    ../src/HTTPResponder.cpp
+    ../src/form.cpp
+    ../src/HttpServer.cpp
+    ../src/client.cpp
+    ../src/HttpClient.cpp
+    ../src/websocket.cpp
     ../../libuv/src/*.cpp
     ../../libuv/src/unix/*.cpp
     ../../base/src/*.cpp
