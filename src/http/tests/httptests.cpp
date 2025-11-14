@@ -39,8 +39,6 @@ public:
         
         sendAll( msg, len );
         
-        sendPing();
-         
     }
     
     void sendAll(const char* msg, size_t len) {
@@ -85,7 +83,7 @@ public:
              WebSocketConnection *con = ((HttpConnection*)connection)->getWebSocketCon();
 #endif
              if(con)
-             con->ping();
+             con->ping("arvind");
 
         }
          

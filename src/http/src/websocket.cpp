@@ -40,8 +40,7 @@ namespace base {
         {
             _connection->shouldSendHeader(false);
             
-            dummy_timer.cb_timeout = std::bind(&WebSocketConnection::dummy_timer_cb, this);
-            dummy_timer.Start(7,7);
+
         }
 
         bool WebSocketConnection::shutdown(uint16_t statusCode, const std::string& statusMessage) {
@@ -58,19 +57,20 @@ namespace base {
             return true;
         }
         
+        /* as per spec pong should return back whatever ping send, but I am sending null data*/
         bool WebSocketConnection::pong() {
 
             STrace << "Send pong";
             
+            std::string str="";
+            
             Buffer buffer;
-            buffer.reserve(2 + WebSocketFramer::MAX_HEADER_LENGTH);
+            buffer.reserve(str.size() + WebSocketFramer::MAX_HEADER_LENGTH);
             BitWriter writer(buffer);
-            framer.writeFrame("pong", 2, int( unsigned(FrameFlags::Fin) | unsigned(Opcode::Pong)), writer);
+            framer.writeFrame(str.c_str(), str.size(), int( unsigned(FrameFlags::Fin) | unsigned(Opcode::Pong)), writer);
 
             _connection->tcpsend((const char*) writer.begin(), writer.position(), nullptr);
-           
-
-            
+          
             return true;
         }
 
@@ -78,18 +78,20 @@ namespace base {
         bool WebSocketConnection::ping() {
 
             STrace << "Send ping";
-            
+            std::string str="";
             
             Buffer buffer;
-            buffer.reserve(2 + WebSocketFramer::MAX_HEADER_LENGTH);
+            buffer.reserve(str.size() + WebSocketFramer::MAX_HEADER_LENGTH);
             BitWriter writer(buffer);
-            framer.writeFrame("pong", 2, int( unsigned(FrameFlags::Fin) | unsigned(Opcode::Ping)), writer);
+            framer.writeFrame(str.c_str(), str.size(), int( unsigned(FrameFlags::Fin) | unsigned(Opcode::Ping)), writer);
 
             _connection->tcpsend((const char*) writer.begin(), writer.position(), nullptr);
            
-
+#if PING
+            m_ping_timeout_timer.Start(m_ping_timeout);
             
             return true;
+#endif
         }
             
         void WebSocketConnection::send(const char* data, size_t len, bool binary , onSendCallback cb) {
@@ -139,10 +141,10 @@ namespace base {
             // Call net::SocketEmitter::onSocketConnect to notify handlers that data may flow
             //net::SocketEmitter::onSocketConnect(*socket.get());
             
-
-            
         }
-        
+
+
+        #if FMP4
         void WebSocketConnection::push( const char* data, size_t len, bool binary, int frametype )
         { 
             dummy_mutex.lock();
@@ -223,6 +225,20 @@ namespace base {
            
         }
         
+        #elif PING 
+
+        void WebSocketConnection::timeout_pong() {
+            SDebug << "timeout pong about to close the websocket connection " ;
+
+             if(_connection)
+            _connection->Close();
+            
+           // if(listener)
+            //listener->Close(); // Broken we need to enable Close later on
+        }
+
+        #endif
+        
         void WebSocketConnection::handleServerRequest(const std::string & buffer) {
             LTrace("Server request: ", buffer)
 
@@ -247,6 +263,18 @@ namespace base {
 
                     if(listener)
                     listener->on_wsconnect( this);
+                
+                
+                     #if FMP4
+                    dummy_timer.cb_timeout = std::bind(&WebSocketConnection::dummy_timer_cb, this);
+                    dummy_timer.Start(7,7);
+                    #elif PING 
+
+                    m_ping_timer.cb_timeout = std::bind(&WebSocketConnection::ping, this);
+                    m_ping_timer.Start(m_ping_interval,m_ping_interval);
+                    m_ping_timeout_timer.cb_timeout = std::bind(&WebSocketConnection::timeout_pong, this);
+
+                    #endif
                 
                         
             } catch (std::exception& exc) {
@@ -353,7 +381,7 @@ namespace base {
                     {
                         wsFrameTyp= PING_FRAME; 
                         SInfo << "Received Ping "  << this;
-                        pong();
+                        pong();//  /* as per spec pong should return back whatever ping send, but I am sending null data*/
                         return;
                     }
                     break;
@@ -362,6 +390,12 @@ namespace base {
                       
                         wsFrameTyp= PONG_FRAME;
                         SInfo << "Received Pong "  << this;
+                        
+                        #if PING
+                        if (framer.mode() == ServerSide)
+                        m_ping_timeout_timer.Stop();
+                        #endif  
+                        
                     }
                     break;
                     default:
@@ -400,6 +434,12 @@ namespace base {
                         // Emit the result packet
                         assert(payload);
                         assert(payloadLength);
+                        
+#if PING
+                         if (framer.mode() == ServerSide)    
+                        m_ping_timeout_timer.Reset();
+#endif
+                        
                         if(listener)
                         listener->on_wsread( this,(const char*) payload, payloadLength );
                         
@@ -440,6 +480,12 @@ namespace base {
             _response.clear();
             framer._headerState = 0;
             framer._frameFlags = 0;
+            
+            
+#if PING
+            m_ping_timeout_timer.Stop();
+            m_ping_timeout_timer.Stop();
+#endif    
 
             if(listener)
             this->listener->on_wsclose( this);
@@ -488,6 +534,18 @@ namespace base {
         //
 
         WebSocketConnection::~WebSocketConnection() {
+            
+            SInfo << "~WebSocketConnection()";
+            
+            #if PING
+
+            m_ping_timeout_timer.Stop();
+            m_ping_timer.Stop();
+            m_ping_timeout_timer.Close();
+            m_ping_timer.Close();
+            
+            #endif
+            
         }
 
     
