@@ -12,17 +12,35 @@ find_package(Threads REQUIRED)
 
 set(SOURCE_FILES src/utils.cpp src/pty.cpp src/protocol.cpp src/server.cpp)
 
-SET(SSL_ROOT "${WORKSPACE}/src/openssl/buildx64")
-SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
+#SET(SSL_ROOT "${WORKSPACE}/src/openssl/buildx64")
+#SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
 
 
 file(GLOB src_HTTP
-    ../src/*.cpp
+
+    ./src/url.cpp
+    ./src/response.cpp
+    ./src/request.cpp
+    ./src/parser.cpp
+    ./src/message.cpp
+    ./src/httputil.cpp
+ #   ./src/HttpsConn.cpp
+    ./src/HttpConn.cpp
+    ./src/cookie.cpp
+    ./src/packetizers.cpp
+    ./src/HTTPResponder.cpp
+    ./src/form.cpp
+    ./src/HttpServer.cpp
+    ./src/client.cpp
+  #  ./src/HttpsClient.cpp
+    ./src/HttpClient.cpp
+    ./src/websocket.cpp
     ../../libuv/src/*.cpp
     ../../libuv/src/unix/*.cpp
     ../../base/src/*.cpp
-    ../../crypto/src/*.cpp
-    ../../net/src/*.cpp
+    ../../net/src/T*.cpp
+    ../../net/src/IP.cpp
+    ../../net/src/dns.cpp
     ../../net/uv_multiplex/src/*.cpp
     ../../http_parser/*.cpp
 )
@@ -40,8 +58,8 @@ set(LINK_LIBS ${ZLIB_LIBRARIES}   )
 
 set (CMAKE_REQUIRED_INCLUDES ${INCLUDE_DIRS})
 
-list(APPEND LINK_LIBS dl Threads::Threads ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a)
-
+#list(APPEND LINK_LIBS dl Threads::Threads ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a)
+list(APPEND LINK_LIBS dl Threads::Threads )
 
 if(WIN32)
     list(APPEND LINK_LIBS shell32 ws2_32)
