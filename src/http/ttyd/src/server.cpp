@@ -1,7 +1,7 @@
 #include "server.h"
 
 #include <errno.h>
-#include <getopt.h>
+//#include <getopt.h>
 //#include <json.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <unistd.h>
+//#include <unistd.h>
 #include "utils.h"
 
 
@@ -36,33 +36,6 @@ struct server *server{nullptr};
 
 
 
-
-// command line options
-static const struct option options[] = {
-  
-#if LWS_LIBRARY_VERSION_NUMBER >= 4000000
-    {"ping-interval", required_argument, NULL, 'P'},
-#endif
-    {"srv-buf-size", required_argument, NULL, 'f'},
-    {"ipv6", no_argument, NULL, '6'},
-    {"ssl", no_argument, NULL, 'S'},
-    {"ssl-cert", required_argument, NULL, 'C'},
-    {"ssl-key", required_argument, NULL, 'K'},
-    {"ssl-ca", required_argument, NULL, 'A'},
-    {"url-arg", no_argument, NULL, 'a'},
-    {"writable", no_argument, NULL, 'W'},
-    {"terminal-type", required_argument, NULL, 'T'},
-    {"client-option", required_argument, NULL, 't'},
-    {"check-origin", no_argument, NULL, 'O'},
-    {"max-clients", required_argument, NULL, 'm'},
-    {"once", no_argument, NULL, 'o'},
-    {"exit-no-conn", no_argument, NULL, 'q'},
-    {"browser", no_argument, NULL, 'B'},
-    {"debug", required_argument, NULL, 'd'},
-    {"version", no_argument, NULL, 'v'},
-    {"help", no_argument, NULL, 'h'},
-    {NULL, 0, 0, 0}};
-static const char *opt_string = "p:i:U:c:H:u:g:s:w:I:b:P:f:6aSC:K:A:Wt:T:Om:oqBd:vh";
 
 static void print_help() {
     // clang-format off
@@ -174,6 +147,8 @@ static struct server *server_new(int argc, char **argv, int start) {
             *ptr++ = ' ';
         }
     }
+    
+    
     *ptr = '\0'; // null terminator
 
     //ts->loop = (uv_loop_t*) xmalloc(sizeof *ts->loop);
@@ -235,53 +210,8 @@ static void signal_cb(uv_signal_t *watcher, int signum) {
     printf("send ^C to force exit.\n");
 }
 
-static int parse_int(char *name, char *str) {
-    char *endptr;
-    errno = 0;
-    long val = strtol(str, &endptr, 0);
-    if (errno != 0 || endptr == str) {
-        fprintf(stderr, "ttyd: invalid value for %s: %s\n", name, str);
-        exit(EXIT_FAILURE);
-    }
-    return (int) val;
-}
 
-static int calc_command_start(int argc, char **argv) {
-    // make a copy of argc and argv
-    int argc_copy = argc;
-    char **argv_copy = (char **) xmalloc(sizeof (char *) * argc);
-    for (int i = 0; i < argc; i++) {
-        argv_copy[i] = strdup(argv[i]);
-    }
 
-    // do not print error message for invalid option
-    opterr = 0;
-    while (getopt_long(argc_copy, argv_copy, opt_string, options, NULL) != -1)
-        ;
-
-    int start = argc;
-    if (optind < argc) {
-        char *command = argv_copy[optind];
-        for (int i = 0; i < argc; i++) {
-            if (strcmp(argv[i], command) == 0) {
-                start = i;
-                break;
-            }
-        }
-    }
-
-    // free argv copy
-    for (int i = 0; i < argc; i++) {
-        free(argv_copy[i]);
-    }
-    free(argv_copy);
-
-    // reset for next use
-    opterr = 1;
-    optind = 0;
-
-    return start;
-}
 
 class testwebscoket : public net::HttpServer {
 public:
@@ -509,7 +439,7 @@ public:
 };
 
 int main(int argc, char **argv) {
-    if (argc == 1) {
+    if (argc == 1 && argc >  2 ) {
         print_help();
         return 0;
     }
@@ -526,7 +456,7 @@ int main(int argc, char **argv) {
 
 
 
-    int start = calc_command_start(argc, argv);
+    int start = 1;// calc_command_start(argc, argv);
     server = server_new(argc, argv, start);
 
     Application app;
@@ -557,156 +487,10 @@ int main(int argc, char **argv) {
     json_object_object_add(client_prefs, "isWindows", json_object_new_boolean(true));
 #endif
 
-    // parse command line options
-    int c;
-    while ((c = getopt_long(start, argv, opt_string, options, NULL)) != -1) {
-        switch (c) {
-            case 'h':
-                print_help();
-                return 0;
-            case 'v':
-                printf("ttyd version %s\n", TTYD_VERSION);
-                return 0;
-            case 'd':
-                // debug_level = parse_int("debug", optarg);
-                break;
-            case 'a':
-                server->url_arg = true;
-                break;
-            case 'W':
-                server->writable = true;
-                break;
-            case 'O':
-                server->check_origin = true;
-                break;
-            case 'm':
-                server->max_clients = parse_int("max-clients", optarg);
-                break;
-            case 'o':
-                server->once = true;
-                break;
-            case 'q':
-                server->exit_no_conn = true;
-                break;
-            case 'B':
-                browser = true;
-                break;
-            case 'p':
-                //        info.port = parse_int("port", optarg);
-                //        if (info.port < 0) {
-                //          fprintf(stderr, "ttyd: invalid port: %s\n", optarg);
-                //          return -1;
-                //        }
-                //arvind
-                break;
-            case 'i':
-                strncpy(iface, optarg, sizeof (iface) - 1);
-                iface[sizeof (iface) - 1] = '\0';
-                break;
-            case 'U':
-                strncpy(socket_owner, optarg, sizeof (socket_owner) - 1);
-                socket_owner[sizeof (socket_owner) - 1] = '\0';
-                break;
-                //      case 'c':
-                //        if (strchr(optarg, ':') == NULL) {
-                //          fprintf(stderr, "ttyd: invalid credential, format: username:password\n");
-                //          return -1;
-                //        }
-                //        char b64_text[256];
-                //        lws_b64_encode_string(optarg, strlen(optarg), b64_text, sizeof(b64_text));
-                //        server->credential = strdup(b64_text);
-                //        break;
-            case 'H':
-                server->auth_header = strdup(optarg);
-                break;
-            case 'u':
-                // info.uid = parse_int("uid", optarg);
-                break;
-                //      case 'g':
-                //        info.gid = parse_int("gid", optarg);
-                //        break;
-            case 's':
-            {
-                int sig = get_sig(optarg);
-                if (sig > 0) {
-                    server->sig_code = sig;
-                    get_sig_name(sig, server->sig_name, sizeof (server->sig_name));
-                } else {
-                    fprintf(stderr, "ttyd: invalid signal: %s\n", optarg);
-                    return -1;
-                }
-            }
-            break;
-            case 'w':
-                server->cwd = strdup(optarg);
-                break;
-            case 'I':
-                if (!strncmp(optarg, "~/", 2)) {
-                    const char *home = getenv("HOME");
-                    server->index = (char*) malloc(strlen(home) + strlen(optarg) - 1);
-                    sprintf(server->index, "%s%s", home, optarg + 1);
-                } else {
-                    server->index = strdup(optarg);
-                }
-                struct stat st;
-                if (stat(server->index, &st) == -1) {
-                    fprintf(stderr, "Can not stat index.html: %s, error: %s\n", server->index, strerror(errno));
-                    return -1;
-                }
-                if (S_ISDIR(st.st_mode)) {
-                    fprintf(stderr, "Invalid index.html path: %s, is it a dir?\n", server->index);
-                    return -1;
-                }
-                break;
-            case 'b':
-            {
-//                char path[128];
-//                strncpy(path, optarg, 128);
-//                size_t len = strlen(path);
-//                while (len && path[len - 1] == '/') path[--len] = 0; // trim trailing /
-//                if (!len) break;
-//#define sc(f)                                  \
-//  strncpy(path + len, endpoints.f, 128 - len); \
-//  endpoints.f = strdup(path);
-//                sc(ws) sc(index) sc(token) sc(parent)
-//#undef sc
-            }
-            break;
 
-            case '6':
-                //        info.options &= ~(LWS_SERVER_OPTION_DISABLE_IPV6);
-                break;
-
-            case 'T':
-                strncpy(server->terminal_type, optarg, sizeof (server->terminal_type) - 1);
-                server->terminal_type[sizeof (server->terminal_type) - 1] = '\0';
-                break;
-            case '?':
-                break;
-//            case 't':
-//                optind--;
-//                for (; optind < start && *argv[optind] != '-'; optind++) {
-//                    char *option = optarg;
-//                    char *key = strsep(&option, "=");
-//                    if (key == NULL) {
-//                        fprintf(stderr, "ttyd: invalid client option: %s, format: key=value\n", optarg);
-//                        return -1;
-//                    }
-//                    char *value = strsep(&option, "=");
-//                    if (value == NULL) {
-//                        fprintf(stderr, "ttyd: invalid client option: %s, format: key=value\n", optarg);
-//                        return -1;
-//                    }
-//                    json obj = json::parse(value);
-//                    json_object_object_add(client_prefs, key, obj != NULL ? obj : json_object_new_string(value));
-//                }
-//                break;
-            default:
-                print_help();
-                return -1;
-        }
-    }
     
+    server->writable = true;
+     
     std::string tmp = client_prefs.dump();
             
     server->prefs_json = tmp;

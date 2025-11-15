@@ -12,9 +12,6 @@ find_package(Threads REQUIRED)
 
 set(SOURCE_FILES src/utils.cpp src/pty.cpp src/protocol.cpp src/server.cpp)
 
-#SET(SSL_ROOT "${WORKSPACE}/src/openssl/buildx64")
-#SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
-
 
 file(GLOB src_HTTP
 
@@ -33,30 +30,26 @@ file(GLOB src_HTTP
     ../src/client.cpp
     ../src/HttpClient.cpp
     ../src/websocket.cpp
-    ../../libuv/src/*.cpp
-    ../../libuv/src/unix/*.cpp
     ../../base/src/*.cpp
     ../../net/src/T*.cpp
     ../../net/src/IP.cpp
     ../../net/src/dns.cpp
-    ../../net/uv_multiplex/src/*.cpp
+#    ../../net/uv_multiplex/src/*.cpp
     ../../http_parser/*.cpp
 )
 
 
 
 
-find_package(ZLIB REQUIRED)
 
-set(INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} ../include/ ../../net/include/ ../../base/include ../../http_parser/ ../../json/include
- ../../net/uv_multiplex/include/ ../../libuv/include ../../libuv/src ${SSL_ROOT}/include
+set(INCLUDE_DIRS  ../include/ ../../net/include/ ../../base/include ../../http_parser/ ../../json/include
+  ../../libuv/include ../../libuv/src
 )
 
-set(LINK_LIBS ${ZLIB_LIBRARIES}   )
 
 set (CMAKE_REQUIRED_INCLUDES ${INCLUDE_DIRS})
 
-#list(APPEND LINK_LIBS dl Threads::Threads ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a)
+#list(APPEND LINK_LIBS dl Threads::Threads )
 list(APPEND LINK_LIBS dl Threads::Threads )
 
 if(WIN32)
@@ -70,13 +63,16 @@ else()
     endif()
 endif()
 
+add_subdirectory(../../libuv build )
+
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${src_HTTP})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
+target_link_libraries(${PROJECT_NAME} ${LINK_LIBS} uv_a)
 target_compile_definitions(${PROJECT_NAME} PUBLIC
     TTYD_VERSION="${TTYD_VERSION}"
     $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
 )
+
 
 target_compile_options(${PROJECT_NAME} PRIVATE -fpermissive -Wno-return-type -Wno-format-overflow -Wno-format -Wno-unused-but-set-variable -Wno-write-strings -no-pie)
 
