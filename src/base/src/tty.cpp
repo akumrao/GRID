@@ -82,7 +82,7 @@ namespace base {
 
     void TTY::start() {
 
-        uv_tty_init(Application::uvGetLoop(), &tty, STDIN_FILENO, 1); // 1 for readable
+        uv_tty_init(Application::uvGetLoop(), &tty, 0, 1); // 1 for readable
         uv_tty_set_mode(&tty, UV_TTY_MODE_RAW); // Set raw mode for unbuffered input
 
         tty.data = this;

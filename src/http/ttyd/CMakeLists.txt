@@ -49,8 +49,9 @@ set(INCLUDE_DIRS  ../include/ ../../net/include/ ../../base/include ../../http_p
 
 set (CMAKE_REQUIRED_INCLUDES ${INCLUDE_DIRS})
 
-#list(APPEND LINK_LIBS dl Threads::Threads )
+if(UNIX)
 list(APPEND LINK_LIBS dl Threads::Threads )
+endif()
 
 if(WIN32)
     list(APPEND LINK_LIBS shell32 ws2_32)
@@ -74,7 +75,13 @@ target_compile_definitions(${PROJECT_NAME} PUBLIC
 )
 
 
+if(UNIX)
 target_compile_options(${PROJECT_NAME} PRIVATE -fpermissive -Wno-return-type -Wno-format-overflow -Wno-format -Wno-unused-but-set-variable -Wno-write-strings -no-pie)
+endif()
+
+if(WIN32)
+target_compile_options(${PROJECT_NAME} PRIVATE )
+endif()
 
 include(GNUInstallDirs)
 

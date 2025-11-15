@@ -12,6 +12,7 @@
 //#include <unistd.h>
 #include "utils.h"
 
+#include "base/filesystem.h"
 
 
 #include "http/HTTPResponder.h"
@@ -439,7 +440,8 @@ public:
 };
 
 int main(int argc, char **argv) {
-    if (argc == 1 && argc >  2 ) {
+
+    if (argc == 1 ||  argc >  2 ) {
         print_help();
         return 0;
     }
@@ -484,12 +486,16 @@ int main(int argc, char **argv) {
        
 
 #ifdef _WIN32
-    json_object_object_add(client_prefs, "isWindows", json_object_new_boolean(true));
+   // json_object_object_add(client_prefs, "isWindows", json_object_new_boolean(true));
 #endif
 
 
     
     server->writable = true;
+    
+    std::string path = fs::currentDir();
+    server->cwd = (char*)xmalloc(path.size() + 1);
+    memcpy(server->cwd, path.data(), path.size() + 1);
      
     std::string tmp = client_prefs.dump();
             

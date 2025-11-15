@@ -17,8 +17,13 @@
 #include "base/time.h"
 #include "base/util.h"
 
+
+#if defined(WIN32)
 #include <time.h>
+#else
 #include <sys/time.h>
+#endif
+
 
 #include <assert.h>
 #include <iterator>
@@ -299,7 +304,11 @@ namespace base {
         if (!_timeFormat.empty()) {
             ost << time::print(time::toLocal(stream.ts), _timeFormat.c_str());
             
-            
+#ifdef base_WIN
+            ost << time::print(time::toLocal(stream.ts), _timeFormat.c_str());
+            ost << " [" << getStringFromLevel(stream.level) << "] ";
+
+#else
             struct timeval mediaTime;
             memset(&mediaTime, 0, sizeof (mediaTime));
             gettimeofday(&mediaTime, 0);
@@ -312,6 +321,8 @@ namespace base {
             ost << strmsec;
              
             ost << " [" << getStringFromLevel(stream.level) << "] ";
+
+#endif
 
             if (!stream.realm.empty()) { // || !stream.address.empty()
                 ost << "[";

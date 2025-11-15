@@ -42,6 +42,24 @@ static const char* sepPattern = "/";
 #endif
 
 
+std::string currentDir()
+{
+   char buffer[1024]; // Buffer to store the current working directory path
+    size_t size = sizeof(buffer);
+    int r;
+
+    r = uv_cwd(buffer, &size);
+    if (r < 0) {
+        fprintf(stderr, "Error getting current working directory: %s\n", uv_strerror(r));
+        return "";
+    }
+
+    printf("Current working directory: %s\n", buffer);
+    
+    return buffer;
+
+}
+
 std::string filename(const std::string& path)
 {
     size_t dirp = path.find_last_of(fs::sepPattern);
@@ -95,18 +113,18 @@ bool exists(const std::string& path)
 // trailing slash for directories or
 // stat fails to recognize validity.
 // // TODO: Do we need transcode here?
-//  #ifdef base_WIN
-//      struct _stat s;
-//      return _stat(fs::normalize(path).c_str(), &s) != -1;
-//  #else
-//      struct stat s;
-//      return stat(fs::normalize(path).c_str(), &s) != -1;
-//  #endif
+  #ifdef base_WIN
+      struct _stat s;
+      return _stat(fs::normalize(path).c_str(), &s) != -1;     // on windows workdirctory is  build directory not build/Debug or build/release directory
+  #else
+      //struct stat s;
+      //return stat(fs::normalize(path).c_str(), &s) != -1;
 
-
-    if(!access(path.c_str(), F_OK )){
+      if (!access(path.c_str(), F_OK)) {
           return true;
-    }
+      }
+
+   #endif
 
 
     return false;

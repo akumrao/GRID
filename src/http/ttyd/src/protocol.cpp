@@ -7,7 +7,10 @@
 #include "pty.h"
 #include "server.h"
 #include "utils.h"
+
+#ifndef _WIN32
 //#include <unistd.h>
+#endif
 
 #include "http/websocket.h"
 
@@ -29,6 +32,7 @@ int write ( base::net::Listener* conn, unsigned char * buf, size_t len, bool bin
     base::net::WebSocketConnection *con = (base::net::WebSocketConnection*)conn;
     con->send((const char*) buf, len, binary );
 
+    return 0;
 }
 
 static int send_initial_message(base::net::Listener* con, int index) {
@@ -72,12 +76,13 @@ static void output(base::net::Listener* con, pty_buf_t *buf) {
 }
 
 
-int close_reason(base::net::Listener* conn, uint16_t statusCode  )
+void close_reason(base::net::Listener* conn, uint16_t statusCode  )
 {
         
     base::net::WebSocketConnection *con = (base::net::WebSocketConnection*)conn;
     std::string reason= "close";
     con->shutdown( statusCode, reason);
+
 }
 
 int callback_on_writable(	base::net::Listener* conn)

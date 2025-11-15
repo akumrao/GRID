@@ -23,6 +23,11 @@ const char *sys_signame[NSIG] = {
     "TTOU", "IO",  "XCPU", "XFSZ", "VTALRM", "PROF", "WINCH", "PWR",  "USR1", "USR2", NULL};
 #endif
 
+#ifdef _MSC_VER // Check if compiling with Visual C++
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+#endif
+
 void *xmalloc(size_t size) {
   if (size == 0) return NULL;
   void *p = malloc(size);
@@ -108,7 +113,7 @@ const char *quote_arg(const char *arg) {
   }
   if (!force_quotes && n == 0) return arg;
 
-  d = q = xmalloc(len + n + 3);
+  d = q =(char *) xmalloc(len + n + 3);
   *d++ = '"';
   while (*arg) {
     if (*arg == '"')
