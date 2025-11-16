@@ -7,7 +7,7 @@
 #include <Utils.h>
 #include <algorithm>
 #include "sdpcommon.h"
-
+#include "Settings.h"
 
 using namespace base;
 
@@ -65,11 +65,17 @@ namespace stun {
     {
         
         //memset(description, 0, sizeof(ice_description_t));
-	random_str64(description->ice_ufrag, 4 + 1);
-	random_str64(description->ice_pwd, 22 + 1);
-	description->ice_lite = false;
-	description->candidates_count = 0;
-	description->finished = false;
+
+        
+    	//random_str64(description->ice_ufrag, 4 + 1);
+    	//random_str64(description->ice_pwd, 22 + 1);
+
+        Settings::User(description->ice_ufrag , 4 + 1);
+        Settings::Passwd(description->ice_pwd, 22 + 1);
+
+    	description->ice_lite = false;
+    	description->candidates_count = 0;
+    	description->finished = false;
         
 //        random_str64(localDes.desc.ice_ufrag, 4 + 1);
 //        random_str64(localDes.desc.ice_pwd, 22 + 1);
@@ -100,9 +106,8 @@ namespace stun {
     
     bool Agent::getInterfaces( ) {
         
-        
-        static int port = 7000;
-        socket = new testUdpServer("::", ++port , this );
+        int port = Settings::LocalPort();
+        socket = new testUdpServer("::", port , this );
        // socket = new testUdpServer("0.0.0.0", ++port , this );
         socket->start();
         

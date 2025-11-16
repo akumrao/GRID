@@ -328,7 +328,7 @@ public:
 
 	static Type stringToType(const string &typeString);
 	static string typeToString(Type type);
-
+        Role mRole;
 private:
 	Candidate defaultCandidate() const;
 	shared_ptr<Entry> createEntry(string mline, string mid, Direction dir);
@@ -337,7 +337,7 @@ private:
 	Type mType;
 
 	// Session-level attributes
-	Role mRole;
+	
 	string mUsername;
 	string mSessionId;
 	std::vector<string> mIceOptions;

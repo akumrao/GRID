@@ -7,11 +7,14 @@
 #include "base/error.h"
 #include "base/logger.h"
 
+#include "base/filesystem.h"
 
 #include <cctype>  // isprint()
 #include <cerrno>
 #include <iterator>  // std::ostream_iterator
 #include <sstream>  // std::ostringstream
+#include <Utils.h>
+
 
 //#define LOGGING_LOG_TO_FILE 1
 /* Class variables. */
@@ -46,106 +49,87 @@ struct Settings::Configuration Settings::configuration;
 //   
 //}
 
-void Settings::SetConfiguration(json &cnfg)
+void Settings::User(char *buf, size_t size) {
+
+    if(!configuration.user.empty())
+    { 
+        memcpy( buf, configuration.user.data() , size   ) ;
+    }
+    else
+    {
+        stun::random_str64(buf, size);
+    }    
+}
+
+void Settings::Passwd(char *buf, size_t size) {
+    if(!configuration.passwd.empty())
+    {
+        memcpy( buf, configuration.passwd.data() , size   ) ;
+    }
+    else
+    {
+        stun::random_str64(buf, size);
+    }
+}
+
+
+uint16_t Settings::RemotePort() {
+    return configuration.remoteport;
+}
+
+
+uint16_t Settings::LocalPort() {
+    return configuration.localport++;
+}
+
+
+void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg )
 {
-//    std::string stringValue;
-//    std::vector<std::string> logTags;
-//
-//    //  std::cout << cnfg.dump(4) << std::flush;
-//
-//    if (cnfg.find("logTags") != cnfg.end())
-//    {
-//        // there is an entry with key "foo"
-//        json &j = cnfg["logTags"];
-//        if (j.is_array())
-//        {
-//            for (json::iterator it = j.begin(); it != j.end(); ++it)
-//            {
-//                logTags.push_back(it->get<std::string>());
-//            }
-//        }
-//    }
 
-//
-//    if (cnfg.find("rtcMinPort") != cnfg.end())
-//    {
-//        Settings::configuration.rtcMinPort = cnfg["rtcMinPort"].get<uint16_t>();
-//    }
-//
-//    if (cnfg.find("rtcMaxPort") != cnfg.end())
-//    {
-//        Settings::configuration.rtcMaxPort = cnfg["rtcMaxPort"].get<uint16_t>();
-//    }
-
-//
-//    if (cnfg.find("vp9Enc") != cnfg.end()) { Settings::configuration.vp9Enc = cnfg["vp9Enc"].get<uint16_t>(); }
-//
-//    if (cnfg.find("nvidiaEnc") != cnfg.end())
-//    {
-//        Settings::configuration.nvidiaEnc = cnfg["nvidiaEnc"].get<uint16_t>();
-//    }
-//
-//    if (cnfg.find("quicksyncEnc") != cnfg.end())
-//    {
-//        Settings::configuration.quicksyncEnc = cnfg["quicksyncEnc"].get<uint16_t>();
-//    }
-//
-//    if (cnfg.find("VAAPIEnc") != cnfg.end())
-//    {
-//        Settings::configuration.VAAPIEnc = cnfg["VAAPIEnc"].get<uint16_t>();
-//    }
-
-
-//    if (cnfg.find("haswell") != cnfg.end()) { Settings::configuration.haswell = cnfg["haswell"].get<bool>(); }
-    
-//    if (cnfg.find("tcpRtsp") != cnfg.end()) { Settings::configuration.tcpRtsp = cnfg["tcpRtsp"].get<bool>(); }
-    
-
-//    if (cnfg.find("NATIVE") != cnfg.end()) { Settings::configuration.native = cnfg["NATIVE"].get<uint16_t>(); }
-
-
-//    if (cnfg.find("x264Enc") != cnfg.end())
-//    {
-//        Settings::configuration.x264Enc = cnfg["x264Enc"].get<uint16_t>();
-//    }
-
-    if (cnfg.find("recordsize") != cnfg.end())
+    if(!cnfg.loaded())     
     {
-        Settings::configuration.recordsize = cnfg["recordsize"].get<uint16_t>();
+        cnfg.root = {
+          {"logLevel", "info"},
+          {"localport", 7001},
+          {"remoteport", 8001},
+          {"user", "4Pfs"},
+          {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
+          {"is_server", false},
+          {"ip", {"127.0.0.1", "103.186.41.66" }}
+          };
+
+        std::string dir = base::fs::dirname(cnfg.path());
+        if (dir != "." && dir != ".." && !base::fs::exists(dir))
+        {
+            base::fs::mkdir(dir);
+        }
+        
+        cnfg.save();
     }
 
-//    if (cnfg.find("SegSize_key") != cnfg.end())
-//    {
-//        Settings::configuration.SegSize_key = cnfg["SegSize_key"].get<uint16_t>();
-//    }
-        
     
-    // if (cnfg.find("rtsp") != cnfg.end()) {
-    //     Settings::configuration.rtsp = cnfg["rtsp"];
-    // }
 
-//    if (cnfg.find("cam_reconnect") != cnfg.end()) {
-//        Settings::configuration.cam_reconnect = cnfg["cam_reconnect"].get<uint16_t>();
-//    }
 
+    json &node = cnfg.root;
     
-    if (cnfg.find("OTA") != cnfg.end())
+    if (node.find("localport") != node.end())
     {
-        Settings::configuration.OTA = cnfg["OTA"];
+        Settings::configuration.localport = node["localport"].get<uint16_t>();
     }
         
-    if (cnfg.find("log") != cnfg.end())
+    if (node.find("remoteport") != node.end())
     {
-        Settings::configuration.log = cnfg["log"];
+        Settings::configuration.remoteport = node["remoteport"].get<uint16_t>();
     }
-        
+
+    if (node.find("is_server") != node.end()) { Settings::configuration.is_server = node["is_server"].get<bool>(); }
     
-    if (cnfg.find("logLevel") != cnfg.end())
+    if (node.find("logLevel") != node.end())
     {  // trace, debug, info, warn
         // TBD // Move logger setting from main to here
         //  Initialize the Logger.
 
-        std::string loglevel = cnfg["logLevel"].get<std::string>();
+        std::string loglevel = node["logLevel"].get<std::string>();
 
         base::Level ld = base::getLevelFromString(loglevel.c_str());
 
@@ -171,339 +155,21 @@ void Settings::SetConfiguration(json &cnfg)
 //        Settings::configuration.dtlsPrivateKeyFile = cnfg["dtlsPrivateKeyFile"].get<std::string>();
 //    }
     
-    
-    if (cnfg.find("qrcode") != cnfg.end())
+    if (node.find("user") != node.end())
     {
-        Settings::configuration.cam = cnfg["qrcode"].get<std::string>();
+        Settings::configuration.user = node["user"].get<std::string>();
     }
     
-     if (cnfg.find("server") != cnfg.end())
+    if (node.find("passwd") != node.end())
     {
-        Settings::configuration.server = cnfg["server"].get<std::string>();
+        Settings::configuration.passwd = node["passwd"].get<std::string>();
     }
-    
-    
-    if (cnfg.find("recording") != cnfg.end()) { Settings::configuration.recording = cnfg["recording"].get<bool>(); }
-    if (cnfg.find("cloud") != cnfg.end()) { Settings::configuration.cloud = cnfg["cloud"].get<bool>(); }
-    //if (cnfg.find("ai") != cnfg.end()) { Settings::configuration.ai = cnfg["ai"].get<bool>(); }
-    if (cnfg.find("facedetect") != cnfg.end()) { Settings::configuration.facedetect = cnfg["facedetect"].get<bool>(); }
-    if (cnfg.find("motionevent") != cnfg.end()) { Settings::configuration.motionevent = cnfg["motionevent"].get<bool>(); }
-    if (cnfg.find("port") != cnfg.end()) { Settings::configuration.port = cnfg["port"].get<int>(); }
 
    // if (cnfg.find("listenIps") != cnfg.end()) { Settings::configuration.listenIps = cnfg["listenIps"]; }
     
-    
-    if (cnfg.find("storage") != cnfg.end())
-    {
-        Settings::configuration.storage = cnfg["storage"];;
-    }
-        
 
-
-    /* Post configuration. */
-
-    // Set logTags.
-  //  if (!logTags.empty()) Settings::SetLogTags(logTags);
-
-    // Validate RTC ports.
-//    if (Settings::configuration.rtcMaxPort < Settings::configuration.rtcMinPort)
-//        base::uv::throwError("rtcMinPort cannot be less than than rtcMinPort");
-
-    // Set DTLS certificate files (if provided),
-    //Settings::SetDtlsCertificateAndPrivateKeyFiles();
 }
 
-//void Settings::PrintConfiguration()
-//{
-//    std::vector<std::string> logTags;
-//    std::ostringstream logTagsStream;
-//
-////    if (Settings::configuration.logTags.info) logTags.emplace_back("info");
-////
-////
-////    if (!logTags.empty())
-////    {
-////        std::copy(logTags.begin(), logTags.end() - 1, std::ostream_iterator<std::string>(logTagsStream, ","));
-////        logTagsStream << logTags.back();
-////    }
-//
-//    //	MS_DEBUG_TAG(info, "<configuration>");
-//    //
-//    //	MS_DEBUG_TAG(info, "  logTags             : ", logTagsStream.str().c_str());
-//    //	MS_DEBUG_TAG(info, "  rtcMinPort          : ", Settings::configuration.rtcMinPort);
-//    //	MS_DEBUG_TAG(info, "  rtcMaxPort          : ", Settings::configuration.rtcMaxPort);
-//    //	if (!Settings::configuration.dtlsCertificateFile.empty())
-//    //	{
-//    //		MS_DEBUG_TAG(
-//    //		  info, "  dtlsCertificateFile : ", Settings::configuration.dtlsCertificateFile.c_str());
-//    //		MS_DEBUG_TAG(
-//    //		  info, "  dtlsPrivateKeyFile  : ", Settings::configuration.dtlsPrivateKeyFile.c_str());
-//    //	}
-//    //
-//    //	MS_DEBUG_TAG(info, "</configuration>");
-//}
-
-
-// void Settings::SetLogLevel(std::string& level)
-// {
-//
-
-// 	// Lowcase given level.
-// 	Utils::String::ToLowerCase(level);
-
-// 	if (Settings::string2LogLevel.find(level) == Settings::string2LogLevel.end())
-// 		base::uv::throwError("invalid value '%s' for logLevel", level.c_str());
-
-// 	Settings::configuration.logLevel = Settings::string2LogLevel[level];
-// }
-
-//void Settings::SetLogTags(const std::vector<std::string> &tags)
-//{
-//    // Reset logTags.
-//    struct LogTags newLogTags;
-//
-//    for (auto &tag : tags)
-//    {
-//        if (tag == "info") newLogTags.info = true;
-//    }
-//
-//    Settings::configuration.logTags = newLogTags;
-//}
-
-//void Settings::SetDtlsCertificateAndPrivateKeyFiles()
-//{
-//    if (!Settings::configuration.dtlsCertificateFile.empty()
-//        && Settings::configuration.dtlsPrivateKeyFile.empty())
-//    {
-//        base::uv::throwError("missing dtlsPrivateKeyFile");
-//    }
-//    else if (
-//        Settings::configuration.dtlsCertificateFile.empty()
-//        && !Settings::configuration.dtlsPrivateKeyFile.empty())
-//    {
-//        base::uv::throwError("missing dtlsCertificateFile");
-//    }
-//    else if (
-//        Settings::configuration.dtlsCertificateFile.empty()
-//        && Settings::configuration.dtlsPrivateKeyFile.empty())
-//    {
-//        return;
-//    }
-//
-//    // std::string &dtlsCertificateFile = Settings::configuration.dtlsCertificateFile;
-//    // std::string &dtlsPrivateKeyFile = Settings::configuration.dtlsPrivateKeyFile;
-//
-//    try
-//    {
-//        // Utils::File::CheckFile(dtlsCertificateFile.c_str());
-//    }
-//    catch (const std::exception &error)
-//    {
-//        base::uv::throwError("dtlsCertificateFile: " + std::string(error.what()));
-//    }
-//
-//    try
-//    {
-//        // Utils::File::CheckFile(dtlsPrivateKeyFile.c_str());
-//    }
-//    catch (const std::exception &error)
-//    {
-//        base::uv::throwError("dtlsPrivateKeyFile: " + std::string(error.what()));
-//    }
-//
-//    // Settings::configuration.dtlsCertificateFile = dtlsCertificateFile;
-//    // Settings::configuration.dtlsPrivateKeyFile = dtlsPrivateKeyFile;
-//}
-
-//
-//void Settings::saveFile(const std::string &path, const std::string &dump)
-//{
-//    std::ofstream ofs(path, std::ios::binary | std::ios::out);
-//    if (!ofs.is_open()) throw std::runtime_error("Cannot open output file: " + path);
-//
-//
-//    ofs << dump;
-//
-//    ofs.close();
-//}
-
-
-
-//void Settings::postNode(json &node ) // complete json
-//{
-//
-//    std::string dump;
-//    uv_rwlock_wrlock(&rwlock_t);
-//
-//    Settings::encSetting.root["rtsp"] = node ;
-//
-//    dump =  Settings::encSetting.root.dump(4) ;
-//
-//    uv_rwlock_wrunlock(&rwlock_t);
-//
-//    saveFile( "./webrtcStats.js", dump   ); 
-//
-//
-//}
-
-//bool Settings::putNode(json &node , std::vector<std::string> & vec )  // only one node
-//{
-//    bool ret = false;
-//    std::string dump;
-//
-//    // uv_rwlock_wrlock(&rwlock_t);
-//      
-//    // json &rtsp =   Settings::encSetting.root["rtsp"] ;
-//    
-//    // for (auto& [key, value] : node.items())
-//    // {
-//       
-//    //    //if (rtsp.find(key) == rtsp.end()) 
-//    //    {
-//    //         rtsp[key] = value;
-//    //         vec.push_back(key);
-//    //         ret = true;
-//    //    }
-//    // }
-//    // dump =  Settings::encSetting.root.dump(4) ;
-//    // uv_rwlock_wrunlock(&rwlock_t);
-//    
-//    // saveFile( "./webrtcStats.js", dump   );
-//    
-//    return ret;
-//     
-//}
-//
-//
-//bool Settings::deleteNode(json &node , std::vector<std::string> & vec  )
-//{
-//    bool ret = false;
-//    std::string dump;
-//
-//
-//   // if(node.is_object()
-//
-//    uv_rwlock_wrlock(&rwlock_t);
-//    json &rtsp =  Settings::encSetting.root["rtsp"];
-//
-//     for (json::iterator it = node.begin(); it != node.end(); ++it)
-//    //for (auto& [key, value] : node.items())
-//    {
-//       std::string key;
-//
-//       if(node.is_object())
-//          key = it.key();
-//       else
-//          key = *it;
-//
-//       if (rtsp.find(key) != rtsp.end())
-//       {
-//            rtsp.erase(key);
-//            vec.push_back(key);
-//            ret = true;
-//       }
-//
-//    }
-//
-//    dump =  Settings::encSetting.root.dump(4) ;
-//
-//    uv_rwlock_wrunlock(&rwlock_t);
-//
-//    saveFile( "./webrtcStats.js", dump   );
-//
-//    return ret;
-//
-//}
-//
-//json Settings::getJsonNode()
-//{
-//    std::string ret;
-//    uv_rwlock_rdlock(&rwlock_t);
-//
-//    json &rtsp =  Settings::encSetting.root["rtsp"];
-//   
-//    uv_rwlock_rdunlock(&rwlock_t);
-//    return rtsp;
-//}
-//
-//std::string Settings::getNode()
-//{
-//    std::string ret;
-//    uv_rwlock_rdlock(&rwlock_t);
-//
-//    json &rtsp =  Settings::encSetting.root["rtsp"];
-//    ret = rtsp.dump(4) ;
-//    uv_rwlock_rdunlock(&rwlock_t);
-//    return ret;
-//}
-//
-//bool Settings::setNodeState(std::string &id , std::string  status)
-//{
-//    bool ret = false;
-//    std::string dump;
-//
-//    uv_rwlock_wrlock(&rwlock_t);
-//    json &rtsp =   Settings::encSetting.root["rtsp"];
-//    if (rtsp.find(id) != rtsp.end())
-//    {
-//        rtsp[id]["state"]= status;
-//        ret = true;
-//    }
-//
-//    dump =  Settings::encSetting.root.dump(4) ;
-//
-//    uv_rwlock_wrunlock(&rwlock_t);
-//
-//    saveFile( "./webrtcStats.js", dump   );
-//
-//
-//    return ret;
-//}
-//
-//bool Settings::getNodeState(std::string id ,  std::string  key ,   std::string  &value)
-//{
-//
-//    bool ret = false;
-//
-//     uv_rwlock_rdlock(&rwlock_t);
-//
-//    json &rtsp =   Settings::encSetting.root["rtsp"];
-//  ///  std::string dump =  Settings::encSetting.root.dump(4) ;
-//     
-//    if (rtsp.find(id) != rtsp.end() && rtsp[id].find(key) != rtsp[id].end())
-//    {
-//       value =  rtsp[id][key];
-//       ret = true;
-//    }
-//
-//  uv_rwlock_rdunlock(&rwlock_t);
-//
-//
-//    return ret;
-//}
-
-
-//bool Settings::getJsonNodeState(std::string id , json& value)
-//{
-//
-//    bool ret = false;
-//
-//     uv_rwlock_rdlock(&rwlock_t);
-//
-//    json &rtsp =   Settings::encSetting.root["rtsp"];
-//  ///  std::string dump =  Settings::encSetting.root.dump(4) ;
-//     
-//    if (rtsp.find(id) != rtsp.end() )
-//    {
-//       value =  rtsp[id];
-//       ret = true;
-//    }
-//
-//    uv_rwlock_rdunlock(&rwlock_t);
-//
-//
-//    return ret;
-//}
 
 
 
