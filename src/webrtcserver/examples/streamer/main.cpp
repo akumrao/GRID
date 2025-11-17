@@ -323,6 +323,8 @@ int main(int argc, char **argv)
     
     
      Application app;
+     
+     Async async;
 
     if (printHelp) {
         cout << "usage: stream-h264 [-a opus_samples_folder] [-b h264_samples_folder] [-d ip_address] [-p port] [-v] [-h]" << endl
@@ -976,8 +978,8 @@ shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string 
         auto work_fn = [pc, candidate]() {
             // This runs in a worker thread
                 
-       
-          pc->addRemoteCandidate(string(candidate)); 
+        Application app; 
+        pc->addRemoteCandidate(string(candidate)); 
           
         };
 
