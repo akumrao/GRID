@@ -974,12 +974,22 @@ shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string 
      //   pc->addRemoteCandidate(candidate);
 //            if (auto ws = wws.lock())
 //                    ws->send(message.dump());
-        candidate.mService = std::to_string( Settings::RemotePort());
-        auto work_fn = [pc, candidate]() {
+       
+        
+        std::string tmp =  std::to_string( Settings::RemotePort());
+        
+        auto work_fn = [pc,&tmp,  candidate]() {
             // This runs in a worker thread
                 
-        Application app; 
+        Application app;
+        
+        candidate.mService =tmp;
+         
+        SInfo << "addRemoteCandidate: " << std::string(candidate);
+         
         pc->addRemoteCandidate(string(candidate)); 
+        
+        app.run();
           
         };
 

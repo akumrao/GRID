@@ -138,7 +138,7 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg )
             new base::RotatingFileChannel("webrtcserver",Settings::configuration.log, ld));
         base::Logger::instance().setWriter(new base::AsyncLogWriter);
 #else
-        base::Logger::instance().add(new base::ConsoleChannel("webrtcserver", ld));
+        base::Logger::instance().add(new base::ConsoleChannel("webrtcserver",  base::Level::Trace));
 #endif
     }
     
