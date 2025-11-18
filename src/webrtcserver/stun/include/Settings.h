@@ -30,13 +30,14 @@ public:
         std::string user;
         std::string passwd;
         bool is_server;
+        std::string datachannel;
 
     };
 
 
 
 public:
-    static void SetConfiguration(  base::cnfg::Configuration& config);
+    static void SetConfiguration(  base::cnfg::Configuration& config, int argc);
     
     static void User(char *buf, size_t size) ;
      
@@ -44,6 +45,7 @@ public:
     
     static uint16_t LocalPort() ;
     static uint16_t RemotePort() ;
+    static std::string getdatachannel();
 
 private:
 

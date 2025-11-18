@@ -4,7 +4,7 @@
 #include "common.hpp"
 #include "internals.hpp"
 #include "logcounter.hpp"
-#include "peerconnection.hpp"
+#include "peerconnection_imp.hpp"
 #include "sctptransport.hpp"
 #include "utils.hpp"
 #include "rtc/datachannel.hpp"

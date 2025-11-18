@@ -22,10 +22,10 @@
 #include "base/async.h"
 #include "Settings.h"
 
-//#define localtesting 1
+/#define localtesting 1
 //#define VIDEOMEDIA 1
 
-#define remotetesting 1
+//#define remotetesting 1
 
 
 #define CERTFROMFILE 2
@@ -310,7 +310,7 @@ int main(int argc, char **argv)
 
     cache.load("./cache.js");
 
-    Settings::SetConfiguration(cache);
+    Settings::SetConfiguration(cache, argc);
 
 
 
@@ -945,7 +945,7 @@ shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string 
                 
             auto descAns = Description(std::string(description), Description::Type::Answer);
             descAns.mRole  = Description::Role::Active;
-             SInfo << "descAnsp:"  << descAns;
+            SInfo << "remote desc Ansp:"  << descAns;
    
             pc->setRemoteDescription(descAns);
         };
@@ -959,37 +959,31 @@ shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string 
         
     
 
-        // Make the answer
 
     });
 
     pc->onLocalCandidate([ id, pc, &async](rtc::Candidate candidate) {
-//            json message = {{"id", id},
-//                            {"type", "candidate"},
-//                            {"candidate", std::string(candidate)},
-//                            {"mid", candidate.mid()}};
+
 
         SInfo << std::string(candidate);
-        //candidate.
-     //   pc->addRemoteCandidate(candidate);
-//            if (auto ws = wws.lock())
-//                    ws->send(message.dump());
-       
+
+
+        rtc::Candidate tmp = candidate;
+        tmp.mService = std::to_string( Settings::RemotePort());
+   
+
         
-        std::string tmp =  std::to_string( Settings::RemotePort());
-        
-        auto work_fn = [pc,&tmp,  candidate]() {
-            // This runs in a worker thread
+        auto work_fn = [pc, tmp]() {
                 
-        Application app;
-        
-        candidate.mService =tmp;
+            Application app;
+
+            tmp.resolved = {0};
+            
+            SInfo << "addRemoteCandidate: " << std::string(tmp);
          
-        SInfo << "addRemoteCandidate: " << std::string(candidate);
-         
-        pc->addRemoteCandidate(string(candidate)); 
-        
-        app.run();
+            pc->addRemoteCandidate(tmp); 
+       
+            app.run();
           
         };
 
@@ -1051,7 +1045,9 @@ shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string 
 
 #endif
 
-    auto dc = pc->createDataChannel("ping-pong");
+ std::string dcchat =   Settings::getdatachannel();
+            
+auto dc = pc->createDataChannel(dcchat);
     dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
         if (auto dc = wdc.lock()) {
             SInfo << "onOpen: "  ;
@@ -1071,7 +1067,7 @@ shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string 
     
     
     
-    pc->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
+pc->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
 		SInfo << "DataChannel from " << id << " received with label \"" << dc->label() ;
 
                 

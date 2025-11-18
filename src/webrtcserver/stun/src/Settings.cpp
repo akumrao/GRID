@@ -82,20 +82,27 @@ uint16_t Settings::LocalPort() {
     return configuration.localport++;
 }
 
+std::string Settings::getdatachannel() {
+    return configuration.datachannel;
+}
 
-void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg )
+
+
+void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
 {
 
-    if(!cnfg.loaded())     
+    //if(!cnfg.loaded())     
+    if(argc == 1)
     {
         cnfg.root = {
           {"logLevel", "info"},
+          {"datachannel", "dc1"},
           {"localport", 7001},
           {"remoteport", 8001},
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
           {"is_server", false},
-          {"ip", {"127.0.0.1", "103.186.41.66" }}
+          {"ip", {"127.0.0.1" }}
           };
 
         std::string dir = base::fs::dirname(cnfg.path());
@@ -105,6 +112,29 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg )
         }
         
         cnfg.save();
+    }
+    else
+    {
+        cnfg.root = {
+          {"logLevel", "info"},
+          {"datachannel", "dc2"},
+          {"localport", 8001},
+          {"remoteport", 7001},
+          {"user", "4Pfs"},
+          {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
+          {"is_server", false},
+          {"ip", {"127.0.0.1" }}
+          };
+
+        std::string dir = base::fs::dirname(cnfg.path());
+        if (dir != "." && dir != ".." && !base::fs::exists(dir))
+        {
+            base::fs::mkdir(dir);
+        }
+        
+        cnfg.save();
+
+
     }
 
     
@@ -120,6 +150,11 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg )
     if (node.find("remoteport") != node.end())
     {
         Settings::configuration.remoteport = node["remoteport"].get<uint16_t>();
+    }
+
+    if (node.find("datachannel") != node.end())
+    {
+        Settings::configuration.datachannel = node["datachannel"].get<std::string>();
     }
 
     if (node.find("is_server") != node.end()) { Settings::configuration.is_server = node["is_server"].get<bool>(); }

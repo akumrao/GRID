@@ -4,7 +4,7 @@
 
 #include "impl/datachannel.hpp"
 #include "impl/internals.hpp"
-#include "impl/peerconnection.hpp"
+#include "impl/peerconnection_imp.hpp"
 
 #ifdef _WIN32
 #include <winsock2.h>

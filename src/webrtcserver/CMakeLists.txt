@@ -190,7 +190,7 @@ set(LIBDATACHANNEL_IMPL_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/dtlstransport.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/icetransport.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/init.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/peerconnection.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/peerconnection_imp.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/logcounter.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/sctptransport.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/threadpool.cpp
@@ -221,7 +221,7 @@ set(LIBDATACHANNEL_IMPL_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/icetransport.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/init.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/internals.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/peerconnection.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/peerconnection_imp.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/queue.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/logcounter.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/sctptransport.hpp

@@ -3,7 +3,7 @@
 #include "track.hpp"
 #include "internals.hpp"
 #include "logcounter.hpp"
-#include "peerconnection.hpp"
+#include "peerconnection_imp.hpp"
 #include "rtp.hpp"
 
 namespace rtc::impl {
