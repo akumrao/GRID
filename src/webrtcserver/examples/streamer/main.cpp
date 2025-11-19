@@ -22,10 +22,10 @@
 #include "base/async.h"
 #include "Settings.h"
 
-/#define localtesting 1
+//#define localtesting 1
 //#define VIDEOMEDIA 1
 
-//#define remotetesting 1
+#define remotetesting 1
 
 
 #define CERTFROMFILE 2
@@ -1207,8 +1207,8 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id,
     });
 
 #endif
-
-    auto dc = pc->createDataChannel("ping-pong");
+     std::string dcchat =   Settings::getdatachannel();
+    auto dc = pc->createDataChannel(dcchat);
     dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
         if (auto dc = wdc.lock()) {
             SInfo << "onOpen: "  ;

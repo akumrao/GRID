@@ -102,7 +102,7 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
           {"is_server", false},
-          {"ip", {"127.0.0.1" }}
+          {"ip", {"192.168.0.19" }}
           };
 
         std::string dir = base::fs::dirname(cnfg.path());
@@ -123,7 +123,7 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
           {"is_server", false},
-          {"ip", {"127.0.0.1" }}
+          {"ip", {"192.168.0.19" }}
           };
 
         std::string dir = base::fs::dirname(cnfg.path());

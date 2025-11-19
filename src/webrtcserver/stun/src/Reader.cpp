@@ -159,7 +159,7 @@ namespace stun {
             char buf[40];  uint16_t port;
             IP::AddressToString(address->mapped, buf, 40, port);
             
-            SInfo << " Stune read STUN_ATTR_XOR_MAPPED_ADDRESS " << buf << ":" << " port ";
+            SInfo << " Stune read STUN_ATTR_XOR_MAPPED_ADDRESS " << buf << ":" <<  port ;
             
             attr = (Attribute*) address;
            
