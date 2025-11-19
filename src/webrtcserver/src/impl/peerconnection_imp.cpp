@@ -226,7 +226,7 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 			}
 			fingerprintAlgorithm = mRemoteFingerprintAlgorithm;
 		}
-
+               mIceTransport->mRole = mIceTransport->agent.m_mode == AGENT_MODE_CONTROLLING ? Description::Role::Active: Description::Role::Passive;
 		auto lower = std::atomic_load(&mIceTransport);
 		if (!lower)
 			throw std::logic_error("No underlying ICE transport for DTLS transport");

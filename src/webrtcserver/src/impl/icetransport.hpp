@@ -61,6 +61,8 @@ public:
 	bool send(message_ptr message) override; // false if dropped
 
 	bool getSelectedCandidatePair(Candidate *local, Candidate *remote);
+        
+        Description::Role mRole;
 
 private:
 	bool outgoing(message_ptr message) override;
@@ -74,7 +76,7 @@ private:
 
 	void addIceServer(IceServer server);
 
-	Description::Role mRole;
+	
 	string mMid;
 	std::chrono::milliseconds mTrickleTimeout;
 	std::atomic<GatheringState> mGatheringState;
@@ -91,7 +93,7 @@ private:
         void onCandidateCallback( Candidate *candidate);
         void onGatheringDoneCallback();
         void onRecvCallback( unsigned char *data, size_t size);
-    
+    public:
         Agent agent;
 #endif
 };

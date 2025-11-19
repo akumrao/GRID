@@ -448,9 +448,15 @@ DtlsTransport::DtlsTransport(shared_ptr<IceTransport> lower, Certificate* certif
 		SSL_set_ex_data(mSsl, TransportExIndex, this);
 
 		if (mIsClient)
-			SSL_set_connect_state(mSsl);
+                {
+                    SInfo << "dtls client";
+                    
+                    SSL_set_connect_state(mSsl);
+                }
 		else
-			SSL_set_accept_state(mSsl);
+                {    SInfo << "dtls server";
+                    SSL_set_accept_state(mSsl);
+                }
 
 		mInBio = BIO_new(BIO_s_mem());
 		mOutBio = BIO_new(BioMethods);
