@@ -258,7 +258,9 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 				    break;
 			    default:
 				    // Ignore
-				    break;
+                                
+                                SInfo << "DtlsTransport::State::Connecting";
+				break;
 			    }
 		    };
 

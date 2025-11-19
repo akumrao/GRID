@@ -2170,6 +2170,8 @@ int Agent::agent_bookkeeping( int64_t &now)
                 LInfo(selected_pair->nominated ? "New selected and nominated pair"
                         : "New selected pair");
                 m_selected_pair = selected_pair;
+                
+                 SInfo << "Nominated selected_pair " << selected_pair->dump();
 
                 // Start nomination timer if controlling
                 if (m_mode == AGENT_MODE_CONTROLLING)
@@ -2193,6 +2195,9 @@ int Agent::agent_bookkeeping( int64_t &now)
                     agent_change_state(JUICE_STATE_CONNECTED);
 
                 agent_change_state(JUICE_STATE_COMPLETED);
+                
+                 SInfo << "Nominated pair are Completed " << nominated_pair->dump();
+               
 
                 agent_stun_entry_t *nominated_entry = NULL;
                 agent_stun_entry_t *relay_entry = NULL;
@@ -2616,7 +2621,24 @@ std::string ice_candidate_pair::dump()
 
     };
     
-      return ret;
+     ret +=" pair ";
+             
+    if(local && remote)
+    {
+        char ip[40];
+        uint16_t port;
+        IP::AddressToString(local->resolved, ip, 40, port);
+        ret +=  ip + std::string(":") + std::to_string(port);
+    
+        ret +=" < > ";
+
+
+        IP::AddressToString(remote->resolved, ip, 40, port);
+        ret +=  ip + std::string(":") + std::to_string(port);
+    }    
+    
+    
+    return ret;
 }
 
 

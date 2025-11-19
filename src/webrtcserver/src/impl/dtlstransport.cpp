@@ -495,13 +495,13 @@ DtlsTransport::DtlsTransport(shared_ptr<IceTransport> lower, Certificate* certif
 DtlsTransport::~DtlsTransport() {
 	stop();
 
-	SDebug << "Destroying DTLS transport";
+	SInfo << "Destroying DTLS transport";
 	SSL_free(mSsl);
 	SSL_CTX_free(mCtx);
 }
 
 void DtlsTransport::start() {
-	SDebug << "Starting DTLS transport";
+	SInfo << "Starting DTLS transport";
 	registerIncoming();
 	changeState(State::Connecting);
 
@@ -524,7 +524,7 @@ void DtlsTransport::start() {
 }
 
 void DtlsTransport::stop() {
-	SDebug << "Stopping DTLS transport";
+	SInfo << "Stopping DTLS transport";
 	unregisterIncoming();
 	mIncomingQueue.stop();
 	enqueueRecv();
