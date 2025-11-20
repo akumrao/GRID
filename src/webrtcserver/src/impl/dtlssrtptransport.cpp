@@ -300,7 +300,7 @@ void DtlsSrtpTransport::postHandshake() {
 		throw std::runtime_error("Failed to get SRTP profile: " +
 		                         openssl::error_string(ERR_get_error()));
 
-	PLOG_DEBUG << "SRTP profile is: " << profile->name;
+	PLOG_INFO << "SRTP profile is: " << profile->name;
 
 	const auto [srtpProfile, keySize, saltSize] = getProfileParamsFromName(profile->name);
 	const size_t keySizeWithSalt = keySize + saltSize;

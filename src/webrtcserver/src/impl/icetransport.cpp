@@ -76,7 +76,7 @@ IceTransport::IceTransport(const Configuration &config, candidate_callback candi
 	}
 	//juice_set_log_handler(IceTransport::LogCallback);
 	juice_set_log_level(level);
-        juice_set_log_level(JUICE_LOG_LEVEL_VERBOSE);
+        juice_set_log_level(JUICE_LOG_LEVEL_INFO);
 
 	juice_config_t jconfig = {};
 	jconfig.cb_state_changed = IceTransport::StateChangeCallback;

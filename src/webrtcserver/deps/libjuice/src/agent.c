@@ -84,6 +84,10 @@ juice_agent_t *agent_create(const juice_config_t *config) {
 		JLOG_FATAL("Memory allocation for agent failed");
 		return NULL;
 	}
+        
+        static int nCount=0;
+        agent->agenNo = ++nCount; 
+        
 
 	bool alloc_failed = false;
 	agent->config.concurrency_mode = config->concurrency_mode;
@@ -245,6 +249,18 @@ int agent_gather_candidates(juice_agent_t *agent) {
 	JLOG_VERBOSE("Adding %d local host candidates", records_count);
 	for (int i = 0; i < records_count; ++i) {
 		ice_candidate_t candidate;
+/*
+                if( agent->agenNo ==1  && records[i].len  < 24 ) 
+                {
+                    continue;
+                }
+                
+                
+                if( agent->agenNo ==2  && records[i].len  > 24 ) 
+                {
+                    continue;
+                }
+  */                      
 		if (ice_create_local_candidate(ICE_CANDIDATE_TYPE_HOST, 1, agent->local.candidates_count,
 		                               records + i, &candidate)) {
 			JLOG_ERROR("Failed to create host candidate");
