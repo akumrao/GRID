@@ -97,7 +97,7 @@ std::string Settings::RemoteIP() {
 
 void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
 {
-
+#if 1
     //if(!cnfg.loaded())     
     if(argc == 1)
     {
@@ -108,8 +108,8 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
           {"remoteport", 8001},
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
-          {"is_ipv4", true},
-          {"remoteip", {"100.65.160.100" }}
+          {"is_ipv4", false},
+          {"remoteip", {"10.168.243.73" }}
           };
 
         std::string dir = base::fs::dirname(cnfg.path());
@@ -130,7 +130,7 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
           {"is_ipv4", true},
-          {"remoteip", {"100.65.160.100" }}
+          {"remoteip", {"2401:4900:61c5:5479:3115:7ea0:3167:c048" }}
           };
 
         std::string dir = base::fs::dirname(cnfg.path());
@@ -146,6 +146,54 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
 
     
 
+#else
+    
+      //if(!cnfg.loaded())     
+    if(argc == 1)
+    {
+        cnfg.root = {
+          {"logLevel", "info"},
+          {"datachannel", "dc1"},
+          {"localport", 7001},
+          {"remoteport", 8001},
+          {"user", "4Pfs"},
+          {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
+          {"is_ipv4", true},
+          {"remoteip", {"10.168.243.73" }}
+          };
+
+        std::string dir = base::fs::dirname(cnfg.path());
+        if (dir != "." && dir != ".." && !base::fs::exists(dir))
+        {
+            base::fs::mkdir(dir);
+        }
+        
+        cnfg.save();
+    }
+    else
+    {
+        cnfg.root = {
+          {"logLevel", "info"},
+          {"datachannel", "dc2"},
+          {"localport", 8001},
+          {"remoteport", 7001},
+          {"user", "4Pfs"},
+          {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
+          {"is_ipv4", true},
+          {"remoteip", {"10.168.243.73" }}
+          };
+
+        std::string dir = base::fs::dirname(cnfg.path());
+        if (dir != "." && dir != ".." && !base::fs::exists(dir))
+        {
+            base::fs::mkdir(dir);
+        }
+        
+        cnfg.save();
+
+
+    }
+#endif
 
     json &node = cnfg.root;
     

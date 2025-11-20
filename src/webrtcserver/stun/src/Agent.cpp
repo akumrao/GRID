@@ -269,10 +269,9 @@ namespace stun {
         return 0;
     }
     
-    
+    /* server reflex ( come from google sutn*/
     int Agent::agent_add_local_reflexive_candidate( Candidate *candidate) {
 
-        STrace <<  "AgentNo " << agentNo << " agent_add_local_reflexive_candidate " << candidate->mType;
        
         if (candidate->mType !=  Candidate::Type::ServerReflexive && candidate->mType  !=  Candidate::Type::PeerReflexive) {
 		LError("Invalid type for local reflexive candidate");
@@ -292,6 +291,9 @@ namespace stun {
 	}
         
 
+        
+        SInfo <<  "AgentNo " << agentNo << " agent_add_local_reflexive_candidate " << candidate->mType;
+        
         if (ice_create_local_candidate(1, localdesp.candidates_count, candidate)) {
             SError << "Failed to create host candidate";
             return -1;
@@ -397,7 +399,6 @@ namespace stun {
     
         int  Agent::agent_add_remote_peer_reflexive_candidate( uint32_t priority, const addr_record_t *record)
         {
-            
             if (remotedesp.ice_find_candidate_from_addr( record, Candidate::Type::Unknown)) {
                     STrace << "AgentNo " << agentNo << " A remote candidate exists for the remote address";
                     return 0;
@@ -436,7 +437,7 @@ namespace stun {
                     return -1;
             }
 
-            SDebug << "AgentNo " << agentNo << " Obtained a new remote reflexive candidate, priority=" << (unsigned long)priority;
+            SInfo << "AgentNo " << agentNo << " Add a new remote peer reflexive candidate, priority=" << (unsigned long)priority;
 
             remote->mPriority = priority;
 
@@ -972,7 +973,7 @@ int Agent::agent_dispatch_stun( unsigned char *buf, size_t size, stun::Message  
             Priority *result = nullptr;
             if( !msg->find(&result ))
             {
-                SError  << "AgentNo " << agentNo << " On Stun Message. Priority attribute is not in stun message";
+                SWarn  << "AgentNo " << agentNo << " On Stun Message. Priority attribute is not in stun message";
                 //exit(0);
             }
             
@@ -1296,6 +1297,26 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 		ice_candidate_pair_t *matching_pair = NULL;
 		for (int i = 0; i < m_candidate_pairs_count; ++i) {
 			ice_candidate_pair_t *pair = m_ordered_pairs[i];
+                        
+#if 0
+  
+   {
+         std::string ret{"addr_record_is_equal "};
+        char ip[40];
+        uint16_t port;
+        IP::AddressToString(pair->remote->resolved, ip, 40, port);
+        ret +=  ip + std::string(":") + std::to_string(port);
+    
+        ret +=" < > ";
+
+
+        IP::AddressToString(  (*(addr_record_t *)record), ip, 40, port);
+        ret +=  ip + std::string(":") + std::to_string(port);
+        
+        SInfo << ret;
+    }    
+    
+#endif
 			if (!pair_is_relayed(pair) &&
 			    IP::addr_record_is_equal(&pair->remote->resolved, record, true)) {
 				matching_pair = pair;

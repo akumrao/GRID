@@ -47,7 +47,39 @@ void testUdpServer::OnUdpSocketPacketReceived(UdpServer* socket, const char* dat
     
     IP::CopyAddress(remoteAddr, remotesrc );
     
+    
+   #if 0
+   std::string ret{"addr_record_is_equal "};
+   {
+        
+        char ip[40];
+        uint16_t port;
+        IP::AddressToString(remotesrc, ip, 40, port);
+        ret +=  ip + std::string(":") + std::to_string(port);
+    
+        ret +=" < > ";
+
+
+    }    
+    
+    #endif
+    
+    
     IP::addr_unmap_inet6_v4mapped((struct sockaddr *)&remotesrc.addr , &remotesrc.len);
+    
+    
+    
+    #if 0
+    {
+    
+        char ip[40];
+        uint16_t port;
+        IP::AddressToString(remotesrc, ip, 40, port);
+        ret +=  ip + std::string(":") + std::to_string(port);
+        
+        SInfo << ret;
+    }
+    #endif    
     
     TransportTuple tuple(socket, (struct sockaddr *) &remotesrc.addr);
     
