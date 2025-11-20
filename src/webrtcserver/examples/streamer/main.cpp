@@ -456,7 +456,7 @@ int main(int argc, char **argv)
                         [&](string const &name, json const &m, bool isAck, json &ack_resp)
                         {
                             //LTrace(cnfg::stringify(m));
-                             LTrace('SocketioClient received message:', cnfg::stringify(m));
+                             STrace << "SocketioClient received message:" <<  cnfg::stringify(m);
 
                             //onPeerMessage((string &) name, m); //arvind
                             // signalingMessageCallback(message);
@@ -970,7 +970,7 @@ shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string 
 
         rtc::Candidate tmp = candidate;
         tmp.mService = std::to_string( Settings::RemotePort());
-   
+        tmp.mNode = Settings::RemoteIP();
 
         
         auto work_fn = [pc, tmp]() {

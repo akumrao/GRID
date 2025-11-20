@@ -3,12 +3,14 @@
 #include "base/logger.h"
 #include <Agent.h>
 
-
+#include "Settings.h"
 
 using namespace base;
 using namespace stun;
 using namespace std::chrono_literals;
 using std::chrono::system_clock;
+
+#define arvind 1
 
 namespace rtc {
 
@@ -308,9 +310,19 @@ int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count)
             if(!interface_a.is_internal)
             {
  
+                #if arvind
+                
                 struct sockaddr* sa = (struct sockaddr*)&interface_a.address;
                 
-                
+                if(Settings::configuration.is_ipv4 && sa->sa_family == AF_INET6 )
+                {
+                  continue;    
+                }else if(!Settings::configuration.is_ipv4 && sa->sa_family == AF_INET )
+                {
+                  continue;  
+                }
+                #endif
+
            	socklen_t len;
 		if (sa &&
 		    (sa->sa_family == AF_INET

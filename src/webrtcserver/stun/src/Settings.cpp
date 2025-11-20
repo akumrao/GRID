@@ -87,6 +87,13 @@ std::string Settings::getdatachannel() {
 }
 
 
+std::string Settings::RemoteIP() {
+    return configuration.remoteip;
+}
+
+
+    
+
 
 void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
 {
@@ -101,8 +108,8 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
           {"remoteport", 8001},
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
-          {"is_server", false},
-          {"ip", {"192.168.0.19" }}
+          {"is_ipv4", true},
+          {"remoteip", {"100.65.160.100" }}
           };
 
         std::string dir = base::fs::dirname(cnfg.path());
@@ -122,8 +129,8 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
           {"remoteport", 7001},
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
-          {"is_server", false},
-          {"ip", {"192.168.0.19" }}
+          {"is_ipv4", true},
+          {"remoteip", {"100.65.160.100" }}
           };
 
         std::string dir = base::fs::dirname(cnfg.path());
@@ -156,8 +163,14 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
     {
         Settings::configuration.datachannel = node["datachannel"].get<std::string>();
     }
+    
+    if (node.find("remoteip") != node.end())
+    {
+        Settings::configuration.remoteip = node["remoteip"][0].get<std::string>();
+    }
+    
 
-    if (node.find("is_server") != node.end()) { Settings::configuration.is_server = node["is_server"].get<bool>(); }
+    if (node.find("is_ipv4") != node.end()) { Settings::configuration.is_ipv4 = node["is_ipv4"].get<bool>(); }
     
     if (node.find("logLevel") != node.end())
     {  // trace, debug, info, warn
@@ -173,7 +186,7 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
             new base::RotatingFileChannel("webrtcserver",Settings::configuration.log, ld));
         base::Logger::instance().setWriter(new base::AsyncLogWriter);
 #else
-        base::Logger::instance().add(new base::ConsoleChannel("webrtcserver",  base::Level::Trace));
+        base::Logger::instance().add(new base::ConsoleChannel("webrtcserver",  base::Level::Info));
 #endif
     }
     

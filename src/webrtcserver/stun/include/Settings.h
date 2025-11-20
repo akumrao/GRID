@@ -29,7 +29,8 @@ public:
         uint16_t localport{0};
         std::string user;
         std::string passwd;
-        bool is_server;
+        bool is_ipv4;
+        std::string remoteip;
         std::string datachannel;
 
     };
@@ -43,8 +44,9 @@ public:
      
     static void Passwd(char *buf, size_t size) ;
     
-    static uint16_t LocalPort() ;
-    static uint16_t RemotePort() ;
+    static uint16_t LocalPort();
+    static uint16_t RemotePort();
+    static std::string RemoteIP();
     static std::string getdatachannel();
 
 private:
