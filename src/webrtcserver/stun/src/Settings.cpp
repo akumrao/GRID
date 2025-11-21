@@ -73,9 +73,9 @@ void Settings::Passwd(char *buf, size_t size) {
 }
 
 
-uint16_t Settings::RemotePort() {
-    return configuration.remoteport;
-}
+//uint16_t Settings::RemotePort() {
+//    return configuration.remoteport;
+//}
 
 
 uint16_t Settings::LocalPort() {
@@ -97,18 +97,15 @@ std::string Settings::RemoteIP() {
 
 void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
 {
-#if 0
-    //if(!cnfg.loaded())     
-    if(argc == 1)
+#if 1
+    if(!cnfg.loaded())     
     {
         cnfg.root = {
           {"logLevel", "info"},
           {"datachannel", "dc1"},
           {"localport", 7001},
-          {"remoteport", 8001},
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
-          {"is_ipv4", false},
           {"remoteip", {"10.168.243.73" }}
           };
 
@@ -119,29 +116,6 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
         }
         
         cnfg.save();
-    }
-    else
-    {
-        cnfg.root = {
-          {"logLevel", "info"},
-          {"datachannel", "dc2"},
-          {"localport", 8001},
-          {"remoteport", 7001},
-          {"user", "4Pfs"},
-          {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
-          {"is_ipv4", true},
-          {"remoteip", {"2401:4900:61c5:5479:3115:7ea0:3167:c048" }}
-          };
-
-        std::string dir = base::fs::dirname(cnfg.path());
-        if (dir != "." && dir != ".." && !base::fs::exists(dir))
-        {
-            base::fs::mkdir(dir);
-        }
-        
-        cnfg.save();
-
-
     }
 
     
@@ -159,7 +133,7 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
           {"is_ipv4", true},
-          {"remoteip", {"100.65.160.100" }}
+          {"remoteip", {"192.168.0.19" }}
           };
 
         std::string dir = base::fs::dirname(cnfg.path());
@@ -180,7 +154,7 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
           {"is_ipv4", true},
-          {"remoteip", {"100.65.160.100" }}
+          {"remoteip", {"192.168.0.19" }}
           };
 
         std::string dir = base::fs::dirname(cnfg.path());
@@ -202,10 +176,10 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
         Settings::configuration.localport = node["localport"].get<uint16_t>();
     }
         
-    if (node.find("remoteport") != node.end())
-    {
-        Settings::configuration.remoteport = node["remoteport"].get<uint16_t>();
-    }
+//    if (node.find("remoteport") != node.end())
+//    {
+//        Settings::configuration.remoteport = node["remoteport"].get<uint16_t>();
+//    }
 
     if (node.find("datachannel") != node.end())
     {
@@ -218,7 +192,7 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
     }
     
 
-    if (node.find("is_ipv4") != node.end()) { Settings::configuration.is_ipv4 = node["is_ipv4"].get<bool>(); }
+//    if (node.find("is_ipv4") != node.end()) { Settings::configuration.is_ipv4 = node["is_ipv4"].get<bool>(); }
     
     if (node.find("logLevel") != node.end())
     {  // trace, debug, info, warn

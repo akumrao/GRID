@@ -142,7 +142,7 @@ void IceTransport::setRemoteDescription(const Description &description) {
 
 bool IceTransport::addRemoteCandidate(const Candidate &candidate) {
     
-    SInfo << "Agent " << agent.agentNo  <<  " addRemoteCandidate " <<  std::string(candidate);
+    STrace << "Agent " << agent.agentNo  <<  " addRemoteCandidate " <<  std::string(candidate);
     
 	// Don't try to pass unresolved candidates for more safety
 	//if (!candidate.isResolved())

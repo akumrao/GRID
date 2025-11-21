@@ -10,7 +10,7 @@ using namespace stun;
 using namespace std::chrono_literals;
 using std::chrono::system_clock;
 
-#define arvind 1
+//#define arvind 1
 
 namespace rtc {
 
@@ -310,9 +310,8 @@ int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count)
             if(!interface_a.is_internal)
             {
  
-                #if arvind
-                
                 struct sockaddr* sa = (struct sockaddr*)&interface_a.address;
+                #if arvind
                 
                 if(Settings::configuration.is_ipv4 && sa->sa_family == AF_INET6 )
                 {

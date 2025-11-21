@@ -968,7 +968,7 @@ shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string 
 
 
         rtc::Candidate tmp = candidate;
-        tmp.mService = std::to_string( Settings::RemotePort());
+        tmp.mService = std::to_string( Settings::LocalPort());
         tmp.mNode = Settings::RemoteIP();
 
         

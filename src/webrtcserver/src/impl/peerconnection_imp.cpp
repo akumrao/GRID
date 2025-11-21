@@ -1115,7 +1115,7 @@ void PeerConnection::processLocalDescription(Description description) {
 
 void PeerConnection::processLocalCandidate(Candidate candidate) {
     
-        SInfo << "processLocalCandidate" <<   std::string(candidate);
+        STrace << "processLocalCandidate" <<   std::string(candidate);
         
 
     
