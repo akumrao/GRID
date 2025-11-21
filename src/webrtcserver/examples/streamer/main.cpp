@@ -23,7 +23,7 @@
 #include "Settings.h"
 
 //#define localtesting 1
-//#define remotetesting 1
+#define remotetesting 1
 //#define VIDEOMEDIA 1
 
 

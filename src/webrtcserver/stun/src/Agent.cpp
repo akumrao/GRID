@@ -1972,8 +1972,10 @@ int Agent::agent_bookkeeping( int64_t &now)
         #if 1
         static int64_t prev = 0;
         
+       // std::cout << "\033[31m" << "This text is red." << std::endl;
+            
         
-        SInfo << "AgentNo " << agentNo << " Bookkeeping " << now -prev <<   " ........................................................" ;
+        SInfo << "\033[32m" << "AgentNo " << agentNo << " Bookkeeping " << now -prev <<   " ......................................................................................................." ;
         
       
        
@@ -2180,7 +2182,13 @@ int Agent::agent_bookkeeping( int64_t &now)
             agent_change_state(JUICE_STATE_FAILED);
             //atomic_store(&selected_entry, NULL); // disallow sending
             m_selected_entry = NULL;
-            SInfo << "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now);
+            
+
+            SInfo <<   "\033[31m" << "Share this ip to your peer " <<  localdesp.dump();  // print color  red
+                // Set text color to blue and background to yellow
+            
+            SInfo << "\033[0m" << "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now); //reset color to default
+            
             _timer.Start(m_next_timestamp - now);
             return 0;
         }
@@ -2289,7 +2297,8 @@ int Agent::agent_bookkeeping( int64_t &now)
                 agent_change_state(JUICE_STATE_FAILED);
                 //atomic_store(&selected_entry, NULL); // disallow sending
                 m_selected_entry = NULL;
-                SInfo << "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now);
+                SInfo <<   "\033[31m" << "Share this ip to your peer " <<  localdesp.dump();  // red color
+                SInfo <<"\033[0m" <<  "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now); // reset to default color
                 _timer.Start(m_next_timestamp - now);
                 return 0;
             } else if (m_next_timestamp > pac_timestamp) {
@@ -2311,7 +2320,9 @@ int Agent::agent_bookkeeping( int64_t &now)
 #endif
         }
 
-        SInfo << "AgentNo " << agentNo << " Bookkeeping end timer " << (m_next_timestamp - now);
+         SInfo << "\033[34m"  << "Share this ip to your peer "  <<  localdesp.dump(); // print color  blue
+         
+        SInfo << "\033[0m" << "AgentNo " << agentNo << " Bookkeeping end timer " << (m_next_timestamp - now); // reset to default color 
         _timer.Start(m_next_timestamp - now);
         return 0;
 }
@@ -2415,7 +2426,7 @@ int  Agent::agent_set_remote_description(const char *sdp) {
 
 
 
-int Agent::agent_resolve_servers( addrinfo* start)
+int Agent::agent_resolve_servers( addrinfo* start) // resolve local server
 {
     
     
@@ -2907,11 +2918,11 @@ void Agent::cbDnsResolve(addrinfo* res, void* ptr) // paired with resolveStunSer
     {   
         Candidate *candStored = ice_add_candidate(tmp, &remotedesp  );
         delete tmp; 
-        agent_resolve_hostname(res,candStored );  
+        agent_resolve_hostname(res,candStored );   // resolve remote candidate
        
     }
     else
-      agent_resolve_servers(res );  // google stun://google server resolve
+      agent_resolve_servers(res );  // google stun://google server resolve for local ice candidate
    
 }
 

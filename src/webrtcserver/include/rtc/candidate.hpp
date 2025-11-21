@@ -7,6 +7,8 @@
 #include <Types.h>
 #include "net/IP.h"
 
+#define AGENT_DEBUG 1
+
 using namespace base::net;
 
 namespace rtc {
@@ -70,6 +72,19 @@ public:
 	//char mAddress[50];
 	//uint16_t mPort;
         mutable addr_record_t resolved{0};
+       
+        #if AGENT_DEBUG
+        std::string dump()
+        {
+            char ip[40];
+            uint16_t port;
+            IP::AddressToString(resolved, ip, 40, port);
+            
+            std::string ret =  ip + std::string(":") + std::to_string(port);
+            return ret; 
+        }
+        #endif 
+       
 };
 
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, const Candidate &candidate);

@@ -22,7 +22,7 @@ using namespace rtc;
 using namespace base;
 using namespace stun;
 
-#define AGENT_DEBUG 1
+
 #define ICE_MAX_CANDIDATES_COUNT 20 
 
 #define MIN_STUN_RETRANSMISSION_TIMEOUT 500 // msecs
