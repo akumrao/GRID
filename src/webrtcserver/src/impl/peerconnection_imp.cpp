@@ -227,7 +227,11 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 			fingerprintAlgorithm = mRemoteFingerprintAlgorithm;
 		}
                
-                // arvind risky code TBD after testing
+                
+                
+
+                if( config.console)
+                if(mIceTransport->mRole == Description::Role::ActPass) //arvind this if line is for console connect
                 mIceTransport->mRole = mIceTransport->agent.m_mode == AGENT_MODE_CONTROLLING ? Description::Role::Active: Description::Role::Passive;
                
 		auto lower = std::atomic_load(&mIceTransport);

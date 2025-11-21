@@ -97,7 +97,7 @@ std::string Settings::RemoteIP() {
 
 void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
 {
-#if 1
+#if 0
     //if(!cnfg.loaded())     
     if(argc == 1)
     {
@@ -159,7 +159,7 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
           {"is_ipv4", true},
-          {"remoteip", {"10.168.243.73" }}
+          {"remoteip", {"100.65.160.100" }}
           };
 
         std::string dir = base::fs::dirname(cnfg.path());
@@ -180,7 +180,7 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
           {"is_ipv4", true},
-          {"remoteip", {"10.168.243.73" }}
+          {"remoteip", {"100.65.160.100" }}
           };
 
         std::string dir = base::fs::dirname(cnfg.path());

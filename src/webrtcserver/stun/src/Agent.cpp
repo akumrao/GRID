@@ -2643,19 +2643,26 @@ std::string ice_candidate_pair::dump()
     };
     
      ret +=" pair ";
-             
-    if(local && remote)
+      
+     
+    char ip[40];
+    uint16_t port;
+        
+    if(local)
     {
-        char ip[40];
-        uint16_t port;
+        
         IP::AddressToString(local->resolved, ip, 40, port);
-        ret +=  ip + std::string(":") + std::to_string(port);
+        ret +=  std::string("Local:") +  ip + std::string(":") + std::to_string(port);
     
         ret +=" < > ";
-
-
+    }
+    else
+        ret +="Local:Xored local stun request < > ";
+                
+    if(remote)
+    {
         IP::AddressToString(remote->resolved, ip, 40, port);
-        ret +=  ip + std::string(":") + std::to_string(port);
+        ret +=  std::string("Remote:") +ip + std::string(":") + std::to_string(port);
     }    
     
     

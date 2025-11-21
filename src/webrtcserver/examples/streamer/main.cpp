@@ -23,9 +23,8 @@
 #include "Settings.h"
 
 //#define localtesting 1
+//#define remotetesting 1
 //#define VIDEOMEDIA 1
-
-#define remotetesting 1
 
 
 #define CERTFROMFILE 2
@@ -369,11 +368,11 @@ int main(int argc, char **argv)
     
    
 #if localtesting 
+    config.console = true;
     std::string id ="server";
-
-   clients.emplace(id, createPeerConnection_lc(config,  id));
+    clients.emplace(id, createPeerConnection_lc(config,  id));
 #elif remotetesting
-
+    config.console = true;
     if(cache.loaded())
     {
        
