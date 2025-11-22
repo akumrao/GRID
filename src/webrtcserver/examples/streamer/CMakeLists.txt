@@ -40,7 +40,6 @@ set_target_properties(streamer PROPERTIES
 	OUTPUT_NAME streamer)
 
 target_include_directories(streamer PUBLIC
-${WEBRTC_REPO}/include
 $<INSTALL_INTERFACE:include>)
 
 

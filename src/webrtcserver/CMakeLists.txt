@@ -30,10 +30,14 @@ option(SCTP_DEBUG "Enable SCTP debugging output to verbose log" OFF)
 option(RTC_UPDATE_VERSION_HEADER "Enable updating the version header" OFF)
 
 
-SET(SSL_ROOT "${WORKSPACE}/src/openssl/buildx64")
-SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
+message("Current Source Directory: ${CMAKE_CURRENT_SOURCE_DIR}/../openssl/buildx64")
+message("Current Binary Directory: ${CMAKE_CURRENT_BINARY_DIR}")
+message("Current List File Directory: ${CMAKE_CURRENT_LIST_DIR}/../openssl/buildx64")
 
-#SET(WEBRTC_REPO "${CMAKE_SOURCE_DIR}/webrtc/src")
+
+SET(SSL_ROOT "${CMAKE_CURRENT_LIST_DIR}/../openssl/buildx64")
+SET(SSL_LIB "${CMAKE_CURRENT_LIST_DIR}/../openssl/buildx64/lib")
+
 
  
 #set(MbedTLS_ROOT ${WORKSPACE}/src/webrtcserver/deps/mbedtls/)
@@ -362,13 +366,12 @@ target_include_directories(datachannel-static PRIVATE ${CMAKE_CURRENT_SOURCE_DIR
 target_include_directories(datachannel-static PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 target_include_directories(datachannel-static PUBLIC 
-    #${WEBRTC_REPO}/deps/libjuice/include
-    ${WEBRTC_REPO}/stun/include
-    ${WEBRTC_REPO}/deps/libsrtp/config
-    ${WEBRTC_REPO}/deps/libsrtp/crypto/include
-    ${WEBRTC_REPO}/deps/libsrtp/include
-    ${WEBRTC_REPO}/deps/json/include
-    ${WEBRTC_REPO}/deps/usrsctp/usrsctplib
+    stun/include
+    deps/libsrtp/config
+    deps/libsrtp/crypto/include
+    deps/libsrtp/include
+    deps/json/include
+    deps/usrsctp/usrsctplib
     ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/  ../libuv/include ../libuv/src ../build/ ../http_parser/ 
 )
 

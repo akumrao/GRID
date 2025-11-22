@@ -72,7 +72,6 @@ struct RTC_CPP_EXPORT Configuration {
 	bool disableAutoGathering = false;
 	bool forceMediaTransport = false;
 	bool disableFingerprintVerification = false;
-        bool console{false}; /* allow to test from console with external ips" */
 
 	// Port range
 	uint16_t portRangeBegin = 1024;
@@ -88,6 +87,10 @@ struct RTC_CPP_EXPORT Configuration {
 	optional<string> certificatePemFile;
 	optional<string> keyPemFile;
 	optional<string> keyPemPass;
+
+        bool console{false}; /* allow to test from console with external ips" */
+        uint16_t portdefault{7345};
+           
 };
 
 #ifdef RTC_ENABLE_WEBSOCKET

@@ -42,7 +42,7 @@ namespace base {
     
             static void on_resolved(uv_getaddrinfo_t* handle, int status, struct addrinfo* res) ;
 
-            void resolve(const std::string& host, int port, uv_loop_t * loop = Application::uvGetLoop(), void* ptr=nullptr) ;
+            void resolve(const std::string& host, int port, uv_loop_t * loop = Application::uvGetLoop(), void* ptr=nullptr, bool hostname=false) ;
 
             uv_getaddrinfo_t *req;
             

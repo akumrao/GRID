@@ -106,7 +106,7 @@ namespace stun {
     
     bool Agent::getInterfaces( ) {
         
-        int port = Settings::LocalPort();
+        int port = mConfig.portdefault;
         socket = new testUdpServer("::", port , this );
        // socket = new testUdpServer("0.0.0.0", ++port , this );
         socket->start();

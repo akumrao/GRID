@@ -26,7 +26,7 @@ public:
     struct Configuration {
         
         //uint16_t remoteport{0};
-        uint16_t localport{0};
+        //uint16_t localport{0};
         std::string user;
         std::string passwd;
         //bool is_ipv4;

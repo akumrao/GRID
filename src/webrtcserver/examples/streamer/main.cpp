@@ -50,7 +50,7 @@ unordered_map<string, shared_ptr<Client>> clients{};
 /// @param id Client ID
 /// @returns Client
 shared_ptr<Client> createPeerConnection(const Configuration &config, string id, bool isClient);
-shared_ptr<Client> createPeerConnection_lc(const Configuration &config, string id);
+shared_ptr<Client> createPeerConnection_lc( Configuration &config, string id);
 
 shared_ptr<Client> createPeerConnection_rm(const Configuration &config, string id, Async &async, bool isClient);
 
@@ -576,9 +576,10 @@ shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const 
 
 #if localtesting 
 // Create and setup a PeerConnection
-shared_ptr<Client> createPeerConnection_lc(const Configuration &config,  string id)
+shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
 {
     auto pc1 = make_shared<PeerConnection>(config);
+    config.portdefault = config.portdefault+1;
     auto pc2 = make_shared<PeerConnection>(config); 
     {
        
@@ -961,14 +962,14 @@ shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string 
 
     });
 
-    pc->onLocalCandidate([ id, pc, &async](rtc::Candidate candidate) {
+    pc->onLocalCandidate([config, id, pc, &async](rtc::Candidate candidate) {
 
 
         SInfo << std::string(candidate);
 
 
         rtc::Candidate tmp = candidate;
-        tmp.mService = std::to_string( Settings::LocalPort());
+        tmp.mService = std::to_string(config.portdefault);
         tmp.mNode = Settings::RemoteIP();
 
         

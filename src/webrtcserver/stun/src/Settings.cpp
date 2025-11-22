@@ -78,12 +78,22 @@ void Settings::Passwd(char *buf, size_t size) {
 //}
 
 
-uint16_t Settings::LocalPort() {
-    return configuration.localport++;
-}
+//uint16_t Settings::LocalPort() {
+//    return configuration.localport++;
+//}
 
 std::string Settings::getdatachannel() {
-    return configuration.datachannel;
+    
+    if(!configuration.passwd.empty())
+    {
+        return configuration.datachannel;
+    }
+    else
+    {
+        char buf[10];
+        stun::random_str64(buf, 9);
+        return buf;
+    }
 }
 
 
@@ -102,11 +112,9 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
     {
         cnfg.root = {
           {"logLevel", "info"},
-          {"datachannel", "dc1"},
-          {"localport", 7001},
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
-          {"remoteip", {"10.168.243.73" }}
+          {"remoteip", {"192.168.0.19" }}
           };
 
         std::string dir = base::fs::dirname(cnfg.path());
@@ -127,9 +135,6 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
     {
         cnfg.root = {
           {"logLevel", "info"},
-          {"datachannel", "dc1"},
-          {"localport", 7001},
-          {"remoteport", 8001},
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
           {"is_ipv4", true},
@@ -148,9 +153,6 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
     {
         cnfg.root = {
           {"logLevel", "info"},
-          {"datachannel", "dc2"},
-          {"localport", 8001},
-          {"remoteport", 7001},
           {"user", "4Pfs"},
           {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
           {"is_ipv4", true},
@@ -171,10 +173,10 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
 
     json &node = cnfg.root;
     
-    if (node.find("localport") != node.end())
-    {
-        Settings::configuration.localport = node["localport"].get<uint16_t>();
-    }
+//    if (node.find("localport") != node.end())
+//    {
+//        Settings::configuration.localport = node["localport"].get<uint16_t>();
+//    }
         
 //    if (node.find("remoteport") != node.end())
 //    {

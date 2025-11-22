@@ -74,11 +74,14 @@ public:
         mutable addr_record_t resolved{0};
        
         #if AGENT_DEBUG
-        std::string dump()
+        std::string dump(bool full= false)
         {
             char ip[40];
             uint16_t port;
             IP::AddressToString(resolved, ip, 40, port);
+            
+            if(!full)
+            return ip; 
             
             std::string ret =  ip + std::string(":") + std::to_string(port);
             return ret; 
