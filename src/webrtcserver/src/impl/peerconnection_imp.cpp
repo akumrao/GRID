@@ -216,7 +216,7 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 		if (auto transport = std::atomic_load(&mDtlsTransport))
 			return transport;
 
-		PLOG_VERBOSE << "Starting DTLS transport";
+		SInfo << "Starting DTLS transport";
 
 		CertificateFingerprint::Algorithm fingerprintAlgorithm;
 		{
@@ -231,7 +231,7 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
                 
 
                 if( config.console)
-                if(mIceTransport->mRole == Description::Role::ActPass) //arvind this if line is for console connect
+               // if(mIceTransport->mRole == Description::Role::ActPass) //arvind this if line is for console connect
                 mIceTransport->mRole = mIceTransport->agent.m_mode == AGENT_MODE_CONTROLLING ? Description::Role::Active: Description::Role::Passive;
                
 		auto lower = std::atomic_load(&mIceTransport);
@@ -252,14 +252,16 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 					    initSctpTransport();
 				    else
 					    changeState(State::Connected);
-
+                                    SInfo << "DtlsTransport::State::Connected";
 				    mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
 				    break;
 			    case DtlsTransport::State::Failed:
+                                    SInfo << "DtlsTransport::State::Failed";
 				    changeState(State::Failed);
 				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
 				    break;
 			    case DtlsTransport::State::Disconnected:
+                                    SInfo << "DtlsTransport::State::Disconnected";
 				    changeState(State::Disconnected);
 				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
 				    break;
