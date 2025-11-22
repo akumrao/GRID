@@ -84,7 +84,7 @@ void Settings::Passwd(char *buf, size_t size) {
 
 std::string Settings::getdatachannel() {
     
-    if(!configuration.passwd.empty())
+    if(!configuration.datachannel.empty())
     {
         return configuration.datachannel;
     }
@@ -210,7 +210,8 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
             new base::RotatingFileChannel("webrtcserver",Settings::configuration.log, ld));
         base::Logger::instance().setWriter(new base::AsyncLogWriter);
 #else
-        base::Logger::instance().add(new base::ConsoleChannel("webrtcserver",  base::Level::Info));
+       // base::Logger::instance().add(new base::ConsoleChannel("webrtcserver",  base::Level::Info));
+        base::Logger::instance().add(new base::ConsoleChannel("webrtcserver",  ld));
 #endif
     }
     
