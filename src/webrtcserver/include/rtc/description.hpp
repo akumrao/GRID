@@ -77,15 +77,15 @@ typedef struct ice_description {
        
     std::string dump()
     {
-        std::string ret = "{";
+        std::string ret = "[";
         for( int i =0; i < candidates_count; ++i)
         {
 
             Candidate *cur = & candidates[i];
 
-            ret += cur->dump() + (i < candidates_count-1? ", ":"");
+            ret += "\"" +cur->dump() + (i < candidates_count-1? "\", ":"\"");
         }
-         ret +="}";
+         ret +="]";
         return ret;
     }
     #endif 

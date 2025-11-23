@@ -11,6 +11,9 @@
   cricket::Candidate represents an address discovered by a cricket::Port. A candidate can be local (i.e discovered by a local port) or remote. Remote candidates are transported using signaling, i.e outside of webrtc. There are 4 types of candidates: local, stun, prflx or relay (standard)
 
  */
+#define k1 "11AAIZCGA0ZrNXIa9aRuqO"
+#define k2 "_o0IYnoxMOlWrHdf4wiL7nqhCWHqpDW5o"
+#define k3 "hmIH5ZM2fdC7QZIK2Z454THFiEW"
 
 #include "nlohmann/json.hpp"
 
@@ -21,6 +24,8 @@
 #include "socketio/socketioClient.h"
 #include "base/async.h"
 #include "Settings.h"
+
+#include "http/HttpsClient.h"
 
 //#define localtesting 1
 #define remotetesting 1
@@ -38,6 +43,77 @@ using namespace base::net;
 
 
 using json = nlohmann::json;
+
+
+
+void RestAPI(std::string method, std::string url,json &m)
+{
+    Application app;
+
+    std::string result;
+             
+    std::string sendMe = m.dump();
+    
+    //ClientConnecton *conn = new HttpsClient( "https", "ipcamera.adapptonline.com", 8080, uri);
+    ClientConnecton *conn = new HttpsClient(url);
+    //Client *conn = new Client("http://zlib.net/index.html");
+    conn->fnComplete = [&](const Response & response) {
+        std::string reason = response.getReason();
+        StatusCode statuscode = response.getStatus();
+     //   std::string body = conn->readStream() ? conn->readStream()->str() : "";
+      //  STrace << "Post API reponse" << "Reason: " << reason << " Response: " << body;
+    };
+
+    conn->fnConnect = [&, sendMe](HttpBase * con) {
+        
+       // SInfo << sendMe.length();
+        
+        con->send( sendMe.c_str(), sendMe.length(), false);
+        
+    };
+
+    conn->fnPayload = [&](HttpBase * con, const char* data, size_t sz) {
+
+       // std::cout  << string( data,sz) << std::endl << std::flush;
+        result +=  string( data,sz);
+
+        
+        
+       // json root = json::parse(data);            
+      //  std::cout << "client->fnPayload " << root.dump(4) << std::endl << std::flush;
+        
+    };
+    
+    conn->fnClose = [&](HttpBase * con, std::string str) {
+        
+      json root = json::parse(result.c_str());        
+        
+        std::cout << "client->fnPayload " << root.dump(4) << std::endl << std::flush;
+    };
+
+
+
+    conn->_request.setMethod(method);
+    conn->_request.setKeepAlive(false);
+    
+    conn->_request.setContentLength(sendMe.size());
+    conn->_request.setContentType("application/json");
+    conn->_request.add( "Accept", "application/vnd.github+json"  );
+    conn->_request.add( "Authorization", std::string("Bearer github_pat_") + std::string(k1) + k2 + std::string(k3)  );
+    conn->_request.add( "User-Agent", "Awesome-Octocat-App"  );
+    
+    conn->setReadStream(new std::stringstream);
+    conn->send();
+    
+    
+    app.run();
+       
+
+
+}
+
+
+
 
 template <class T> weak_ptr<T> make_weak_ptr(shared_ptr<T> ptr) { return ptr; }
 
@@ -321,7 +397,32 @@ int main(int argc, char **argv)
     //int c = 0;
     
     
-     Application app;
+{
+    json m;
+
+    //m["messageType"] = "IDENTITY_NOT_IN_GALLERY";
+    //m["messagePayload"] =  identity.root;
+  //  m["ts"] =  date;
+//    m["camid"] = ctx->cam;
+
+
+
+    RestAPI("GET",  "https://api.github.com/repos/akumrao/akumrao.github.io/contents/dd", m);  
+    
+//    m["message"] = "Commit message";
+//    m["content"] = "SGVsbG8gRnJvbSBHaXRodWIgQVBJIQ==";
+//            
+//    RestAPI("PUT",  "https://api.github.com/repos/akumrao/akumrao.github.io/contents/dd/file13.txt", m);  
+ 
+
+                
+    
+    return 0;
+    
+
+}
+    Application app; 
+ 
      
      Async async;
 

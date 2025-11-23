@@ -31,8 +31,53 @@ https://www.rfc-editor.org/rfc/rfc6627.html#page-9
 
 
 
-Libuv
+udp listen
 
-   The statements setting alternate local addresses for inbound zone transfers (alt-transfer-source, alt-transfer-source-v6, and use-alt-transfer-source) have been removed. [GL #3714]
+ nc -6 -ul -p 6111 
 
-The Differentiated Services Code Point (DSCP) feature in BIND has been non-operational since the new Network Manager was introduced in BIND 9.16. It is now marked as obsolete, and vestigial code implementing it has been removed. Configuring DSCP values in named.conf now causes a warning to be logged. [GL #3773]
+ nc  -ul -p 6111 
+
+upd send 
+
+nc -6 -vzu 2401:4900:62a5:400d:a521:aa30:18a6:e80b 6111
+
+nc -vzu 27.63.245.71 6111
+
+Free turn server
+https://dev.to/aprogrammer22/list-of-free-stun-and-turn-servers-open-relay-project-3a70
+
+https://gist.github.com/sagivo/3a4b2f2c7ac6e1b5267c2f1f59ac6c6b
+
+
+Free webpage hosting 
+
+https://cpanel.infinityfree.com/panel/index.php
+https://umrao.free.nf
+
+free storage
+https://mega.nz/fm/4QtW0SgD
+
+https://app.netlify.com/drop
+
+https://www.techradar.com/web-hosting/best-
+
+https://github.com/themactep/thingino-firmware.git
+
+
+# List files in folder dd
+curl -L \
+  -H "Accept: application/vnd.github.object" \
+  -H "Authorization: Bearer <yourtocken>" \
+  -H "X-GitHub-Api-Version: 2022-11-28" \
+  https://api.github.com/repos/akumrao/akumrao.github.io/contents/dd
+
+
+#add new file 
+ curl -X PUT \
+    -H "Accept: application/vnd.github+json" \
+    -H "Authorization: Bearer  <yourtocken>" \
+    https://api.github.com/repos/akumrao/akumrao.github.io/contents/dd/file1.txt \
+    -d '{
+      "message": "Commit message for the new file",
+      "content": "bXkgbmV3IGZpbGUgY29udGVudA=="
+    }'

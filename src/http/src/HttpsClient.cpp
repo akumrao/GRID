@@ -152,9 +152,36 @@ namespace base {
 
             if (!_connect) {
                 _connect = true;
+                
+                //char addr[40] = {'\0'};
+               // int port =0; 
+                
+                for (;res != NULL; res = res->ai_next) 
+                { 
+                    /*
+                    if (res->ai_family == AF_INET) {
+                        // ipv4
+                        //char c[17] = { '\0' };
+                        
+                        sockaddr_in* tmp  =   (sockaddr_in*) res->ai_addr;
+                        port= htons(tmp->sin_port);
+                        uv_ip4_name(tmp, addr, 16);
+                        
+                    } else if (res->ai_family == AF_INET6) {
+                        // ipv6
+                        //char c[40] = { '\0' };
+                        sockaddr_in6* tmp  =   (sockaddr_in6*) res->ai_addr;
+                        port= htons(tmp->sin6_port);
+                        uv_ip6_name(tmp, addr, 39);
+                    }
+                    */
 
-                LTrace("Connecting ", _url.host(), ":", _url.port())
-                Connect(_url.host(), _url.port(), res);
+                    LTrace("Connecting ", _url.host(), ":", _url.port())
+                    Connect(_url.host(), _url.port(), res);
+                }
+                
+
+          
             }
 
         }
@@ -163,7 +190,7 @@ namespace base {
             if (_connect) return;
             LTrace("Resolve DNS ", _url.host());
 
-            resolve(_url.host(), _url.port(), Application::uvGetLoop());
+            resolve(_url.host(), _url.port(), Application::uvGetLoop(), nullptr, true );
         }
 
         void HttpsClient::setReadStream(std::ostream* os) {
