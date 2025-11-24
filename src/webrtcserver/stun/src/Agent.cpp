@@ -12,9 +12,6 @@
 using namespace base;
 
 
-
-
-
 #define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
 namespace stun {
@@ -117,7 +114,7 @@ namespace stun {
         
         
         addr_record_t records[ICE_MAX_CANDIDATES_COUNT - 1];
-	int records_count = udp_get_addrs(socket->udpServer->localAddr, records, ICE_MAX_CANDIDATES_COUNT - 1);
+	int records_count = udp_get_addrs(socket->udpServer->localAddr, records, ICE_MAX_CANDIDATES_COUNT - 1,   mConfig.api->mac_addr);
 	if (records_count < 0) {
 		SError << "Failed to gather local host candidates";
 	      records_count = 0;
@@ -2326,7 +2323,8 @@ int Agent::agent_bookkeeping( int64_t &now)
 #endif
         }
 
-         SInfo << "\033[34m" << "AgentNo " <<  agentNo << " Share this ip to your peer "  <<  localdesp.dump(); // print color  blue
+        SInfo << "\033[34m" << "AgentNo " <<  agentNo << " " << mConfig.api->mac_addr << " Share this ip to your peer "  <<  localdesp.dump(); // print color  blue
+       mConfig.api->Insert(   mConfig.api->mac_addr, localdesp.dump()  );
          
         SInfo << "\033[0m" << "AgentNo " << agentNo << " Bookkeeping end timer " << (m_next_timestamp - now); // reset to default color 
         _timer.Start(m_next_timestamp - now);

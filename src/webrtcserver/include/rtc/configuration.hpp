@@ -4,7 +4,7 @@
 #define RTC_ICE_CONFIGURATION_H
 
 #include "common.hpp"
-
+#include "RestAPI.h"
 #include <vector>
 
 namespace rtc {
@@ -90,6 +90,8 @@ struct RTC_CPP_EXPORT Configuration {
 
         bool console{false}; /* allow to test from console with external ips" */
         uint16_t portdefault{7345};
+        
+        RestAPI *api{nullptr};
            
 };
 

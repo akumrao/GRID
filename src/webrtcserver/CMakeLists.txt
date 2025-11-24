@@ -139,6 +139,7 @@ set(LIBSTUN_SOURCES
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/utils.cpp 
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Writer.cpp
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Settings.cpp
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/RestAPI.cpp
 
  #${CMAKE_CURRENT_SOURCE_DIR}/stun/src/tls.cpp 
  #${CMAKE_CURRENT_SOURCE_DIR}/stun/src/configuration.cpp

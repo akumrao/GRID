@@ -272,7 +272,7 @@ int addr_set_port(struct sockaddr *sa, uint16_t port) {
 	}
 }
 
-int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count)
+int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count, char *mac_addr)
 {
     
     if (!addr_is_any((struct sockaddr *)&bound.addr)) {
@@ -306,6 +306,7 @@ int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count)
             candidate.mType = Candidate::Type::Host;
             
             SInfo  <<  " Name: " <<  interface_a.name;
+          
                        
             if(!interface_a.is_internal)
             {
@@ -335,6 +336,15 @@ int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count)
 					current->len = len;
 					addr_set_port((struct sockaddr *)&current->addr, port);
 					++current;
+                                        
+                                        if(ret == 1)
+                                        {
+                                            snprintf(mac_addr,18, "%02x:%02x:%02x:%02x:%02x:%02x",
+                                            interface_a.phys_addr[0], interface_a.phys_addr[1],
+                                            interface_a.phys_addr[2], interface_a.phys_addr[3],
+                                            interface_a.phys_addr[4], interface_a.phys_addr[5]);
+
+                                        }
 				}
 			}
 		}
