@@ -78,11 +78,28 @@ void RestAPI::Run(std::string method, std::string url,json &body)
 
           json root = json::parse(result.c_str());        
 
+          if (root.find("content") != root.end()) {
+            // there is an entry with key "foo"
+          }
+          
+           if (root.find("status") != root.end()) {
+            // there is an entry with key "foo"
+          }
+
+
           
           for (auto& element : root) {
             
               std::cout << element << '\n';
-            
+           
+              
+              if (element.find("name") != element.end()) {
+            // there is an entry with key "foo"
+             }
+              
+             if (element.find("sha") != element.end()) {
+            // there is an entry with key "foo"
+             }
           }
           
             std::cout << "client->fnPayload " << root.dump(4) << std::endl << std::flush;

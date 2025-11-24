@@ -337,12 +337,13 @@ int main(int argc, char **argv)
     
     api->Run("GET",  "https://api.github.com/repos/akumrao/akumrao.github.io/contents/dd", body);  
     
-//    body["message"] = "Commit message";
-//    body["content"] = "SGVsbG8gRnJvbSBHaXRodWIgQVBJIQ==";
-//            
-//    RestAPI("PUT",  "https://api.github.com/repos/akumrao/akumrao.github.io/contents/dd/file13.txt", body);  
+    body["message"] = "Commit message";
+    body["content"] = "SGVsbG8gRnJvbSBHaXRodWIgQVBJIQ==";
+     body["sha"] = "30a75a65bb729e27b3233129acd79a0cd4f69f57";
+            
+    api->Run("PUT",  "https://api.github.com/repos/akumrao/akumrao.github.io/contents/dd/file23.txt", body);  
  
-
+app.run();
     
     
 
