@@ -21,22 +21,58 @@
 #include "net/netInterface.h"
 #include "http/HttpsClient.h"
 #include "base/application.h"
-
+#include "base/base64.hpp"
 
 using namespace base::net;
 
+ #define URL  "https://api.github.com/repos/akumrao/akumrao.github.io/contents/"
 
-void RestAPI::Insert(std::string file,  std::string content  )
+void RestAPI::Get( std::string file )
+{ 
+    json body;
+    Run("GET",  URL+room +"/"+file, body );  
+
+}
+
+void RestAPI::Put( std::string file , std::string content,  std::string sha )
 {
-  //mConfig.api->mapFile.find(mConfig.api->mac_addr) != mConfig.api->mapFile.end() 
-        //mConfig.api->mapFile[mConfig.api->mac_addr].content =  localdesp.dump();
-  
+    json body;
+    
+    body["message"] = "Commit message";
+    body["content"] = base64_encode(content);
+    
+    if(sha.size())
+    body["sha"] = sha;
+    Run("PUT",  URL+room + "/"+file, body );  
+    
+}
+
+void RestAPI::List( )
+{
+    json body;
+    Run("GET",  URL+room , body);  
+    
+}
+
+void RestAPI::Insert(std::string file,  std::string content )
+{
+    
+    if(mapFile.find( mac_addr) ==  mapFile.end() || ( mapFile.find( mac_addr) !=  mapFile.end() && mapFile[mac_addr].content !=  content ))
+    {
+        mutMapFIle.lock();
+        mapFile[mac_addr].content =  content;
+        mutMapFIle.unlock();
+        
+        SInfo << mac_addr << " " << content;
+        Put( mac_addr, content,  mapFile[mac_addr].sha );
+    }
 }
   
-  
+
 void RestAPI::Run(std::string method, std::string url,json &body)
 {
-    auto work_fn = [method, url, body ]() {
+    SInfo << "Run " << url;
+    auto work_fn = [method, url, body, this ]() {
              
         Application app;
 
@@ -74,35 +110,38 @@ void RestAPI::Run(std::string method, std::string url,json &body)
 
         };
 
-        conn->fnClose = [&](HttpBase * con, std::string str) {
-
-          json root = json::parse(result.c_str());        
-
-          if (root.find("content") != root.end()) {
-            // there is an entry with key "foo"
-          }
-          
-           if (root.find("status") != root.end()) {
-            // there is an entry with key "foo"
-          }
-
-
-          
-          for (auto& element : root) {
+        conn->fnClose = [&, this](HttpBase * con, std::string str) {
+             
+            json root = json::parse(result.c_str());        
             
-              std::cout << element << '\n';
-           
-              
-              if (element.find("name") != element.end()) {
-            // there is an entry with key "foo"
-             }
-              
-             if (element.find("sha") != element.end()) {
-            // there is an entry with key "foo"
-             }
-          }
-          
             std::cout << "client->fnPayload " << root.dump(4) << std::endl << std::flush;
+
+            if (root.find("status") != root.end()) {
+                SWarn <<  root.dump();  // only 
+            }
+            else if (root.find("content") != root.end()) {
+
+            }
+            else
+            {
+
+                for (auto& element : root) {
+
+                    std::cout << element << '\n';
+                   if (element.find("name") != element.end()) {
+                       
+                       SInfo << " element[name] " << element["name"];
+                     
+                            Get( element["name"] );
+                   }
+
+                   if (element.find("sha") != element.end()) {
+                  // there is an entry with key "foo"
+                   }
+                }
+           }
+          
+           
         };
 
 

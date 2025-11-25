@@ -317,33 +317,12 @@ int main(int argc, char **argv)
 
 
 
-
-////////////////////////////////////////////////////    
-
-
     bool printHelp = false;
     //int c = 0;
 
     Application app; 
      
     Async async;
-    
-    
-    RestAPI *api  = new RestAPI(async);
-    
-    config.api = api;
-    
-    json body;
-    
-    api->Run("GET",  "https://api.github.com/repos/akumrao/akumrao.github.io/contents/dd", body);  
-    
-    body["message"] = "Commit message";
-    body["content"] = "SGVsbG8gRnJvbSBHaXRodWIgQVBJIQ==";
-     body["sha"] = "30a75a65bb729e27b3233129acd79a0cd4f69f57";
-            
-    api->Run("PUT",  "https://api.github.com/repos/akumrao/akumrao.github.io/contents/dd/file23.txt", body);  
- 
-app.run();
     
     
 
@@ -394,6 +373,14 @@ app.run();
     std::string id ="server";
     clients.emplace(id, createPeerConnection_lc(config,  id));
 #elif remotetesting
+    
+    
+
+    
+    config.allocRestApi(async, "test");
+    config.api->List();
+
+    
     config.console = true;
     if(cache.loaded())
     {

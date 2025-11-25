@@ -18,6 +18,9 @@
 #include "base/async.h"
 #include "nlohmann/json.hpp"
 
+#include <mutex>
+
+
 using namespace base;
 
 
@@ -28,7 +31,7 @@ class RestAPI
 {
 public:
 
-    RestAPI(Async &async):async(async)
+    RestAPI(Async &async, std::string room):async(async), room(room)
     {
         
     }
@@ -37,6 +40,11 @@ public:
     {
         
     }
+    
+    void List();
+    
+    void Put( std::string file,  std::string content,  std::string sha );
+    void Get( std::string file );
             
     void Run(std::string method, std::string url,json &body);
     
@@ -52,6 +60,9 @@ public:
         std::string content;
     };
     std::map<std::string,  stMap> mapFile;
+    
+    std::mutex mutMapFIle;
+    std::string room;
              
 };
 

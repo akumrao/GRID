@@ -91,7 +91,22 @@ struct RTC_CPP_EXPORT Configuration {
         bool console{false}; /* allow to test from console with external ips" */
         uint16_t portdefault{7345};
         
-        RestAPI *api{nullptr};
+        void allocRestApi(Async &async, std::string room)
+        {
+            api = new RestAPI(async, room  );
+        }
+        void freeRestApi()
+        {
+            delete api;
+        }
+        
+        ~Configuration()
+        {
+//            freeRestApi();
+        }
+         RestAPI *api{nullptr};
+private:
+
            
 };
 
