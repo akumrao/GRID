@@ -12,7 +12,6 @@
 
  */
 
-#include "nlohmann/json.hpp"
 
 #include "h264fileparser.hpp"
 #include "opusfileparser.hpp"
@@ -20,19 +19,29 @@
 //#include "ArgParser.hpp"
 #include "socketio/socketioClient.h"
 
-//#define localtesting 1
+#include "Settings.h"
+#include "RestAPI.h"
+#include "uv.h"
 
-#define VIDEOMEDIA 1
+//#define localtesting 1
+#define remotetesting 1
+//#define VIDEOMEDIA 1
+
+
+#define CERTFROMFILE 2
 
 using namespace rtc;
 using namespace std;
-using namespace std::chrono_literals;
+//using namespace std::chrono_literals;
 
 using namespace base;
 using namespace base::net;
 
 
 using json = nlohmann::json;
+
+
+
 
 template <class T> weak_ptr<T> make_weak_ptr(shared_ptr<T> ptr) { return ptr; }
 
@@ -44,9 +53,10 @@ unordered_map<string, shared_ptr<Client>> clients{};
 /// @param wws Websocket for signaling
 /// @param id Client ID
 /// @returns Client
-shared_ptr<Client> createPeerConnection(const Configuration &config,
-                                         
-                                        string id);
+shared_ptr<Client> createPeerConnection(const Configuration &config, string id, bool isClient);
+shared_ptr<Client> createPeerConnection_lc( Configuration &config, string id);
+
+shared_ptr<Client> createPeerConnection_rm(const Configuration &config, string id, Async &async, bool isClient);
 
 /// Creates stream
 /// @param h264Samples Directory with H264 samples
@@ -83,9 +93,10 @@ uint16_t port = defaultPort;
 sockio::Socket *mysocket = nullptr;
 std::string from;
 std::string room;
-std::string id ="client";
- 
 Configuration config;
+
+std::string id;
+  
 
 void sendCandidate( const std::string &mid, int mlineindex, const std::string &sdp )
 {
@@ -147,22 +158,42 @@ void sendSdp( const std::string &sdp, const std::string &type   )
 /// @param ws Websocket
 
 
-#ifndef localtesting
+#if !defined( localtesting) && !defined(remotetesting)
 
 void wsOnMessage(json const &m ) {
     
     
     std::string type;
-  //  std::string room;
+   
     std::string to;
     std::string user;
-   
+  
+     if (m.find("room") != m.end())
+    {
+        room = m["room"].get<std::string>();
+    }
+    else
+    {
+        SError << " On Peer message is missing room id ";
+        return;
+    }
 
+
+    
+    if (m.find("type") != m.end())
+    {
+      type = m["type"].get<string>();
+
+    }
+     
+ 
+    
     if (m.find("to") != m.end()) { to = m["to"].get<std::string>(); }
 
     if (m.find("from") != m.end())
     {
         from = m["from"].get<std::string>();
+        if(id.empty())
         id =from;
     }
     else
@@ -177,16 +208,7 @@ void wsOnMessage(json const &m ) {
         SError << " On Peer message is missing SDP type";
     }
 
-    if (m.find("room") != m.end())
-    {
-        room = m["room"].get<std::string>();
-
-    }
-    else
-    {
-        SError << " On Peer message is missing room id ";
-        return;
-    }
+   
 
     
     if (m.find("cam") != m.end())
@@ -209,14 +231,27 @@ void wsOnMessage(json const &m ) {
     
     
      
-    if (m.find("type") != m.end())
-    {
-      type = m["type"].get<string>();
 
-    }
      
-    if (type == "request") {
-         clients.emplace(id, createPeerConnection(config,  id));
+    
+
+    if (type == "offer") {
+         clients.emplace(id, createPeerConnection(config,  id, false));
+         
+         //clients.emplace(id, createPeerConnection(config,  id));
+        if (auto jt = clients.find(id); jt != clients.end()) {
+            auto pc = jt->second->peerConnection;
+           
+            auto sdp = m["desc"]["sdp"].get<string>();
+            
+            SInfo << "setRemoteDescription " << type ;
+            
+            auto description = Description(sdp, type);
+            pc->setRemoteDescription(description);
+            pc->setLocalDescription( );
+        }
+         
+         
     } else if (type == "answer") {
         
        //clients.emplace(id, createPeerConnection(config,  id));
@@ -264,25 +299,259 @@ void initiate(std::string rm)
     room = rm;
     id = "client"; /// hard coded the id for client(second participant), since it will have only one instance. Second instance should only have one instance, otherwise throw error. TBD 
 
-    clients.emplace(id, createPeerConnection(config,  id));
+    clients.emplace(id, createPeerConnection(config,  id, true));
 }
 
 #endif
 
-int main(int argc, char **argv) 
+#define ASSERT_OK 
 
-
-//try 
+void test()
 {
+  char buffer[512];
+  size_t rss;
+  size_t size;
+  double uptime;
+  uv_pid_t pid;
+  uv_pid_t ppid;
+  uv_rusage_t rusage;
+  uv_cpu_info_t* cpus;
+  uv_interface_address_t* interfaces;
+  uv_passwd_t pwd;
+  uv_utsname_t uname;
+  unsigned par;
+  char* const* member;
+  int count;
+  int i;
+  int err;
+
+  err = uv_get_process_title(buffer, sizeof(buffer));
+  ASSERT_OK(err);
+  printf("uv_get_process_title: %s\n", buffer);
+
+  size = sizeof(buffer);
+  err = uv_cwd(buffer, &size);
+  ASSERT_OK(err);
+  printf("uv_cwd: %s\n", buffer);
+
+  err = uv_resident_set_memory(&rss);
+#if defined(__MSYS__)
+  ASSERT_EQ(err, UV_ENOSYS);
+#else
+  ASSERT_OK(err);
+  printf("uv_resident_set_memory: %llu\n", (unsigned long long) rss);
+#endif
+
+  err = uv_uptime(&uptime);
+#if defined(__PASE__)
+  ASSERT_EQ(err, UV_ENOSYS);
+#else
+  ASSERT_OK(err);
+
+  printf("uv_uptime: %f\n", uptime);
+#endif
+
+  err = uv_getrusage(&rusage);
+  ASSERT_OK(err);
+
+  printf("uv_getrusage:\n");
+  printf("  user: %llu sec %llu microsec\n",
+         (unsigned long long) rusage.ru_utime.tv_sec,
+         (unsigned long long) rusage.ru_utime.tv_usec);
+  printf("  system: %llu sec %llu microsec\n",
+         (unsigned long long) rusage.ru_stime.tv_sec,
+         (unsigned long long) rusage.ru_stime.tv_usec);
+  printf("  page faults: %llu\n", (unsigned long long) rusage.ru_majflt);
+  printf("  maximum resident set size: %llu\n",
+         (unsigned long long) rusage.ru_maxrss);
+
+
+
+  printf("uv_available_parallelism: %u\n", par);
+
+#ifdef __linux__
+  FILE* file;
+  int cgroup_version = 0;
+  unsigned int cgroup_par = 0;
+  uint64_t quota, period;
+
+  // Attempt to parse cgroup v2 to deduce parallelism constraints
+  file = fopen("/sys/fs/cgroup/cpu.max", "r");
+  if (file) {
+    if (fscanf(file, "%lu %lu", &quota, &period) == 2 && quota > 0) {
+      cgroup_version = 2;
+      cgroup_par = (unsigned int)(quota / period);
+    }
+    fclose(file);
+  }
+
+  // If cgroup v2 wasn't present, try parsing cgroup v1
+  if (cgroup_version == 0) {
+    file = fopen("/sys/fs/cgroup/cpu,cpuacct/cpu.cfs_quota_us", "r");
+    if (file) {
+      if (fscanf(file, "%lu", &quota) == 1 && quota > 0 && quota < ~0ULL) {
+        fclose(file);
+        file = fopen("/sys/fs/cgroup/cpu,cpuacct/cpu.cfs_period_us", "r");
+        if (file && fscanf(file, "%lu", &period) == 1) {
+          cgroup_version = 1;
+          cgroup_par = (unsigned int)(quota / period);
+        }
+      }
+      if (file) fclose(file);
+    }
+  }
+
+  // If we found cgroup parallelism constraints, assert and print them
+  if (cgroup_par > 0) {
+    printf("cgroup v%d available parallelism: %u\n", cgroup_version, cgroup_par);
+  }
+#endif
+
+  err = uv_cpu_info(&cpus, &count);
+#if defined(__CYGWIN__) || defined(__MSYS__)
+  ASSERT_EQ(err, UV_ENOSYS);
+#else
+  ASSERT_OK(err);
+
+  printf("uv_cpu_info:\n");
+  for (i = 0; i < count; i++) {
+    printf("  model: %s\n", cpus[i].model);
+    printf("  speed: %d\n", cpus[i].speed);
+    printf("  times.sys: %llu\n", (unsigned long long) cpus[i].cpu_times.sys);
+    printf("  times.user: %llu\n",
+           (unsigned long long) cpus[i].cpu_times.user);
+    printf("  times.idle: %llu\n",
+           (unsigned long long) cpus[i].cpu_times.idle);
+    printf("  times.irq: %llu\n",  (unsigned long long) cpus[i].cpu_times.irq);
+    printf("  times.nice: %llu\n",
+           (unsigned long long) cpus[i].cpu_times.nice);
+  }
+#endif
+  uv_free_cpu_info(cpus, count);
+
+  err = uv_interface_addresses(&interfaces, &count);
+  ASSERT_OK(err);
+
+  printf("uv_interface_addresses:\n");
+  for (i = 0; i < count; i++) {
+    printf("  name: %s\n", interfaces[i].name);
+    printf("  internal: %d\n", interfaces[i].is_internal);
+    printf("  physical address: ");
+    printf("%02x:%02x:%02x:%02x:%02x:%02x\n",
+           (unsigned char)interfaces[i].phys_addr[0],
+           (unsigned char)interfaces[i].phys_addr[1],
+           (unsigned char)interfaces[i].phys_addr[2],
+           (unsigned char)interfaces[i].phys_addr[3],
+           (unsigned char)interfaces[i].phys_addr[4],
+           (unsigned char)interfaces[i].phys_addr[5]);
+
+    if (interfaces[i].address.address4.sin_family == AF_INET) {
+      uv_ip4_name(&interfaces[i].address.address4, buffer, sizeof(buffer));
+    } else if (interfaces[i].address.address4.sin_family == AF_INET6) {
+      uv_ip6_name(&interfaces[i].address.address6, buffer, sizeof(buffer));
+    }
+
+    printf("  address: %s\n", buffer);
+
+    if (interfaces[i].netmask.netmask4.sin_family == AF_INET) {
+      uv_ip4_name(&interfaces[i].netmask.netmask4, buffer, sizeof(buffer));
+      printf("  netmask: %s\n", buffer);
+    } else if (interfaces[i].netmask.netmask4.sin_family == AF_INET6) {
+      uv_ip6_name(&interfaces[i].netmask.netmask6, buffer, sizeof(buffer));
+      printf("  netmask: %s\n", buffer);
+    } else {
+      printf("  netmask: none\n");
+    }
+  }
+  uv_free_interface_addresses(interfaces, count);
+
+  err = uv_os_get_passwd(&pwd);
+  ASSERT_OK(err);
+
+#if defined(_WIN32)
+  ASSERT_EQ(err, UV_ENOTSUP);
+  ASSERT_EQ(pwd.uid, (unsigned long) -1);
+  ASSERT_EQ(pwd.gid, (unsigned long) -1);
+  (void) member;
+  grp.groupname = "ENOTSUP";
+#else
+  ASSERT_OK(err);
+
+#endif
+
+  printf("uv_os_get_passwd:\n");
+  printf("  euid: %ld\n", pwd.uid);
+#if !defined(_WIN32)
+  printf("    members: [");
+
+  printf(" ]\n");
+#endif
+  printf("  username: %s\n", pwd.username);
+  if (pwd.shell != NULL) /* Not set on Windows */
+    printf("  shell: %s\n", pwd.shell);
+  printf("  home directory: %s\n", pwd.homedir);
+  uv_os_free_passwd(&pwd);
+#if !defined(_WIN32)
+#endif
+
+  pid = uv_os_getpid();
+  printf("uv_os_getpid: %d\n", (int) pid);
+  ppid = uv_os_getppid();
+  printf("uv_os_getppid: %d\n", (int) ppid);
+
+  err = uv_os_uname(&uname);
+  ASSERT_OK(err);
+  printf("uv_os_uname:\n");
+  printf("  sysname: %s\n", uname.sysname);
+  printf("  release: %s\n", uname.release);
+  printf("  version: %s\n", uname.version);
+  printf("  machine: %s\n", uname.machine);
+
+
+  return ;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+int main(int argc, char **argv) 
+{
+
+/////////////////////////////////////////////////
+    base::cnfg::Configuration cache;
+
+    cache.load("./cache.js");
+
+    Settings::SetConfiguration(cache, argc);
+
+
 
     bool printHelp = false;
     //int c = 0;
-    
-    Logger::instance().add(new ConsoleChannel("trace", Level::Info));
-    
-     Application app;
-    
 
+    Application app; 
+     
+    Async async;
+    
+    test();
 
     if (printHelp) {
         cout << "usage: stream-h264 [-a opus_samples_folder] [-b h264_samples_folder] [-d ip_address] [-p port] [-v] [-h]" << endl
@@ -302,17 +571,55 @@ int main(int argc, char **argv)
     cout << "STUN server is " << stunServer << endl;
     config.iceServers.emplace_back(stunServer);
     config.disableAutoNegotiation = true;
+    // read cert from file
+#if CERTFROMFILE == 1
+    config.keyPemFile = "/var/tmp/key/private_key.pem";
+    config.certificatePemFile = "/var/tmp/key/certificate.crt";  
+    config.keyPemPass = "12345678";
+    
+#elif CERTFROMFILE == 2
+
+    /* convert pem to single line
+     * # awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' certificate.crt  
+    */
+
+    config.keyPemFile = "";
+    config.certificatePemFile = "";  
+   // config.keyPemPass = "12345678";
+    
+#else
+    
+#endif
 
     string localId = "server";
     cout << "The local ID is: " << localId << endl;
     
    
 #if localtesting 
+    config.console = true;
     std::string id ="server";
+    clients.emplace(id, createPeerConnection_lc(config,  id));
+#elif remotetesting
+    
+    
 
-   clients.emplace(id, createPeerConnection(config,  id));
-#else
+    
+    config.allocRestApi(async, "test");
+    config.api->List();
 
+    
+    config.console = true;
+    if(cache.loaded())
+    {
+       
+        id = "client"; /// hard coded the id for client(second participant), since it will have only one instance. Second instance should only have one instance, otherwise throw error. TBD 
+
+        clients.emplace(id, createPeerConnection_rm(config,  id, async, true));
+    
+       
+    }
+  
+#else   
     std::string room = "65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0";
     std::string host = ip_address;
     int port = 8443;
@@ -335,19 +642,10 @@ int main(int argc, char **argv)
                     sockio::Socket::event_listener_aux(
                         [&](string const &name, json const &data, bool isAck, json &ack_resp)
                         {
-                            STrace << cnfg::stringify(data);
-                            STrace << "Created room " << data[0] << "- my client ID is " << data[1];
+                            SInfo << cnfg::stringify(data);
+                            SInfo << "ws: Created room " << data[0] << "- my client ID is " << data[1];
                             //isInitiator = true;
                             // grabWebCamVideo();
-                        }));
-
-                mysocket->on(
-                    "full",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-                        {
-                            STrace << cnfg::stringify(data);
-                            // LTrace("Room " + room + " is full.")
                         }));
 
 
@@ -356,12 +654,36 @@ int main(int argc, char **argv)
                     sockio::Socket::event_listener_aux(
                         [&](string const &name, json const &data, bool isAck, json &ack_resp)
                         {
-                            STrace << cnfg::stringify(data);
+                            SInfo << "ws join " << cnfg::stringify(data);
+                             SInfo << "ws: Created room " << data[0] << "- my client ID is " << data[1] << " noClientInRoom: " << data[2];
+                           
+                            std::string room1 = data[0];
+                            
+                            int noClientInRoom = data[2].get<int>();
+                            
+                            if(noClientInRoom > 1)
+                             initiate(room1 );
+
+                             
                             // LTrace("Another peer made a request to join room " + room)
                             // LTrace("This peer is the initiator of room " + room + "!")
                             //isChannelReady = true;
                         }));
 
+                
+                mysocket->on(
+                    "joined",
+                    sockio::Socket::event_listener_aux(
+                        [&](string const &name, json const &m, bool isAck, json &ack_resp)
+                        {
+                            SInfo << "ws joined "  <<  cnfg::stringify(m);
+                            // LTrace("Another peer made a request to join room " + room)
+                            // LTrace("This peer is the initiator of room " + room + "!")
+                            //isChannelReady = true;
+                              //wsOnMessage(m);
+                        }));
+                        
+                        
                 /// for webrtc messages
                 mysocket->on(
                     "message",
@@ -369,7 +691,7 @@ int main(int argc, char **argv)
                         [&](string const &name, json const &m, bool isAck, json &ack_resp)
                         {
                             //LTrace(cnfg::stringify(m));
-                            // LTrace('SocketioClient received message:', cnfg::stringify(m));
+                             STrace << "SocketioClient received message:" <<  cnfg::stringify(m);
 
                             //onPeerMessage((string &) name, m); //arvind
                             // signalingMessageCallback(message);
@@ -490,9 +812,10 @@ shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const 
 
 #if localtesting 
 // Create and setup a PeerConnection
-shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
+shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
 {
     auto pc1 = make_shared<PeerConnection>(config);
+    config.portdefault = config.portdefault+1;
     auto pc2 = make_shared<PeerConnection>(config); 
     {
        
@@ -506,7 +829,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
                 // remove disconnected client
                 //MainThread.dispatch([id]() 
                 {
-                  //  clients.erase(id);
+                    clients.erase(id);
 
                     int x = 1; //arvind
                 }
@@ -669,7 +992,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
                 // remove disconnected client
                 //MainThread.dispatch([id]() 
                 {
-                  //  clients.erase(id);
+                    clients.erase(id);
 
                     int x = 1; //arvind
                 }
@@ -806,16 +1129,16 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
     		 client->dataChannel22 = dc;
     	});
 
-        pc2->setLocalDescription();
+        pc2->setLocalDescription();  // this will create offfer
         return client;
     }
 };
 
-#else
+#elif remotetesting
 
 
 // Create and setup a PeerConnection
-shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
+shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string id, Async &async, bool isClient)
 {
     SInfo << "createPeerConnection" ;
     
@@ -831,7 +1154,213 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
             // remove disconnected client
             //MainThread.dispatch([id]() 
             {
-              //  clients.erase(id);
+                clients.erase(id);
+                
+                int x = 1; //arvind
+            }
+            //);
+        }
+    });
+    
+    
+    
+    pc->onLocalDescription([ id, pc, &async](rtc::Description description) {
+//		json message = {{"id", id},
+//		                {"type", description.typeString()},
+//		                {"description", std::string(description)}};
+        
+
+       
+        SInfo << "pc1 send sdp:"  << description.typeString() <<  " des "<<  std::string(description);
+
+          
+        //  test(async);
+        
+        auto work_fn = [pc, description]() {
+            // This runs in a worker thread
+                
+            auto descAns = Description(std::string(description), Description::Type::Answer);
+            descAns.mRole  = Description::Role::Active;
+            SInfo << "remote desc Ansp:"  << descAns;
+   
+            pc->setRemoteDescription(descAns);
+        };
+
+        auto after_work_fn = [](int status) {
+            // This runs back in the main event loop thread
+            std::cout << "Main thread: Work finished with status " << status << std::endl;
+        };
+
+        async.queueWork(work_fn, after_work_fn);
+        
+    
+
+
+    });
+
+    pc->onLocalCandidate([config, id, pc, &async](rtc::Candidate candidate) {
+
+
+        SInfo << std::string(candidate);
+
+
+        rtc::Candidate tmp = candidate;
+        tmp.mService = std::to_string(config.portdefault);
+        tmp.mNode = Settings::RemoteIP();
+
+        
+        auto work_fn = [pc, tmp]() {
+                
+            Application app;
+
+            tmp.resolved = {0};
+            
+            SInfo << "addRemoteCandidate: " << std::string(tmp);
+         
+            pc->addRemoteCandidate(tmp); 
+       
+            app.run();
+          
+        };
+
+        auto after_work_fn = [](int status) {
+            // This runs back in the main event loop thread
+            std::cout << "Main thread: Work finished with status " << status << std::endl;
+        };
+
+        async.queueWork(work_fn, after_work_fn);
+        
+        
+    });
+
+    pc->onGatheringStateChange(
+        [](PeerConnection::GatheringState state) {
+        SInfo << "Gathering State: " << state ;
+        if (state == PeerConnection::GatheringState::Complete)
+        {
+          //  if(auto pc = wpc.lock())
+            {
+//                json desc;
+//                desc["type"] =  description->typeString();
+//                desc[sdp] = sdp;
+//    
+             
+            }
+        }
+    });
+#if VIDEOMEDIA
+
+    client->video = addVideo(pc, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
+       // MainThread.dispatch([wc]() 
+        
+        SInfo << "addToStream";
+        
+        {
+            if (auto c = wc.lock()) {
+                addToStream(c, true);
+            }
+        }
+        
+        //);
+        SInfo << "Video from " << id << " opened" << endl;
+    });
+
+    client->audio = addAudio(pc, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
+        
+        
+        //MainThread.dispatch([wc]() 
+        
+        {
+            if (auto c = wc.lock()) {
+                addToStream(c, false);
+            }
+        }
+        //);
+        SInfo << "Audio from " << id << " opened" << endl;
+    });
+
+#endif
+
+ std::string dcchat =   Settings::getdatachannel();
+            
+auto dc = pc->createDataChannel(dcchat);
+    dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
+        if (auto dc = wdc.lock()) {
+            SInfo << "onOpen: "  ;
+            dc->send("Ping");
+        }
+    });
+
+    dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg) {
+        SInfo << "Message from " << id << " received: " << msg << endl;
+        if (auto dc = wdc.lock()) {
+            
+            SInfo << "onOpen: " << msg  ;
+            dc->send("Ping");
+        }
+    });
+    client->dataChannel1 = dc;
+    
+    
+    
+pc->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
+		SInfo << "DataChannel from " << id << " received with label \"" << dc->label() ;
+
+                
+                dc->onOpen([wdc = make_weak_ptr(dc)]() {
+			if (auto dc = wdc.lock()) {
+				SInfo << "DataChannel 2: Open" << endl;
+				dc->send("Hello from 2");
+			}
+		});
+                
+
+		dc->onClosed([id]() { std::cout << "DataChannel from " << id << " closed" << std::endl; });
+
+		dc->onMessage([id, dc](auto data) {
+			// data holds either std::string or rtc::binary
+			if (std::holds_alternative<std::string>(data))
+				SInfo << "Message from " << id << " received: " << std::get<std::string>(data)
+				          << std::endl;
+			else
+				SInfo << "Binary message from " << id
+				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+                        
+                        sleep(500);
+                        dc->send("Send to web");
+		});
+
+		 client->dataChannel2 = dc;
+	});
+        
+    if(isClient)    
+    pc->setLocalDescription();
+    return client;
+};
+
+
+
+#else
+
+
+// Create and setup a PeerConnection
+shared_ptr<Client> createPeerConnection(const Configuration &config,  string id, bool isClient)
+{
+    SInfo << "createPeerConnection" ;
+    
+    
+    auto pc = make_shared<PeerConnection>(config);
+    auto client = make_shared<Client>(pc);
+
+    pc->onStateChange([id](PeerConnection::State state) {
+        SInfo << "State: " << state << endl;
+        if (state == PeerConnection::State::Disconnected ||
+            state == PeerConnection::State::Failed ||
+            state == PeerConnection::State::Closed) {
+            // remove disconnected client
+            //MainThread.dispatch([id]() 
+            {
+                clients.erase(id);
                 
                 int x = 1; //arvind
             }
@@ -914,8 +1443,8 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
     });
 
 #endif
-
-    auto dc = pc->createDataChannel("ping-pong");
+     std::string dcchat =   Settings::getdatachannel();
+    auto dc = pc->createDataChannel(dcchat);
     dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
         if (auto dc = wdc.lock()) {
             SInfo << "onOpen: "  ;
@@ -964,7 +1493,8 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id)
 
 		 client->dataChannel2 = dc;
 	});
-
+        
+    if(isClient)    
     pc->setLocalDescription();
     return client;
 };

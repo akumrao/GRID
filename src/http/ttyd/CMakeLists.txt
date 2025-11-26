@@ -10,47 +10,48 @@ set(TTYD_VERSION "${PROJECT_VERSION}")
 set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
-set(SOURCE_FILES src/utils.cpp src/pty.cpp src/protocol.cpp src/http.cpp src/server.cpp)
-
-#set(WORKSPACE "/usr/local/google/home/aumrao/workspace/MagicAi")
-SET(SSL_ROOT "${WORKSPACE}/src/openssl/buildx64")
-SET(SSL_LIB "${WORKSPACE}/src/openssl/buildx64/lib")
+set(SOURCE_FILES src/utils.cpp src/pty.cpp src/protocol.cpp src/server.cpp)
 
 
 file(GLOB src_HTTP
-    ../src/*.cpp
-    ../../libuv/src/*.cpp
-    ../../libuv/src/unix/*.cpp
+
+    ../src/url.cpp
+    ../src/response.cpp
+    ../src/request.cpp
+    ../src/parser.cpp
+    ../src/message.cpp
+    ../src/httputil.cpp
+    ../src/HttpConn.cpp
+    ../src/cookie.cpp
+    ../src/packetizers.cpp
+    ../src/HTTPResponder.cpp
+    ../src/form.cpp
+    ../src/HttpServer.cpp
+    ../src/client.cpp
+    ../src/HttpClient.cpp
+    ../src/websocket.cpp
     ../../base/src/*.cpp
-    ../../crypto/src/*.cpp
-    ../../net/src/*.cpp
-    ../../net/uv_multiplex/src/*.cpp
+    ../../net/src/T*.cpp
+    ../../net/src/IP.cpp
+    ../../net/src/dns.cpp
+#    ../../net/uv_multiplex/src/*.cpp
     ../../http_parser/*.cpp
 )
 
 
 
 
-find_package(ZLIB REQUIRED)
-#find_package(Libwebsockets 3.2.0 REQUIRED)
 
-set(INCLUDE_DIRS ${ZLIB_INCLUDE_DIR} ${LIBWEBSOCKETS_INCLUDE_DIRS}  ../include/ ../../net/include/ ../../base/include ../../http_parser/ ../../json/include
- ../../net/uv_multiplex/include/ ../../libuv/include ../../libuv/src ${SSL_ROOT}/include
+set(INCLUDE_DIRS  ../include/ ../../net/include/ ../../base/include ../../http_parser/ ../../json/include
+  ../../libuv/include ../../libuv/src
 )
 
-set(LINK_LIBS ${ZLIB_LIBRARIES} ${LIBWEBSOCKETS_LIBRARIES}  )
 
 set (CMAKE_REQUIRED_INCLUDES ${INCLUDE_DIRS})
-include(CheckSymbolExists)
-#check_symbol_exists(LWS_WITH_LIBUV "lws_config.h" LWS_WITH_LIBUV)
-#check_symbol_exists(LWS_OPENSSL_SUPPORT "lws_config.h" LWS_OPENSSL_ENABLED)
-#check_symbol_exists(LWS_WITH_MBEDTLS "lws_config.h" LWS_MBEDTLS_ENABLED)
-#if(NOT LWS_WITH_LIBUV)
-#    message(FATAL_ERROR "libwebsockets was not build with libuv support (-DLWS_WITH_LIBUV=ON)")
-#endif()
 
-list(APPEND LINK_LIBS dl Threads::Threads ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a)
-
+if(UNIX)
+list(APPEND LINK_LIBS dl Threads::Threads )
+endif()
 
 if(WIN32)
     list(APPEND LINK_LIBS shell32 ws2_32)
@@ -63,15 +64,24 @@ else()
     endif()
 endif()
 
+add_subdirectory(../../libuv build )
+
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${src_HTTP})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} ${LINK_LIBS})
+target_link_libraries(${PROJECT_NAME} ${LINK_LIBS} uv_a)
 target_compile_definitions(${PROJECT_NAME} PUBLIC
     TTYD_VERSION="${TTYD_VERSION}"
     $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
 )
 
+
+if(UNIX)
 target_compile_options(${PROJECT_NAME} PRIVATE -fpermissive -Wno-return-type -Wno-format-overflow -Wno-format -Wno-unused-but-set-variable -Wno-write-strings -no-pie)
+endif()
+
+if(WIN32)
+target_compile_options(${PROJECT_NAME} PRIVATE )
+endif()
 
 include(GNUInstallDirs)
 

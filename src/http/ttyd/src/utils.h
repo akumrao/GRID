@@ -1,9 +1,6 @@
 #ifndef TTYD_UTIL_H
 #define TTYD_UTIL_H
 
-#define lwsl_err printf
-#define lwsl_notice printf
-#define lwsl_warn printf
 
 #define container_of(ptr, type, member)                \
   ({                                                   \
@@ -23,8 +20,6 @@ char *uppercase(char *s);
 // Convert a string to lower case
 char *lowercase(char *s);
 
-// Check whether str ends with suffix
-bool endswith(const char *str, const char *suffix);
 
 // Get human readable signal string
 int get_sig_name(int sig, char *buf, size_t len);
@@ -32,8 +27,6 @@ int get_sig_name(int sig, char *buf, size_t len);
 // Get signal code from string like SIGHUP
 int get_sig(const char *sig_name);
 
-// Open uri with the default application of system
-int open_uri(char *uri);
 
 #ifdef _WIN32
 char *strsep(char **sp, char *sep);

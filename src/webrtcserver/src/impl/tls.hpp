@@ -6,32 +6,8 @@
 
 #include <chrono>
 
-#if USE_GNUTLS
 
-#include <gnutls/gnutls.h>
-
-#include <gnutls/crypto.h>
-#include <gnutls/dtls.h>
-#include <gnutls/x509.h>
-
-namespace rtc::gnutls {
-
-bool check(int ret, const string &message = "GnuTLS error");
-
-gnutls_certificate_credentials_t *new_credentials();
-void free_credentials(gnutls_certificate_credentials_t *creds);
-
-gnutls_x509_crt_t *new_crt();
-void free_crt(gnutls_x509_crt_t *crt);
-
-gnutls_x509_privkey_t *new_privkey();
-void free_privkey(gnutls_x509_privkey_t *privkey);
-
-gnutls_datum_t make_datum(char *data, size_t size);
-
-} // namespace rtc::gnutls
-
-#elif USE_MBEDTLS
+#if USE_MBEDTLS
 
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/ecdsa.h"
@@ -49,8 +25,12 @@ bool check(int ret, const string &message = "MbedTLS error");
 
 string format_time(const std::chrono::system_clock::time_point &tp);
 
-std::shared_ptr<mbedtls_pk_context> new_pk_context();
-std::shared_ptr<mbedtls_x509_crt> new_x509_crt();
+mbedtls_pk_context* new_pk_context();
+mbedtls_x509_crt* new_x509_crt();
+
+void pk_free(mbedtls_pk_context *p);
+void crt_free(mbedtls_x509_crt *crt);
+
 
 } // namespace rtc::mbedtls
 

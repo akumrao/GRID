@@ -4,7 +4,7 @@
 #define RTC_ICE_CONFIGURATION_H
 
 #include "common.hpp"
-
+#include "RestAPI.h"
 #include <vector>
 
 namespace rtc {
@@ -87,6 +87,27 @@ struct RTC_CPP_EXPORT Configuration {
 	optional<string> certificatePemFile;
 	optional<string> keyPemFile;
 	optional<string> keyPemPass;
+
+        bool console{false}; /* allow to test from console with external ips" */
+        uint16_t portdefault{7345};
+        
+        void allocRestApi(Async &async, std::string room)
+        {
+            api = new RestAPI(async, room  );
+        }
+        void freeRestApi()
+        {
+            delete api;
+        }
+        
+        ~Configuration()
+        {
+//            freeRestApi();
+        }
+         RestAPI *api{nullptr};
+private:
+
+           
 };
 
 #ifdef RTC_ENABLE_WEBSOCKET

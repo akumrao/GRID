@@ -40,36 +40,60 @@ namespace base {
         {
             _connection->shouldSendHeader(false);
             
-            dummy_timer.cb_timeout = std::bind(&WebSocketConnection::dummy_timer_cb, this);
-            dummy_timer.Start(7,7);
+
         }
 
         bool WebSocketConnection::shutdown(uint16_t statusCode, const std::string& statusMessage) {
-            char buffer[256];
-            BitWriter writer(buffer, 256);
-            writer.putU16(statusCode);
-            writer.put(statusMessage);
+            
+            Buffer buffer;
+            buffer.reserve(2 + WebSocketFramer::MAX_HEADER_LENGTH);
+            BitWriter writer(buffer);
+            framer.writeFrame(statusMessage.data(), 2, int( unsigned(FrameFlags::Fin) | unsigned(Opcode::Close)), writer);
 
-            assert(socket);
-             send(buffer, writer.position(),
-                    unsigned(FrameFlags::Fin) | unsigned(Opcode::Close));
+            _connection->tcpsend((const char*) writer.begin(), writer.position(), nullptr);
+           
+           
             
             return true;
         }
         
+        /* as per spec pong should return back whatever ping send, but I am sending null data*/
         bool WebSocketConnection::pong() {
-            char buffer[2];
-            BitWriter writer(buffer, 2);
-            //writer.putU16(statusCode);
-            //writer.put(statusMessage);
 
-            assert(socket);
-             send(buffer, writer.position(),
-                    unsigned(FrameFlags::Fin) | unsigned(Opcode::Pong));
+            STrace << "Send pong";
             
+            std::string str="";
+            
+            Buffer buffer;
+            buffer.reserve(str.size() + WebSocketFramer::MAX_HEADER_LENGTH);
+            BitWriter writer(buffer);
+            framer.writeFrame(str.c_str(), str.size(), int( unsigned(FrameFlags::Fin) | unsigned(Opcode::Pong)), writer);
+
+            _connection->tcpsend((const char*) writer.begin(), writer.position(), nullptr);
+          
             return true;
         }
 
+        
+        bool WebSocketConnection::ping() {
+
+            STrace << "Send ping";
+            std::string str="";
+            
+            Buffer buffer;
+            buffer.reserve(str.size() + WebSocketFramer::MAX_HEADER_LENGTH);
+            BitWriter writer(buffer);
+            framer.writeFrame(str.c_str(), str.size(), int( unsigned(FrameFlags::Fin) | unsigned(Opcode::Ping)), writer);
+
+            _connection->tcpsend((const char*) writer.begin(), writer.position(), nullptr);
+           
+#if PING
+            m_ping_timeout_timer.Start(m_ping_timeout);
+            
+            return true;
+#endif
+        }
+            
         void WebSocketConnection::send(const char* data, size_t len, bool binary , onSendCallback cb) {
            // LTrace("Send: ", len, ": ", std::string(data, len))
             assert(framer.handshakeComplete());
@@ -117,10 +141,10 @@ namespace base {
             // Call net::SocketEmitter::onSocketConnect to notify handlers that data may flow
             //net::SocketEmitter::onSocketConnect(*socket.get());
             
-
-            
         }
-        
+
+
+        #if FMP4
         void WebSocketConnection::push( const char* data, size_t len, bool binary, int frametype )
         { 
             dummy_mutex.lock();
@@ -201,6 +225,20 @@ namespace base {
            
         }
         
+        #elif PING 
+
+        void WebSocketConnection::timeout_pong() {
+            SDebug << "timeout pong about to close the websocket connection " ;
+
+             if(_connection)
+            _connection->Close();
+            
+           // if(listener)
+            //listener->Close(); // Broken we need to enable Close later on
+        }
+
+        #endif
+        
         void WebSocketConnection::handleServerRequest(const std::string & buffer) {
             LTrace("Server request: ", buffer)
 
@@ -225,6 +263,18 @@ namespace base {
 
                     if(listener)
                     listener->on_wsconnect( this);
+                
+                
+                     #if FMP4
+                    dummy_timer.cb_timeout = std::bind(&WebSocketConnection::dummy_timer_cb, this);
+                    dummy_timer.Start(7,7);
+                    #elif PING 
+
+                    m_ping_timer.cb_timeout = std::bind(&WebSocketConnection::ping, this);
+                    m_ping_timer.Start(m_ping_interval,m_ping_interval);
+                    m_ping_timeout_timer.cb_timeout = std::bind(&WebSocketConnection::timeout_pong, this);
+
+                    #endif
                 
                         
             } catch (std::exception& exc) {
@@ -320,8 +370,8 @@ namespace base {
                          if(listener)
                         listener->on_wsclose(this);
 
-                         if(_connection)
-                        _connection->Close();
+                         if(_connection && _connection->fnClose)
+                        _connection->fnClose(_connection,"remoteclose");
                          
                          return;
                     }
@@ -330,8 +380,8 @@ namespace base {
                     case 0x9:
                     {
                         wsFrameTyp= PING_FRAME; 
-                        SInfo << "Ping "  << this;
-                        pong();
+                        SInfo << "Received Ping "  << this;
+                        pong();//  /* as per spec pong should return back whatever ping send, but I am sending null data*/
                         return;
                     }
                     break;
@@ -339,7 +389,13 @@ namespace base {
                     {
                       
                         wsFrameTyp= PONG_FRAME;
-                        SInfo << "Pong "  << this;
+                        SInfo << "Received Pong "  << this;
+                        
+                        #if PING
+                        if (framer.mode() == ServerSide)
+                        m_ping_timeout_timer.Stop();
+                        #endif  
+                        
                     }
                     break;
                     default:
@@ -378,6 +434,12 @@ namespace base {
                         // Emit the result packet
                         assert(payload);
                         assert(payloadLength);
+                        
+#if PING
+                         if (framer.mode() == ServerSide)    
+                        m_ping_timeout_timer.Reset();
+#endif
+                        
                         if(listener)
                         listener->on_wsread( this,(const char*) payload, payloadLength );
                         
@@ -418,8 +480,20 @@ namespace base {
             _response.clear();
             framer._headerState = 0;
             framer._frameFlags = 0;
+            
+            
+#if PING
+            m_ping_timeout_timer.Stop();
+            m_ping_timeout_timer.Stop();
+#endif    
 
+            if(listener)
             this->listener->on_wsclose( this);
+            
+            if(_connection && _connection->fnClose)
+                _connection->fnClose(_connection, "close");
+            
+            
             // Emit closed event
             //net::SocketEmitter::onSocketClose(*socket.get());
         }
@@ -460,6 +534,18 @@ namespace base {
         //
 
         WebSocketConnection::~WebSocketConnection() {
+            
+            SInfo << "~WebSocketConnection()";
+            
+            #if PING
+
+            m_ping_timeout_timer.Stop();
+            m_ping_timer.Stop();
+            m_ping_timeout_timer.Close();
+            m_ping_timer.Close();
+            
+            #endif
+            
         }
 
     
@@ -579,7 +665,7 @@ namespace base {
         }
 
         size_t WebSocketFramer::writeFrame(const char* data, size_t len, int flags, BitWriter& frame) {
-            assert(flags == SendFlags::Text || flags == SendFlags::Binary);
+          //  assert(flags == SendFlags::Text || flags == SendFlags::Binary);
             assert(frame.position() == 0);
             // assert(frame.limit() >= size_t(len + MAX_HEADER_LENGTH));
 

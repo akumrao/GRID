@@ -25,9 +25,14 @@
 #include  <mutex>
 #include  <queue>
 
+/*when send ping at regular interval to keep the connection alive, incase of firewall, proxy etc*/
+/* please enable it for sever only. When you enable soceket io then do not need this flag to set */
+#define PING 1  
 
+/*enable it for fragmented FMp4 streaming. TBD In future move it to upper layer*/
+//#define FMP4 1 
 
-
+/* Note Both PING and FMP4 could be enable together and never such requirement will come and possible */
 
 namespace base {
     namespace net {
@@ -239,8 +244,7 @@ namespace base {
 
             bool shutdown(uint16_t statusCode, const std::string& statusMessage);
             bool pong();
-            
-            void dummy_timer_cb();
+            bool ping();
             
             void push( const char* data, size_t len, bool binary, int frametype);
             //
@@ -277,11 +281,13 @@ namespace base {
             Request& _request;
             Response& _response;
             
+            #if FMP4
+            void dummy_timer_cb();
             Timer dummy_timer{ nullptr};
             std::mutex dummy_mutex;
-            
-            struct Store{
-                
+
+                struct Store{
+
                 bool binary;
                 std::string buff;  
                 int frametype;   // 1 ftype, 2 moov , 3 first moof( idr frame), 4 P or B frames cane be dropped 
@@ -291,6 +297,18 @@ namespace base {
             bool dropping{false};
             int first_frame{1};
             int qsize{ 0 };
+
+            #elif PING  
+
+            Timer m_ping_timer{ nullptr};
+            Timer m_ping_timeout_timer{ nullptr};
+
+            unsigned int m_ping_interval{25000};
+            unsigned int m_ping_timeout{60000};
+            
+            void timeout_pong();
+
+            #endif
             
         public:
             std::string key;

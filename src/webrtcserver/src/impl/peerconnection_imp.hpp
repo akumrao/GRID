@@ -144,7 +144,7 @@ private:
 	void updateTrackSsrcCache(const Description &description);
 
 	const init_token mInitToken = Init::Instance().token();
-	future_certificate_ptr mCertificate;
+	Certificate* mCertificate;
 
 	Processor mProcessor;
 	optional<Description> mLocalDescription;

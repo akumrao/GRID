@@ -23,6 +23,11 @@ const char *sys_signame[NSIG] = {
     "TTOU", "IO",  "XCPU", "XFSZ", "VTALRM", "PROF", "WINCH", "PWR",  "USR1", "USR2", NULL};
 #endif
 
+#ifdef _MSC_VER // Check if compiling with Visual C++
+#define strcasecmp _stricmp
+#define strncasecmp _strnicmp
+#endif
+
 void *xmalloc(size_t size) {
   if (size == 0) return NULL;
   void *p = malloc(size);
@@ -53,11 +58,7 @@ char *lowercase(char *s) {
   return s;
 }
 
-bool endswith(const char *str, const char *suffix) {
-  size_t str_len = strlen(str);
-  size_t suffix_len = strlen(suffix);
-  return str_len > suffix_len && !strcmp(str + (str_len - suffix_len), suffix);
-}
+
 
 int get_sig_name(int sig, char *buf, size_t len) {
   int n = snprintf(buf, len, "SIG%s", sig < NSIG ? sys_signame[sig] : "unknown");
@@ -74,21 +75,6 @@ int get_sig(const char *sig_name) {
   return atoi(sig_name);
 }
 
-int open_uri(char *uri) {
-#ifdef __APPLE__
-  char command[256];
-  sprintf(command, "open %s > /dev/null 2>&1", uri);
-  return system(command);
-#elif defined(_WIN32) || defined(__CYGWIN__)
-  return ShellExecute(0, 0, uri, 0, 0, SW_SHOW) > (HINSTANCE)32 ? 0 : 1;
-#else
-  // check if X server is running
-  if (system("xset -q > /dev/null 2>&1")) return 1;
-  char command[256];
-  sprintf(command, "xdg-open %s > /dev/null 2>&1", uri);
-  return system(command);
-#endif
-}
 
 #ifdef _WIN32
 char *strsep(char **sp, char *sep) {
@@ -127,7 +113,7 @@ const char *quote_arg(const char *arg) {
   }
   if (!force_quotes && n == 0) return arg;
 
-  d = q = xmalloc(len + n + 3);
+  d = q =(char *) xmalloc(len + n + 3);
   *d++ = '"';
   while (*arg) {
     if (*arg == '"')

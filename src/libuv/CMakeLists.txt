@@ -253,7 +253,7 @@ else()
        src/unix/stream.cpp
        src/unix/tcp.cpp
        src/unix/thread.cpp
-#       src/unix/tty.cpp
+       src/unix/tty.cpp
        src/unix/udp.cpp)
   list(APPEND uv_test_sources test/runner-unix.cpp)
 endif()
@@ -381,15 +381,15 @@ target_compile_options(uv_a PRIVATE ${uv_cflags})
 target_include_directories(uv_a PUBLIC include PRIVATE src)
 target_link_libraries(uv_a ${uv_libraries})
 
+
+if(UNIX)
+
 set(CMAKE_BUILD_TYPE MinSizeRel)
 
 if (CMAKE_BUILD_TYPE STREQUAL "MinSizeRel")
     target_compile_options(uv PRIVATE -Os -flto -s -Wl,-s -Wl,--gc-sections)
 endif()
 
-
-
-if(UNIX)
   # Now for some gibbering horrors from beyond the stars...
   foreach(x ${uv_libraries})
     set(LIBS "${LIBS} -l${x}")

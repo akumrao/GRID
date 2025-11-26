@@ -54,13 +54,21 @@ socket.on('created', function(room) {
 socket.on('join', function(room, id, numClients) {
     console.log('New peer joins, room: ' + room + ', ' + " client id: " + id);
     isChannelReady = true;
+
+
+    if(numClients > 1)
+    isInitiator = true;
+
+    maybeStart();
+
 });
 
-socket.on('joined', function(roomId) {
-  console.log('joined: ' + roomId);
+socket.on('joined', function(msg) {
+  console.log('joined: %o %o %o ', msg , socket.id, msg.from  );
   isChannelReady = true;
-  isInitiator = true;
-  maybeStart();
+
+  // if(socket.id != msg.from)
+
 });
 
 socket.emit('createorjoin', roomId , true);
@@ -85,7 +93,7 @@ socket.on('log', function(array) {
 function sendMessage(message) {
     console.log('Client sending message: ', message);
     //log('Client sending message: ', message);
-    socket.emit('messageToWebrtc', message);
+    socket.emit('message', message);
 }
 
 
@@ -215,14 +223,15 @@ async function maybeStart() {
 
    // pc.addStream(localStream);
     isStarted = true;
-    console.log('isInitiator', isInitiator);
-    if (isInitiator) {
-      //doCall();
-      sendMessage({
-      room: roomId,
-      type: 'request'
-    });
+    // console.log('isInitiator', isInitiator);
+     if (isInitiator) {
+    doCall();
     }
+    //   sendMessage({
+    //   room: roomId,
+    //   type: 'request'
+    // });
+  
   }
 }
 
@@ -278,90 +287,6 @@ function createPeerConnection() {
          channelSnd.send('Hi you!');
      }
         
-
-    //     var msg = JSON.parse(event.data);
-
-        
-    //     switch (msg.messageType) {
-    //       case "IDENTITY_NOT_IN_GALLERY":
-           
-
-    //       var base64Url = "data:image/jpeg;base64, " + msg.messagePayload.looselyCroppedImage;
-    //       var imgid = document.getElementById("image");
-    //       imgid.src = base64Url;
-
-    //       var myJsObj = GenIdentity();
-
-    //         //   "messageType": "identity",
-    //         //   "messagePayload": {
-    //         //     "configuredGalleryIdentities": {
-    //         //       "76a92b24-31d5-463b-ab7a-b379efab7b30": {
-    //         //         "accuracyMonitorConsent": false,
-    //         //         "identityName": "entername",
-    //         //         "productImprovementConsent": false,
-    //         //         "registrationImageIDs": ["entername"]
-    //         //       }
-    //         //     },
-    //         //     "sequenceNum": 1
-    //         //   }
-    //         // };
-
-
-    //       //var obj = JSON.parse(myJsObj);
-    //       myJsObj['registrationImage'] = msg.messagePayload.registrationImage;
-
-    //       // using JSON.stringify pretty print capability:
-    //       var str = JSON.stringify(myJsObj);
-
-    //       // display pretty printed object in text area:
-    //       //document.getElementById('myTextArea').innerHTML = str;
-
-    //       document.getElementById('w3review').value= str;
-     
-             
-
-    //       break;
-    //       case "IDENTITY_RECOGNIZED":
-    //       {
-
-
-    //         var base64Url = "data:image/jpeg;base64, " + msg.messagePayload.looselyCroppedImage;
-    //         var imgid = document.getElementById("image");
-    //         imgid.src = base64Url;
-
-    //         document.getElementById('w3review').value=  msg.messagePayload.identityName;
-
-             
-    //       // {
-    //       //   msg.identityID": "76a92b24-31d5-463b-ab7a-b379efab7b30",
-    //       //   "identityName": "arvind",
-    //       // }
-          
-                
-    //         //document.getElementById('w3review').value = msg.messagePayload;
-
-    //         break;
-            
-    //       }
-
-    //       case "RECORDING":
-    //       {
-
-    //         recordlist(msg.messagePayload);
-
-    //         break;
-    //       }
-    //       case "PERSON":
-    //       {
-
-    //          document.getElementById('w3review').value =  JSON.stringify(msg.messagePayload);
-    //          break;
-
-    //       }
-
-
-    //     }
-    // }
 
 
 

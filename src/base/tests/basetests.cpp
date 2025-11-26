@@ -10,7 +10,7 @@
 
 #include "basetests.h"
 #include "base/uuid.h"
-
+#include "base/async.h"
 
 using std::cout;
 using std::cerr;
@@ -250,6 +250,33 @@ int main(int argc, char** argv) {
         test->join();
 
         
+    });
+    
+    
+    
+    
+    
+    
+    describe("Async", []()
+    {
+        
+        Async async;
+                 
+        std::cout << "Main thread: Queueing work..." << std::endl;
+
+        auto work_fn = []() {
+            // This runs in a worker thread
+            std::cout << "Worker thread: Starting heavy lifting..." << std::endl;
+//            std::this_thread::sleep_for(std::chrono::seconds(2)); // Simulate work
+            std::cout << "Worker thread: Finished heavy lifting." << std::endl;
+        };
+
+        auto after_work_fn = [](int status) {
+            // This runs back in the main event loop thread
+            std::cout << "Main thread: Work finished with status " << status << std::endl;
+        };
+
+        async.queueWork(work_fn, after_work_fn);
     });
 
     test::runAll();

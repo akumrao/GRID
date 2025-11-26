@@ -1,11 +1,11 @@
 
-#include "peerconnection.hpp"
+#include "peerconnection_imp.hpp"
 #include "certificate.hpp"
 #include "dtlstransport.hpp"
 #include "icetransport.hpp"
 #include "internals.hpp"
 #include "logcounter.hpp"
-#include "peerconnection.hpp"
+//#include "peerconnection.hpp"
 #include "processor.hpp"
 #include "rtp.hpp"
 #include "sctptransport.hpp"
@@ -42,13 +42,11 @@ PeerConnection::PeerConnection(Configuration config_) : config(std::move(config_
 	PLOG_VERBOSE << "Creating PeerConnection";
 
 	if (config.certificatePemFile && config.keyPemFile) {
-		std::promise<certificate_ptr> cert;
-		cert.set_value(std::make_shared<Certificate>(
+           mCertificate =  
 		    config.certificatePemFile->find(PemBeginCertificateTag) != string::npos
 		        ? Certificate::FromString(*config.certificatePemFile, *config.keyPemFile)
 		        : Certificate::FromFile(*config.certificatePemFile, *config.keyPemFile,
-		                                config.keyPemPass.value_or(""))));
-		mCertificate = cert.get_future();
+		                                config.keyPemPass.value_or(""));
 	} else if (!config.certificatePemFile && !config.keyPemFile) {
 		mCertificate = make_certificate(config.certificateType);
 	} else {
@@ -72,13 +70,15 @@ PeerConnection::PeerConnection(Configuration config_) : config(std::move(config_
 }
 
 PeerConnection::~PeerConnection() {
-	PLOG_VERBOSE << "Destroying PeerConnection";
+	SInfo << "Destroying PeerConnection";
 	mProcessor.join();
+        
+        delete mCertificate;
 }
 
 void PeerConnection::close() {
 	if (!closing.exchange(true)) {
-		PLOG_VERBOSE << "Closing PeerConnection";
+		SInfo << "Closing PeerConnection";
 		if (auto transport = std::atomic_load(&mSctpTransport))
 			transport->stop();
 		else
@@ -89,7 +89,7 @@ void PeerConnection::close() {
 void PeerConnection::remoteClose() {
 	close();
 	if (state.load() != State::Closed) {
-		// Close data channels and tracks asynchronously
+		 SInfo << "Closing remoteClose";
 		mProcessor.enqueue(&PeerConnection::closeDataChannels, shared_from_this());
 		mProcessor.enqueue(&PeerConnection::closeTracks, shared_from_this());
 
@@ -216,7 +216,7 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 		if (auto transport = std::atomic_load(&mDtlsTransport))
 			return transport;
 
-		PLOG_VERBOSE << "Starting DTLS transport";
+		SInfo << "Starting DTLS transport";
 
 		CertificateFingerprint::Algorithm fingerprintAlgorithm;
 		{
@@ -226,12 +226,19 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 			}
 			fingerprintAlgorithm = mRemoteFingerprintAlgorithm;
 		}
+               
+                
+                
 
+                if( config.console)
+               // if(mIceTransport->mRole == Description::Role::ActPass) //arvind this if line is for console connect
+                mIceTransport->mRole = mIceTransport->agent.m_mode == AGENT_MODE_CONTROLLING ? Description::Role::Active: Description::Role::Passive;
+               
 		auto lower = std::atomic_load(&mIceTransport);
 		if (!lower)
 			throw std::logic_error("No underlying ICE transport for DTLS transport");
 
-		auto certificate = mCertificate.get();
+		auto certificate = mCertificate;
 		auto verifierCallback = weak_bind(&PeerConnection::checkFingerprint, this, _1);
 		auto dtlsStateChangeCallback =
 		    [this, weak_this = weak_from_this()](DtlsTransport::State transportState) {
@@ -245,20 +252,24 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 					    initSctpTransport();
 				    else
 					    changeState(State::Connected);
-
+                                    SInfo << "DtlsTransport::State::Connected";
 				    mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
 				    break;
 			    case DtlsTransport::State::Failed:
+                                    SInfo << "DtlsTransport::State::Failed";
 				    changeState(State::Failed);
 				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
 				    break;
 			    case DtlsTransport::State::Disconnected:
+                                    SInfo << "DtlsTransport::State::Disconnected";
 				    changeState(State::Disconnected);
 				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
 				    break;
 			    default:
 				    // Ignore
-				    break;
+                                
+                                SInfo << "DtlsTransport::State::Connecting";
+				break;
 			    }
 		    };
 
@@ -1069,7 +1080,7 @@ void PeerConnection::processLocalDescription(Description description) {
 	}
 
 	// Set local fingerprint (wait for certificate if necessary)
-	description.setFingerprint(mCertificate.get()->fingerprint());
+	description.setFingerprint(mCertificate->fingerprint());
 
 	PLOG_VERBOSE << "Issuing local description: " << description;
 
@@ -1106,7 +1117,7 @@ void PeerConnection::processLocalDescription(Description description) {
 
 void PeerConnection::processLocalCandidate(Candidate candidate) {
     
-        SInfo << "processLocalCandidate" <<   std::string(candidate);
+        STrace << "processLocalCandidate" <<   std::string(candidate);
         
 
     

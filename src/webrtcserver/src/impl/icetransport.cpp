@@ -115,7 +115,7 @@ Description IceTransport::getLocalDescription(Description::Type type)  {
 
 void IceTransport::setRemoteDescription(const Description &description) {
     
-         SInfo << "Agent " << agent.agentNo  <<  "setRemoteDescription";
+         SInfo << "Agent " << agent.agentNo  <<  " setRemoteDescription";
          
 	// RFC 5763: The answerer MUST use either a setup attribute value of setup:active or
 	// setup:passive.
@@ -142,7 +142,7 @@ void IceTransport::setRemoteDescription(const Description &description) {
 
 bool IceTransport::addRemoteCandidate(const Candidate &candidate) {
     
-    SInfo << "Agent " << agent.agentNo  <<  " addRemoteCandidate " <<  std::string(candidate);
+    STrace << "Agent " << agent.agentNo  <<  " addRemoteCandidate " <<  std::string(candidate);
     
 	// Don't try to pass unresolved candidates for more safety
 	//if (!candidate.isResolved())

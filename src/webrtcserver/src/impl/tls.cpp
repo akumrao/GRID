@@ -5,64 +5,9 @@
 #include <fstream>
 #include <stdexcept>
 
-#if USE_GNUTLS
 
-namespace rtc::gnutls {
 
-// Return false on non-fatal error
-bool check(int ret, const string &message) {
-	if (ret < 0) {
-		if (!gnutls_error_is_fatal(ret)) {
-			return false;
-		}
-		throw std::runtime_error(message + ": " + gnutls_strerror(ret));
-	}
-	return true;
-}
-
-gnutls_certificate_credentials_t *new_credentials() {
-	auto creds = new gnutls_certificate_credentials_t;
-	gnutls::check(gnutls_certificate_allocate_credentials(creds));
-	return creds;
-}
-
-void free_credentials(gnutls_certificate_credentials_t *creds) {
-	gnutls_certificate_free_credentials(*creds);
-	delete creds;
-}
-
-gnutls_x509_crt_t *new_crt() {
-	auto crt = new gnutls_x509_crt_t;
-	gnutls::check(gnutls_x509_crt_init(crt));
-	return crt;
-}
-
-void free_crt(gnutls_x509_crt_t *crt) {
-	gnutls_x509_crt_deinit(*crt);
-	delete crt;
-}
-
-gnutls_x509_privkey_t *new_privkey() {
-	auto privkey = new gnutls_x509_privkey_t;
-	gnutls::check(gnutls_x509_privkey_init(privkey));
-	return privkey;
-}
-
-void free_privkey(gnutls_x509_privkey_t *privkey) {
-	gnutls_x509_privkey_deinit(*privkey);
-	delete privkey;
-}
-
-gnutls_datum_t make_datum(char *data, size_t size) {
-	gnutls_datum_t datum;
-	datum.data = reinterpret_cast<unsigned char *>(data);
-	datum.size = size;
-	return datum;
-}
-
-} // namespace rtc::gnutls
-
-#elif USE_MBEDTLS
+#if USE_MBEDTLS
 
 #include <time.h>
 
@@ -114,31 +59,40 @@ string format_time(const std::chrono::system_clock::time_point &tp) {
 		throw std::runtime_error("Time conversion failed");
 
 	return string(buffer);
-};
-
-std::shared_ptr<mbedtls_pk_context> new_pk_context() {
-	return std::shared_ptr<mbedtls_pk_context>{[]() {
-		                                           auto p = new mbedtls_pk_context;
-		                                           mbedtls_pk_init(p);
-		                                           return p;
-	                                           }(),
-	                                           [](mbedtls_pk_context *p) {
-		                                           mbedtls_pk_free(p);
-		                                           delete p;
-	                                           }};
 }
 
-std::shared_ptr<mbedtls_x509_crt> new_x509_crt() {
-	return std::shared_ptr<mbedtls_x509_crt>{[]() {
-		                                         auto p = new mbedtls_x509_crt;
-		                                         mbedtls_x509_crt_init(p);
-		                                         return p;
-	                                         }(),
-	                                         [](mbedtls_x509_crt *crt) {
-		                                         mbedtls_x509_crt_free(crt);
-		                                         delete crt;
-	                                         }};
+mbedtls_pk_context* new_pk_context() 
+{
+
+	auto p = new mbedtls_pk_context;
+	mbedtls_pk_init(p);
+	return p;
+	                                          
 }
+
+mbedtls_x509_crt* new_x509_crt() 
+{
+	
+	auto p = new mbedtls_x509_crt;
+	mbedtls_x509_crt_init(p);
+	return p;
+}
+
+
+void pk_free(mbedtls_pk_context *p) 
+{
+	mbedtls_pk_free(p);
+	delete p;
+}
+
+
+void crt_free(mbedtls_x509_crt *crt) 
+{
+	mbedtls_x509_crt_free(crt);
+	delete crt;
+}
+
+
 
 } // namespace rtc::mbedtls
 

@@ -38,7 +38,7 @@ public:
         //con->send( msg, len );
         
         sendAll( msg, len );
-         
+        
     }
     
     void sendAll(const char* msg, size_t len) {
@@ -67,11 +67,33 @@ public:
          
     }
     
+    
+      void sendPing() {
+      
+        
+        SInfo << "No of Connectons " << this->GetNumConnections();
+        
+        for (auto* connection :  this->GetConnections())
+        {
+            
+#if HTTPSSL
+                    
+             WebSocketConnection *con = ((HttpsConnection*)connection)->getWebSocketCon();
+#else
+             WebSocketConnection *con = ((HttpConnection*)connection)->getWebSocketCon();
+#endif
+             if(con)
+             con->ping("arvind");
+
+        }
+         
+    }
+    
 };
 
 int main(int argc, char** argv) {
 
-   ConsoleChannel *ch =  new ConsoleChannel("debug", Level::Info);
+   ConsoleChannel *ch =  new ConsoleChannel("debug", Level::Trace);
             
    Logger::instance().add(ch);
     //test::init();

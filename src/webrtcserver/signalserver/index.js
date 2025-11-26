@@ -200,10 +200,12 @@ async function runSocketServer() {
             socket.room = roomId;
             socket.join(roomId);
 
+            /*
             if(!client)
              socket.isclient= false;
             else 
             socket.isclient = true;
+            */
 
 
             log('Received request to createorjoin room ' + roomId + " isclient " +  socket.isclient ) ;
@@ -217,17 +219,18 @@ async function runSocketServer() {
             log('Room ' + roomId + ' now has ' + numClients + ' client(s)');
 
             if (numClients === 1) {
+                socket.isclient= false;
                 log('Client ID ' + socket.id + ' created room ' + roomId);
                 //when first time client connection then socket is created, store socket id and then emit  Join event
                // socket.emit('created', roomId, socket.id);
                 socket.emit('join', roomId, socket.id, numClients);
             } else if (numClients > 1) {
-                //log('Client ID ' + socket.id + ' joined room ' + roomId);
+                log('Client ID ' + socket.id + ' joined room ' + roomId);
                 //if already client connections are there then we send event Joined event.
                 
                 // when all the users in room need get joining event
 
-                
+                socket.isclient = true;
                 Object.keys(clientsInRoom.sockets).forEach(function(scid){
                  
                  let sc = io.sockets.connected[scid];
@@ -236,9 +239,13 @@ async function runSocketServer() {
                  
                  if(!sc.isclient)
                  {
-                    console.log('joined room: ', roomId);
+                    console.log('joined roomid: ', roomId);
+                    var message={};
+                    //message.from = sc.id;
+                    message.type = "joined";
+                    message.room = roomId;
 
-                    io.sockets.in(roomId).emit('joined', roomId, socket.id, numClients);
+                    io.sockets.in(roomId).emit('joined',  message );
                  }
 
                 });
@@ -248,40 +255,40 @@ async function runSocketServer() {
             }
         });
 
+     
         socket.on('message', function(message) {
-            console.log('webrtc server message: ', message);
-
             message.from = socket.id;
 
+            if(socket.isclient)
+                console.log('Second participant: ', message);
+            else
+                console.log('First participant: ', message);
+
+            //console.log( message.room );
+
+            if(message.to && message.to.length != 0)
             socket.to(message.to).emit('message', message);
-        });
+            else
+            {
 
-        socket.on('messageToWebrtc', function(message) {
-            message.from = socket.id;
+                var clientsInRoom = io.sockets.adapter.rooms[message.room];
+                if(!clientsInRoom)
+                    return;
 
+                //console.log( clientsInRoom );
 
-            console.log('app message: ', message);
-
-            console.log( message.room );
-
-            var clientsInRoom = io.sockets.adapter.rooms[message.room];
-            if(!clientsInRoom)
-                return;
-
-            //console.log( clientsInRoom );
-
-         //   var numClients = clientsInRoom.length; //For socket.io versions >= 1.4:
-            Object.keys(clientsInRoom.sockets).forEach(function(scid){
-             
-             let sc = io.sockets.connected[scid];
+             //   var numClients = clientsInRoom.length; //For socket.io versions >= 1.4:
+                Object.keys(clientsInRoom.sockets).forEach(function(scid){
                  
-             if(!sc.isclient)
-             {
-                sc.emit('message', message);
-             }
+                let sc = io.sockets.connected[scid];
+                     
+                if(sc.isclient !=  socket.isclient  &&  socket.id != sc.id )
+                {
+                    sc.emit('message', message);
+                }
+                });
 
-
-            });
+            }
 
 
         });

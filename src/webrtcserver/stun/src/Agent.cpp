@@ -7,12 +7,9 @@
 #include <Utils.h>
 #include <algorithm>
 #include "sdpcommon.h"
-
+#include "Settings.h"
 
 using namespace base;
-
-
-
 
 
 #define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
@@ -65,11 +62,17 @@ namespace stun {
     {
         
         //memset(description, 0, sizeof(ice_description_t));
-	random_str64(description->ice_ufrag, 4 + 1);
-	random_str64(description->ice_pwd, 22 + 1);
-	description->ice_lite = false;
-	description->candidates_count = 0;
-	description->finished = false;
+
+        
+    	//random_str64(description->ice_ufrag, 4 + 1);
+    	//random_str64(description->ice_pwd, 22 + 1);
+
+        Settings::User(description->ice_ufrag , 4 + 1);
+        Settings::Passwd(description->ice_pwd, 22 + 1);
+
+    	description->ice_lite = false;
+    	description->candidates_count = 0;
+    	description->finished = false;
         
 //        random_str64(localDes.desc.ice_ufrag, 4 + 1);
 //        random_str64(localDes.desc.ice_pwd, 22 + 1);
@@ -100,9 +103,8 @@ namespace stun {
     
     bool Agent::getInterfaces( ) {
         
-        
-        static int port = 7000;
-        socket = new testUdpServer("::", ++port , this );
+        int port = mConfig.portdefault;
+        socket = new testUdpServer("::", port , this );
        // socket = new testUdpServer("0.0.0.0", ++port , this );
         socket->start();
         
@@ -112,7 +114,7 @@ namespace stun {
         
         
         addr_record_t records[ICE_MAX_CANDIDATES_COUNT - 1];
-	int records_count = udp_get_addrs(socket->udpServer->localAddr, records, ICE_MAX_CANDIDATES_COUNT - 1);
+	int records_count = udp_get_addrs(socket->udpServer->localAddr, records, ICE_MAX_CANDIDATES_COUNT - 1,  ( mConfig.api ?  mConfig.api->mac_addr: NULL));
 	if (records_count < 0) {
 		SError << "Failed to gather local host candidates";
 	      records_count = 0;
@@ -264,29 +266,35 @@ namespace stun {
         return 0;
     }
     
-    
+    /* Peer Reflex for local description*/
     int Agent::agent_add_local_reflexive_candidate( Candidate *candidate) {
 
-        STrace <<  "AgentNo " << agentNo << " agent_add_local_reflexive_candidate " << candidate->mType;
        
         if (candidate->mType !=  Candidate::Type::ServerReflexive && candidate->mType  !=  Candidate::Type::PeerReflexive) {
 		LError("Invalid type for local reflexive candidate");
 		return -1;
 	}
         
+  
+        //Orignal code
+//        if (localdesp.ice_find_candidate_from_addr( &candidate->resolved, candidate->resolved.addr.ss_family == AF_INET6 ? Candidate::Type::Unknown : candidate->mType )) {
+//                  LTrace("A local candidate exists for the mapped address");
+//                  return 0;
+//        }
         
-        if (localdesp.ice_find_candidate_from_addr( &candidate->resolved, candidate->resolved.addr.ss_family == AF_INET6 ? Candidate::Type::Unknown : candidate->mType )) {
+        if (localdesp.ice_find_candidate_from_addr( &candidate->resolved,  Candidate::Type::Unknown )) {
                   LTrace("A local candidate exists for the mapped address");
                   return 0;
         }
-        
-        
         if (candidate->mType == Candidate::Type::PeerReflexive && ice_candidates_count(&localdesp, Candidate::Type::PeerReflexive) >= MAX_PEER_REFLEXIVE_CANDIDATES_COUNT) {
 		LInfo("Local description has the maximum number of peer reflexive candidates, ignoring");
 		return 0;
 	}
         
 
+        
+        SInfo <<  "AgentNo " << agentNo << " agent_add_local_reflexive_candidate " << candidate->mType;
+        
         if (ice_create_local_candidate(1, localdesp.candidates_count, candidate)) {
             SError << "Failed to create host candidate";
             return -1;
@@ -308,6 +316,54 @@ namespace stun {
         
     }
 
+    //  Peer reflex for remote description
+    int  Agent::agent_add_remote_peer_reflexive_candidate( uint32_t priority, const addr_record_t *record)
+    {
+        if (remotedesp.ice_find_candidate_from_addr( record, Candidate::Type::Unknown)) {
+                STrace << "AgentNo " << agentNo << " A remote candidate exists for the remote address";
+                return 0;
+        }
+        Candidate candidate;
+        candidate.mType = Candidate::Type::PeerReflexive;
+        candidate.resolved =  *record;
+
+//            char buf[512];
+//            uint16_t port;
+//            
+//            if(record->addr.ss_family == AF_INET6)
+//            {
+//                uv_ip6_name((sockaddr_in6* )&record->addr, buf, sizeof (buf));
+//		port = ntohs( ((sockaddr_in6 *)&record->addr)->sin6_port);
+//                                
+//            }
+//            else if(record->addr.ss_family == AF_INET )
+//            {
+//                 uv_ip4_name((sockaddr_in*)&record->addr, buf, sizeof (buf));
+//                 port =  ntohs( ((sockaddr_in *)&record->addr)->sin_port); 
+//            }
+
+        if (ice_create_local_candidate( 1, localdesp.candidates_count,  &candidate)) {
+                LError("Failed to create reflexive candidate");
+                return -1;
+        }
+        if (ice_candidates_count(&remotedesp , Candidate::Type::PeerReflexive ) >=    MAX_PEER_REFLEXIVE_CANDIDATES_COUNT) {
+                LInfo( "Remote description has the maximum number of peer reflexive candidates, ignoring");
+                return 0;
+        }
+        Candidate *remote =ice_add_candidate(&candidate, &remotedesp);
+
+        if(remote== nullptr) {
+                LError("Failed to add candidate to remote description");
+                return -1;
+        }
+
+        SInfo << "AgentNo " << agentNo << " Add a new remote peer reflexive candidate, priority=" << (unsigned long)priority;
+
+        remote->mPriority = priority;
+
+        return agent_add_candidate_pairs_for_remote( remote);
+    }
+        
     int Agent::ice_create_local_candidate( int component, int index,  Candidate *candidate) {
       //  memset(candidate, 0, sizeof (*candidate));
 
@@ -323,7 +379,7 @@ namespace stun {
 //            printf("getnameinfo failed, errno=%d", sockerrno);
 //            return -1;
 //        }
-  #if 1       
+  #if 1 // TBD push this code to async event       
         char hostname[257];
         char service[33];
         
@@ -389,54 +445,7 @@ namespace stun {
     }
     
     
-    
-        int  Agent::agent_add_remote_peer_reflexive_candidate( uint32_t priority, const addr_record_t *record)
-        {
-            
-            if (remotedesp.ice_find_candidate_from_addr( record, Candidate::Type::Unknown)) {
-                    STrace << "AgentNo " << agentNo << " A remote candidate exists for the remote address";
-                    return 0;
-            }
-            Candidate candidate;
-            candidate.mType = Candidate::Type::PeerReflexive;
-            candidate.resolved =  *record;
-            
-//            char buf[512];
-//            uint16_t port;
-//            
-//            if(record->addr.ss_family == AF_INET6)
-//            {
-//                uv_ip6_name((sockaddr_in6* )&record->addr, buf, sizeof (buf));
-//		port = ntohs( ((sockaddr_in6 *)&record->addr)->sin6_port);
-//                                
-//            }
-//            else if(record->addr.ss_family == AF_INET )
-//            {
-//                 uv_ip4_name((sockaddr_in*)&record->addr, buf, sizeof (buf));
-//                 port =  ntohs( ((sockaddr_in *)&record->addr)->sin_port); 
-//            }
-            
-            if (ice_create_local_candidate( 1, localdesp.candidates_count,  &candidate)) {
-                    LError("Failed to create reflexive candidate");
-                    return -1;
-            }
-            if (ice_candidates_count(&remotedesp , Candidate::Type::PeerReflexive ) >=    MAX_PEER_REFLEXIVE_CANDIDATES_COUNT) {
-                    LInfo( "Remote description has the maximum number of peer reflexive candidates, ignoring");
-                    return 0;
-            }
-            Candidate *remote =ice_add_candidate(&candidate, &remotedesp);
-            
-            if(remote== nullptr) {
-                    LError("Failed to add candidate to remote description");
-                    return -1;
-            }
 
-            SDebug << "AgentNo " << agentNo << " Obtained a new remote reflexive candidate, priority=" << (unsigned long)priority;
-
-            remote->mPriority = priority;
-
-            return agent_add_candidate_pairs_for_remote( remote);
-    }
     
     int Agent::ice_add_remote_candidate(const char *sdpCandidate)
     {
@@ -531,14 +540,14 @@ namespace stun {
 	
         candidate = description->candidates + description->candidates_count -1;
         
-        STrace<< "AgentNo " << agentNo <<   " candidate:" <<  candidate;
+      //  STrace<< "AgentNo " << agentNo <<   " candidate:" <<  candidate;
         
        // char buffer[4096];
         
         //ice_generate_candidate_sdp(candidate, buffer, 4096);
         
-        std::string tmp =   std::string (*candidate);
-        STrace<< "AgentNo " << agentNo << " candidate " << std::string ( *candidate);
+        //std::string tmp =   std::string (*candidate);
+        SInfo<< "AgentNo " << agentNo << " candidate " << std::string ( *candidate);
         
         return candidate;
 
@@ -967,7 +976,7 @@ int Agent::agent_dispatch_stun( unsigned char *buf, size_t size, stun::Message  
             Priority *result = nullptr;
             if( !msg->find(&result ))
             {
-                SError  << "AgentNo " << agentNo << " On Stun Message. Priority attribute is not in stun message";
+                SWarn  << "AgentNo " << agentNo << " On Stun Message. Priority attribute is not in stun message";
                 //exit(0);
             }
             
@@ -1291,6 +1300,26 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record( const addr_record_t *re
 		ice_candidate_pair_t *matching_pair = NULL;
 		for (int i = 0; i < m_candidate_pairs_count; ++i) {
 			ice_candidate_pair_t *pair = m_ordered_pairs[i];
+                        
+#if 0
+  
+   {
+         std::string ret{"addr_record_is_equal "};
+        char ip[40];
+        uint16_t port;
+        IP::AddressToString(pair->remote->resolved, ip, 40, port);
+        ret +=  ip + std::string(":") + std::to_string(port);
+    
+        ret +=" < > ";
+
+
+        IP::AddressToString(  (*(addr_record_t *)record), ip, 40, port);
+        ret +=  ip + std::string(":") + std::to_string(port);
+        
+        SInfo << ret;
+    }    
+    
+#endif
 			if (!pair_is_relayed(pair) &&
 			    IP::addr_record_is_equal(&pair->remote->resolved, record, true)) {
 				matching_pair = pair;
@@ -1946,8 +1975,10 @@ int Agent::agent_bookkeeping( int64_t &now)
         #if 1
         static int64_t prev = 0;
         
+       // std::cout << "\033[31m" << "This text is red." << std::endl;
+            
         
-        SInfo << "AgentNo " << agentNo << " Bookkeeping " << now -prev <<   " ........................................................" ;
+        SInfo << "\033[32m" << "AgentNo " << agentNo << " Bookkeeping " << now -prev <<   " ......................................................................................................." ;
         
       
        
@@ -2154,7 +2185,13 @@ int Agent::agent_bookkeeping( int64_t &now)
             agent_change_state(JUICE_STATE_FAILED);
             //atomic_store(&selected_entry, NULL); // disallow sending
             m_selected_entry = NULL;
-            SInfo << "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now);
+            
+
+            SInfo <<   "\033[31m" << "Share this ip to your peer " <<  localdesp.dump();  // print color  red
+                // Set text color to blue and background to yellow
+            
+            SInfo << "\033[0m" << "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now); //reset color to default
+            
             _timer.Start(m_next_timestamp - now);
             return 0;
         }
@@ -2165,6 +2202,8 @@ int Agent::agent_bookkeeping( int64_t &now)
                 LInfo(selected_pair->nominated ? "New selected and nominated pair"
                         : "New selected pair");
                 m_selected_pair = selected_pair;
+                
+                 SInfo << "Nominated selected_pair " << selected_pair->dump();
 
                 // Start nomination timer if controlling
                 if (m_mode == AGENT_MODE_CONTROLLING)
@@ -2188,6 +2227,9 @@ int Agent::agent_bookkeeping( int64_t &now)
                     agent_change_state(JUICE_STATE_CONNECTED);
 
                 agent_change_state(JUICE_STATE_COMPLETED);
+                
+                 SInfo << "Nominated pair are Completed " << nominated_pair->dump();
+               
 
                 agent_stun_entry_t *nominated_entry = NULL;
                 agent_stun_entry_t *relay_entry = NULL;
@@ -2258,7 +2300,8 @@ int Agent::agent_bookkeeping( int64_t &now)
                 agent_change_state(JUICE_STATE_FAILED);
                 //atomic_store(&selected_entry, NULL); // disallow sending
                 m_selected_entry = NULL;
-                SInfo << "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now);
+                SInfo <<   "\033[31m" << "Share this ip to your peer " <<  localdesp.dump();  // red color
+                SInfo <<"\033[0m" <<  "AgentNo " << agentNo << " JUICE_STATE_FAILED timer " << (m_next_timestamp - now); // reset to default color
                 _timer.Start(m_next_timestamp - now);
                 return 0;
             } else if (m_next_timestamp > pac_timestamp) {
@@ -2280,7 +2323,11 @@ int Agent::agent_bookkeeping( int64_t &now)
 #endif
         }
 
-        SInfo << "AgentNo " << agentNo << " Bookkeeping end timer " << (m_next_timestamp - now);
+        SInfo << "\033[34m" << "AgentNo " <<  agentNo << " Share this ip to your peer "  <<  localdesp.dump(); // print color  blue
+        if( mConfig.api)
+        mConfig.api->Insert(   mConfig.api->mac_addr, localdesp.dump()  );
+         
+        SInfo << "\033[0m" << "AgentNo " << agentNo << " Bookkeeping end timer " << (m_next_timestamp - now); // reset to default color 
         _timer.Start(m_next_timestamp - now);
         return 0;
 }
@@ -2384,7 +2431,7 @@ int  Agent::agent_set_remote_description(const char *sdp) {
 
 
 
-int Agent::agent_resolve_servers( addrinfo* start)
+int Agent::agent_resolve_servers( addrinfo* start) // resolve local server
 {
     
     
@@ -2611,7 +2658,31 @@ std::string ice_candidate_pair::dump()
 
     };
     
-      return ret;
+     ret +=" pair ";
+      
+     
+    char ip[40];
+    uint16_t port;
+        
+    if(local)
+    {
+        
+        IP::AddressToString(local->resolved, ip, 40, port);
+        ret +=  std::string("Local:") +  ip + std::string(":") + std::to_string(port);
+    
+        ret +=" < > ";
+    }
+    else
+        ret +="Local:Xored local stun request < > ";
+                
+    if(remote)
+    {
+        IP::AddressToString(remote->resolved, ip, 40, port);
+        ret +=  std::string("Remote:") +ip + std::string(":") + std::to_string(port);
+    }    
+    
+    
+    return ret;
 }
 
 
@@ -2819,7 +2890,7 @@ void Agent::resolveStunServer( )
     for( const IceServer &icesv:  mConfig.iceServers  )
     {
         SInfo << "resolve " <<  icesv.hostname << ":" << icesv.port;
-        resolve(icesv.hostname, icesv.port, Application::uvGetLoop(), nullptr);
+        resolve(icesv.hostname, icesv.port, Application::uvGetLoop(), nullptr, true);
         //break;
     }
    
@@ -2852,11 +2923,11 @@ void Agent::cbDnsResolve(addrinfo* res, void* ptr) // paired with resolveStunSer
     {   
         Candidate *candStored = ice_add_candidate(tmp, &remotedesp  );
         delete tmp; 
-        agent_resolve_hostname(res,candStored );  
+        agent_resolve_hostname(res,candStored );   // resolve remote candidate
        
     }
     else
-      agent_resolve_servers(res );  // google stun://google server resolve
+      agent_resolve_servers(res );  // google stun://google server resolve for local ice candidate
    
 }
 

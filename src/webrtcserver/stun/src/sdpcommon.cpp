@@ -3,12 +3,14 @@
 #include "base/logger.h"
 #include <Agent.h>
 
-
+#include "Settings.h"
 
 using namespace base;
 using namespace stun;
 using namespace std::chrono_literals;
 using std::chrono::system_clock;
+
+//#define arvind 1
 
 namespace rtc {
 
@@ -270,7 +272,7 @@ int addr_set_port(struct sockaddr *sa, uint16_t port) {
 	}
 }
 
-int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count)
+int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count, char *mac_addr)
 {
     
     if (!addr_is_any((struct sockaddr *)&bound.addr)) {
@@ -304,13 +306,23 @@ int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count)
             candidate.mType = Candidate::Type::Host;
             
             SInfo  <<  " Name: " <<  interface_a.name;
+          
                        
             if(!interface_a.is_internal)
             {
  
                 struct sockaddr* sa = (struct sockaddr*)&interface_a.address;
+                #if arvind
                 
-                
+                if(Settings::configuration.is_ipv4 && sa->sa_family == AF_INET6 )
+                {
+                  continue;    
+                }else if(!Settings::configuration.is_ipv4 && sa->sa_family == AF_INET )
+                {
+                  continue;  
+                }
+                #endif
+
            	socklen_t len;
 		if (sa &&
 		    (sa->sa_family == AF_INET
@@ -324,6 +336,15 @@ int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count)
 					current->len = len;
 					addr_set_port((struct sockaddr *)&current->addr, port);
 					++current;
+                                        
+                                        if(ret == 1)
+                                        {
+                                            snprintf(mac_addr,18, "%02x%02x%02%02x%02x%02x",
+                                            interface_a.phys_addr[0], interface_a.phys_addr[1],
+                                            interface_a.phys_addr[2], interface_a.phys_addr[3],
+                                            interface_a.phys_addr[4], interface_a.phys_addr[5]);
+                                                SInfo  <<  " mac_addr: " <<  mac_addr;
+                                        }
 				}
 			}
 		}

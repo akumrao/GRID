@@ -32,6 +32,9 @@ Base_API extern const char* separator;
 /// '/' on unix and '\\' on windows.
 Base_API extern const char delimiter;
 
+
+Base_API std::string currentDir();
+
 /// Returns the file name and extension part of the given path.
 Base_API std::string filename(const std::string& path);
 

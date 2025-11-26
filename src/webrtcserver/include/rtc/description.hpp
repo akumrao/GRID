@@ -49,7 +49,7 @@ typedef struct ice_description {
 	int candidates_count{0};
 	bool finished{false};
         
-        
+    
     Candidate *ice_find_candidate_from_addr( const addr_record_t *record,  Candidate::Type type)
     {
 
@@ -72,6 +72,24 @@ typedef struct ice_description {
             return NULL;
     }
         
+    
+    #if AGENT_DEBUG
+       
+    std::string dump()
+    {
+        std::string ret = "[";
+        for( int i =0; i < candidates_count; ++i)
+        {
+
+            Candidate *cur = & candidates[i];
+
+            ret += "\"" +cur->dump() + (i < candidates_count-1? "\", ":"\"");
+        }
+         ret +="]";
+        return ret;
+    }
+    #endif 
+
         
 } ice_description_t;
 
@@ -328,7 +346,7 @@ public:
 
 	static Type stringToType(const string &typeString);
 	static string typeToString(Type type);
-
+        Role mRole;
 private:
 	Candidate defaultCandidate() const;
 	shared_ptr<Entry> createEntry(string mline, string mid, Direction dir);
@@ -337,7 +355,7 @@ private:
 	Type mType;
 
 	// Session-level attributes
-	Role mRole;
+	
 	string mUsername;
 	string mSessionId;
 	std::vector<string> mIceOptions;

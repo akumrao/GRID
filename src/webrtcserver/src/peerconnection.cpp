@@ -8,7 +8,7 @@
 #include "impl/dtlstransport.hpp"
 #include "impl/icetransport.hpp"
 #include "impl/internals.hpp"
-#include "impl/peerconnection.hpp"
+#include "impl/peerconnection_imp.hpp"
 #include "impl/sctptransport.hpp"
 #include "impl/threadpool.hpp"
 #include "impl/track.hpp"
@@ -168,7 +168,7 @@ void PeerConnection::gatherLocalCandidates(std::vector<IceServer> additionalIceS
 
 void PeerConnection::setRemoteDescription(Description description) {
 	std::unique_lock signalingLock(impl()->signalingMutex);
-	PLOG_INFO << "Setting remote description: " <<  description.type(); //string(description);
+	SInfo << "Setting remote description: " <<  description.type(); //string(description);
 
 	if (description.type() == Description::Type::Rollback) {
 		// This is mostly useless because we accept any offer
@@ -271,7 +271,7 @@ void PeerConnection::setRemoteDescription(Description description) {
 
 void PeerConnection::addRemoteCandidate(Candidate candidate) {
 	std::unique_lock signalingLock(impl()->signalingMutex);
-	PLOG_VERBOSE << "Adding remote candidate: " << string(candidate);
+	SInfo << "Adding remote candidate: " << string(candidate);
 	impl()->processRemoteCandidate(std::move(candidate));
 }
 

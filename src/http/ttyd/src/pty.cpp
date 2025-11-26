@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+//#include <unistd.h>
 
 #include "base/logger.h"
 using namespace base;
@@ -216,7 +216,7 @@ bool conpty_init() {
 static WCHAR *to_utf16(char *str) {
   int len = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
   if (len <= 0) return NULL;
-  WCHAR *wstr = xmalloc((len + 1) * sizeof(WCHAR));
+  WCHAR *wstr = (WCHAR *)xmalloc((len + 1) * sizeof(WCHAR));
   if (len != MultiByteToWideChar(CP_UTF8, 0, str, -1, wstr, len)) {
     free(wstr);
     return NULL;
@@ -338,13 +338,13 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   SetConsoleCtrlHandler(NULL, FALSE);
 
   int status = 1;
-  process->in = xmalloc(sizeof(uv_pipe_t));
-  process->out = xmalloc(sizeof(uv_pipe_t));
+  process->in = (uv_pipe_t*) xmalloc(sizeof(uv_pipe_t));
+  process->out = (uv_pipe_t*)xmalloc(sizeof(uv_pipe_t));
   uv_pipe_init(process->loop, process->in, 0);
   uv_pipe_init(process->loop, process->out, 0);
 
-  uv_connect_t *in_req = xmalloc(sizeof(uv_connect_t));
-  uv_connect_t *out_req = xmalloc(sizeof(uv_connect_t));
+  uv_connect_t *in_req = (uv_connect_t*)xmalloc(sizeof(uv_connect_t));
+  uv_connect_t *out_req = (uv_connect_t*) xmalloc(sizeof(uv_connect_t));
   uv_pipe_connect(in_req, process->in, in_name, connect_cb);
   uv_pipe_connect(out_req, process->out, out_name, connect_cb);
 

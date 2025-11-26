@@ -67,7 +67,7 @@ namespace base {
 
             }
 
-            void GetAddrInfoReq::resolve(const std::string& host, int port, uv_loop_t * loop, void* ptr ) {
+            void GetAddrInfoReq::resolve(const std::string& host, int port, uv_loop_t * loop, void* ptr, bool hostname ) {
 
                 req = new uv_getaddrinfo_t; 
                 stTmp *tmp = new stTmp;
@@ -91,6 +91,7 @@ namespace base {
                 hints.ai_flags = AI_ADDRCONFIG;
 
                 //if (mode != ICE_RESOLVE_MODE_LOOKUP)
+                if(!hostname)
                 hints.ai_flags |= AI_NUMERICHOST | AI_NUMERICSERV;  // for simple simple lookup for deep looup remove this line
 
                 r = uv_getaddrinfo(loop,
