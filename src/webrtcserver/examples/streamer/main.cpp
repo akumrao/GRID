@@ -28,12 +28,10 @@
 //#define VIDEOMEDIA 1
 
 
-#define CERTFROMFILE 2
+#define CERTFROMFILE 1
 
 using namespace rtc;
 using namespace std;
-//using namespace std::chrono_literals;
-
 using namespace base;
 using namespace base::net;
 
@@ -152,10 +150,6 @@ void sendSdp( const std::string &sdp, const std::string &type   )
                 
 }
 
-/// Incomming message handler for websocket
-/// @param message Incommint message
-/// @param config Configuration
-/// @param ws Websocket
 
 
 #if !defined( localtesting) && !defined(remotetesting)
@@ -551,7 +545,6 @@ int main(int argc, char **argv)
      
     Async async;
     
-    test();
 
     if (printHelp) {
         cout << "usage: stream-h264 [-a opus_samples_folder] [-b h264_samples_folder] [-d ip_address] [-p port] [-v] [-h]" << endl
@@ -573,8 +566,8 @@ int main(int argc, char **argv)
     config.disableAutoNegotiation = true;
     // read cert from file
 #if CERTFROMFILE == 1
-    config.keyPemFile = "/var/tmp/key/private_key.pem";
-    config.certificatePemFile = "/var/tmp/key/certificate.crt";  
+    config.keyPemFile =  Settings::configuration.key;
+    config.certificatePemFile = Settings::configuration.certPemFile;  
     config.keyPemPass = "12345678";
     
 #elif CERTFROMFILE == 2

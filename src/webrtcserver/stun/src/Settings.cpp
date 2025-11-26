@@ -111,10 +111,12 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
     if(!cnfg.loaded())     
     {
         cnfg.root = {
-          {"logLevel", "info"},
-          {"user", "4Pfs"},
-          {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
-          {"remoteip", {"192.168.0.19" }}
+            {"logLevel", "info"},
+            {"user", "4Pfs"},
+            {"passwd", "BsX4g0brln0+kXB/SxXSfI"},
+            { "key", "/var/tmp/key/private_key.pem"},
+            { "certPemFile", "/var/tmp/key/certificate.crt"},  
+            {"remoteip", {"192.168.0.19" }}
           };
 
         std::string dir = base::fs::dirname(cnfg.path());
@@ -182,6 +184,17 @@ void Settings::SetConfiguration(  base::cnfg::Configuration &cnfg , int argc)
 //    {
 //        Settings::configuration.remoteport = node["remoteport"].get<uint16_t>();
 //    }
+    
+    
+    if (node.find("key") != node.end())
+    {
+        Settings::configuration.key = node["key"].get<std::string>();
+    }
+    
+    if (node.find("certPemFile") != node.end())
+    {
+        Settings::configuration.certPemFile = node["certPemFile"].get<std::string>();
+    }
 
     if (node.find("datachannel") != node.end())
     {

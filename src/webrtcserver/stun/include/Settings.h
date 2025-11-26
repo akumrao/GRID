@@ -32,6 +32,10 @@ public:
         //bool is_ipv4;
         std::string remoteip;
         std::string datachannel;
+        
+        std::string key;
+        std::string certPemFile;
+        
 
     };
 

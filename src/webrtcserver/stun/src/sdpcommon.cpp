@@ -339,10 +339,10 @@ int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count, ch
                                         
                                         if(ret == 1)
                                         {
-                                            snprintf(mac_addr,18, "%02x%02x%02%02x%02x%02x",
-                                            interface_a.phys_addr[0], interface_a.phys_addr[1],
-                                            interface_a.phys_addr[2], interface_a.phys_addr[3],
-                                            interface_a.phys_addr[4], interface_a.phys_addr[5]);
+                                            snprintf(mac_addr,18, "%02x%02x%02x%02x%02x%02x",
+                                            (unsigned char)interface_a.phys_addr[0], (unsigned char)interface_a.phys_addr[1],
+                                            (unsigned char)interface_a.phys_addr[2], (unsigned char)interface_a.phys_addr[3],
+                                            (unsigned char)interface_a.phys_addr[4], (unsigned char)interface_a.phys_addr[5]);
                                                 SInfo  <<  " mac_addr: " <<  mac_addr;
                                         }
 				}
