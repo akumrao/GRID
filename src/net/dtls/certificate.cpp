@@ -305,7 +305,7 @@ Certificate* Certificate::Generate(CertificateType type, const string &commonNam
 	// See https://www.rfc-editor.org/rfc/rfc8827.html#section-6.5
 	case CertificateType::Default:
 	case CertificateType::Ecdsa: {
-		PLOG_VERBOSE << "Generating ECDSA P-256 key pair";
+		STrace << "Generating ECDSA P-256 key pair";
 #if OPENSSL_VERSION_NUMBER >= 0x30000000
 		pkey = EVP_EC_gen("prime256v1");
 		if (!pkey)
@@ -326,7 +326,7 @@ Certificate* Certificate::Generate(CertificateType type, const string &commonNam
 		break;
 	}
 	case CertificateType::Rsa: {
-		PLOG_VERBOSE << "Generating RSA key pair";
+		STrace << "Generating RSA key pair";
 		const unsigned int bits = 2048;
 #if OPENSSL_VERSION_NUMBER >= 0x30000000
 		pkey = EVP_RSA_gen(bits);
