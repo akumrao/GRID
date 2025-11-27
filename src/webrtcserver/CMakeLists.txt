@@ -188,7 +188,7 @@ set(LIBDATACHANNEL_HEADERS
 )
 
 set(LIBDATACHANNEL_IMPL_SOURCES
-	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/certificate.cpp
+	#${CMAKE_CURRENT_SOURCE_DIR}/src/impl/certificate.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/channel.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/datachannel.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/dtlssrtptransport.cpp
@@ -199,7 +199,7 @@ set(LIBDATACHANNEL_IMPL_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/logcounter.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/sctptransport.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/threadpool.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/tls.cpp
+	#${CMAKE_CURRENT_SOURCE_DIR}/src/impl/tls.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/track.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/utils.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/processor.cpp
@@ -213,12 +213,12 @@ set(LIBDATACHANNEL_IMPL_SOURCES
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/tlstransport.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/transport.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/verifiedtlstransport.cpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/wstransport.cpp
+#	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/wstransport.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/wshandshake.cpp
 )
 
 set(LIBDATACHANNEL_IMPL_HEADERS
-	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/certificate.hpp
+	#${CMAKE_CURRENT_SOURCE_DIR}/src/impl/certificate.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/channel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/datachannel.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/dtlssrtptransport.hpp
@@ -231,7 +231,7 @@ set(LIBDATACHANNEL_IMPL_HEADERS
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/logcounter.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/sctptransport.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/threadpool.hpp
-	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/tls.hpp
+#	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/tls.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/track.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/utils.hpp
 	${CMAKE_CURRENT_SOURCE_DIR}/src/impl/processor.hpp
@@ -334,9 +334,9 @@ endif()
 add_subdirectory(deps/libsrtp)
 
 if(USE_MBEDTLS)  
-file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"   "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" "../net/srcmbedtls/*.cpp")
+file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"   "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" "../net/srcmbedtls/*.cpp"  "../net/dtls/*.cpp")
 else()
-file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"  "../net/src/*.cpp" "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" )
+file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"  "../net/src/*.cpp" "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" "../net/dtls/*.cpp")
 endif()   
 
 
@@ -373,7 +373,7 @@ target_include_directories(datachannel-static PUBLIC
     deps/libsrtp/include
     deps/json/include
     deps/usrsctp/usrsctplib
-    ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/  ../libuv/include ../libuv/src ../build/ ../http_parser/ 
+    ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/  ../libuv/include ../libuv/src ../build/ ../http_parser/ ../net/dtls/
 )
 
 

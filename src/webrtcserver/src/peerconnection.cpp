@@ -1,10 +1,8 @@
-
-
 #include "peerconnection.hpp"
 #include "common.hpp"
 #include "rtp.hpp"
 
-#include "impl/certificate.hpp"
+#include "certificate.hpp"
 #include "impl/dtlstransport.hpp"
 #include "impl/icetransport.hpp"
 #include "impl/internals.hpp"

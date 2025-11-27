@@ -337,7 +337,7 @@ int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count, ch
 					addr_set_port((struct sockaddr *)&current->addr, port);
 					++current;
                                         
-                                        if(ret == 1)
+                                        if(ret == 1 && mac_addr)
                                         {
                                             snprintf(mac_addr,18, "%02x%02x%02x%02x%02x%02x",
                                             (unsigned char)interface_a.phys_addr[0], (unsigned char)interface_a.phys_addr[1],

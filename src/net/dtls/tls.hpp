@@ -2,10 +2,12 @@
 #ifndef RTC_TLS_H
 #define RTC_TLS_H
 
-#include "common.hpp"
+//#include "common.hpp"
 
 #include <chrono>
+#include <string>
 
+using std::string;
 
 #if USE_MBEDTLS
 

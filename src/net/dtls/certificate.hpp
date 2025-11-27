@@ -2,16 +2,50 @@
 #ifndef RTC_IMPL_CERTIFICATE_H
 #define RTC_IMPL_CERTIFICATE_H
 
-#include "description.hpp" // for CertificateFingerprint
-#include "common.hpp"
-#include "configuration.hpp" // for CertificateType
-#include "init.hpp"
+//#include "description.hpp" // for CertificateFingerprint
+//#include "common.hpp"
+//#include "configuration.hpp" // for CertificateType
+//#include "init.hpp"
 #include "tls.hpp"
 
 #include <future>
 #include <tuple>
 
+
+namespace rtc {
+
+    
+    typedef enum {
+	RTC_CERTIFICATE_DEFAULT = 0, // ECDSA
+	RTC_CERTIFICATE_ECDSA = 1,
+	RTC_CERTIFICATE_RSA = 2,
+    } rtcCertificateType;
+
+
+    enum class CertificateType {
+	Default = RTC_CERTIFICATE_DEFAULT, // ECDSA
+	Ecdsa = RTC_CERTIFICATE_ECDSA,
+	Rsa = RTC_CERTIFICATE_RSA
+    };
+    
+    
+    struct CertificateFingerprint {
+	enum class Algorithm { Sha1, Sha224, Sha256, Sha384, Sha512 };
+	static string AlgorithmIdentifier(Algorithm algorithm);
+	static size_t AlgorithmSize(Algorithm algorithm);
+
+	bool isValid() const;
+
+	Algorithm algorithm;
+	string value;
+};
+
+
+}
+
+
 namespace rtc::impl {
+
 
 class Certificate {
 public:

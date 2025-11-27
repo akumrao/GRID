@@ -1,7 +1,7 @@
 
 
 #include "certificate.hpp"
-#include "threadpool.hpp"
+#include "base/logger.h"
 
 #include <algorithm>
 #include <cassert>
@@ -10,6 +10,9 @@
 #include <mutex>
 #include <sstream>
 #include <unordered_map>
+#include <cstring>
+
+using namespace base;
 
 namespace rtc::impl {
 
@@ -64,7 +67,7 @@ Certificate::Certificate(mbedtls_x509_crt *crt, mbedtls_pk_context* pk)
       mFingerprint(make_fingerprint(crt, CertificateFingerprint::Algorithm::Sha256)) {}
 
 Certificate* Certificate::FromString(string crt_pem, string key_pem) {
-	PLOG_DEBUG << "Importing certificate from PEM string (MbedTLS)";
+	SDebug << "Importing certificate from PEM string (MbedTLS)";
 
 	auto crt = mbedtls::new_x509_crt();
 	auto pk = mbedtls::new_pk_context();
@@ -83,7 +86,7 @@ Certificate* Certificate::FromString(string crt_pem, string key_pem) {
 
 Certificate* Certificate::FromFile(const string &crt_pem_file, const string &key_pem_file,
                                   const string &pass) {
-	PLOG_DEBUG << "Importing certificate from PEM file (MbedTLS): " << crt_pem_file;
+	SDebug << "Importing certificate from PEM file (MbedTLS): " << crt_pem_file;
 
 	auto crt = mbedtls::new_x509_crt();
 	auto pk = mbedtls::new_pk_context();
@@ -97,7 +100,7 @@ Certificate* Certificate::FromFile(const string &crt_pem_file, const string &key
 }
 
 Certificate* Certificate::Generate(CertificateType type, const string &commonName) {
-	PLOG_DEBUG << "Generating certificate (MbedTLS)";
+	SDebug << "Generating certificate (MbedTLS)";
 
 	mbedtls_entropy_context entropy;
 	mbedtls_ctr_drbg_context drbg;
@@ -222,7 +225,7 @@ int dummy_pass_cb(char *buf, int size, int /*rwflag*/, void *u) {
 } // namespace
 
 Certificate* Certificate::FromString(string crt_pem, string key_pem) {
-	PLOG_DEBUG << "Importing certificate from PEM string (OpenSSL)";
+	SDebug << "Importing certificate from PEM string (OpenSSL)";
 
 	BIO *bio = BIO_new(BIO_s_mem());
 	BIO_write(bio, crt_pem.data(), int(crt_pem.size()));
@@ -250,7 +253,7 @@ Certificate* Certificate::FromString(string crt_pem, string key_pem) {
 
 Certificate* Certificate::FromFile(const string &crt_pem_file, const string &key_pem_file,
                                   const string &pass) {
-	PLOG_DEBUG << "Importing certificate from PEM file (OpenSSL): " << crt_pem_file;
+	SDebug << "Importing certificate from PEM file (OpenSSL): " << crt_pem_file;
 
 	BIO *bio = openssl::BIO_new_from_file(crt_pem_file);
 	if (!bio)
@@ -281,7 +284,7 @@ Certificate* Certificate::FromFile(const string &crt_pem_file, const string &key
 }
 
 Certificate* Certificate::Generate(CertificateType type, const string &commonName) {
-	PLOG_DEBUG << "Generating certificate (OpenSSL)";
+	SDebug << "Generating certificate (OpenSSL)";
 
 	X509 *x509 = X509_new();
         

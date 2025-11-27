@@ -4,6 +4,7 @@
 #define RTC_DESCRIPTION_HPP
 
 #include "candidate.hpp"
+#include "certificate.hpp"
 #include "common.hpp"
   #include <optional>
 #include <iostream>
@@ -22,16 +23,6 @@ const string DEFAULT_OPUS_AUDIO_PROFILE =
 const string DEFAULT_H264_VIDEO_PROFILE =
     "profile-level-id=42e01f;packetization-mode=1;level-asymmetry-allowed=1";
 
-struct CertificateFingerprint {
-	enum class Algorithm { Sha1, Sha224, Sha256, Sha384, Sha512 };
-	static string AlgorithmIdentifier(Algorithm algorithm);
-	static size_t AlgorithmSize(Algorithm algorithm);
-
-	bool isValid() const;
-
-	Algorithm algorithm;
-	string value;
-};
 
 
 typedef struct ice_description {

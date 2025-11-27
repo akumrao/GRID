@@ -6,6 +6,7 @@
 #include "common.hpp"
 #include "RestAPI.h"
 #include <vector>
+#include "certificate.hpp"
 
 namespace rtc {
 
@@ -49,11 +50,7 @@ struct RTC_CPP_EXPORT ProxyServer {
 	optional<string> password;
 };
 
-enum class CertificateType {
-	Default = RTC_CERTIFICATE_DEFAULT, // ECDSA
-	Ecdsa = RTC_CERTIFICATE_ECDSA,
-	Rsa = RTC_CERTIFICATE_RSA
-};
+
 
 enum class TransportPolicy { All = RTC_TRANSPORT_POLICY_ALL, Relay = RTC_TRANSPORT_POLICY_RELAY };
 
@@ -110,34 +107,7 @@ private:
            
 };
 
-#ifdef RTC_ENABLE_WEBSOCKET
 
-struct WebSocketConfiguration {
-	bool disableTlsVerification = false; // if true, don't verify the TLS certificate
-	optional<ProxyServer> proxyServer;   // only non-authenticated http supported for now
-	std::vector<string> protocols;
-	optional<std::chrono::milliseconds> connectionTimeout; // zero to disable
-	optional<std::chrono::milliseconds> pingInterval;      // zero to disable
-	optional<int> maxOutstandingPings;
-	optional<string> caCertificatePemFile;
-	optional<string> certificatePemFile;
-	optional<string> keyPemFile;
-	optional<string> keyPemPass;
-	optional<size_t> maxMessageSize;
-};
-
-struct WebSocketServerConfiguration {
-	uint16_t port = 8080;
-	bool enableTls = false;
-	optional<string> certificatePemFile;
-	optional<string> keyPemFile;
-	optional<string> keyPemPass;
-	optional<string> bindAddress;
-	optional<std::chrono::milliseconds> connectionTimeout;
-	optional<size_t> maxMessageSize;
-};
-
-#endif
 
 } // namespace rtc
 
