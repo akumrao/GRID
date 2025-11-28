@@ -99,7 +99,7 @@ void SslConnection::on_read(const char* data, size_t len)
   
 }
 
-void SslConnection::on_connect()
+void SslConnection::on_connect()  // only called when called from client. For server handshake is done at init
 {
     LTrace("SSL On connect")
  

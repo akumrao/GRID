@@ -892,6 +892,10 @@ SSLAdapter::SSLAdapter(SslConnection *socket)
       
 void  SSLAdapter::initSSL()
 {
+    if(server)
+        initServer();
+    else        
+        initClient();
     
 }
    
@@ -904,7 +908,7 @@ void SSLAdapter::initClient()
         assert(!_socket->context()->isForServerUse());
          */
 
-        if (!ctxClient)
+    if (!ctxClient)
     {
         ctxClient = InitCTX(false); /* initialize SSL */
     }
@@ -921,7 +925,7 @@ void SSLAdapter::initClient()
     _writeBIO = BIO_new(BIO_s_mem());
     SSL_set_bio(_ssl, _readBIO, _writeBIO);
     SSL_set_connect_state(_ssl);
-    SSL_do_handshake(_ssl);
+   // SSL_do_handshake(_ssl);
 }
 
 void SSLAdapter::initServer()  //(SSL* ssl)
@@ -932,7 +936,7 @@ void SSLAdapter::initServer()  //(SSL* ssl)
             _socket->useContext(SSLManager::instance().defaultServerContext());
         assert(_socket->context()->isForServerUse());*/
 
-        if (!ctxServer)
+    if (!ctxServer)
     {
         ctxServer = InitCTX(true); /* initialize SSL */
     }
@@ -992,17 +996,18 @@ void SSLAdapter::addIncomingData(const char *data, size_t len)
     assert(_readBIO);
     BIO_write(_readBIO, data, (int) len);
     flush();
+    flush();
 }
 
 void SSLAdapter::addOutgoingData(const std::string &s)
 {
     addOutgoingData(s.c_str(), s.size());
-    flush();
 }
 
 void SSLAdapter::addOutgoingData(const char *data, size_t len)
 {
     std::copy(data, data + len, std::back_inserter(_bufferOut));
+    flush();
 }
 
 void SSLAdapter::handshake()
@@ -1112,7 +1117,7 @@ void SSLAdapter::handleError(int rc)
         char buffer[256];
         ERR_error_string_n(ERR_get_error(), buffer, sizeof(buffer));
         std::string msg(buffer);
-        LTrace(msg);
+        SError << msg;
         // throw std::runtime_error("SSL connection failed: " + msg);
         //_socket->setError("SSL connection failed: " + msg);  //arvind
         break;

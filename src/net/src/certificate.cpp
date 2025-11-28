@@ -14,6 +14,62 @@
 
 using namespace base;
 
+namespace rtc
+{
+    size_t
+    CertificateFingerprint::AlgorithmSize(CertificateFingerprint::Algorithm fingerprintAlgorithm) {
+            switch (fingerprintAlgorithm) {
+            case CertificateFingerprint::Algorithm::Sha1:
+                    return 20;
+            case CertificateFingerprint::Algorithm::Sha224:
+                    return 28;
+            case CertificateFingerprint::Algorithm::Sha256:
+                    return 32;
+            case CertificateFingerprint::Algorithm::Sha384:
+                    return 48;
+            case CertificateFingerprint::Algorithm::Sha512:
+                    return 64;
+            default:
+                    return 0;
+            }
+    }
+
+    std::string CertificateFingerprint::AlgorithmIdentifier(
+        CertificateFingerprint::Algorithm fingerprintAlgorithm) {
+            switch (fingerprintAlgorithm) {
+            case CertificateFingerprint::Algorithm::Sha1:
+                    return "sha-1";
+            case CertificateFingerprint::Algorithm::Sha224:
+                    return "sha-224";
+            case CertificateFingerprint::Algorithm::Sha256:
+                    return "sha-256";
+            case CertificateFingerprint::Algorithm::Sha384:
+                    return "sha-256";
+            case CertificateFingerprint::Algorithm::Sha512:
+                    return "sha-512";
+            default:
+                    return "unknown";
+            }
+    }
+
+    bool CertificateFingerprint::isValid() const {
+            size_t expectedSize = AlgorithmSize(this->algorithm);
+            if (expectedSize == 0 || this->value.size() != expectedSize * 3 - 1) {
+                    return false;
+            }
+
+            for (size_t i = 0; i < this->value.size(); ++i) {
+                    if (i % 3 == 2) {
+                            if (this->value[i] != ':')
+                                    return false;
+                    } else {
+                            if (!std::isxdigit(this->value[i]))
+                                    return false;
+                    }
+            }
+            return true;
+    }
+}
 namespace rtc::impl {
 
 
