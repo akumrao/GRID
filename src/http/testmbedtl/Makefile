@@ -1,6 +1,6 @@
 ################################################################################
-### CUSTOMIZE BELOW HERE #######################################################
-
+### CUSTOMIZE BELOW HERE  #######################################################
+#imp go to ./src/webrtcserver/deps/mbedtls/buildx64.sh and run it before make
 CC	= gcc
 CXX     = g++
 TARGET=runHttp # define the name of the executable
@@ -9,7 +9,7 @@ SOURCES=$(wildcard *.cpp ../src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix
 CXXFLAGS   := -g  -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized
  
 
-CPPFLAGS   := -I../../webrtcserver/deps/mbedtls/build/include -I../../mbedtls/build/ -I../../json/include/  -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/incmbedtls/ -I../../net/uv_multiplex/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
+CPPFLAGS   := -I../../webrtcserver/deps/mbedtls/include -I../../mbedtls/ -I../../json/include/  -I../../base/token/ -I../../http/include/ -I../../base/include/ -I../../net/incmbedtls/ -I../../net/uv_multiplex/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
 -DHTTPSSL=1  
               
 

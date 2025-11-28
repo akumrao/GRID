@@ -85,6 +85,7 @@ public:
     /// If no connection is established, returns nullptr.
 //    SSLSession::Ptr currentSession();
 
+/*
     /// Returns true if a reused session was negotiated during
     /// the handshake.
     bool sessionWasReused();
@@ -95,7 +96,7 @@ public:
 
     /// Returns the peer's certificate.
     X509* peerCertificate() const;
-
+*/
 //    net::TransportType transport() const override;
 
    // virtual void acceptConnection() override;

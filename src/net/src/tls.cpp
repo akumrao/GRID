@@ -1,6 +1,6 @@
 
 
-#include "tls.hpp"
+#include "net/tls.hpp"
  #include <mutex> 
 #include <fstream>
 #include <stdexcept>
@@ -104,11 +104,16 @@ void init() {
 	static std::mutex mutex;
 	static bool done = false;
 
-	std::lock_guard lock(mutex);
+        
+        mutex.lock();
+        
+	//std::lock_guard lock(mutex);
 	if (!std::exchange(done, true)) {
 		OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS | OPENSSL_INIT_LOAD_CRYPTO_STRINGS, nullptr);
 		OPENSSL_init_crypto(OPENSSL_INIT_LOAD_CRYPTO_STRINGS, nullptr);
 	}
+        
+        mutex.unlock();
 }
 
 string error_string(unsigned long error) {

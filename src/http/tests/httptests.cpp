@@ -68,26 +68,7 @@ public:
     }
     
     
-      void sendPing() {
-      
-        
-        SInfo << "No of Connectons " << this->GetNumConnections();
-        
-        for (auto* connection :  this->GetConnections())
-        {
-            
-#if HTTPSSL
-                    
-             WebSocketConnection *con = ((HttpsConnection*)connection)->getWebSocketCon();
-#else
-             WebSocketConnection *con = ((HttpConnection*)connection)->getWebSocketCon();
-#endif
-             if(con)
-             con->ping("arvind");
-
-        }
-         
-    }
+  
     
 };
 
@@ -97,7 +78,8 @@ int main(int argc, char** argv) {
             
    Logger::instance().add(ch);
     //test::init();
-  
+   
+   SInfo << "https://localhost:8000";
     
    StreamingResponderFactory *stream =   new StreamingResponderFactory();
             

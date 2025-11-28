@@ -76,7 +76,8 @@ int main(int argc, char** argv) {
    Logger::instance().add(ch);
     //test::init();
   
-    
+   SInfo << "https://localhost:8000";
+
    StreamingResponderFactory *stream =   new StreamingResponderFactory();
             
    Application app;
