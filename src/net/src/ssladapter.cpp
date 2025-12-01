@@ -30,7 +30,7 @@ https://github.com/deleisha/evt-tls/issues/21    // very bad code please do not 
 #include "Settings.h"
 #endif 
 
-#define FROMFILE 1
+//#define FROMFILE 1
 //#define DEFULTTEST 1
 
 
@@ -320,6 +320,8 @@ void SSLAdapter::initSSL()
 
 #else 
     
+        //config.keyPemFile = "/mnt/key/private_key.pem";
+        //config.certificatePemFile  = "/mnt/key/certificate.crt";       
         config.init();
        auto [crt, pk] = config.mCertificate->credentials();
 
@@ -465,7 +467,7 @@ void SSLAdapter::shutdown()
 //}
 
 
-int SSLAdapter::handshake()
+int SSLAdapter::handshake() //// handshake shoud be callled from client only
 {
     
 
@@ -594,7 +596,7 @@ void SSLAdapter::addIncomingData(const char *data, size_t len)  // onread
      
      
        
-    if( handshake_state == STATE_HANDSHAKING )
+    if( handshake_state == STATE_HANDSHAKING ) //// handshake shoud be callled from client only
     {   handshake();
         return;
     }    
@@ -734,7 +736,7 @@ SSL_CTX *InitCTX(bool server)
     SSL_CTX *ctx;
 
 
-    std::string KeyFile = "/var/tmp/key/server-key.pem";
+    std::string KeyFile = "/var/tmp/key/private_key.pem";
     #if SETTINGFromCONFIG
     KeyFile = Settings::configuration.dtlsPrivateKeyFile;
     #endif
@@ -770,7 +772,7 @@ SSL_CTX *InitCTX(bool server)
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if FROMFILE
 
-    std::string CertFile = "/var/tmp/key/server-cert.pem";
+    std::string CertFile ="/var/tmp/key/certificate.crt";
     #if SETTINGFromCONFIG
     CertFile = Settings::configuration.dtlsCertificateFile;
     #endif
@@ -960,7 +962,7 @@ void  SSLAdapter::initSSL()
         return ;
     }
 
-    SSL_set_bio(_ssl, ssl_bio_, app_bio_);
+    SSL_set_bio(_ssl, ssl_bio_, ssl_bio_);
     
    
     if(server)
@@ -980,7 +982,8 @@ void  SSLAdapter::initSSL()
 
 void SSLAdapter::shutdown()
 {
-    LTrace("Shutdown") if (_ssl)
+   // LTrace("Shutdown") 
+    if (_ssl)
     {
         // LTrace("Shutdown SSL")
 
@@ -1018,97 +1021,35 @@ void SSLAdapter::shutdown()
 //    return SSL_pending(_ssl);
 //}
 
-void SSLAdapter::addIncomingData(const char *data, size_t sz) // from onread
+void SSLAdapter::addIncomingData(const char *data, size_t len) // from onread
 {
-      LTrace("Add incoming data: ", sz)
-//    assert(ssl_bio_);
-//    BIO_write(ssl_bio_, data, (int) len);
-//    flush();
-//    flush();
-    
-    
-//    int offset = 0;
-//    int rv = 0;
-//    int i  = 0;
-//    assert( data != NULL && "invalid argument passed");
-//    assert( sz > 0 && "Size of data should be positive");
-//    for( offset = 0; offset < sz; offset += i ) {
-//        //handle error condition
-//        i =  BIO_write(c->app_bio, data + offset, sz - offset);
-//
-//        //if handshake is not complete, do it again
-//        if ( evt_tls_is_handshake_over(c) ) {
-//            rv = evt__tls__op(c, EVT_TLS_OP_READ, NULL, 0);
-//        }
-//        else {
-//            rv = evt__tls__op(c, EVT_TLS_OP_HANDSHAKE, NULL, 0);
-//        }
-//    }
-//    return rv;
-    
-              
-        BIO_write( app_bio_, data, sz);
-       if( !SSL_is_init_finished(_ssl)) {
-        if( STATE_HANDSHAKE_DONE !=   handshake() ) {
-            //recheck if handshake is complete now
-            return ;
-        }
-       }
-    
-  
-            
-              
-              
-    
-    int offset = 0;
-    int rv = 0;
-    int i  = 0;
-    assert( data != NULL && "invalid argument passed");
-    assert( sz > 0 && "Size of data should be positive");
-    for( offset = 0; offset < sz; offset += i ) {
-        //handle error condition
-        i =  BIO_write(app_bio_, data + offset, sz - offset);
 
-        //if handshake is not complete, do it again
-        if ( SSL_is_init_finished(_ssl) &&  handshake_state == STATE_HANDSHAKE_DONE ) 
+    BIO_write( app_bio_,data , len);
+     
+    if( handshake_state == STATE_HANDSHAKING )
+    {   handshake(); // handshake shoud be callled from client only
+        return;
+    }    
+
+    while (true)
+    {
+    
+        memset((void*) data, 0, len);
+    
+        int rv = -1;
+        rv = SSL_read(_ssl, (unsigned char *)data, len);
+        rv =swrap_error_handler( rv);
+
+        if (rv > 0) {
+
+            _socket->on_read(data,  rv) ; 
+
+        } 
+        else
         {
-            
-            memset((void*) data, 0, sz);
-
-             int rv = -1;
-             rv = SSL_read(_ssl, (unsigned char *)data, sz);
-             rv =swrap_error_handler( rv);
-
-             if (rv == 1) {
-
-                 _socket->on_read(data,  rv) ; 
-
-             } 
-//             else if (rv == SSL_ERROR_WANT_READ ||
-//                        rv == SSL_ERROR_WANT_WRITE) {
-//               break;
-//             } else {
-//                 //SError << getTLSError(rv);
-//               break;
-//             }
-
-            
-            
-            
-           
+            break;
         }
-        else 
-        {
-        
-             handshake();
-            
-            
-            
-            //rv = evt__tls__op(c, EVT_TLS_OP_HANDSHAKE, NULL, 0);
-        }
-    }
-    return ;
-      
+   }
   
     
     
@@ -1263,7 +1204,8 @@ int SSLAdapter::handshake()
 
 void SSLAdapter::stay_uptodate( )
 {
- 
+    STrace << "stay_uptodate";
+    
     size_t pending = BIO_pending(app_bio_);
     if( pending > 0) {
 

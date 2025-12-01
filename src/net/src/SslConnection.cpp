@@ -59,8 +59,9 @@ SslConnection::SslConnection(Listener* listener, SSLContext::Ptr context, SSLSes
 
 SslConnection::~SslConnection()
 {
+     SInfo << "~SslConnection()";
     _sslAdapter.shutdown();
-    LTrace("Destroy")
+
 }
 
 void SslConnection::send(const char* data, size_t len)
