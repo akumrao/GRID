@@ -4,15 +4,14 @@
 CC	= gcc
 CXX     = g++
 TARGET=runtestSecTcpServer # define the name of the executable
-SOURCES=$(wildcard testSecTcpServer.cpp ../srcmbedtls/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp  ../../base/src/*.cpp )
+SOURCES=$(wildcard testSecTcpServer.cpp ../srcmbedtls/*.cpp ../src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp  ../../base/src/*.cpp )
 
-CXXFLAGS   := -g -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL -DFROMFILE=1
-
-              
-CPPFLAGS   := -I../../json/include/  -I../../base/include/ -I../../webrtcserver/deps/mbedtls/include -I../../net/incmbedtls/  -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
+CXXFLAGS   := -g -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL -DFROMFILE=1 -DUSE_MBEDTLS=1
 
               
-LDFLAGS   := -L/data/sound/lib -L/usr/lib/x86_64-linux-gnu
+CPPFLAGS   := -I../../json/include/  -I../../base/include/ -I../../webrtcserver/deps/mbedtls/include -I../../net/incmbedtls/  -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
+
+              
 
 LDLIBS    := -lpthread -lm -ldl 
 

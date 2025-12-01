@@ -5,7 +5,11 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
+ *  https://github.com/clibs/net/blob/master/src/net.c  // with flust and want to reade more ssl error
+
+
+// below code is very unstable an
+https://github.com/deleisha/evt-tls/issues/21    // very bad code please do not use it
  */
 
 
@@ -525,7 +529,7 @@ void  SSLAdapter::addOutgoingData(const char* data, size_t len)
     
 
     rv = (size_t)mbedtls_ssl_write( &_ssl, (const unsigned char *) data,  len);
-    // if (r <= 0) { handleError(r); }  // we are not sure why Mbedtls does not handle error, though openssl does it 
+    // if (r <= 0) { swrap_error_handler(r); }  // we are not sure why Mbedtls does not handle error, though openssl does it 
     // I have refered https://github.com/yodaos-project/ShadowNode.git
     
     
@@ -554,7 +558,7 @@ void  SSLAdapter::addOutgoingData(const char* data, size_t len)
 }
    
 
-void SSLAdapter::addIncomingData(const char *data, size_t len)
+void SSLAdapter::addIncomingData(const char *data, size_t len)  // onread
 {
    
      TLS_BIO_write( app_bio_,data , len);
@@ -693,9 +697,7 @@ const char defaultCertificate[]
       "-----END CERTIFICATE-----";
 
 
-static SSL_CTX *ctxClient = nullptr;
 
-static SSL_CTX *ctxServer = nullptr;
 
 SSL_CTX *InitCTX(bool server)
 {
@@ -703,12 +705,16 @@ SSL_CTX *InitCTX(bool server)
     SSL_CTX *ctx;
 
 
-    std::string KeyFile = "/var/tmp/key/private_key.pem";
+    std::string KeyFile = "/var/tmp/key/server-key.pem";
     #if SETTINGFromCONFIG
     KeyFile = Settings::configuration.dtlsPrivateKeyFile;
     #endif
 
     SSL_library_init();
+
+
+ //   ERR_load_BIO_strings();
+   // ERR_load_crypto_strings();
 
 
     OpenSSL_add_all_algorithms(); /* load & register all cryptos, etc. */
@@ -730,12 +736,12 @@ SSL_CTX *InitCTX(bool server)
     // Arvind TBD
     // SSL_CTX_set_session_cache_mode (ctx, SSL_SESS_CACHE_BOTH);
     // SSL_CTX_set_timeout (ctx, 300);  client side check code before enable it
-
+    
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if FROMFILE
 
-    std::string CertFile = "/var/tmp/key/certificate.crt";
+    std::string CertFile = "/var/tmp/key/server-cert.pem";
     #if SETTINGFromCONFIG
     CertFile = Settings::configuration.dtlsCertificateFile;
     #endif
@@ -875,10 +881,17 @@ void ShowCerts(SSL *ssl)
 SSLAdapter::SSLAdapter(SslConnection *socket)
     : _socket(socket),
       _ssl(nullptr),
-      _readBIO(nullptr),
-      _writeBIO(nullptr){LTrace("SSLAdapter")}
+      ssl_bio_(nullptr),
+      app_bio_(nullptr)
+{
+    
+    LTrace("SSLAdapter")
+}
 
-      SSLAdapter::~SSLAdapter()
+
+
+
+SSLAdapter::~SSLAdapter()
 {
     // LTrace("Destroy")
     if (_ssl)
@@ -886,69 +899,55 @@ SSLAdapter::SSLAdapter(SslConnection *socket)
         SSL_free(_ssl);
         _ssl = nullptr;
     }
-    // LTrace("Destroy: OK")
+    
+    SSL_CTX_free(ctx);
+    
+
+
+
+//    ENGINE_cleanup();
+  //  CONF_modules_unload(1);
+    ERR_free_strings();
+    EVP_cleanup();
+    sk_SSL_COMP_free(SSL_COMP_get_compression_methods());
+    //SSL_COMP_free_compression_methods();
+    CRYPTO_cleanup_all_ex_data();
+
+    
+
 }
       
       
 void  SSLAdapter::initSSL()
 {
+
+    
+     ctx = InitCTX(server); /* initialize SSL */
+     _ssl = SSL_new(ctx);
+
+     int r = BIO_new_bio_pair(&ssl_bio_, 0, &app_bio_, 0);
+    if (r != 1) {
+        SSL_free(_ssl);  _ssl = NULL;
+        return ;
+    }
+
+    SSL_set_bio(_ssl, ssl_bio_, app_bio_);
+    
+   
     if(server)
-        initServer();
-    else        
-        initClient();
+    {
+        SSL_set_accept_state(_ssl);
+    }
+    else
+        SSL_set_connect_state(_ssl);
+    
+    //SSL_do_handshake(_ssl);
+    
     
 }
    
-void SSLAdapter::initClient()
-{
-    LTrace("Init client")
-        /*assert(_socket);
-        if (!_socket->context())
-            _socket->useContext(SSLManager::instance().defaultClientContext());
-        assert(!_socket->context()->isForServerUse());
-         */
-
-    if (!ctxClient)
-    {
-        ctxClient = InitCTX(false); /* initialize SSL */
-    }
 
 
-    _ssl = SSL_new(ctxClient);
-
-    // TODO: Improve automatic SSL session handling.
-    // Maybe add a stored session to the network manager.
-    //            if (_socket->currentSession())
-    //               SSL_set_session(_ssl, _socket->currentSession()->sslSession());
-
-    _readBIO = BIO_new(BIO_s_mem());
-    _writeBIO = BIO_new(BIO_s_mem());
-    SSL_set_bio(_ssl, _readBIO, _writeBIO);
-    SSL_set_connect_state(_ssl);
-   // SSL_do_handshake(_ssl);
-}
-
-void SSLAdapter::initServer()  //(SSL* ssl)
-{
-    LTrace("Init server")
-        /*assert(_socket);
-        if (!_socket->context())
-            _socket->useContext(SSLManager::instance().defaultServerContext());
-        assert(_socket->context()->isForServerUse());*/
-
-    if (!ctxServer)
-    {
-        ctxServer = InitCTX(true); /* initialize SSL */
-    }
-
-
-    _ssl = SSL_new(ctxServer);
-    _readBIO = BIO_new(BIO_s_mem());
-    _writeBIO = BIO_new(BIO_s_mem());
-    SSL_set_bio(_ssl, _readBIO, _writeBIO);
-    SSL_set_accept_state(_ssl);
-    SSL_do_handshake(_ssl);
-}
 
 void SSLAdapter::shutdown()
 {
@@ -969,159 +968,331 @@ void SSLAdapter::shutdown()
             // flag by calling SSL_shutdown() once and be
             // done with it.
             int rc = SSL_shutdown(_ssl);
-            if (rc <= 0) handleError(rc);
+            if (rc <= 0) swrap_error_handler(rc);
         }
     }
 }
 
-bool SSLAdapter::initialized() const
+//bool SSLAdapter::initialized() const
+//{
+//    return !!_ssl;
+//}
+//
+//bool SSLAdapter::ready() const
+//{
+//    return _ssl && SSL_is_init_finished(_ssl);
+//}
+//
+//int SSLAdapter::available() const
+//{
+//    assert(_ssl);
+//    return SSL_pending(_ssl);
+//}
+
+void SSLAdapter::addIncomingData(const char *data, size_t sz) // from onread
 {
-    return !!_ssl;
+      LTrace("Add incoming data: ", sz)
+//    assert(ssl_bio_);
+//    BIO_write(ssl_bio_, data, (int) len);
+//    flush();
+//    flush();
+    
+    
+//    int offset = 0;
+//    int rv = 0;
+//    int i  = 0;
+//    assert( data != NULL && "invalid argument passed");
+//    assert( sz > 0 && "Size of data should be positive");
+//    for( offset = 0; offset < sz; offset += i ) {
+//        //handle error condition
+//        i =  BIO_write(c->app_bio, data + offset, sz - offset);
+//
+//        //if handshake is not complete, do it again
+//        if ( evt_tls_is_handshake_over(c) ) {
+//            rv = evt__tls__op(c, EVT_TLS_OP_READ, NULL, 0);
+//        }
+//        else {
+//            rv = evt__tls__op(c, EVT_TLS_OP_HANDSHAKE, NULL, 0);
+//        }
+//    }
+//    return rv;
+    
+              
+        BIO_write( app_bio_, data, sz);
+       if( !SSL_is_init_finished(_ssl)) {
+        if( STATE_HANDSHAKE_DONE !=   handshake() ) {
+            //recheck if handshake is complete now
+            return ;
+        }
+       }
+    
+  
+            
+              
+              
+    
+    int offset = 0;
+    int rv = 0;
+    int i  = 0;
+    assert( data != NULL && "invalid argument passed");
+    assert( sz > 0 && "Size of data should be positive");
+    for( offset = 0; offset < sz; offset += i ) {
+        //handle error condition
+        i =  BIO_write(app_bio_, data + offset, sz - offset);
+
+        //if handshake is not complete, do it again
+        if ( SSL_is_init_finished(_ssl) &&  handshake_state == STATE_HANDSHAKE_DONE ) 
+        {
+            
+            memset((void*) data, 0, sz);
+
+             int rv = -1;
+             rv = SSL_read(_ssl, (unsigned char *)data, sz);
+             rv =swrap_error_handler( rv);
+
+             if (rv == 1) {
+
+                 _socket->on_read(data,  rv) ; 
+
+             } 
+//             else if (rv == SSL_ERROR_WANT_READ ||
+//                        rv == SSL_ERROR_WANT_WRITE) {
+//               break;
+//             } else {
+//                 //SError << getTLSError(rv);
+//               break;
+//             }
+
+            
+            
+            
+           
+        }
+        else 
+        {
+        
+             handshake();
+            
+            
+            
+            //rv = evt__tls__op(c, EVT_TLS_OP_HANDSHAKE, NULL, 0);
+        }
+    }
+    return ;
+      
+  
+    
+    
 }
 
-bool SSLAdapter::ready() const
-{
-    return _ssl && SSL_is_init_finished(_ssl);
-}
-
-int SSLAdapter::available() const
-{
-    assert(_ssl);
-    return SSL_pending(_ssl);
-}
-
-void SSLAdapter::addIncomingData(const char *data, size_t len)
-{
-    // LTrace("Add incoming data: ", len)
-    assert(_readBIO);
-    BIO_write(_readBIO, data, (int) len);
-    flush();
-    flush();
-}
-
-void SSLAdapter::addOutgoingData(const std::string &s)
-{
-    addOutgoingData(s.c_str(), s.size());
-}
+//void SSLAdapter::addOutgoingData(const std::string &s)
+//{
+//    addOutgoingData(s.c_str(), s.size());
+//}
 
 void SSLAdapter::addOutgoingData(const char *data, size_t len)
 {
-    std::copy(data, data + len, std::back_inserter(_bufferOut));
-    flush();
+
+//       // SInfo << "Send " <<  data   << " len "  << len;
+//    //if (len > MBEDTLS_SSL_MAX_CONTENT_LEN) // mbedtld2.5    
+//    if (len > MBEDTLS_SSL_OUT_CONTENT_LEN) 
+//    {
+//        SError <<  "encode data is too large, change the values in config.h to increase the size" ;
+//      //  return;
+//    }
+
+    
+
+    if( handshake_state == STATE_HANDSHAKING )
+    {  // handshake();
+        std::copy(data, data + len, std::back_inserter(_bufferOut));
+        return;
+    }    
+    
+    size_t rv;
+    
+
+     rv = (size_t)SSL_write( _ssl, (const unsigned char *) data,  len);
+     if (rv <= 0) { swrap_error_handler(rv); }  // we are not sure why Mbedtls does not handle error, though openssl does it 
+    // I have refered https://github.com/yodaos-project/ShadowNode.git
+    
+    
+
+
 }
 
-void SSLAdapter::handshake()
+int SSLAdapter::handshake()
 {
-    int r = SSL_do_handshake(_ssl);
-    if (r <= 0) handleError(r);
-}
+    //int r = SSL_do_handshake(_ssl);
+    //if (r <= 0) swrap_error_handler(r);
+    
 
-void SSLAdapter::flush()
-{
-    // LTrace("Flushing")
 
-    // Keep trying to handshake until initialized
-    if (!ready()) return handshake();
-
-    // Read any decrypted remote data from SSL and emit to the app
-    flushReadBIO();
-
-    // Write any local data to SSL for excryption
-    if (_bufferOut.size() > 0)
-    {
-        int r = SSL_write(_ssl, &_bufferOut[0], (int) _bufferOut.size());
-        if (r <= 0) { handleError(r); }
-        _bufferOut.clear();
-        // flushWriteBIO();
+    if (handshake_state == STATE_HANDSHAKE_DONE) {
+        return STATE_HANDSHAKE_DONE;
     }
+    handshake_state = STATE_HANDSHAKING;
 
-    // send any encrypted data from SSL to the remote peer
-    flushWriteBIO();
+    int rv = 0;
+    rv = SSL_do_handshake(_ssl);
+    rv = swrap_error_handler(rv);
+    if (rv ==1) {
+        handshake_state = STATE_HANDSHAKE_DONE;
+//
+//        int verify_status = (int) mbedtls_ssl_get_verify_result(&_ssl);
+//        if (verify_status) {
+//            char buf[512];
+//            mbedtls_x509_crt_verify_info(buf, sizeof (buf), "::", (uint32_t) verify_status);
+//            //mbedtls_printf("%s\n", buf);
+//            SError << " Failed ssl cert verification " << buf;
+//        }
+
+        SInfo << "SSL Handshake over";
+
+        if (_bufferOut.size() > 0) {
+
+            addOutgoingData(&_bufferOut[0], _bufferOut.size());
+            _bufferOut.clear();
+        }
+
+
+        //  _socket->on_tls_connect();
+
+        // notify to the JS layer "onhandshakedone".
+        // jerry_value_t fn = iotjs_jval_get_property(jthis, "onhandshakedone");
+
+    }
+    return handshake_state;
+    
+    
 }
+
+//void SSLAdapter::flush()
+//{
+//    // LTrace("Flushing")
+//
+//    // Keep trying to handshake until initialized
+//    if (!ready()) return handshake();
+//
+//    // Read any decrypted remote data from SSL and emit to the app
+//    flushReadBIO();
+//
+//    // Write any local data to SSL for excryption
+//    if (_bufferOut.size() > 0)
+//    {
+//        int r = SSL_write(_ssl, &_bufferOut[0], (int) _bufferOut.size());
+//        if (r <= 0) { swrap_error_handler(r); }
+//        _bufferOut.clear();
+//        // flushWriteBIO();
+//    }
+//
+//    // send any encrypted data from SSL to the remote peer
+//    flushWriteBIO();
+//}
 
 /* Arvind TBD. Below code does not work with lower version of OpenSSL.
   In future I will replace TLS with DTLS
 */
-void SSLAdapter::flushReadBIO()
+//void SSLAdapter::flushReadBIO()
+//{
+//    size_t npending = BIO_ctrl_pending(ssl_bio_);
+//    if (npending > 0)
+//    {
+//        int nread;
+//        char buffer[npending];
+//        while ((nread = SSL_read(_ssl, buffer, npending)) > 0)
+//        {
+//            // LTrace("On Read ", buffer)
+//            //  _socket->listener->on_read(_socket, buffer, nread); // arvind
+//            _socket->on_read(buffer, nread);  // arvind
+//        }
+//    }
+//}
+
+
+
+
+//evt__send_pending
+//int SSLAdapter::flushWriteBIO()
+//{
+//    size_t npending = BIO_pending(app_bio_);
+//    if (npending > 0)
+//    {
+//        char buffer[npending];
+//        int nread = BIO_read(app_bio_, buffer, npending);
+//        if (nread > 0)
+//        {
+//            nread = _socket->Write(buffer, nread, cb);  // arvind
+//            cb = nullptr;
+//        }
+//        
+//        return nread;
+//    }
+//    return 0;
+//}
+
+
+void SSLAdapter::stay_uptodate( )
 {
-    size_t npending = BIO_ctrl_pending(_readBIO);
-    if (npending > 0)
-    {
-        int nread;
-        char buffer[npending];
-        while ((nread = SSL_read(_ssl, buffer, npending)) > 0)
-        {
-            // LTrace("On Read ", buffer)
-            //  _socket->listener->on_read(_socket, buffer, nread); // arvind
-            _socket->on_read(buffer, nread);  // arvind
-        }
+ 
+    size_t pending = BIO_pending(app_bio_);
+    if( pending > 0) {
+
+        //Need to free the memory
+        char *mybuf;
+        
+        mybuf = (char*)malloc(pending);
+
+        int rv = BIO_read(app_bio_, mybuf, pending);
+        assert( rv == pending );
+
+        _socket->Write( mybuf, rv, cb);
+        
+        //SInfo << "stay_uptodate "  <<  rv ;
+        
+        
+        //assert(rv == pending);
+
+        free(mybuf);
+        mybuf = 0;
     }
-}
+    
+    
+    
 
-/*
-void SSLAdapter::flushReadBIO() {
-    size_t npending = BIO_ctrl_pending(_readBIO);
-    if (npending > 0) {
-        int nread = 0;
-        int ntotal = 0;
+  }
+    
 
-        char buffer[npending];
-        while ((nread = SSL_read(_ssl, &buffer[ntotal], npending)) > 0) {
-           // LTrace("On Read ", buffer)
-            //  _socket->listener->on_read(_socket, buffer, nread); // arvind
-           // _socket->on_read(buffer, nread); // arvind
-            ntotal = ntotal + nread;
-        }
-        _socket->on_read(buffer, ntotal); // arvind
-    }
-}*/
-
-void SSLAdapter::flushWriteBIO()
+int SSLAdapter::swrap_error_handler(const int err_code)
 {
-    size_t npending = BIO_ctrl_pending(_writeBIO);
-    if (npending > 0)
-    {
-        char buffer[npending];
-        int nread = BIO_read(_writeBIO, buffer, npending);
-        if (nread > 0)
-        {
-            _socket->Write(buffer, nread, cb);  // arvind
-            cb = nullptr;
-        }
+    //if (rc > 0) return;
+        if(err_code > 0) {
+        return err_code;
     }
-}
 
-void SSLAdapter::handleError(int rc)
-{
-    if (rc > 0) return;
-    int error = SSL_get_error(_ssl, rc);
-    switch (error)
-    {
-    case SSL_ERROR_ZERO_RETURN:
-        LTrace("SSL_ERROR_ZERO_RETURN");
-        return;
-    case SSL_ERROR_WANT_READ:
-        // LTrace("SSL_ERROR_WANT_READ")
-        flushWriteBIO();
-        break;
-    case SSL_ERROR_WANT_WRITE:
-        LTrace("SSL_ERROR_WANT_WRITE");
-        assert(0 && "not implemented");
-        break;
-    case SSL_ERROR_WANT_CONNECT:
-    case SSL_ERROR_WANT_ACCEPT:
-    case SSL_ERROR_WANT_X509_LOOKUP:
-        assert(0 && "should not occur");
-        break;
-    default:
-        char buffer[256];
-        ERR_error_string_n(ERR_get_error(), buffer, sizeof(buffer));
-        std::string msg(buffer);
-        SError << msg;
-        // throw std::runtime_error("SSL connection failed: " + msg);
-        //_socket->setError("SSL connection failed: " + msg);  //arvind
-        break;
+    switch (SSL_get_error(_ssl, err_code)) {
+        case SSL_ERROR_NONE: //0
+        case SSL_ERROR_SSL:  // 1
+            ERR_print_errors_fp(stderr);
+            //don't break, flush data first
+
+        case SSL_ERROR_WANT_READ: // 2
+        case SSL_ERROR_WANT_WRITE: // 3
+        case SSL_ERROR_WANT_X509_LOOKUP:  // 4
+            stay_uptodate();
+            break;
+        case SSL_ERROR_ZERO_RETURN: // 5
+        case SSL_ERROR_SYSCALL: //6
+        case SSL_ERROR_WANT_CONNECT: //7
+        case SSL_ERROR_WANT_ACCEPT: //8
+            //ERR_print_errors_fp(stderr);
+        default:
+            return err_code;
     }
+    return err_code;
+    
+
+     
 }
 
 

@@ -79,6 +79,23 @@ int main( void )
 #include "net/bio.h"
 
 
+
+#else
+//#include "crypto/crypto.h"
+//#include "net/address.h"
+//#include "net/net.h"
+//#include "base/handle.h"
+
+#include <string>
+#include <vector>
+
+#include <openssl/bio.h>
+#include <openssl/err.h>
+#include <openssl/ssl.h>
+
+#endif
+
+
 #include <functional>
 
 namespace base {
@@ -131,11 +148,14 @@ public:
     void addIncomingData(const char *data, size_t len);
     void addOutgoingData(const char *data, size_t len);
     
+   #if USE_MBEDTLS  
+
     static void my_debug(void *ctx, int level, const char *file, int line,   const char *str);
     static int my_verify(void *data, mbedtls_x509_crt *crt, int depth, uint32_t *flags);
 
     
     bool setup(const mbedtls_ssl_config *conf, const char *hostname);
+    #endif
     
     onSendCallback  cb{nullptr};
     
@@ -171,7 +191,7 @@ protected:
     std::vector<char> _bufferOut; ///<  The outgoing payload to be encrypted and sent
     
     
-    
+  #if USE_MBEDTLS  
     
     mbedtls_ssl_context _ssl;           /**< TLS context            */
     int _ssl_error;                     /**< Last TLS error         */
@@ -185,101 +205,23 @@ protected:
     
     mbedtls_pk_context pkey;
     
-};
-
-
-} // namespace net
-} // namespace base
-
-
-#else
-//#include "crypto/crypto.h"
-//#include "net/address.h"
-//#include "net/net.h"
-//#include "base/handle.h"
-
-#include <string>
-#include <vector>
-
-#include <openssl/bio.h>
-#include <openssl/err.h>
-#include <openssl/ssl.h>
-
-#include <functional>
-
-namespace base {
-    
-using onSendCallback =  std::function<void(bool sent)>;
-    
-namespace net {
-
-
-
-/// A wrapper for the OpenSSL SSL connection context
-///
-/// TODO: Decouple from SSLSocket implementation
-class  SslConnection;
-class  SSLAdapter
-{
-public:
-    SSLAdapter(SslConnection* socket);
-    ~SSLAdapter();
-
-    void initSSL();
+   #else
+        
+      SSL* _ssl{nullptr};
       
-    /// Initializes the SSL context as a client.
-    void initClient();
+      SSL_CTX *ctx{nullptr};
 
-    /// Initializes the SSL context as a server.
-    void initServer();
-
-    /// Returns true when SSL context has been initialized.
-    bool initialized() const;
-
-    /// Returns true when the handshake is complete.
-    bool ready() const;
-
-    /// Start/continue the SSL handshake process.
-    void handshake();
-
-    /// Returns the number of bytes available in
-    /// the SSL buffer for immediate reading.
-    int available() const;
-
-    /// Issues an orderly SSL shutdown.
-    void shutdown();
-
-    /// Flushes the SSL read/write buffers.
-    void flush();
-
-    void addIncomingData(const char* data, size_t len);
-    void addOutgoingData(const std::string& data);
-    void addOutgoingData(const char* data, size_t len);
+      
+    #endif
     
-    onSendCallback  cb{nullptr};
-
-protected:
-    void handleError(int rc);
-
-    void flushReadBIO();
-    void flushWriteBIO();
-
-protected:
-    friend class SslConnection;
-
-    SslConnection* _socket;
-     
-    SSL* _ssl;
-    BIO* _readBIO;  ///< The incoming buffer we write encrypted SSL data into
-    BIO* _writeBIO; ///<  The outgoing buffer we write to the socket
-    std::vector<char> _bufferOut; ///<  The outgoing payload to be encrypted and sent
     
-    bool server{false};
 };
 
 
 } // namespace net
 } // namespace base
-#endif
+
+
+
 
 #endif // Net_SSLAdapter_H

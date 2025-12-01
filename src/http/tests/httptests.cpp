@@ -5,7 +5,21 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
+ 
+
+  https://github.com/creytiv/re
+  https://en.wikipedia.org/wiki/UDP_hole_punching 
+  cricket::Candidate represents an address discovered by a cricket::Port. A candidate can be local (i.e discovered by a local port) or remote. Remote candidates are transported using signaling, i.e outside of webrtc. There are 4 types of candidates: local, stun, prflx or relay (standard)
+  https://github.com/clibs/net/blob/master/src/net.c
+  https://github.com/geminiwen/libuv-mbedtls/blob/master/src/uv_tls.c
+  
+// good
+  https://github.com/deleisha/libuv-tls/blob/master/test_tls_client.c
+  
+  https://github.com/geminiwen/libuv-mbedtls/blob/master/README.md
+ 
+  
+  
  */
 
 #include "http/HTTPResponder.h"
