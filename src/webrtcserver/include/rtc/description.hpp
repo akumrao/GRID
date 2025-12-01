@@ -4,7 +4,7 @@
 #define RTC_DESCRIPTION_HPP
 
 #include "candidate.hpp"
-#include "certificate.hpp"
+#include "net/certificate.h"
 #include "common.hpp"
   #include <optional>
 #include <iostream>

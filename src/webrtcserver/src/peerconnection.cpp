@@ -2,7 +2,7 @@
 #include "common.hpp"
 #include "rtp.hpp"
 
-#include "certificate.hpp"
+#include "net/certificate.h"
 #include "impl/dtlstransport.hpp"
 #include "impl/icetransport.hpp"
 #include "impl/internals.hpp"

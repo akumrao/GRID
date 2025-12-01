@@ -3,7 +3,7 @@
 #include "dtlssrtptransport.hpp"
 #include "logcounter.hpp"
 #include "rtp.hpp"
-#include "tls.hpp"
+#include "net/tls.h"
 
 #if RTC_ENABLE_MEDIA
 

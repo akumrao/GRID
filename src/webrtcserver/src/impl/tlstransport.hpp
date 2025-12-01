@@ -3,10 +3,10 @@
 #ifndef RTC_IMPL_TLS_TRANSPORT_H
 #define RTC_IMPL_TLS_TRANSPORT_H
 
-#include "certificate.hpp"
+#include "net/certificate.h"
 #include "common.hpp"
 #include "queue.hpp"
-#include "tls.hpp"
+#include "net/tls.h"
 #include "transport.hpp"
 
 #if RTC_ENABLE_WEBSOCKET

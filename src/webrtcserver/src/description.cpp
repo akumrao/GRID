@@ -1356,7 +1356,7 @@ string Description::typeToString(Type type) {
 		return "unknown";
 	}
 }
-
+/*
 size_t
 CertificateFingerprint::AlgorithmSize(CertificateFingerprint::Algorithm fingerprintAlgorithm) {
 	switch (fingerprintAlgorithm) {
@@ -1410,6 +1410,7 @@ bool CertificateFingerprint::isValid() const {
 	}
 	return true;
 }
+*/
 
 std::ostream &operator<<(std::ostream &out, const Description &description) {
 	return out << string(description);

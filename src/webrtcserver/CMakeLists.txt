@@ -334,7 +334,7 @@ endif()
 add_subdirectory(deps/libsrtp)
 
 if(USE_MBEDTLS)  
-file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"   "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" "../net/srcmbedtls/*.cpp"  "../net/dtls/*.cpp")
+file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"   "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" "../net/src/*.cpp" "../net/srcmbedtls/*.cpp"  "../net/dtls/*.cpp")
 else()
 file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"  "../net/src/*.cpp" "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" "../net/dtls/*.cpp")
 endif()   
@@ -373,7 +373,7 @@ target_include_directories(datachannel-static PUBLIC
     deps/libsrtp/include
     deps/json/include
     deps/usrsctp/usrsctplib
-    ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/  ../libuv/include ../libuv/src ../build/ ../http_parser/ ../net/dtls/
+    ${INC} ../signal/include ../facedetec/include/ ${SSL_ROOT}/include  ../include  ../http/include/ ../base/include/  ../libuv/include ../libuv/src ../build/ ../http_parser/ ../net/dtls/ ../net/include/
 )
 
 
@@ -381,10 +381,6 @@ target_include_directories(datachannel-static PUBLIC
 if(USE_MBEDTLS) 
 target_include_directories(datachannel-static PUBLIC 
 ../net/incmbedtls/)
-else()
-target_include_directories(datachannel-static PUBLIC 
-../net/include/
-)
 endif()   
 
 

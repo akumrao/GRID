@@ -95,7 +95,7 @@ namespace stun {
          
         getInterfaces();
         
-       // resolveStunServer( ); // arvind if you wish to disable public ip comment this line
+        resolveStunServer( ); // arvind if you wish to disable public ip comment this line
         
         return 0;
         

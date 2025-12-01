@@ -23,17 +23,22 @@ https://github.com/deleisha/evt-tls/issues/21    // very bad code please do not 
 #include <iterator>
 #include <stdexcept>
 #include <vector>
-
-
+#include "net/certificate.h"
+#include "net/tls.h"
 
 #if SETTINGFromCONFIG
 #include "Settings.h"
 #endif 
 
 #define FROMFILE 1
+//#define DEFULTTEST 1
+
+
 
 using namespace std;
 
+
+ConfCert config;
 
 
 #if USE_MBEDTLS
@@ -137,15 +142,10 @@ void SSLAdapter::initSSL()
     
     mbedtls_entropy_init(&_entropy);
     mbedtls_ctr_drbg_init(&_ctr_drbg);
-    mbedtls_x509_crt_init(&_cacert);
+   
     mbedtls_ssl_config_init(&_ssl_conf);
     
-    
-    if(server)
-    {
-       mbedtls_pk_init( &pkey );
-
-    }
+ 
         
     const char *DRBG_PERS = "mbed TLS helloword client";
     
@@ -215,6 +215,14 @@ void SSLAdapter::initSSL()
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 #if FROMFILE
 
+   mbedtls_x509_crt_init(&_cacert);
+    if(server)
+    {
+       mbedtls_pk_init( &pkey );
+
+    }
+
+
     std::string CertFile = "/mnt/key/certificate.crt";
   
 
@@ -251,14 +259,28 @@ void SSLAdapter::initSSL()
     }   
    
             
-            
+      mbedtls_ssl_conf_ca_chain(&_ssl_conf, &_cacert, NULL);
+        
+    if(server)
+    if( (  mbedtls_ssl_conf_own_cert( &_ssl_conf, &_cacert, &pkey ) ) != 0 )
+    {
+        SError << "failed\n  ! mbedtls_ssl_conf_own_cert returned ";
+        exit(0);
+    }
+             
    
        
        
             
     
-#else
+#elif DEFULTTEST 
+  
+ mbedtls_x509_crt_init(&_cacert);
+    if(server)
+    {
+       mbedtls_pk_init( &pkey );
 
+    }
     
     
     int ret = mbedtls_x509_crt_parse( &_cacert, (const unsigned char *) mbedtls_test_srv_crt,
@@ -285,10 +307,25 @@ void SSLAdapter::initSSL()
          exit(0);
     }
     
+   
+     mbedtls_ssl_conf_ca_chain(&_ssl_conf, &_cacert, NULL);
+        
+    if(server)
+    if( (  mbedtls_ssl_conf_own_cert( &_ssl_conf, &_cacert, &pkey ) ) != 0 )
+    {
+        SError << "failed\n  ! mbedtls_ssl_conf_own_cert returned ";
+        exit(0);
+    }
+     
+
+#else 
     
-    
-    
-    
+        config.init();
+       auto [crt, pk] = config.mCertificate->credentials();
+
+       //  mbedtls_ssl_conf_ca_chain(&_ssl_conf, crt, NULL);
+         
+      rtc::mbedtls::check(mbedtls_ssl_conf_own_cert(&_ssl_conf, crt, pk));
 
 
 #endif
@@ -296,14 +333,7 @@ void SSLAdapter::initSSL()
      
 
  
-        mbedtls_ssl_conf_ca_chain(&_ssl_conf, &_cacert, NULL);
-        
-        if(server)
-        if( (  mbedtls_ssl_conf_own_cert( &_ssl_conf, &_cacert, &pkey ) ) != 0 )
-        {
-            SError << "failed\n  ! mbedtls_ssl_conf_own_cert returned ";
-            exit(0);
-        }
+       
          
         #if UNSAFE
         mbedtls_ssl_conf_authmode(&_ssl_conf, MBEDTLS_SSL_VERIFY_OPTIONAL ); //MBEDTLS_SSL_VERIFY_OPTIONAL); MBEDTLS_SSL_VERIFY_NONE
@@ -311,8 +341,7 @@ void SSLAdapter::initSSL()
          mbedtls_ssl_conf_rng(&_ssl_conf, mbedtls_ctr_drbg_random, &_ctr_drbg); 
       
 
-       // mbedtls_ssl_conf_own_cert(&_ssl_conf, &_cacert, NULL);
-      
+            
         //static const auto host = "127.0.0.1";
         setup(&_ssl_conf, nullptr);
 

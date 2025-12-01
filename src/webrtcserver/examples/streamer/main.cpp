@@ -25,7 +25,7 @@
 //#define VIDEOMEDIA 1
 
 
-#define CERTFROMFILE 1
+//#define CERTFROMFILE 1
 
 using namespace rtc;
 using namespace std;

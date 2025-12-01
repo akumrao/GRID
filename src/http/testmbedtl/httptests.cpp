@@ -13,11 +13,15 @@
 //#include "base/test.h"
 #include "base/logger.h"
 #include "base/application.h"
+#include "net/certificate.h"
 
 using namespace base;
 using namespace base::net;
+using namespace rtc;
+using namespace rtc::impl;
 //using namespace base::test;
 
+extern ConfCert config;
 
 
 class testwebscoket: public net::HttpsServer 
@@ -71,10 +75,38 @@ public:
 
 int main(int argc, char** argv) {
 
-   ConsoleChannel *ch =  new ConsoleChannel("debug", Level::Info);
+   ConsoleChannel *ch =  new ConsoleChannel("debug", Level::Debug);
             
    Logger::instance().add(ch);
     //test::init();
+
+   
+  
+
+
+   
+// 
+//
+//#if USE_MBEDTLS
+//    auto [crt, pk] = config.mCertificate->credentials();
+//
+//    //mbedtls::check(mbedtls_ssl_conf_own_cert(&mConf, crt, pk));
+//
+//#else
+//
+//    auto [x509, pkey] = config.mCertificate->credentials();
+//    
+//     //SSL_CTX_use_certificate(mCtx, x509);
+//   // SSL_CTX_use_PrivateKey(mCtx, pkey);
+//   // openssl::check(SSL_CTX_check_private_key(mCtx), "SSL local private key check failed");
+//    
+//#endif
+//   
+                
+   
+   
+
+
   
    SInfo << "https://localhost:8000";
 
@@ -100,6 +132,7 @@ int main(int argc, char** argv) {
 
         app.stop();
         //app.uvDestroy();
+        config.exit();
         delete ch;
 
     }

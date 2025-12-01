@@ -6,7 +6,7 @@
 #include "common.hpp"
 #include "RestAPI.h"
 #include <vector>
-#include "certificate.hpp"
+#include "net/certificate.h"
 
 namespace rtc {
 

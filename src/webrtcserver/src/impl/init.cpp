@@ -1,14 +1,14 @@
 
 
 #include "init.hpp"
-#include "certificate.hpp"
+#include "net/certificate.h"
 #include "dtlstransport.hpp"
 #include "icetransport.hpp"
 #include "internals.hpp"
 #include "pollservice.hpp"
 #include "sctptransport.hpp"
 #include "threadpool.hpp"
-#include "tls.hpp"
+#include "net/tls.h"
 #include "utils.hpp"
 
 #if RTC_ENABLE_WEBSOCKET
