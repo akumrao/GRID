@@ -75,7 +75,7 @@ public:
 
 int main(int argc, char** argv) {
 
-   ConsoleChannel *ch =  new ConsoleChannel("debug", Level::Debug);
+   ConsoleChannel *ch =  new ConsoleChannel("debug", Level::Trace);
             
    Logger::instance().add(ch);
     //test::init();

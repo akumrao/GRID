@@ -788,7 +788,28 @@ SSL_CTX *InitCTX(bool server)
         ERR_print_errors_fp(stderr);
         abort();
     }
-#else
+
+    if (server)
+    {
+        // New lines //for server side only
+
+
+        SSL_CTX_set_default_passwd_cb_userdata(ctx, (void *) "12345678");
+
+        if (SSL_CTX_use_PrivateKey_file(ctx, KeyFile.c_str(), SSL_FILETYPE_PEM) <= 0)
+        {
+            ERR_print_errors_fp(stderr);
+            abort();
+        }
+
+        if (!SSL_CTX_check_private_key(ctx))
+        {
+            fprintf(stderr, "Private key does not match the public certificate\n");
+            abort();
+        }
+    }
+
+#elif DEFULTTEST
 
     X509 *cert = NULL;
     BIO *bio = NULL;
@@ -822,18 +843,13 @@ SSL_CTX *InitCTX(bool server)
 
     if (cert) X509_free(cert);
 
-#endif
-
-
-    //
 
     if (server)
     {
         // New lines //for server side only
 
-#if FROMFILE
+
         SSL_CTX_set_default_passwd_cb_userdata(ctx, (void *) "12345678");
-#endif
 
         if (SSL_CTX_use_PrivateKey_file(ctx, KeyFile.c_str(), SSL_FILETYPE_PEM) <= 0)
         {
@@ -847,6 +863,24 @@ SSL_CTX *InitCTX(bool server)
             abort();
         }
     }
+
+#else
+
+        config.init();
+
+        auto [x509, pkey] = config.mCertificate->credentials();
+        SSL_CTX_use_certificate(ctx, x509);
+        SSL_CTX_use_PrivateKey(ctx, pkey);
+        int ret =  SSL_CTX_check_private_key(ctx);
+        if(ret)
+        {
+            SError << "SSL_CTX_check_private_key(ctx);";
+        }
+
+
+#endif
+
+
 
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

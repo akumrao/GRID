@@ -121,7 +121,7 @@ static const string PemBeginCertificateTag = "-----BEGIN CERTIFICATE-----";
 struct  ConfCert {
    
     // Options
-    rtc::CertificateType certificateType = rtc::CertificateType::Default;
+    rtc::CertificateType certificateType = rtc::CertificateType::Rsa;
     // Certificates and private keys
     string certificatePemFile;
     string keyPemFile;
