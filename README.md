@@ -1,8 +1,10 @@
-# **The Consumer Supplier Computing Grid:** 
+## **The Consumer Supplier Computing Grid:** 
 
-# **1\. Executive Summary**
+## **1\. Executive Summary**
 
-The growing demand for high-performance computing (HPC) from AI and complex simulations is currently limited by the high cost and centralization of traditional cloud providers. We propose **The Consumer Supplier Computing Grid**—a decentralized platform that pools the idle GPU, TPU, NPU & CPU and capacity of consumer devices globally. This model delivers significantly **lower-cost, distributed, and highly flexible compute resources** to businesses while generating a reliable income stream for suppliers. Our unique **Resource Exchange Model** provides unprecedented utility and liquidity, positioning the Grid to capture a vital segment of the global cloud computing market and ensure a compelling **Return on Investment (ROI)** for our partners.  
+The growing demand for high-performance computing (HPC) from AI and complex simulations is currently limited by the high cost and centralization of traditional cloud providers. We propose The Consumer Supplier Computing Grid —a decentralized platform that pools the idle CPU, GPU, TPU & NPU and capacity of consumer devices globally. This model delivers significantly lower-cost, distributed, and highly flexible compute resources to businesses while generating a reliable income stream for suppliers. Our unique Resource Exchange Model provides unprecedented utility and liquidity, positioning the Grid to capture a vital segment of the global cloud computing market and ensure a compelling Return on Investment (ROI) for our partners.
+
+  
 ---
 
 ## 
@@ -38,7 +40,7 @@ Individuals install a secure client application, enabling them to **loan their u
 
 ### **C. The Resource Exchange/Swap Model (Unique Value)**
 
-This key differentiator provides essential **liquidity and utility** within the system.
+This key differentiator provides essential **easy to use and self guided** within the system.
 
 * **Mechanism:** A user who supplies excess CPU/GPU cycles can instantly trade the value they have earned for access to a simultaneous withdrawal of equivalent CPU/GPU cycles from the Grid's pool, and vice versa.  
 * **Benefits:** This creates a flexible, internal value system, allowing users to dynamically balance their resource needs (CPU-heavy today, GPU-heavy tomorrow) without relying on external cash transactions.
