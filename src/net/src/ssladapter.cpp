@@ -870,13 +870,28 @@ SSL_CTX *InitCTX(bool server)
 
         auto [x509, pkey] = config.mCertificate->credentials();
         SSL_CTX_use_certificate(ctx, x509);
-        SSL_CTX_use_PrivateKey(ctx, pkey);
-        int ret =  SSL_CTX_check_private_key(ctx);
-        if(ret)
+
+        if (SSL_CTX_use_certificate(ctx, x509) <= 0)
         {
-            SError << "SSL_CTX_check_private_key(ctx);";
+            ERR_print_errors_fp(stderr);
+            abort();
         }
 
+        if ( SSL_CTX_use_PrivateKey(ctx, pkey) <= 0)
+        {
+            ERR_print_errors_fp(stderr);
+            abort();
+        }
+
+     
+        if (!SSL_CTX_check_private_key(ctx)) {
+            ERR_print_errors_fp(stderr);
+         fprintf(stderr, "Private key does not match the public certificate\n");
+         abort();
+       }
+
+
+      
 
 #endif
 

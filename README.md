@@ -1,192 +1,55 @@
-# High performing AI for Face Detection for Ingenic T31 chipset. 
+# **The Consumer Supplier Computing Grid:** 
 
-Size of webrtc is around 3 MB. Size of the firmware is around 5 Mb. With RTCP feedback, REMB and Transport-CC congestion control, IR CUT, Night vision, QR scanning, GOP varies from 64 to 800 
+# **1\. Executive Summary**
 
-# TO build
-sudo bash 
+The growing demand for high-performance computing (HPC) from AI and complex simulations is currently limited by the high cost and centralization of traditional cloud providers. We propose **The Consumer Supplier Computing Grid**—a decentralized platform that pools the idle GPU, TPU, NPU & CPU and capacity of consumer devices globally. This model delivers significantly **lower-cost, distributed, and highly flexible compute resources** to businesses while generating a reliable income stream for suppliers. Our unique **Resource Exchange Model** provides unprecedented utility and liquidity, positioning the Grid to capture a vital segment of the global cloud computing market and ensure a compelling **Return on Investment (ROI)** for our partners.  
+---
 
-Take ubuntu 18.04 LTS
+## 
 
-apt-get install build-essential cmake 
+##  **2\. The Opportunity (Market & Problem)**
 
-apt-get install  p7zip-full
+The market faces two key challenges:
 
-Install the gcc-9 packages:
+* **High Cost of Cloud:** Existing cloud services charge premium rates for GPU-intensive workloads, making advanced computing expensive for many researchers and startups.  
+* **Untapped Power:** Billions of consumer-owned devices (laptops, gaming PCs) remain idle for long periods, representing a massive, unused pool of computational power.
 
-sudo apt-get install -y software-properties-common
+### **Value Proposition**
 
-compilers
+The Grid directly addresses these by establishing a cost-effective P2P compute marketplace, offering:
 
-apt-get install gcc-9
+1. **Cost Savings:** Compute resources acquired at substantially lower rates than traditional centralized cloud services.  
+2. **Decentralized Resilience:** Enhanced stability and geographically diverse processing capabilities.
 
-apt-get install g++-9
+---
 
-apt-get install python
+## 
 
+##  **3\. The Solution:** 
 
-cd /usr/bin
+The Grid functions as a dynamic, two-sided market for computational capacity.
 
-rm gcc
+### **A. The Supplier Model (Generating Supply)**
 
-rm  g++ 
+Individuals install a secure client application, enabling them to **loan their unused CPU and GPU cycles** to the Grid.
 
-ln -s gcc-7 gcc
+* **Compensation:** Suppliers earn monetary rewards based on the volume, quality (speed, uptime), and type of resource contributed.  
+* **Security & Privacy:** The Grid ensures data integrity and guarantees that client processing occurs without accessing the supplier’s personal files or operating environment.
 
-ln -s g++-7 g++
+### **C. The Resource Exchange/Swap Model (Unique Value)**
 
+This key differentiator provides essential **liquidity and utility** within the system.
 
-gcc --version
+* **Mechanism:** A user who supplies excess CPU/GPU cycles can instantly trade the value they have earned for access to a simultaneous withdrawal of equivalent CPU/GPU cycles from the Grid's pool, and vice versa.  
+* **Benefits:** This creates a flexible, internal value system, allowing users to dynamically balance their resource needs (CPU-heavy today, GPU-heavy tomorrow) without relying on external cash transactions.
 
-apt install git
+---
 
-mkdir -p /export/webrtc
+##  **4\. Technical Architecture **
 
-cd /export/webrtc
+The Grid requires a robust, fault-tolerant infrastructure:
 
-git clone  https://chromium.googlesource.com/chromium/tools/depot_tools 
+* **Connection & Protocol:** Secure peer-to-peer (P2P) connections optimized for low-latency communication between suppliers and consumers. Protocol used STUN, TURN, SCTP, webrtc to penetrate NAT and firewall, worked across ipv4 and ipv6    
+* **Workload Manager:**  TTY shell based access on linux shell, windows command shell and browser.
 
-git checkout chrome/4147
-
-
-export PATH=/export/webrtc/depot_tools:$PATH 
-
-
-
-mkdir -p /workspace/webrtc
-
-cd /workspace/webrtc
-
-fetch --nohooks webrtc_android
-
-cd src
-
-gclient sync
-
-cd src 
-
-git checkout branch-heads/m76
-
-gclient sync -D
-
-mkdir -p /workspace/
-
-T31 compiler path should look like   /workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software  ( shared at google drive)
-
-mkdir /workspace/adappt/T31 cd /workspace/adappt/T31
-
-
-7z x ISVP-T31-1.1.6-20221229.7z
-
-
-cd /workspace/adappt/T31/ISVP-T31-1.1.6-20221229/software
-
-chmod +x ./t31_env_setup.sh 
-
-./t31_image_mk.sh
-
-
-source ./t31_env_setup.sh 540	  repeate again if it says
-
-source ./t31_env_setup.sh 540	
-
-
-
-git clone git@github.com:Adappt-Intelligence-Inc/MagicAI.git 
-
-git checkout h264_streaming
-
-cd /workspace/webrtc/src
-
-git apply /workspace/MagicAI/src/webrtc/patch_t31_full.txt
-
-
-cd /workspace/MagicAI/
-
-./buildt31.sh
-
-
-
-For build error 
-if you get std::max error because of compiler gcc9  or higer replace
-
-std::max -> std::max<size_t>
-
-
-
-
-# AI
-xa_sdk_initialize() 
-
- I would add xa_sdk_configure()  with the config blob in the Json HOWTO - this will enable face recognition.  A call to  xa_sdk_is_face_recognition_enabled() should return the correct values as specified in the .h file.  Then add a call to  xa_sdk_process_image() with an image with a face you'd like to test - call that function over and over with the same image until it returns some data in process_image_outputs 
-
-
-#to compile 
-
-cd MagicAI
-
-./build.sh
-
-cd /src/facedetec
-
-make -j8
-
-
-
-# to test
-copy binary runAI to t31 at /mnt
-
-cd /mnt 
-runConfTest 
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/mnt
-
-
-
-
-# to test
-
-To compile webrtc
-
-
-cmake -DWEBRTC_REPO=/workspace/webrtc/src -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DWEBRTC_BUILD_DIR=out/arm64 -DANDROID_ABI=x86_64 .. 
-  
-
-
-cmake -DWEBRTC_REPO=/workspace/webrtc/src -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DWEBRTC_BUILD_DIR=out/arm64 -DANDROID_ABI=mipsel 
-
-cmake -DWEBRTC_REPO=/workspace/webrtc/src -DCMAKE_POSITION_INDEPENDENT_CODE=ON -DWEBRTC_BUILD_DIR=out/arm64 -DCMAKE_CROSSCOMPILING=1  -DANDROID_ABI=mipssel .
-
-
-install nasm 2.16 from  https://www.nasm.us/pub/nasm/releasebuilds/2.16.03/ . Otherwise include path issues
-
-
-
-
-
- cp -r -p  /workspace/webrtc/src/third_party/libsrtp /arvind/workspace/webrtc/src/third_party/
- cp -r -p  /workspace/webrtc/src/third_party/abseil-cpp /arvind/workspace/webrtc/src/third_party/
- cp -r -p  /workspace/webrtc/src/third_party/srtp /arvind/workspace/webrtc/src/third_party/
- cp -r -p  /workspace/webrtc/src/third_party/pffft /arvind/workspace/webrtc/src/third_party/
- cp -r -p  /workspace/webrtc/src/third_party/rnnoise /arvind/workspace/webrtc/src/third_party/
- cp -r -p  /workspace/webrtc/src/third_party/usrsctp /arvind/workspace/webrtc/src/third_party/
- cp -r -p  /workspace/webrtc/src/base/third_party/libevent   /arvind/workspace/webrtc/src/base/third_party/
-
-
-
-## To bundle binaries and create fresh flash images, with following steps.  
-
-binwalk -e system.img
-
-mkfs.jffs2 -o otasystem.img -r _system.img.extracted/jffs2-root/ -e 0x8000 -s 0xb00000 -n -l -X zlib
-
-flash_eraseall /dev/mtd2
-
-sync
-
-flashcp -v /mnt/OTA/otasystem.img /dev/mtd2
-
-sync
-
-cp /tmp/Upgrade/upGradeFlag.system /configs/upGradeFlag
-
-sync
-
+* **Security:**  Mbedtls and openssl, SRTP, DTLS TLS.
