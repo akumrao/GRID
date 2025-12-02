@@ -47,7 +47,7 @@ This key differentiator provides essential **easy to use and self guided** withi
 
 ---
 
-##  **4\. Technical Architecture **
+##  **4\. Technical Architecture**
 
 The Grid requires a robust, fault-tolerant infrastructure:
 
