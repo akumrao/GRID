@@ -13,7 +13,7 @@
 #include "utils.h"
 
 #include "base/filesystem.h"
-
+#include "net/certificate.h"
 
 #include "http/HTTPResponder.h"
 //#include "base/test.h"
@@ -41,7 +41,7 @@ struct server *server{nullptr};
 static void print_help() {
     // clang-format off
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
-            "USAGE:  ./ttyd -W bash  then browse    http://localhost:8000/ \n"
+            "USAGE:  ./ttyd bash  then browse    http://localhost:8000/ \n"
             "    ttyd [options] <command> [<arguments...>]\n\n"
             "VERSION:\n"
             "    %s\n\n"
@@ -212,14 +212,21 @@ static void signal_cb(uv_signal_t *watcher, int signum) {
 }
 
 
+ #if HTTPSSL
+           class testwebscoket : public net::HttpsServer {
+        public:
+    testwebscoket(std::string ip, int port, ServerConnectionFactory *factory = nullptr, bool multithreaded = false) : net::HttpsServer(ip, port, factory, multithreaded) {}
+}       
+ #else
 
 
 class testwebscoket : public net::HttpServer {
 public:
+   testwebscoket(std::string ip, int port, ServerConnectionFactory *factory = nullptr, bool multithreaded = false) : net::HttpServer(ip, port, factory, multithreaded) {}
+  
 
-    testwebscoket(std::string ip, int port, ServerConnectionFactory *factory = nullptr, bool multithreaded = false) : net::HttpServer(ip, port, factory, multithreaded) {
+#endif
 
-    }
 
     void on_wsread(Listener* connection, const char* msg, size_t len) {
 
