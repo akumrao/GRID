@@ -1290,15 +1290,16 @@ int SSLAdapter::swrap_error_handler(const int err_code)
         return err_code;
     }
 
-    switch (SSL_get_error(_ssl, err_code)) {
+    int x = SSL_get_error(_ssl, err_code);
+    switch (x) {
         case SSL_ERROR_NONE: //0
         case SSL_ERROR_SSL:  // 1
             ERR_print_errors_fp(stderr);
             //don't break, flush data first
-
+          break;
         case SSL_ERROR_WANT_READ: // 2
         case SSL_ERROR_WANT_WRITE: // 3
-        case SSL_ERROR_WANT_X509_LOOKUP:  // 4
+       // case SSL_ERROR_WANT_X509_LOOKUP:  // 4
             stay_uptodate();
             break;
         case SSL_ERROR_ZERO_RETURN: // 5

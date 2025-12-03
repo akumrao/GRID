@@ -27,11 +27,12 @@
 //#include "base/test.h"
 #include "base/logger.h"
 #include "base/application.h"
+#include "net/certificate.h"
 
 using namespace base;
 using namespace base::net;
 //using namespace base::test;
-
+extern ConfCert config;
 
 
 class testwebscoket: public net::HttpsServer 
@@ -92,6 +93,9 @@ int main(int argc, char** argv) {
             
    Logger::instance().add(ch);
     //test::init();
+   
+    config.certificatePemFile = "/var/tmp/certificate.crt";
+    config.keyPemFile = "/var/tmp/private.key" ;
    
    SInfo << "https://localhost:8000";
     
