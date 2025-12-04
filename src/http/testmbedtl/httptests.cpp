@@ -82,30 +82,8 @@ int main(int argc, char** argv) {
 
    
   
-
-
-   
-// 
-//
-//#if USE_MBEDTLS
-//    auto [crt, pk] = config.mCertificate->credentials();
-//
-//    //mbedtls::check(mbedtls_ssl_conf_own_cert(&mConf, crt, pk));
-//
-//#else
-//
-//    auto [x509, pkey] = config.mCertificate->credentials();
-//    
-//     //SSL_CTX_use_certificate(mCtx, x509);
-//   // SSL_CTX_use_PrivateKey(mCtx, pkey);
-//   // openssl::check(SSL_CTX_check_private_key(mCtx), "SSL local private key check failed");
-//    
-//#endif
-//   
-                
-   
-   
-
+   config.certificatePemFile = "/var/tmp/certificate.crt";
+   config.keyPemFile = "/var/tmp/private.key" ;
 
   
    SInfo << "https://localhost:8000";

@@ -95,7 +95,7 @@ namespace base {
             http_parser_settings _settings;
             http_parser_type _type;
 
-            bool _wasHeaderValue;
+            bool _wasHeaderValue{false};
             std::string _lastHeaderField;
             std::string _lastHeaderValue;
 
