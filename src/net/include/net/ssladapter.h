@@ -166,9 +166,6 @@ protected:
     
 
 
- BIO     *app_bio_; //Our BIO, All IO should be through this
- BIO     *ssl_bio_; //the ssl BIO used only by openSSL
-
 
 
 
@@ -205,13 +202,27 @@ protected:
     
     mbedtls_pk_context pkey;
     
+    
+    BIO     *app_bio_; //Our BIO, All IO should be through this
+    BIO     *ssl_bio_; //the ssl BIO used only by openSSL
+
+
    #else
         
       SSL* _ssl{nullptr};
       
-      SSL_CTX *ctx{nullptr};
-
+     // SSL_CTX *ctx{nullptr};
       
+    BIO *_readBIO;
+    BIO *_writeBIO;
+     
+    private:
+    
+    void initClient();      
+    void initServer();
+    void flushReadBIO();
+    void flushWriteBIO();
+    int flush();
     #endif
     
     

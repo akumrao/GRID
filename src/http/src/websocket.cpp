@@ -228,7 +228,7 @@ namespace base {
         #elif PING 
 
         void WebSocketConnection::timeout_pong() {
-            SDebug << "timeout pong about to close the websocket connection " ;
+            SInfo << "timeout pong about to close the websocket connection " ;
 
              if(_connection)
             _connection->Close();
@@ -304,7 +304,7 @@ namespace base {
         }
 
         void WebSocketConnection::onSocketRecv( std::string buffer) {
-            //LTrace("On recv: ", buffer.size())
+             //STrace <<  "On recv: " <<  buffer.size();
 
             if (framer.handshakeComplete()) 
             {
@@ -394,6 +394,7 @@ namespace base {
                         #if PING
                         if (framer.mode() == ServerSide)
                         m_ping_timeout_timer.Stop();
+                       // m_ping_timer.Stop();
                         #endif  
                         
                     }
@@ -423,7 +424,7 @@ namespace base {
                    /// assert(payload);
                      if (payloadLength)
                      {
-                       
+                       //STrace << "payloadLength " << payloadLength;
  
                         // Update the next frame offset
                         offset = reader.position(); // + payloadLength;
