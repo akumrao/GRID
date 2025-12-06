@@ -134,7 +134,7 @@ const wss = new WebSocket.Server({ server: config.UseHTTPS ? https : http});
 
 wss.on('connection', function connection(ws) {
   ws.on('message', function incoming(message) {
-       //console.log('received: %s',message.length );
+    console.log('received: %s, %o', message.length, message );
     wss.clients.forEach(function each(client) {
       if (client !== ws && client.readyState === WebSocket.OPEN) {
         client.send(message);
@@ -144,6 +144,20 @@ wss.on('connection', function connection(ws) {
   
 
   });
+
+
+  const pingInterval = setInterval(() => {
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.ping(); // Send a standard WebSocket ping frame
+            console.log('Server sent ping');
+        }
+    }, 3000);
+
+  ws.on('pong', () => {
+        console.log('Server received pong');
+        // Optionally, reset a timeout here if you're using a custom inactivity timeout
+  });
+
 
 
 ws.on('error', function incoming(err) {

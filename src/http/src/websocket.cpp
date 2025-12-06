@@ -5,7 +5,7 @@
  * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation; either version 2 of the License, or
  * (at your option) any later version.
- *
+ * Note: Please use http and wireshhark on ::1(any port) capture to fix the problem
  */
 
 
@@ -24,6 +24,25 @@
 #include <stdexcept>
 #include <inttypes.h>
 
+#if wireshark
+//enable it when you use wireshark
+Transmission Control Protocol, Src Port: 40256, Dst Port: 8000, Seq: 516, Ack: 132, Len: 8
+    TCP payload (8 bytes)  click this and press show packet bytes
+    [PDU Size: 8]
+WebSocket
+    1... .... = Fin: True
+    .000 .... = Reserved: 0x0
+    .... 0001 = Opcode: Text (1)
+    1... .... = Mask: True
+    .000 0010 = Payload length: 2
+    Masking-Key: 96c24900
+    Masked payload
+    Payload
+
+#include <iostream>
+#include <string>
+#include <iomanip> // Required for std::hex and std::setw
+#endif
 
 using std::endl;
 
@@ -86,7 +105,8 @@ namespace base {
             framer.writeFrame(str.c_str(), str.size(), int( unsigned(FrameFlags::Fin) | unsigned(Opcode::Ping)), writer);
 
             _connection->tcpsend((const char*) writer.begin(), writer.position(), nullptr);
-           
+           // uint8_t ping_frame[] = {0x89, 0x00};  // FIN=1, opcode=PING, payload_len=0
+           //_connection->tcpsend((const char*) ping_frame, sizeof(ping_frame) , nullptr);
 #if PING
             m_ping_timeout_timer.Start(m_ping_timeout);
             
@@ -259,10 +279,10 @@ namespace base {
                 LTrace("Handshake success")
                         
                    if(_connection->fnConnect)
-                    _connection->fnConnect(_connection);
+                        _connection->fnConnect(_connection);
 
                     if(listener)
-                    listener->on_wsconnect( this);
+                        listener->on_wsconnect( this);
                 
                 
                      #if FMP4
@@ -304,7 +324,18 @@ namespace base {
         }
 
         void WebSocketConnection::onSocketRecv( std::string buffer) {
-             //STrace <<  "On recv: " <<  buffer.size();
+            
+#if wireshark
+ STrace <<  "On recv: " <<  buffer.size();
+             
+             
+        for (char c : buffer) {
+               // Cast the character to an unsigned int to get its ASCII value
+               // Then print it in hexadecimal format, with a width of 2 and filled with '0'
+               std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned int>(static_cast<unsigned char>(c)) << " ";
+           }
+        std::cout << std::endl;
+#endif    
 
             if (framer.handshakeComplete()) 
             {
@@ -394,9 +425,11 @@ namespace base {
                         #if PING
                         if (framer.mode() == ServerSide)
                         m_ping_timeout_timer.Stop();
-                       // m_ping_timer.Stop();
+#if wireshark
+                        m_ping_timer.Stop();
+#endif
                         #endif  
-                        
+                        return;
                     }
                     break;
                     default:

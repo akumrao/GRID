@@ -32,8 +32,10 @@
 using namespace base;
 using namespace base::net;
 //using namespace base::test;
-extern ConfCert config;
 
+
+#if HTTPSSL
+extern ConfCert config;
 
 class testwebscoket: public net::HttpsServer 
 {
@@ -43,7 +45,18 @@ public:
      {
          
      }
+#else
+class testwebscoket: public net::HttpServer 
+{
+public:
     
+     testwebscoket( std::string ip, int port, ServerConnectionFactory *factory = nullptr,  bool multithreaded =false) : net::HttpServer(  ip, port,  factory, multithreaded)
+     {
+         
+     }     
+     
+#endif
+     
     void on_wsread(Listener* connection, const char* msg, size_t len) {
       
         //connection->send("arvind", 6 );
@@ -94,10 +107,16 @@ int main(int argc, char** argv) {
    Logger::instance().add(ch);
     //test::init();
    
+   #if HTTPSSL
     config.certificatePemFile = "/var/tmp/certificate.crt";
     config.keyPemFile = "/var/tmp/private.key" ;
    
+    
    SInfo << "https://localhost:8000";
+   
+   #else
+    SInfo << "http://localhost:8000";
+   #endif
     
    StreamingResponderFactory *stream =   new StreamingResponderFactory();
             

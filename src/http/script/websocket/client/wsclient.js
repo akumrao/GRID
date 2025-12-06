@@ -23,8 +23,11 @@ function onDisconnectClick() {
  * Open a new WebSocket connection using the given parameters
  */
 function openWSConnection(protocol, hostname, port, endpoint) {
-    var webSocketURL = null;
-    webSocketURL = protocol + "://" + hostname + ":" + port + endpoint;
+    //var webSocketURL = null;
+    //webSocketURL = protocol + "://" + hostname + ":" + port + endpoint;
+    var webSocketURL = window.location.href.replace('http://', 'ws://').replace('https://', 'wss://');
+
+
     console.log("openWSConnection::Connecting to: " + webSocketURL);
     try {
         webSocket = new WebSocket(webSocketURL);
