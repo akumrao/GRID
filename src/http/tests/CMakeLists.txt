@@ -88,7 +88,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
 
 if(USE_MBEDTLS) 
-target_include_directories(${PROJECT_NAME}PUBLIC 
+target_include_directories(${PROJECT_NAME} PUBLIC 
 ../net/incmbedtls/)
 endif()   
 
@@ -114,12 +114,12 @@ if(USE_MBEDTLS)
 	option(ENABLE_PROGRAMS OFF)
 	set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
-	add_subdirectory(deps/mbedtls EXCLUDE_FROM_ALL)
+	add_subdirectory(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/mbedtls build2 EXCLUDE_FROM_ALL)
 
 	target_compile_definitions(${PROJECT_NAME} PRIVATE USE_MBEDTLS=1 HTTPSSL=1)
 
-	target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/deps/mbedtls/include)
-	target_link_libraries(${PROJECT_NAME}  PRIVATE mbedtls mbedx509 mbedcrypto -lz)
+	target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/mbedtls/include)
+	target_link_libraries(${PROJECT_NAME}  PRIVATE Threads::Threads uv_a mbedtls mbedx509 mbedcrypto -lz)
 	
 else()
 	if(APPLE)

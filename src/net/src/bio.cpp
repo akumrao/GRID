@@ -1,3 +1,5 @@
+#if USE_MBEDTLS
+
 #include <cstring>
 //#include <iostream>
 
@@ -336,3 +338,5 @@ int TLS_BIO_net_recv(void* ctx, unsigned char* buf, size_t len) {
     }
     return sz;
 }
+
+#endif

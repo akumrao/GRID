@@ -216,7 +216,7 @@ static void signal_cb(uv_signal_t *watcher, int signum) {
            class testwebscoket : public net::HttpsServer {
         public:
     testwebscoket(std::string ip, int port, ServerConnectionFactory *factory = nullptr, bool multithreaded = false) : net::HttpsServer(ip, port, factory, multithreaded) {}
-}       
+       
  #else
 
 
