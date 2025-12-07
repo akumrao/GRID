@@ -1,0 +1,504 @@
+
+
+
+
+#include "WebRtcTransport.h"
+#include "base/logger.h"
+#include "base/error.h"
+//#include "Utils.h"
+//#include "Channel/Notifier.h"
+#include <cmath> // std::pow()
+
+namespace RTC
+{
+	/* Static. */
+
+	static constexpr uint16_t IceCandidateDefaultLocalPriority{ 10000 };
+	// We just provide "host" candidates so type preference is fixed.
+	static constexpr uint16_t IceTypePreference{ 64 };
+	// We do not support non rtcp-mux so component is always 1.
+	static constexpr uint16_t IceComponent{ 1 };
+
+	static inline uint32_t generateIceCandidatePriority(uint16_t localPreference)
+	{
+		return std::pow(2, 24) * IceTypePreference + std::pow(2, 8) * localPreference +
+		       std::pow(2, 0) * (256 - IceComponent);
+	}
+
+	/* Instance methods. */
+
+	WebRtcTransport::WebRtcTransport(const std::string& id)
+	{
+		
+
+	}
+
+	WebRtcTransport::~WebRtcTransport()
+	{
+		
+
+		// Must delete the DTLS transport first since it will generate a DTLS alert
+		// to be sent.
+		delete this->dtlsTransport;
+		this->dtlsTransport = nullptr;
+
+
+		for (auto& kv : this->udpSockets)
+		{
+			auto* udpSocket = kv.first;
+
+			delete udpSocket;
+		}
+		this->udpSockets.clear();
+
+		for (auto& kv : this->tcpServers)
+		{
+			auto* tcpServer = kv.first;
+
+			delete tcpServer;
+		}
+		this->tcpServers.clear();
+
+		
+	}
+
+	
+
+
+
+	void WebRtcTransport::HandleRequest()
+	{
+		
+
+
+
+//            dtlsRemoteRole = RTC::DtlsTransport::Role::AUTO;
+//
+//              // Set local DTLS role.
+//            switch (dtlsRemoteRole)
+//            {
+//                    case RTC::DtlsTransport::Role::CLIENT:
+//                    {
+//                            this->dtlsRole = RTC::DtlsTransport::Role::SERVER;
+//
+//                            break;
+//                    }
+//                    case RTC::DtlsTransport::Role::SERVER:
+//                    {
+//                            this->dtlsRole = RTC::DtlsTransport::Role::CLIENT;
+//
+//                            break;
+//                    }
+//                    // If the peer has role "auto" we become "client" since we are ICE controlled.
+//                    case RTC::DtlsTransport::Role::AUTO:
+//                    {
+//                            this->dtlsRole = RTC::DtlsTransport::Role::CLIENT;
+//
+//                            break;
+//                    }
+//                    case RTC::DtlsTransport::Role::NONE:
+//                    {
+//                            base::uv::throwError("invalid remote DTLS role");
+//                    }
+//            };
+//
+//            this->connectCalled = true;
+//
+//            // Pass the remote fingerprint to the DTLS transport.
+//            if (this->dtlsTransport->SetRemoteFingerprint(dtlsRemoteFingerprint))
+//            {
+//                    // If everything is fine, we may run the DTLS transport if ready.
+//                    MayRunDtlsTransport();
+//            }
+//
+//
+//
+//            switch (this->dtlsRole)
+//            {
+//                    case RTC::DtlsTransport::Role::CLIENT:
+//                            data["dtlsLocalRole"] = "client";
+//                            break;
+//
+//                    case RTC::DtlsTransport::Role::SERVER:
+//                            data["dtlsLocalRole"] = "server";
+//                            break;
+//
+//                    default:
+//                            MS_ABORT("invalid local DTLS role");
+//            }
+
+
+			
+	}
+
+	inline bool WebRtcTransport::IsConnected() const
+	{
+		
+
+		assertm(this->dtlsTransport, "no dtlsTransport");
+
+		
+		return (
+//			(
+//				this->iceServer->GetState() == RTC::IceServer::IceState::CONNECTED ||
+//				this->iceServer->GetState() == RTC::IceServer::IceState::COMPLETED
+//			) &&
+			this->dtlsTransport->GetState() == RTC::DtlsTransport::DtlsState::CONNECTED
+		);
+		
+	}
+
+	void WebRtcTransport::MayRunDtlsTransport()
+	{
+		
+
+		assertm(this->dtlsTransport, "no dtlsTransport");
+
+		// Do nothing if we have the same local DTLS role as the DTLS transport.
+		// NOTE: local role in DTLS transport can be NONE, but not ours.
+		if (this->dtlsTransport->GetLocalRole() == this->dtlsRole)
+			return;
+
+		// Check our local DTLS role.
+		switch (this->dtlsRole)
+		{
+			// If still 'auto' then transition to 'server' if ICE is 'connected' or
+			// 'completed'.
+			case RTC::DtlsTransport::Role::AUTO:
+			{
+				
+//				if (
+//					this->iceServer->GetState() == RTC::IceServer::IceState::CONNECTED ||
+//					this->iceServer->GetState() == RTC::IceServer::IceState::COMPLETED
+//				)
+				
+				{
+					LDebug( "transition from DTLS local role 'auto' to 'server' and running DTLS transport");
+
+					this->dtlsRole = RTC::DtlsTransport::Role::SERVER;
+					this->dtlsTransport->Run(RTC::DtlsTransport::Role::SERVER);
+				}
+
+				break;
+			}
+
+			// 'client' is only set if a 'connect' request was previously called with
+			// remote DTLS role 'server'.
+			//
+			// If 'client' then wait for ICE to be 'completed' (got USE-CANDIDATE).
+			//
+			// NOTE: This is the theory, however let's be more flexible as told here:
+			//   https://bugs.chromium.org/p/webrtc/issues/detail?id=3661
+			case RTC::DtlsTransport::Role::CLIENT:
+			{
+				
+//				if (
+//					this->iceServer->GetState() == RTC::IceServer::IceState::CONNECTED ||
+//					this->iceServer->GetState() == RTC::IceServer::IceState::COMPLETED
+//				)
+				
+				{
+					LTrace( "running DTLS transport in local role 'client'");
+
+					this->dtlsTransport->Run(RTC::DtlsTransport::Role::CLIENT);
+				}
+
+				break;
+			}
+
+			// If 'server' then run the DTLS transport if ICE is 'connected' (not yet
+			// USE-CANDIDATE) or 'completed'.
+			case RTC::DtlsTransport::Role::SERVER:
+			{
+				
+//				if (
+//					this->iceServer->GetState() == RTC::IceServer::IceState::CONNECTED ||
+//					this->iceServer->GetState() == RTC::IceServer::IceState::COMPLETED
+//				)
+//				
+				{
+					LTrace( "running DTLS transport in local role 'server'");
+
+					this->dtlsTransport->Run(RTC::DtlsTransport::Role::SERVER);
+				}
+
+				break;
+			}
+
+			case RTC::DtlsTransport::Role::NONE:
+			{
+				MS_ABORT("local DTLS role not set");
+			}
+		}
+	}
+
+
+
+
+
+//	void WebRtcTransport::SendSctpData(const uint8_t* data, size_t len)
+//	{
+//		
+//
+//		
+//		if (!IsConnected())
+//		{
+//			MS_WARN_TAG(sctp, "DTLS not connected, cannot send SCTP data");
+//
+//			return;
+//		}
+//
+//		this->dtlsTransport->SendApplicationData(data, len);
+//	}
+
+	inline void WebRtcTransport::OnPacketReceived(
+	  base::net::TransportTuple* tuple, const char* data, size_t len)
+	{
+		
+
+
+		assertm(this->dtlsTransport, "no dtlsTransport");
+
+		// Increase receive transmission.
+//		RTC::Transport::DataReceived(len);
+
+		
+		// Check if it's DTLS.
+		if (RTC::DtlsTransport::IsDtls(data, len))
+		{
+			OnDtlsDataReceived(tuple, data, len);
+		}
+		else
+		{
+			LWarn("ignoring received packet of unknown type");
+		}
+	}
+
+//	inline void WebRtcTransport::OnStunDataReceived(
+//	  base::net::TransportTuple* tuple, const uint8_t* data, size_t len)
+//	{
+//		
+//
+//
+//
+//		RTC::StunPacket* packet = RTC::StunPacket::Parse(data, len);
+//
+//		if (!packet)
+//		{
+//			LWarn("ignoring wrong STUN packet received");
+//
+//			return;
+//		}
+//
+//		// Pass it to the IceServer.
+//		this->iceServer->ProcessStunPacket(packet, tuple);
+//
+//		delete packet;
+//	}
+
+	inline void WebRtcTransport::OnDtlsDataReceived(
+	  const base::net::TransportTuple* tuple, const char* data, size_t len)
+	{
+		
+
+
+		assertm(this->dtlsTransport, "no dtlsTransport");
+
+//		// Ensure it comes from a valid tuple.
+//		if (!this->iceServer->IsValidTuple(tuple))
+//		{
+//			LWarn( "ignoring DTLS data coming from an invalid tuple");
+//
+//			return;
+//		}
+//
+//		// Trick for clients performing aggressive ICE regardless we are ICE-Lite.
+//		this->iceServer->ForceSelectedTuple(tuple);
+
+		// Check that DTLS status is 'connecting' or 'connected'.
+		if (
+		  this->dtlsTransport->GetState() == RTC::DtlsTransport::DtlsState::CONNECTING ||
+		  this->dtlsTransport->GetState() == RTC::DtlsTransport::DtlsState::CONNECTED)
+		{
+			//MS_DEBUG_DEV("DTLS data received, passing it to the DTLS transport");
+
+			this->dtlsTransport->ProcessDtlsData((const uint8_t*)data, len);
+		}
+		else
+		{
+			LWarn( "Transport is not 'connecting' or 'connected', ignoring received DTLS data");
+
+			return;
+		}
+	}
+
+
+
+	inline void WebRtcTransport::OnUdpSocketPacketReceived(
+	  base::net::UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr)
+	{
+		
+
+		base::net::TransportTuple tuple(socket, remoteAddr);
+
+		OnPacketReceived(&tuple, data, len);
+	}
+
+       inline void WebRtcTransport::on_close(base::net::Listener* conn)
+	{
+//		RTC::TcpConnection* connection = (RTC::TcpConnection*) conn;
+//
+//		base::net::TransportTuple tuple(connection);
+//
+//		this->iceServer->RemoveTuple(&tuple);
+	}
+
+
+        void WebRtcTransport::on_read(base::net::Listener* conn, const char* data, size_t len) {
+
+//            RTC::TcpConnection* connection = (RTC::TcpConnection*) conn;
+//            base::net::TransportTuple tuple(connection);
+//
+//            OnPacketReceived(&tuple, (const uint8_t*)data, len);
+
+        }
+
+
+
+	inline void WebRtcTransport::OnDtlsTransportConnecting(const RTC::DtlsTransport* /*dtlsTransport*/)
+	{
+		
+
+
+//		assertm(this->dtlsTransport, "no dtlsTransport");
+//
+//		LTrace( "DTLS connecting");
+//
+//		// Notify the Node WebRtcTransport.
+//		json data = json::object();
+//
+//		data["dtlsState"] = "connecting";
+//
+//		Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
+	}
+
+	inline void WebRtcTransport::OnDtlsTransportConnected( const RTC::DtlsTransport* /*dtlsTransport*/) 
+	{
+		
+
+//		assertm(this->iceServer, "no iceServer");
+//		assertm(this->dtlsTransport, "no dtlsTransport");
+//
+//		LTrace( "DTLS connected");
+//
+//		// Close it if it was already set and update it.
+//		if (this->srtpSendSession)
+//		{
+//			delete this->srtpSendSession;
+//			this->srtpSendSession = nullptr;
+//		}
+//		if (this->srtpRecvSession)
+//		{
+//			delete this->srtpRecvSession;
+//			this->srtpRecvSession = nullptr;
+//		}
+//
+//		try
+//		{
+//			this->srtpSendSession = new RTC::SrtpSession(
+//			  RTC::SrtpSession::Type::OUTBOUND, srtpProfile, srtpLocalKey, srtpLocalKeyLen);
+//		}
+//		catch (const std::exception& error)
+//		{
+//			MS_ERROR("error creating SRTP sending session: %s", error.what());
+//		}
+//
+//		try
+//		{
+//			this->srtpRecvSession = new RTC::SrtpSession(
+//			  RTC::SrtpSession::Type::INBOUND, srtpProfile, srtpRemoteKey, srtpRemoteKeyLen);
+//		}
+//		catch (const std::exception& error)
+//		{
+//			MS_ERROR("error creating SRTP receiving session: %s", error.what());
+//
+//			delete this->srtpSendSession;
+//			this->srtpSendSession = nullptr;
+//		}
+//
+//		// Notify the Node WebRtcTransport.
+//		json data = json::object();
+//
+//		data["dtlsState"]      = "connected";
+//		data["dtlsRemoteCert"] = remoteCert;
+//
+//		Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
+//
+//		// Tell the parent class.
+//		RTC::Transport::Connected();
+	}
+
+	inline void WebRtcTransport::OnDtlsTransportFailed(const RTC::DtlsTransport* /*dtlsTransport*/)
+	{
+		
+
+		
+		assertm(this->dtlsTransport, "no dtlsTransport");
+
+		LWarn( "DTLS failed");
+
+
+
+	
+	}
+
+	inline void WebRtcTransport::OnDtlsTransportClosed(const RTC::DtlsTransport* /*dtlsTransport*/)
+	{
+		
+
+
+		assertm(this->dtlsTransport, "no dtlsTransport");
+
+		LWarn( "DTLS remotely closed");
+
+
+
+		// Tell the parent class.
+		//RTC::Transport::Disconnected();
+	}
+
+	inline void WebRtcTransport::OnDtlsTransportSendData(
+	  const RTC::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
+	{
+		
+
+
+		assertm(this->dtlsTransport, "no dtlsTransport");
+
+//
+//
+//		if (!this->iceServer->GetSelectedTuple())
+//		{
+//			LWarn( "no selected tuple set, cannot send DTLS packet");
+//
+//			return;
+//		}
+//
+//		this->iceServer->GetSelectedTuple()->Send(data, len);
+
+		// Increase send transmission.
+		//RTC::Transport::DataSent(len);
+	}
+
+	inline void WebRtcTransport::OnDtlsTransportApplicationDataReceived(
+	  const RTC::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
+	{
+		
+
+
+		assertm(this->dtlsTransport, "no dtlsTransport");
+
+		// Pass it to the parent transport.
+		//RTC::Transport::ReceiveSctpData(data, len);
+	}
+} // namespace RTC
