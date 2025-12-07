@@ -1,0 +1,43 @@
+################################################################################
+### CUSTOMIZE BELOW HERE #######################################################
+
+CC	= gcc
+CXX     = g++
+TARGET=runtestSecTcpClient # define the name of the executable
+SOURCES=$(wildcard testDtlsClient.cpp ../src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../crypto/src/*.cpp ../../base/src/*.cpp )
+
+CXXFLAGS   := -g  -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL -DENABLE_OPENSSL=1
+
+
+CPPFLAGS   := -I../../json/include/ -I../../crypto/include/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
+
+
+
+
+LDLIBS    := -lpthread -lm -ldl
+
+SLIBS     := ../../../src/openssl/buildx64/lib/libssl.a   ../../../src/openssl/buildx64/lib/libcrypto.a 
+
+
+################################################################################
+### DO NOT EDIT THE FOLLOWING LINES ############################################
+
+
+# define list of objects
+OBJSC=$(SOURCES:.cpp=.o)
+OBJS=$(OBJSC:.cpp=.o)
+
+# the target is obtained linking all .o files
+all: $(SOURCES) $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) $(OBJS) $(LDLIBS) $(SLIBS) -o $(TARGET)
+
+purge: clean
+	rm -f $(TARGET)
+
+clean:
+	rm -f  $(OBJS)
+
+################################################################################
+################################################################################
