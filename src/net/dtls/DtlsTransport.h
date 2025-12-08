@@ -41,22 +41,6 @@ namespace RTC
 		};
 
 	public:
-		enum class FingerprintAlgorithm
-		{
-			NONE = 0,
-			SHA1 = 1,
-			SHA224,
-			SHA256,
-			SHA384,
-			SHA512
-		};
-
-	public:
-		struct Fingerprint
-		{
-			FingerprintAlgorithm algorithm{ FingerprintAlgorithm::NONE };
-			std::string value;
-		};
 
 	private:
 		struct SrtpProfileMapEntry
@@ -94,15 +78,13 @@ namespace RTC
 		static void ClassInit();
 		static void ClassDestroy();
 		static Role StringToRole(const std::string& role);
-		static FingerprintAlgorithm GetFingerprintAlgorithm(const std::string& fingerprint);
-		static std::string& GetFingerprintAlgorithmString(FingerprintAlgorithm fingerprint);
 		static bool IsDtls(const char* data, size_t len);
 
 	private:
-		static void GenerateCertificateAndPrivateKey();
 		static void ReadCertificateAndPrivateKeyFromFiles();
 		static void CreateSslCtx();
 		static void GenerateFingerprints();
+                static void onDtlError();
 
 	private:
 		static X509* certificate;
@@ -110,9 +92,6 @@ namespace RTC
 		static SSL_CTX* sslCtx;
 		static uint8_t sslReadBuffer[];
 		static std::map<std::string, Role> string2Role;
-		static std::map<std::string, FingerprintAlgorithm> string2FingerprintAlgorithm;
-		static std::map<FingerprintAlgorithm, std::string> fingerprintAlgorithm2String;
-		static std::vector<Fingerprint> localFingerprints;
 		static std::vector<SrtpProfileMapEntry> srtpProfiles;
 
 	public:
@@ -122,8 +101,7 @@ namespace RTC
 	public:
 		void Dump() const;
 		void Run(Role localRole);
-		std::vector<Fingerprint>& GetLocalFingerprints() const;
-		bool SetRemoteFingerprint(Fingerprint fingerprint);
+		bool SetRemoteFingerprint();
 		void ProcessDtlsData(const uint8_t* data, size_t len);
 		DtlsState GetState() const;
 		Role GetLocalRole() const;
@@ -157,7 +135,7 @@ namespace RTC
 		// Others.
 		DtlsState state{ DtlsState::NEW };
 		Role localRole{ Role::NONE };
-		Fingerprint remoteFingerprint;
+		//Fingerprint remoteFingerprint;
 		bool handshakeDone{ false };
 		bool handshakeDoneNow{ false };
 		std::string remoteCert;
@@ -175,24 +153,7 @@ namespace RTC
 			return DtlsTransport::Role::NONE;
 	}
 
-	inline DtlsTransport::FingerprintAlgorithm DtlsTransport::GetFingerprintAlgorithm(
-	  const std::string& fingerprint)
-	{
-		auto it = DtlsTransport::string2FingerprintAlgorithm.find(fingerprint);
 
-		if (it != DtlsTransport::string2FingerprintAlgorithm.end())
-			return it->second;
-		else
-			return DtlsTransport::FingerprintAlgorithm::NONE;
-	}
-
-	inline std::string& DtlsTransport::GetFingerprintAlgorithmString(
-	  DtlsTransport::FingerprintAlgorithm fingerprint)
-	{
-		auto it = DtlsTransport::fingerprintAlgorithm2String.find(fingerprint);
-
-		return it->second;
-	}
 
 	inline bool DtlsTransport::IsDtls(const char* data, size_t len)
 	{
@@ -208,10 +169,7 @@ namespace RTC
 
 	/* Inline instance methods. */
 
-	inline std::vector<DtlsTransport::Fingerprint>& DtlsTransport::GetLocalFingerprints() const
-	{
-		return DtlsTransport::localFingerprints;
-	}
+
 
 	inline DtlsTransport::DtlsState DtlsTransport::GetState() const
 	{

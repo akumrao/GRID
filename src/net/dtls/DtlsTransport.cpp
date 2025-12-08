@@ -14,6 +14,10 @@
 #include <cstdio>  // std::sprintf(), std::fopen()
 #include <cstring> // std::memcpy(), std::strcmp()
 
+#include "net/certificate.h"
+
+
+extern ConfCert config;
 
 using namespace base;
 
@@ -80,27 +84,27 @@ namespace RTC
 
 	/* Class variables. */
 
-	X509* DtlsTransport::certificate{ nullptr };
-	EVP_PKEY* DtlsTransport::privateKey{ nullptr };
+	//X509* DtlsTransport::certificate{ nullptr };
+	//EVP_PKEY* DtlsTransport::privateKey{ nullptr };
 	SSL_CTX* DtlsTransport::sslCtx{ nullptr };
 	uint8_t DtlsTransport::sslReadBuffer[SslReadBufferSize];
 	
-	std::map<std::string, DtlsTransport::FingerprintAlgorithm> DtlsTransport::string2FingerprintAlgorithm =
-	{
-		{ "sha-1",   DtlsTransport::FingerprintAlgorithm::SHA1   },
-		{ "sha-224", DtlsTransport::FingerprintAlgorithm::SHA224 },
-		{ "sha-256", DtlsTransport::FingerprintAlgorithm::SHA256 },
-		{ "sha-384", DtlsTransport::FingerprintAlgorithm::SHA384 },
-		{ "sha-512", DtlsTransport::FingerprintAlgorithm::SHA512 }
-	};
-	std::map<DtlsTransport::FingerprintAlgorithm, std::string> DtlsTransport::fingerprintAlgorithm2String =
-	{
-		{ DtlsTransport::FingerprintAlgorithm::SHA1,   "sha-1"   },
-		{ DtlsTransport::FingerprintAlgorithm::SHA224, "sha-224" },
-		{ DtlsTransport::FingerprintAlgorithm::SHA256, "sha-256" },
-		{ DtlsTransport::FingerprintAlgorithm::SHA384, "sha-384" },
-		{ DtlsTransport::FingerprintAlgorithm::SHA512, "sha-512" }
-	};
+//	std::map<std::string, DtlsTransport::FingerprintAlgorithm> DtlsTransport::string2FingerprintAlgorithm =
+//	{
+//		{ "sha-1",   DtlsTransport::FingerprintAlgorithm::SHA1   },
+//		{ "sha-224", DtlsTransport::FingerprintAlgorithm::SHA224 },
+//		{ "sha-256", DtlsTransport::FingerprintAlgorithm::SHA256 },
+//		{ "sha-384", DtlsTransport::FingerprintAlgorithm::SHA384 },
+//		{ "sha-512", DtlsTransport::FingerprintAlgorithm::SHA512 }
+//	};
+//	std::map<DtlsTransport::FingerprintAlgorithm, std::string> DtlsTransport::fingerprintAlgorithm2String =
+//	{
+//		{ DtlsTransport::FingerprintAlgorithm::SHA1,   "sha-1"   },
+//		{ DtlsTransport::FingerprintAlgorithm::SHA224, "sha-224" },
+//		{ DtlsTransport::FingerprintAlgorithm::SHA256, "sha-256" },
+//		{ DtlsTransport::FingerprintAlgorithm::SHA384, "sha-384" },
+//		{ DtlsTransport::FingerprintAlgorithm::SHA512, "sha-512" }
+//	};
 	std::map<std::string, DtlsTransport::Role> DtlsTransport::string2Role =
 	{
 		{ "auto",   DtlsTransport::Role::AUTO   },
@@ -108,7 +112,7 @@ namespace RTC
 		{ "server", DtlsTransport::Role::SERVER }
 	};
 	
-	std::vector<DtlsTransport::Fingerprint> DtlsTransport::localFingerprints;
+//	std::vector<DtlsTransport::Fingerprint> DtlsTransport::localFingerprints;
 	
 
 	/* Class methods. */
@@ -132,32 +136,31 @@ namespace RTC
 ////		{
 ////			ReadCertificateAndPrivateKeyFromFiles();
 ////		}
+            
+            
+                 config.init();
+
 
 		// Create a global SSL_CTX.
 		CreateSslCtx();
 
 		// Generate certificate fingerprints.
-		GenerateFingerprints();
+		//GenerateFingerprints();
 	}
 
 	void DtlsTransport::ClassDestroy()
 	{
 		
 
-		if (DtlsTransport::privateKey)
-			EVP_PKEY_free(DtlsTransport::privateKey);
-		if (DtlsTransport::certificate)
-			X509_free(DtlsTransport::certificate);
+//		if (DtlsTransport::privateKey)
+//			EVP_PKEY_free(DtlsTransport::privateKey);
+//		if (DtlsTransport::certificate)
+//			X509_free(DtlsTransport::certificate);
 		if (DtlsTransport::sslCtx)
 			SSL_CTX_free(DtlsTransport::sslCtx);
 	}
 
-	void DtlsTransport::GenerateCertificateAndPrivateKey()
-	{
-		
 
-
-	}
 
 //	void DtlsTransport::ReadCertificateAndPrivateKeyFromFiles()
 //	{
@@ -211,58 +214,78 @@ namespace RTC
 //
 //		base::uv::throwError("error reading DTLS certificate and private key PEM files");
 //	}
+        
+        void DtlsTransport::onDtlError()
+        {
+            if (DtlsTransport::sslCtx)
+		{
+			SSL_CTX_free(DtlsTransport::sslCtx);
+			DtlsTransport::sslCtx = nullptr;
+		}
 
+//		if (ecdh)
+//			EC_KEY_free(ecdh);
+
+		base::uv::throwError("SSL context creation failed");
+                
+        }
+        
 	void DtlsTransport::CreateSslCtx()
 	{
-		
-//
-//		std::string dtlsSrtpProfiles;
-//		EC_KEY* ecdh{ nullptr };
-//		int ret;
-//
-///* Set the global DTLS context. */
-//
-//// Both DTLS 1.0 and 1.2 (requires OpenSSL >= 1.1.0).
-//#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
-//		DtlsTransport::sslCtx = SSL_CTX_new(DTLS_method());
-//// Just DTLS 1.0 (requires OpenSSL >= 1.0.1).
-//#elif (OPENSSL_VERSION_NUMBER >= 0x10001000L)
-//		DtlsTransport::sslCtx = SSL_CTX_new(DTLSv1_method());
-//#else
-//#error "too old OpenSSL version"
-//#endif
-//                
-//                if (!DtlsTransport::sslCtx)
-//                {
-//                        LOG_OPENSSL_ERROR("SSL_CTX_new() failed");
-//
-//                        goto error;
-//                }
-//                
-//
+
+ 
+            
+
+		std::string dtlsSrtpProfiles;
+		EC_KEY* ecdh{ nullptr };
+		int ret;
+
+/* Set the global DTLS context. */
+
+// Both DTLS 1.0 and 1.2 (requires OpenSSL >= 1.1.0).
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+		DtlsTransport::sslCtx = SSL_CTX_new(DTLS_method());
+// Just DTLS 1.0 (requires OpenSSL >= 1.0.1).
+#elif (OPENSSL_VERSION_NUMBER >= 0x10001000L)
+		DtlsTransport::sslCtx = SSL_CTX_new(DTLSv1_method());
+#else
+#error "too old OpenSSL version"
+#endif
+                
+                if (!DtlsTransport::sslCtx)
+                {
+                        LOG_OPENSSL_ERROR("SSL_CTX_new() failed");
+
+                       onDtlError(); return;
+                }
+                
+
 //                if (
 //		  Settings::configuration.dtlsCertificateFile.empty() ||
 //		  Settings::configuration.dtlsPrivateKeyFile.empty())
-//		{
-//
-//                    ret = SSL_CTX_use_certificate(DtlsTransport::sslCtx, DtlsTransport::certificate);
-//
-//                    if (ret == 0)
-//                    {
-//                            LOG_OPENSSL_ERROR("SSL_CTX_use_certificate() failed");
-//
-//                            goto error;
-//                    }
-//
-//                    ret = SSL_CTX_use_PrivateKey(DtlsTransport::sslCtx, DtlsTransport::privateKey);
-//
-//                    if (ret == 0)
-//                    {
-//                            LOG_OPENSSL_ERROR("SSL_CTX_use_PrivateKey() failed");
-//
-//                            goto error;
-//                    }
-//                }
+                
+                auto [x509, pkey] = config.mCertificate->credentials();
+                                
+		{
+
+                    ret = SSL_CTX_use_certificate(DtlsTransport::sslCtx, x509);
+
+                    if (ret == 0)
+                    {
+                            LOG_OPENSSL_ERROR("SSL_CTX_use_certificate() failed");
+
+                            onDtlError(); return;
+                    }
+
+                    ret = SSL_CTX_use_PrivateKey(DtlsTransport::sslCtx, pkey);
+
+                    if (ret == 0)
+                    {
+                            LOG_OPENSSL_ERROR("SSL_CTX_use_PrivateKey() failed");
+
+                            onDtlError(); return;
+                    }
+                }
 //                else
 //                {    
 //                    if (SSL_CTX_load_verify_locations(DtlsTransport::sslCtx, Settings::configuration.dtlsCertificateFile.c_str(), nullptr) != 1)
@@ -286,96 +309,96 @@ namespace RTC
 //                    }
 //                
 //                }
+                
+                
 //                
-//                
-////                
-//                //if(server)
-//                if (1) {
-//                    //New lines //for server side only 
+                //if(server)
+                if (1) {
+                    //New lines //for server side only 
+
+                    
+
+                    ret = SSL_CTX_check_private_key(DtlsTransport::sslCtx);
+
+                    if (ret == 0)
+                    {
+                            LOG_OPENSSL_ERROR("SSL_CTX_check_private_key() failed");
+
+                            onDtlError(); return;
+                    }
+
+                
+                }
+                //End new lines
+
+                        
+             
+		// Set options.
+		SSL_CTX_set_options(
+		  DtlsTransport::sslCtx,
+		  SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_NO_TICKET | SSL_OP_SINGLE_ECDH_USE |
+		    SSL_OP_NO_QUERY_MTU);
+
+		// Don't use sessions cache.
+		SSL_CTX_set_session_cache_mode(DtlsTransport::sslCtx, SSL_SESS_CACHE_OFF);
+
+		// Read always as much into the buffer as possible.
+		// NOTE: This is the default for DTLS, but a bug in non latest OpenSSL
+		// versions makes this call required.
+		SSL_CTX_set_read_ahead(DtlsTransport::sslCtx, 1);
+
+		SSL_CTX_set_verify_depth(DtlsTransport::sslCtx, 4);
+
+		// Require certificate from peer.
+		SSL_CTX_set_verify(
+		  DtlsTransport::sslCtx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, onSslCertificateVerify);
+
+		// Set SSL info callback.
+		SSL_CTX_set_info_callback(DtlsTransport::sslCtx, onSslInfo);
+
+		// Set ciphers.
+		ret = SSL_CTX_set_cipher_list(
+		  DtlsTransport::sslCtx, "ALL:!ADH:!LOW:!EXP:!MD5:!aNULL:!eNULL:@STRENGTH");
+
+		if (ret == 0)
+		{
+			LOG_OPENSSL_ERROR("SSL_CTX_set_cipher_list() failed");
+
+			onDtlError(); return;
+		}
+
+// Enable ECDH ciphers.
+// DOC: http://en.wikibooks.org/wiki/OpenSSL/Diffie-Hellman_parameters
+// NOTE: https://code.google.com/p/chromium/issues/detail?id=406458
+// NOTE: https://bugs.ruby-lang.org/issues/12324
 //
-//                    
-//
-//                    ret = SSL_CTX_check_private_key(DtlsTransport::sslCtx);
-//
-//                    if (ret == 0)
-//                    {
-//                            LOG_OPENSSL_ERROR("SSL_CTX_check_private_key() failed");
-//
-//                            goto error;
-//                    }
-//
-//                
-//                }
-//                //End new lines
-//
-//                        
-//             
-//		// Set options.
-//		SSL_CTX_set_options(
-//		  DtlsTransport::sslCtx,
-//		  SSL_OP_CIPHER_SERVER_PREFERENCE | SSL_OP_NO_TICKET | SSL_OP_SINGLE_ECDH_USE |
-//		    SSL_OP_NO_QUERY_MTU);
-//
-//		// Don't use sessions cache.
-//		SSL_CTX_set_session_cache_mode(DtlsTransport::sslCtx, SSL_SESS_CACHE_OFF);
-//
-//		// Read always as much into the buffer as possible.
-//		// NOTE: This is the default for DTLS, but a bug in non latest OpenSSL
-//		// versions makes this call required.
-//		SSL_CTX_set_read_ahead(DtlsTransport::sslCtx, 1);
-//
-//		SSL_CTX_set_verify_depth(DtlsTransport::sslCtx, 4);
-//
-//		// Require certificate from peer.
-//		SSL_CTX_set_verify(
-//		  DtlsTransport::sslCtx, SSL_VERIFY_PEER | SSL_VERIFY_FAIL_IF_NO_PEER_CERT, onSslCertificateVerify);
-//
-//		// Set SSL info callback.
-//		SSL_CTX_set_info_callback(DtlsTransport::sslCtx, onSslInfo);
-//
-//		// Set ciphers.
-//		ret = SSL_CTX_set_cipher_list(
-//		  DtlsTransport::sslCtx, "ALL:!ADH:!LOW:!EXP:!MD5:!aNULL:!eNULL:@STRENGTH");
-//
-//		if (ret == 0)
-//		{
-//			LOG_OPENSSL_ERROR("SSL_CTX_set_cipher_list() failed");
-//
-//			goto error;
-//		}
-//
-//// Enable ECDH ciphers.
-//// DOC: http://en.wikibooks.org/wiki/OpenSSL/Diffie-Hellman_parameters
-//// NOTE: https://code.google.com/p/chromium/issues/detail?id=406458
-//// NOTE: https://bugs.ruby-lang.org/issues/12324
-////
-//// Nothing to be done in OpenSSL >= 1.1.0.
-//#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
-//// For OpenSSL >= 1.0.2.
-//#elif (OPENSSL_VERSION_NUMBER >= 0x10002000L)
-//		SSL_CTX_set_ecdh_auto(DtlsTransport::sslCtx, 1);
-//// Older versions.
-//#else
-//		ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-//
-//		if (!ecdh)
-//		{
-//			LOG_OPENSSL_ERROR("EC_KEY_new_by_curve_name() failed");
-//
-//			goto error;
-//		}
-//
-//		if (SSL_CTX_set_tmp_ecdh(DtlsTransport::sslCtx, ecdh) != 1)
-//		{
-//			LOG_OPENSSL_ERROR("SSL_CTX_set_tmp_ecdh() failed");
-//
-//			goto error;
-//		}
-//
-//		EC_KEY_free(ecdh);
-//		ecdh = nullptr;
-//#endif
-//
+// Nothing to be done in OpenSSL >= 1.1.0.
+#if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+// For OpenSSL >= 1.0.2.
+#elif (OPENSSL_VERSION_NUMBER >= 0x10002000L)
+		SSL_CTX_set_ecdh_auto(DtlsTransport::sslCtx, 1);
+// Older versions.
+#else
+		ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
+
+		if (!ecdh)
+		{
+			LOG_OPENSSL_ERROR("EC_KEY_new_by_curve_name() failed");
+
+			goto error;
+		}
+
+		if (SSL_CTX_set_tmp_ecdh(DtlsTransport::sslCtx, ecdh) != 1)
+		{
+			LOG_OPENSSL_ERROR("SSL_CTX_set_tmp_ecdh() failed");
+
+			goto error;
+		}
+
+		EC_KEY_free(ecdh);
+		ecdh = nullptr;
+#endif
+
 //		// Set the "use_srtp" DTLS extension.
 //		for (auto it = DtlsTransport::srtpProfiles.begin(); it != DtlsTransport::srtpProfiles.end(); ++it)
 //		{
@@ -385,8 +408,8 @@ namespace RTC
 //			SrtpProfileMapEntry* profileEntry = std::addressof(*it);
 //			dtlsSrtpProfiles += profileEntry->name;
 //		}
-//
-//		MS_DEBUG_2TAGS(dtls, srtp, "setting SRTP profiles for DTLS: ", dtlsSrtpProfiles.c_str());
+
+//		SDebug << "setting SRTP profiles for DTLS: " <<  dtlsSrtpProfiles ;
 //
 //		// NOTE: This function returns 0 on success.
 //		ret = SSL_CTX_set_tlsext_use_srtp(DtlsTransport::sslCtx, dtlsSrtpProfiles.c_str());
@@ -398,94 +421,12 @@ namespace RTC
 //
 //			goto error;
 //		}
-//
-//		return;
-//
-//	error:
-//
-//		if (DtlsTransport::sslCtx)
-//		{
-//			SSL_CTX_free(DtlsTransport::sslCtx);
-//			DtlsTransport::sslCtx = nullptr;
-//		}
-//
-//		if (ecdh)
-//			EC_KEY_free(ecdh);
-//
-//		base::uv::throwError("SSL context creation failed");
-	}
 
-	void DtlsTransport::GenerateFingerprints()
-	{
+		return;
 		
-
-		for (auto& kv : DtlsTransport::string2FingerprintAlgorithm)
-		{
-			const std::string& algorithmString = kv.first;
-			FingerprintAlgorithm algorithm     = kv.second;
-			uint8_t binaryFingerprint[EVP_MAX_MD_SIZE];
-			unsigned int size{ 0 };
-			char hexFingerprint[(EVP_MAX_MD_SIZE * 3) + 1];
-			const EVP_MD* hashFunction;
-			int ret;
-
-			switch (algorithm)
-			{
-				case FingerprintAlgorithm::SHA1:
-					hashFunction = EVP_sha1();
-					break;
-
-				case FingerprintAlgorithm::SHA224:
-					hashFunction = EVP_sha224();
-					break;
-
-				case FingerprintAlgorithm::SHA256:
-					hashFunction = EVP_sha256();
-					break;
-
-				case FingerprintAlgorithm::SHA384:
-					hashFunction = EVP_sha384();
-					break;
-
-				case FingerprintAlgorithm::SHA512:
-					hashFunction = EVP_sha512();
-					break;
-
-				default:
-					base::uv::throwError("unknown algorithm");
-			}
-
-                        X509 *x509_data = SSL_CTX_get0_certificate(DtlsTransport::sslCtx);
-                       
-                       
-                        //X509 *x509_data = SSL_get_certificate(DtlsTransport::sslCtx);
-
-			ret = X509_digest(x509_data, hashFunction, binaryFingerprint, &size);
-
-			if (ret == 0)
-			{
-				LError("X509_digest() failed");
-				base::uv::throwError("Fingerprints generation failed");
-			}
-
-			// Convert to hexadecimal format in uppercase with colons.
-			for (unsigned int i{ 0 }; i < size; ++i)
-			{
-				std::sprintf(hexFingerprint + (i * 3), "%.2X:", binaryFingerprint[i]);
-			}
-			hexFingerprint[(size * 3) - 1] = '\0';
-
-			LTrace(algorithmString, " fingerprint: ", hexFingerprint);
-
-			// Store it in the vector.
-			DtlsTransport::Fingerprint fingerprint;
-
-			fingerprint.algorithm = DtlsTransport::GetFingerprintAlgorithm(algorithmString);
-			fingerprint.value     = hexFingerprint;
-
-			DtlsTransport::localFingerprints.push_back(fingerprint);
-		}
 	}
+
+
 
 	/* Instance methods. */
 
@@ -694,26 +635,26 @@ namespace RTC
 		}
 	}
 
-	bool DtlsTransport::SetRemoteFingerprint(Fingerprint fingerprint)
-	{
-		
-
-		assertm(
-		  fingerprint.algorithm != FingerprintAlgorithm::NONE, "no fingerprint algorithm provided");
-
-		this->remoteFingerprint = fingerprint;
-
-		// The remote fingerpring may have been set after DTLS handshake was done,
-		// so we may need to process it now.
-		if (this->handshakeDone && this->state != DtlsState::CONNECTED)
-		{
-			LTrace( "handshake already done, processing it right now");
-
-			return ProcessHandshake();
-		}
-
-		return true;
-	}
+//	bool DtlsTransport::SetRemoteFingerprint(Fingerprint fingerprint)
+//	{
+//		
+//
+//		assertm(
+//		  fingerprint.algorithm != FingerprintAlgorithm::NONE, "no fingerprint algorithm provided");
+//
+//		this->remoteFingerprint = fingerprint;
+//
+//		// The remote fingerpring may have been set after DTLS handshake was done,
+//		// so we may need to process it now.
+//		if (this->handshakeDone && this->state != DtlsState::CONNECTED)
+//		{
+//			LTrace( "handshake already done, processing it right now");
+//
+//			return ProcessHandshake();
+//		}
+//
+//		return true;
+//	}
 
 	void DtlsTransport::ProcessDtlsData(const uint8_t* data, size_t len)
 	{
@@ -901,7 +842,7 @@ namespace RTC
 			this->timer->Stop();
 
 			// Process the handshake just once (ignore if DTLS renegotiation).
-			if (!wasHandshakeDone && this->remoteFingerprint.algorithm != FingerprintAlgorithm::NONE)
+			if (!wasHandshakeDone ) //if (!wasHandshakeDone && this->remoteFingerprint.algorithm != FingerprintAlgorithm::NONE)
 				return ProcessHandshake();
 
 			return true;
@@ -1017,20 +958,20 @@ namespace RTC
 		
 
 		assertm(this->handshakeDone, "handshake not done yet");
-		assertm(
-		  this->remoteFingerprint.algorithm != FingerprintAlgorithm::NONE, "remote fingerprint not set");
+//		assertm(
+//		  this->remoteFingerprint.algorithm != FingerprintAlgorithm::NONE, "remote fingerprint not set");
 
-		// Validate the remote fingerprint.
-		if (!CheckRemoteFingerprint())
-		{
-			Reset();
-
-			// Set state and notify the listener.
-			this->state = DtlsState::FAILED;
-			this->listener->OnDtlsTransportFailed(this);
-
-			return false;
-		}
+//		// Validate the remote fingerprint.
+//		if (!CheckRemoteFingerprint())
+//		{
+//			Reset();
+//
+//			// Set state and notify the listener.
+//			this->state = DtlsState::FAILED;
+//			this->listener->OnDtlsTransportFailed(this);
+//
+//			return false;
+//		}
 
 //		// Get the negotiated SRTP profile.
 //		RTC::SrtpSession::Profile srtpProfile = GetNegotiatedSrtpProfile();
@@ -1056,127 +997,6 @@ namespace RTC
 		return false;
 	}
 
-	inline bool DtlsTransport::CheckRemoteFingerprint()
-	{
-		
-
-		assertm(
-		  this->remoteFingerprint.algorithm != FingerprintAlgorithm::NONE, "remote fingerprint not set");
-
-		X509* certificate;
-		uint8_t binaryFingerprint[EVP_MAX_MD_SIZE];
-		unsigned int size{ 0 };
-		char hexFingerprint[(EVP_MAX_MD_SIZE * 3) + 1];
-		const EVP_MD* hashFunction;
-		int ret;
-
-		certificate = SSL_get_peer_certificate(this->ssl);
-
-		if (!certificate)
-		{
-			LWarn("no certificate was provided by the peer");
-
-			return false;
-		}
-
-		switch (this->remoteFingerprint.algorithm)
-		{
-			case FingerprintAlgorithm::SHA1:
-				hashFunction = EVP_sha1();
-				break;
-
-			case FingerprintAlgorithm::SHA224:
-				hashFunction = EVP_sha224();
-				break;
-
-			case FingerprintAlgorithm::SHA256:
-				hashFunction = EVP_sha256();
-				break;
-
-			case FingerprintAlgorithm::SHA384:
-				hashFunction = EVP_sha384();
-				break;
-
-			case FingerprintAlgorithm::SHA512:
-				hashFunction = EVP_sha512();
-				break;
-
-			default:
-				MS_ABORT("unknown algorithm");
-		}
-
-		// Compare the remote fingerprint with the value given via signaling.
-		ret = X509_digest(certificate, hashFunction, binaryFingerprint, &size);
-
-		if (ret == 0)
-		{
-			LError("X509_digest() failed");
-
-			X509_free(certificate);
-
-			return false;
-		}
-
-		// Convert to hexadecimal format in uppercase with colons.
-		for (unsigned int i{ 0 }; i < size; ++i)
-		{
-			std::sprintf(hexFingerprint + (i * 3), "%.2X:", binaryFingerprint[i]);
-		}
-		hexFingerprint[(size * 3) - 1] = '\0';
-
-		if (this->remoteFingerprint.value != hexFingerprint)
-		{
-			SWarn <<  "fingerprint in the remote certificate (%s) does not match the announced one (%s)" <<    hexFingerprint <<    this->remoteFingerprint.value;
-
-			X509_free(certificate);
-
-			return false;
-		}
-
-		LTrace( "valid remote fingerprint");
-
-		// Get the remote certificate in PEM format.
-
-		BIO* bio = BIO_new(BIO_s_mem());
-
-		// Ensure the underlying BUF_MEM structure is also freed.
-		// NOTE: Avoid stupid "warning: value computed is not used [-Wunused-value]" since
-		// BIO_set_close() always returns 1.
-		(void)BIO_set_close(bio, BIO_CLOSE);
-
-		ret = PEM_write_bio_X509(bio, certificate);
-
-		if (ret != 1)
-		{
-			LOG_OPENSSL_ERROR("PEM_write_bio_X509() failed");
-
-			X509_free(certificate);
-			BIO_free(bio);
-
-			return false;
-		}
-
-		BUF_MEM* mem;
-
-		BIO_get_mem_ptr(bio, &mem); // NOLINT[cppcoreguidelines-pro-type-cstyle-cast]
-
-		if (!mem || !mem->data || mem->length == 0u)
-		{
-			LOG_OPENSSL_ERROR("BIO_get_mem_ptr() failed");
-
-			X509_free(certificate);
-			BIO_free(bio);
-
-			return false;
-		}
-
-		this->remoteCert = std::string(mem->data, mem->length);
-
-		X509_free(certificate);
-		BIO_free(bio);
-
-		return true;
-	}
 
 
 

@@ -9,16 +9,12 @@ SOURCES=$(wildcard testSecTcpServer.cpp ../src/*.cpp ../../libuv/src/*.cpp ../..
 CXXFLAGS   := -g -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL
 
 
-CPPFLAGS   := -I../../json/include/ -I../../crypto/include/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
+CPPFLAGS   := -I../../json/include/ -I../../crypto/include/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../../../src/openssl/buildx64/include 
 
               
-LDFLAGS   := -L/data/sound/lib -L/usr/lib/x86_64-linux-gnu
+LDLIBS    := -lpthread -lm -ldl
 
-
-
-LDLIBS    := -lpthread -lm -ldl -lssl -lcrypto 
-
-#SLIBS     := /data/mozilla/webrtc-builds/out/webrtc-22215-d8831bb-linux-x64/lib/x64/Debug/libwebrtc_full.a
+SLIBS     := ../../../src/openssl/buildx64/lib/libssl.a   ../../../src/openssl/buildx64/lib/libcrypto.a 
 
 
 ################################################################################

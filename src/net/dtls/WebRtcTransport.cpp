@@ -30,7 +30,65 @@ namespace RTC
 	WebRtcTransport::WebRtcTransport(const std::string& id)
 	{
 		
+            uint16_t iceLocalPreferenceDecrement{ 0 };
+            
+            std::vector<ListenIp> listenIps;
+            listenIps.resize(1);
+            listenIps[0].announcedIp = "127.0.0.1";
+            listenIps[0].ip = "127.0.0.1";
+            listenIps[0].port = 8000;
+            
+            bool enableUdp{ true };
+            bool enableTcp{ false };    
+            
+            bool preferUdp{ false };
+            bool preferTcp{ false };
+            
+            for (auto& listenIp : listenIps)
+            {
+                    if (enableUdp)
+                    {
+                            uint16_t iceLocalPreference =
+                              IceCandidateDefaultLocalPriority - iceLocalPreferenceDecrement;
 
+                            if (preferUdp)
+                                    iceLocalPreference += 1000;
+
+                            uint32_t icePriority = generateIceCandidatePriority(iceLocalPreference);
+
+                            // This may throw.
+                            auto* udpSocket = new base::net::UdpServer(this, listenIp.ip,  listenIp.port );
+
+                            this->udpSockets[udpSocket] = listenIp.announcedIp;
+                           
+                    }
+
+                    if (enableTcp)
+                    {
+                            uint16_t iceLocalPreference =
+                              IceCandidateDefaultLocalPriority - iceLocalPreferenceDecrement;
+
+                            if (preferTcp)
+                                    iceLocalPreference += 1000;
+
+                            uint32_t icePriority = generateIceCandidatePriority(iceLocalPreference);
+
+                            // This may throw.
+                            auto* tcpServer = new base::net::TcpServer(this, listenIp.ip,  listenIp.port);
+
+                            this->tcpServers[tcpServer] = listenIp.announcedIp;
+
+                    }
+
+                    // Decrement initial ICE local preference for next IP.
+                    iceLocalPreferenceDecrement += 100;
+            }
+
+
+
+	    // Create a DTLS transport.
+            STrace << " Create a DTLS transport.";
+			this->dtlsTransport = new RTC::DtlsTransport(this);
 	}
 
 	WebRtcTransport::~WebRtcTransport()

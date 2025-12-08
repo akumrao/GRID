@@ -15,15 +15,17 @@
 // #include "base/test.h"
 #include "base/time.h"
 #include "net/SslConnection.h"
+#include "DtlsTransport.h"
+#include "net/certificate.h"
 
-///ssl
-//#include "net/sslmanager.h"
+#include "WebRtcTransport.h"
+
 
 using std::endl;
 using namespace base;
 using namespace net;
-// using namespace base::test;
 
+extern ConfCert config;
 
 class testSslCon :  public SslConnection{
 public:
@@ -117,12 +119,26 @@ int main(int argc, char** argv) {
         SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true);
    
 
-       // auto* webRtcTransport = new RTC::WebRtcTransport(transportId, this, request->data);
+        RTC::DtlsTransport::ClassInit();
+                
+        #if HTTPSSL
+        config.certificatePemFile = "/var/tmp/certificate.crt";
+        config.keyPemFile = "/var/tmp/private.key" ;
+        SInfo << "https://localhost:8000";
+
+        #else
+        SInfo << "http://localhost:8000";
+        #endif
+        
+        std::string transportId = "101";
+        auto* webRtcTransport = new RTC::WebRtcTransport(transportId);
 
 
         app.waitForShutdown([&](void*) {
 
            // socket.shutdown();
+            
+             RTC::DtlsTransport::ClassDestroy();
 
         });
 
