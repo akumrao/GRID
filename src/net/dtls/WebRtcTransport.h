@@ -26,6 +26,7 @@ namespace RTC
 		{
 			std::string ip;
 			std::string announcedIp;
+                        int port;
 		};
 
 	public:
