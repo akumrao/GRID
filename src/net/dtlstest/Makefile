@@ -9,9 +9,8 @@ SOURCES=$(wildcard testDtlsServer.cpp ../src/*.cpp ../dtls/*.cpp ../../libuv/src
 CXXFLAGS   := -g -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL
 
 
-CPPFLAGS   := -I../../json/include/  -I../dtls/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
+CPPFLAGS   := -I../../json/include/ -I../dtls/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../../../src/openssl/buildx64/include
 
-              
 
 LDLIBS    := -lpthread -lm -ldl
 
