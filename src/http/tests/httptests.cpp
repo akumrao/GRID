@@ -108,8 +108,9 @@ int main(int argc, char** argv) {
     //test::init();
    
    #if HTTPSSL
-    config.certificatePemFile = "/var/tmp/certificate.crt";
-    config.keyPemFile = "/var/tmp/private.key" ;
+
+    config.certificatePemFile = "/usr/local/google/home/aumrao/dta-repo/dta-tools/thirdparty/jimtcl/examples/certificate.pem";
+    config.keyPemFile = "/usr/local/google/home/aumrao/dta-repo/dta-tools/thirdparty/jimtcl/examples/key.pem" ;
    
     
    SInfo << "https://localhost:8000";

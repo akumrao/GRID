@@ -31,16 +31,16 @@ namespace RTC
 		};
 
 	public:
-		WebRtcTransport(const std::string& id );
+		WebRtcTransport(const std::string& id, int localPort, int remotePort );
 		~WebRtcTransport() ;
 
 	public:
-
+                void HandleRequest(bool server);
 
 	private:
 		bool IsConnected() const ;
 		void MayRunDtlsTransport();
-                void HandleRequest();
+                
 
 		//void SendSctpData(const uint8_t* data, size_t len) override;
 		void OnPacketReceived(base::net::TransportTuple* tuple, const char* data, size_t len);

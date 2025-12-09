@@ -9,6 +9,7 @@
 //#include "Channel/Notifier.h"
 #include <cmath> // std::pow()
 
+using namespace base;
 namespace RTC
 {
 	/* Static. */
@@ -27,16 +28,16 @@ namespace RTC
 
 	/* Instance methods. */
 
-	WebRtcTransport::WebRtcTransport(const std::string& id)
+	WebRtcTransport::WebRtcTransport(const std::string& id, int localPort, int remotePort )
 	{
 		
             uint16_t iceLocalPreferenceDecrement{ 0 };
             
             std::vector<ListenIp> listenIps;
             listenIps.resize(1);
-            listenIps[0].announcedIp = "127.0.0.1";
+            listenIps[0].announcedIp = "0.0.0.0";
             listenIps[0].ip = "127.0.0.1";
-            listenIps[0].port = 8000;
+            listenIps[0].port = localPort;
             
             bool enableUdp{ true };
             bool enableTcp{ false };    
@@ -58,6 +59,9 @@ namespace RTC
 
                             // This may throw.
                             auto* udpSocket = new base::net::UdpServer(this, listenIp.ip,  listenIp.port );
+                            
+                            udpSocket->bind();
+                            
 
                             this->udpSockets[udpSocket] = listenIp.announcedIp;
                            
@@ -124,10 +128,15 @@ namespace RTC
 
 
 
-	void WebRtcTransport::HandleRequest()
+	void WebRtcTransport::HandleRequest(bool server)
 	{
 		
-
+            if(server)
+                dtlsRole = RTC::DtlsTransport::Role::SERVER;
+            else
+                dtlsRole = RTC::DtlsTransport::Role::CLIENT;
+            
+             MayRunDtlsTransport();
 
 
 //            dtlsRemoteRole = RTC::DtlsTransport::Role::AUTO;
@@ -313,7 +322,7 @@ namespace RTC
 	  base::net::TransportTuple* tuple, const char* data, size_t len)
 	{
 		
-
+            SInfo << "OnPacketReceived" << len;
 
 		assertm(this->dtlsTransport, "no dtlsTransport");
 
@@ -358,9 +367,9 @@ namespace RTC
 	  const base::net::TransportTuple* tuple, const char* data, size_t len)
 	{
 		
+            SInfo << "OnDtlsDataReceived" << len;
 
-
-		assertm(this->dtlsTransport, "no dtlsTransport");
+            assertm(this->dtlsTransport, "no dtlsTransport");
 
 //		// Ensure it comes from a valid tuple.
 //		if (!this->iceServer->IsValidTuple(tuple))
@@ -373,21 +382,21 @@ namespace RTC
 //		// Trick for clients performing aggressive ICE regardless we are ICE-Lite.
 //		this->iceServer->ForceSelectedTuple(tuple);
 
-		// Check that DTLS status is 'connecting' or 'connected'.
-		if (
-		  this->dtlsTransport->GetState() == RTC::DtlsTransport::DtlsState::CONNECTING ||
-		  this->dtlsTransport->GetState() == RTC::DtlsTransport::DtlsState::CONNECTED)
-		{
-			//MS_DEBUG_DEV("DTLS data received, passing it to the DTLS transport");
+            // Check that DTLS status is 'connecting' or 'connected'.
+            if (
+              this->dtlsTransport->GetState() == RTC::DtlsTransport::DtlsState::CONNECTING ||
+              this->dtlsTransport->GetState() == RTC::DtlsTransport::DtlsState::CONNECTED)
+            {
+                    //MS_DEBUG_DEV("DTLS data received, passing it to the DTLS transport");
 
-			this->dtlsTransport->ProcessDtlsData((const uint8_t*)data, len);
-		}
-		else
-		{
-			LWarn( "Transport is not 'connecting' or 'connected', ignoring received DTLS data");
+                    this->dtlsTransport->ProcessDtlsData((const uint8_t*)data, len);
+            }
+            else
+            {
+                    LWarn( "Transport is not 'connecting' or 'connected', ignoring received DTLS data");
 
-			return;
-		}
+                    return;
+            }
 	}
 
 
@@ -395,18 +404,20 @@ namespace RTC
 	inline void WebRtcTransport::OnUdpSocketPacketReceived(
 	  base::net::UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr)
 	{
-		
+            SInfo << "OnUdpSocketPacketReceived" << len;
 
-		base::net::TransportTuple tuple(socket, remoteAddr);
+            base::net::TransportTuple tuple(socket, remoteAddr);
 
-		OnPacketReceived(&tuple, data, len);
+            OnPacketReceived(&tuple, data, len);
 	}
 
        inline void WebRtcTransport::on_close(base::net::Listener* conn)
 	{
-//		RTC::TcpConnection* connection = (RTC::TcpConnection*) conn;
-//
-//		base::net::TransportTuple tuple(connection);
+            SInfo << "on_close";
+
+            net::TcpConnection* connection = (net::TcpConnection*) conn;
+
+            base::net::TransportTuple tuple(connection);
 //
 //		this->iceServer->RemoveTuple(&tuple);
 	}
@@ -414,6 +425,8 @@ namespace RTC
 
         void WebRtcTransport::on_read(base::net::Listener* conn, const char* data, size_t len) {
 
+             SInfo << "on_read Len" <<  len;
+             
 //            RTC::TcpConnection* connection = (RTC::TcpConnection*) conn;
 //            base::net::TransportTuple tuple(connection);
 //
@@ -426,7 +439,7 @@ namespace RTC
 	inline void WebRtcTransport::OnDtlsTransportConnecting(const RTC::DtlsTransport* /*dtlsTransport*/)
 	{
 		
-
+                 SInfo << "OnDtlsTransportConnecting";
 
 //		assertm(this->dtlsTransport, "no dtlsTransport");
 //
@@ -443,7 +456,9 @@ namespace RTC
 	inline void WebRtcTransport::OnDtlsTransportConnected( const RTC::DtlsTransport* /*dtlsTransport*/) 
 	{
 		
-
+                SInfo << "OnDtlsTransportConnected";
+                
+                
 //		assertm(this->iceServer, "no iceServer");
 //		assertm(this->dtlsTransport, "no dtlsTransport");
 //
@@ -512,12 +527,10 @@ namespace RTC
 
 	inline void WebRtcTransport::OnDtlsTransportClosed(const RTC::DtlsTransport* /*dtlsTransport*/)
 	{
-		
-
-
-		assertm(this->dtlsTransport, "no dtlsTransport");
-
-		LWarn( "DTLS remotely closed");
+	
+            
+            assertm(this->dtlsTransport, "no dtlsTransport");
+            LWarn( "DTLS remotely closed");
 
 
 
@@ -529,9 +542,9 @@ namespace RTC
 	  const RTC::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
 	{
 		
+            SInfo << "OnDtlsTransportSendData len:" << len;
 
-
-		assertm(this->dtlsTransport, "no dtlsTransport");
+            assertm(this->dtlsTransport, "no dtlsTransport");
 
 //
 //
@@ -544,7 +557,7 @@ namespace RTC
 //
 //		this->iceServer->GetSelectedTuple()->Send(data, len);
 
-		// Increase send transmission.
+            // Increase send transmission.
 		//RTC::Transport::DataSent(len);
 	}
 
@@ -552,11 +565,11 @@ namespace RTC
 	  const RTC::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
 	{
 		
+            SInfo << "OnDtlsTransportApplicationDataReceived len:" << len;
 
+            assertm(this->dtlsTransport, "no dtlsTransport");
 
-		assertm(this->dtlsTransport, "no dtlsTransport");
-
-		// Pass it to the parent transport.
-		//RTC::Transport::ReceiveSctpData(data, len);
+            // Pass it to the parent transport.
+            //RTC::Transport::ReceiveSctpData(data, len);
 	}
 } // namespace RTC

@@ -109,29 +109,42 @@ private:
 
 
 int main(int argc, char** argv) {
-    Logger::instance().add(new ConsoleChannel("debug", Level::Trace));
+    
+        Logger::instance().add(new ConsoleChannel("debug", Level::Trace));
 
 
  
      //  net::SSLManager::initNoVerifyServer();
 
         Application app;
-        SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true);
+        //SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true);
    
 
         RTC::DtlsTransport::ClassInit();
                 
         #if HTTPSSL
-        config.certificatePemFile = "/var/tmp/certificate.crt";
-        config.keyPemFile = "/var/tmp/private.key" ;
+        config.certificatePemFile = "/usr/local/google/home/aumrao/dta-repo/dta-tools/thirdparty/jimtcl/examples/certificate.pem";
+        config.keyPemFile = "/usr/local/google/home/aumrao/dta-repo/dta-tools/thirdparty/jimtcl/examples/key.pem" ;
+   
         SInfo << "https://localhost:8000";
 
         #else
         SInfo << "http://localhost:8000";
         #endif
         
-        std::string transportId = "101";
-        auto* webRtcTransport = new RTC::WebRtcTransport(transportId);
+        if(argc> 1)
+        {
+            std::string transportId = "101";
+            auto* webRtcTransport = new RTC::WebRtcTransport(transportId ,8000, 9000);
+            webRtcTransport->HandleRequest(false);
+        }
+        else
+        {
+            std::string transportId = "102";
+            auto* webRtcTransport = new RTC::WebRtcTransport(transportId, 9000, 8000);
+            webRtcTransport->HandleRequest(false);
+        }
+        
 
 
         app.waitForShutdown([&](void*) {
