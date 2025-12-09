@@ -1,4 +1,10 @@
+GIT commands 
 
+ git filter-branch --index-filter 'git rm -rf --cached --ignore-unmatch src/net/dtlstest/runwebRTCserver' HEAD
+
+ git push -f
+
+ git difftool -- src/net/dtlstest/runwebRTCserver
 
 https://multicorewareinc.com/image-signal-processors-in-modern-sensor-engineering/
 
