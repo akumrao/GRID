@@ -6,8 +6,43 @@
 #include "media/engine/internal_encoder_factory.h"
 #include "rtc_base/logging.h"
 #include "test/video_codec_settings.h"
+//#include "rtc_base/timeutils.h"
+#include "rtc_base/time_utils.h"  
+
+#include <iostream>
+#include <string>
+#include <chrono>
+#include <ctime>
+#include <iomanip> // Required for std::put_time
 
 namespace webrtc_demo {
+    
+
+    
+std::string time_in_HH_MM_SS_MMM()
+{
+    using namespace std::chrono;
+
+    // get current time
+    auto now = system_clock::now();
+
+    // get number of milliseconds for the current second
+    // (remainder after division into seconds)
+    auto ms = duration_cast<milliseconds>(now.time_since_epoch()) % 1000;
+
+    // convert to std::time_t in order to convert to std::tm (broken time)
+    auto timer = system_clock::to_time_t(now);
+
+    // convert to broken time
+    std::tm bt = *std::localtime(&timer);
+
+    std::ostringstream oss;
+
+    oss << std::put_time(&bt, "%H:%M:%S"); // HH:MM:SS
+    oss << '.' << std::setfill('0') << std::setw(3) << ms.count();
+
+    return oss.str();
+}
 
 constexpr size_t kWidth = 1920;
 constexpr size_t kHeight = 1080;
@@ -89,7 +124,7 @@ webrtc::EncodedImageCallback::Result VideoEncodeHandler::OnEncodedImage(
     const webrtc::EncodedImage& encoded_image,
     const webrtc::CodecSpecificInfo* codec_specific_info,
     const webrtc::RTPFragmentationHeader* fragmentation) {
-  RTC_LOG(LS_INFO) << "-----VideoEncodeHandler::OnEncodedImage-----" << encoded_image.size() << ", " << encoded_image.Timestamp() << "--" << encoded_image._frameType;
+  RTC_LOG(LS_INFO) << time_in_HH_MM_SS_MMM() << " OnEncodedImage--"<<   encoded_image.size() << ", " <<  encoded_image.Timestamp() << "--" << (encoded_image._frameType == webrtc::VideoFrameType::kVideoFrameKey ? "I":"P"); 
 
   return webrtc::EncodedImageCallback::Result(
       webrtc::EncodedImageCallback::Result::OK);

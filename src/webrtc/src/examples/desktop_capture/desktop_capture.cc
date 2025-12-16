@@ -96,11 +96,12 @@ void DesktopCapture::OnCaptureResult(
                         i420_buffer_->StrideV(), 0, 0, width, height, width,
                         height, libyuv::kRotate0, libyuv::FOURCC_ARGB);
 
+  int64_t curr=  rtc::TimeMicros();
   webrtc::VideoFrame captureFrame =
       webrtc::VideoFrame::Builder()
           .set_video_frame_buffer(i420_buffer_)
-          .set_timestamp_rtp(0)
-          .set_timestamp_ms(rtc::TimeMillis())
+          .set_timestamp_rtp((curr*9)/100)     // 90Hz value
+          .set_timestamp_us(rtc::TimeMicros())
           .set_rotation(webrtc::VideoRotation::kVideoRotation_0)
           .build();
 
