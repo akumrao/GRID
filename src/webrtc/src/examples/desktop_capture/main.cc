@@ -6,6 +6,11 @@
 #include <thread>
 
 int main() {
+
+
+  rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);  // LS_VERBOSE, LS_INFO, LS_ERROR
+  rtc::LogMessage::LogThreads(true);
+  rtc::LogMessage::LogTimestamps();
   std::unique_ptr<webrtc_demo::DesktopCapture> capturer(webrtc_demo::DesktopCapture::Create(30,0));
 
   capturer->StartCapture();

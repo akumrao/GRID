@@ -115,16 +115,24 @@ void VideoEncodeHandler::OnFrame(const webrtc::VideoFrame& frame) {
     ReInitEncoder();
   }
 
+  int64_t enc_start_time_us = rtc::TimeMicros();
+
   if (video_encoder_) {
     video_encoder_->Encode(frame, nullptr);
   }
+
+  
+  RTC_LOG(LS_INFO) << "id: " << frame.id()
+                    << " enc_start_time_us: " << enc_start_time_us
+                   << " enc_end_time_us: " << rtc::TimeMicros();
+
 }
 
 webrtc::EncodedImageCallback::Result VideoEncodeHandler::OnEncodedImage(
     const webrtc::EncodedImage& encoded_image,
     const webrtc::CodecSpecificInfo* codec_specific_info,
     const webrtc::RTPFragmentationHeader* fragmentation) {
-  RTC_LOG(LS_INFO) << time_in_HH_MM_SS_MMM() << " OnEncodedImage--"<<   encoded_image.size() << ", " <<  encoded_image.Timestamp() << "--" << (encoded_image._frameType == webrtc::VideoFrameType::kVideoFrameKey ? "I":"P"); 
+  RTC_LOG(LS_INFO) << "id: " <<   encoded_image.NtpTimeMs() <<   " size: " <<    encoded_image.size() << " rtpts: " <<  encoded_image.Timestamp() << " frametype: " << (encoded_image._frameType == webrtc::VideoFrameType::kVideoFrameKey ? "I":"P"); 
 
   return webrtc::EncodedImageCallback::Result(
       webrtc::EncodedImageCallback::Result::OK);

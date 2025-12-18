@@ -33,8 +33,19 @@ DesktopCapture* DesktopCapture::Create(size_t target_fps,
 }
 
 bool DesktopCapture::Init(size_t target_fps, size_t capture_screen_index) {
-  dc_ = webrtc::DesktopCapturer::CreateScreenCapturer(
-      webrtc::DesktopCaptureOptions::CreateDefault());
+
+    /* Enable allow_directx_capturer in DesktopCaptureOptions,
+      but let
+          // DesktopCapturer::CreateScreenCapturer to decide whether a DirectX
+          // capturer should be used.
+     */
+
+     webrtc:: DesktopCaptureOptions options(webrtc::DesktopCaptureOptions::CreateDefault());
+     #if defined(WEBRTC_WIN)
+     options.set_allow_directx_capturer(true);
+     #endif 
+     dc_ = webrtc::DesktopCapturer::CreateScreenCapturer(options);
+     
 
   if (!dc_)
     return false;
@@ -95,10 +106,11 @@ void DesktopCapture::OnCaptureResult(
                         i420_buffer_->StrideU(), i420_buffer_->MutableDataV(),
                         i420_buffer_->StrideV(), 0, 0, width, height, width,
                         height, libyuv::kRotate0, libyuv::FOURCC_ARGB);
-
+  int64_t static id = 0;
   int64_t curr=  rtc::TimeMicros();
   webrtc::VideoFrame captureFrame =
       webrtc::VideoFrame::Builder()
+          .set_id(++id)
           .set_video_frame_buffer(i420_buffer_)
           .set_timestamp_rtp((curr*9)/100)     // 90Hz value
           .set_timestamp_us(rtc::TimeMicros())
