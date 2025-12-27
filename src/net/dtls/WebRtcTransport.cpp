@@ -5,6 +5,7 @@
 #include "WebRtcTransport.h"
 #include "base/logger.h"
 #include "base/error.h"
+#include "net/IP.h"
 //#include "Utils.h"
 //#include "Channel/Notifier.h"
 #include <cmath> // std::pow()
@@ -45,6 +46,8 @@ namespace RTC
             bool preferUdp{ false };
             bool preferTcp{ false };
             
+            iceServer = new RTC::IceServer();
+            
             for (auto& listenIp : listenIps)
             {
                     if (enableUdp)
@@ -64,6 +67,18 @@ namespace RTC
                             
 
                             this->udpSockets[udpSocket] = listenIp.announcedIp;
+                            
+                            
+                             addr_record_t mapped;
+                            
+                             IP::StringToAddress(listenIps[0].ip.data() , remotePort,  mapped);
+                             
+                            tuple = new TransportTuple(
+                            udpSocket, reinterpret_cast<struct sockaddr*>(&mapped.addr)  );
+
+                            tuple = iceServer->AddTuple(tuple);
+                                   
+                            iceServer->SetSelectedTuple(tuple) ;
                            
                     }
 
@@ -97,29 +112,29 @@ namespace RTC
 
 	WebRtcTransport::~WebRtcTransport()
 	{
-		
+            delete iceServer;
 
-		// Must delete the DTLS transport first since it will generate a DTLS alert
-		// to be sent.
-		delete this->dtlsTransport;
-		this->dtlsTransport = nullptr;
+            // Must delete the DTLS transport first since it will generate a DTLS alert
+            // to be sent.
+            delete this->dtlsTransport;
+            this->dtlsTransport = nullptr;
 
 
-		for (auto& kv : this->udpSockets)
-		{
-			auto* udpSocket = kv.first;
+            for (auto& kv : this->udpSockets)
+            {
+                    auto* udpSocket = kv.first;
 
-			delete udpSocket;
-		}
-		this->udpSockets.clear();
+                    delete udpSocket;
+            }
+            this->udpSockets.clear();
 
-		for (auto& kv : this->tcpServers)
-		{
-			auto* tcpServer = kv.first;
+            for (auto& kv : this->tcpServers)
+            {
+                    auto* tcpServer = kv.first;
 
-			delete tcpServer;
-		}
-		this->tcpServers.clear();
+                    delete tcpServer;
+            }
+            this->tcpServers.clear();
 
 		
 	}
@@ -371,16 +386,16 @@ namespace RTC
 
             assertm(this->dtlsTransport, "no dtlsTransport");
 
-//		// Ensure it comes from a valid tuple.
-//		if (!this->iceServer->IsValidTuple(tuple))
-//		{
-//			LWarn( "ignoring DTLS data coming from an invalid tuple");
-//
-//			return;
-//		}
-//
-//		// Trick for clients performing aggressive ICE regardless we are ICE-Lite.
-//		this->iceServer->ForceSelectedTuple(tuple);
+		// Ensure it comes from a valid tuple.
+		if (!this->iceServer->IsValidTuple(tuple))
+		{
+			LWarn( "ignoring DTLS data coming from an invalid tuple");
+
+			return;
+		}
+
+		// Trick for clients performing aggressive ICE regardless we are ICE-Lite.
+		this->iceServer->ForceSelectedTuple(tuple);
 
             // Check that DTLS status is 'connecting' or 'connected'.
             if (
@@ -404,7 +419,7 @@ namespace RTC
 	inline void WebRtcTransport::OnUdpSocketPacketReceived(
 	  base::net::UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr)
 	{
-            SInfo << "OnUdpSocketPacketReceived" << len;
+            SInfo << "OnUdpSocketPacketReceived " << len;
 
             base::net::TransportTuple tuple(socket, remoteAddr);
 
@@ -419,7 +434,7 @@ namespace RTC
 
             base::net::TransportTuple tuple(connection);
 //
-//		this->iceServer->RemoveTuple(&tuple);
+		this->iceServer->RemoveTuple(&tuple);
 	}
 
 
@@ -453,10 +468,13 @@ namespace RTC
 //		Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
 	}
 
-	inline void WebRtcTransport::OnDtlsTransportConnected( const RTC::DtlsTransport* /*dtlsTransport*/) 
+	inline void WebRtcTransport::OnDtlsTransportConnected( const RTC::DtlsTransport* dtlsTransport ) 
 	{
 		
                 SInfo << "OnDtlsTransportConnected";
+                
+                const uint8_t tmp[7]="arvind";
+                OnDtlsTransportSendData( dtlsTransport, tmp, 7);
                 
                 
 //		assertm(this->iceServer, "no iceServer");
@@ -546,16 +564,16 @@ namespace RTC
 
             assertm(this->dtlsTransport, "no dtlsTransport");
 
-//
-//
-//		if (!this->iceServer->GetSelectedTuple())
-//		{
-//			LWarn( "no selected tuple set, cannot send DTLS packet");
-//
-//			return;
-//		}
-//
-//		this->iceServer->GetSelectedTuple()->Send(data, len);
+
+
+		if (!this->iceServer->GetSelectedTuple())
+		{
+			LWarn( "no selected tuple set, cannot send DTLS packet");
+
+			return;
+		}
+
+		this->iceServer->GetSelectedTuple()->Send(data, len);
 
             // Increase send transmission.
 		//RTC::Transport::DataSent(len);

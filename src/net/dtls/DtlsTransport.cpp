@@ -13,7 +13,7 @@
 #include <uv.h>
 #include <cstdio>  // std::sprintf(), std::fopen()
 #include <cstring> // std::memcpy(), std::strcmp()
-
+#include "IceServer.h"
 #include "net/certificate.h"
 
 
@@ -985,8 +985,17 @@ namespace RTC
 //		}
 //
 //		// NOTE: We assume that "use_srtp" DTLS extension is required even if
-//		// there is no audio/video.
-//		MS_WARN_2TAGS(dtls, srtp, "SRTP profile not negotiated");
+		// there is no audio/video.
+                
+                
+                this->state = DtlsState::CONNECTED;
+		this->listener->OnDtlsTransportConnected(
+		  this );
+                
+                
+		SWarn <<  "SRTP profile not negotiated";
+                
+                return true;
 
 		Reset();
 

@@ -88,7 +88,7 @@ uint16_t port = defaultPort;
 sockio::Socket *mysocket = nullptr;
 std::string from;
 std::string room;
-Configuration config;
+Configuration settingconfig;
 
 std::string id;
   
@@ -332,13 +332,13 @@ int main(int argc, char **argv)
    
     string stunServer = "stun:stun.l.google.com:19302";
     cout << "STUN server is " << stunServer << endl;
-    config.iceServers.emplace_back(stunServer);
-    config.disableAutoNegotiation = true;
+    settingconfig.iceServers.emplace_back(stunServer);
+    settingconfig.disableAutoNegotiation = true;
     // read cert from file
 #if CERTFROMFILE == 1
-    config.keyPemFile =  Settings::configuration.key;
-    config.certificatePemFile = Settings::configuration.certPemFile;  
-    config.keyPemPass = "12345678";
+    settingconfig.keyPemFile =  Settings::configuration.key;
+    settingconfig.certificatePemFile = Settings::configuration.certPemFile;  
+    settingconfig.keyPemPass = "12345678";
     
 #elif CERTFROMFILE == 2
 
@@ -346,9 +346,9 @@ int main(int argc, char **argv)
      * # awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' certificate.crt  
     */
 
-    config.keyPemFile = "";
-    config.certificatePemFile = "";  
-   // config.keyPemPass = "12345678";
+    settingconfig.keyPemFile = "";
+    settingconfig.certificatePemFile = "";  
+   // settingconfig.keyPemPass = "12345678";
     
 #else
     
@@ -359,25 +359,25 @@ int main(int argc, char **argv)
     
    
 #if localtesting 
-    config.console = true;
+    settingconfig.console = true;
     std::string id ="server";
-    clients.emplace(id, createPeerConnection_lc(config,  id));
+    clients.emplace(id, createPeerConnection_lc(settingconfig,  id));
 #elif remotetesting
     
     
 
     
-    config.allocRestApi(async, "test");
-    config.api->List();
+    settingconfig.allocRestApi(async, "test");
+    settingconfig.api->List();
 
     
-    config.console = true;
+    settingconfig.console = true;
     if(cache.loaded())
     {
        
         id = "client"; /// hard coded the id for client(second participant), since it will have only one instance. Second instance should only have one instance, otherwise throw error. TBD 
 
-        clients.emplace(id, createPeerConnection_rm(config,  id, async, true));
+        clients.emplace(id, createPeerConnection_rm(settingconfig,  id, async, true));
     
        
     }

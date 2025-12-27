@@ -22,7 +22,7 @@ namespace RTC
 
 	
 	public:
-		
+               
 		IceState GetState() const;
 		TransportTuple* GetSelectedTuple() const;
 		
@@ -31,8 +31,14 @@ namespace RTC
 		// This should be just called in 'connected' or completed' state
 		// and the given tuple must be an already valid tuple.
 		void ForceSelectedTuple(const TransportTuple* tuple);
+                
+                /**
+		 * Set the given tuple as the selected tuple.
+		 * 
+		 */
+		void SetSelectedTuple(TransportTuple* storedTuple);
 
-	private:
+	public:
 		void HandleTuple(TransportTuple* tuple, bool hasUseCandidate);
 		/**
 		 * Store the given tuple and return its stored address.
@@ -42,17 +48,13 @@ namespace RTC
 		 * If the given tuple exists return its stored address, nullptr otherwise.
 		 */
 		TransportTuple* HasTuple(const TransportTuple* tuple) const;
-		/**
-		 * Set the given tuple as the selected tuple.
-		 * NOTE: The given tuple MUST be already stored within the list.
-		 */
-		void SetSelectedTuple(TransportTuple* storedTuple);
+
 
 	private:
 		// Passed by argument.
 		// Others.
                 IceState state{ IceState::NEW };
-		std::list<TransportTuple> tuples;
+		std::list<TransportTuple*> tuples;
 		TransportTuple* selectedTuple{ nullptr };
 	};
 

@@ -391,6 +391,7 @@ namespace base {
 
             }
 
+            STrace << " binding to port " << localPort;
             
             startRead();
         }

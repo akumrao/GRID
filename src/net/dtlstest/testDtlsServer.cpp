@@ -17,7 +17,8 @@
 #include "net/SslConnection.h"
 #include "DtlsTransport.h"
 #include "net/certificate.h"
-
+#include "json/confSettings.h"
+#include "json/configuration.h"
 #include "WebRtcTransport.h"
 
 
@@ -118,15 +119,30 @@ int main(int argc, char** argv) {
 
         Application app;
         //SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true);
-   
+        
+        
+        
+        
+        base::cnfg::Configuration cnfgSet;
+        cnfgSet.load("./config.js");
+
+
+        try {
+            Settings::SetConfiguration(cnfgSet.root);
+        } catch (const std::exception& error) {
+
+         //  Settings::exit();
+            std::_Exit(-1);
+        } 
+    
+
 
         RTC::DtlsTransport::ClassInit();
                 
         #if HTTPSSL
-        config.certificatePemFile = "/usr/local/google/home/aumrao/dta-repo/dta-tools/thirdparty/jimtcl/examples/certificate.pem";
-        config.keyPemFile = "/usr/local/google/home/aumrao/dta-repo/dta-tools/thirdparty/jimtcl/examples/key.pem" ;
-   
-        SInfo << "https://localhost:8000";
+        
+        config.certificatePemFile = Settings::configuration.certFile;
+        config.keyPemFile =Settings::configuration.keyFile  ;
 
         #else
         SInfo << "http://localhost:8000";
@@ -142,7 +158,7 @@ int main(int argc, char** argv) {
         {
             std::string transportId = "102";
             auto* webRtcTransport = new RTC::WebRtcTransport(transportId, 9000, 8000);
-            webRtcTransport->HandleRequest(false);
+            webRtcTransport->HandleRequest(true);
         }
         
 

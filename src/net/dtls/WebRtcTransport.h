@@ -2,7 +2,7 @@
 #define WEBRTC_TRANSPORT_HPP
 
 #include "DtlsTransport.h"
-
+#include "TransportTuple.h"
 //#include "SrtpSession.h"
 //#include "RTC/StunPacket.h"
 #include "net/netInterface.h"
@@ -11,7 +11,9 @@
 #include "TransportTuple.h"
 #include "net/UdpSocket.h"
 #include <vector>
+#include "IceServer.h"
 
+using namespace base::net;
 
 namespace RTC
 {
@@ -24,9 +26,9 @@ namespace RTC
 	private:
 		struct ListenIp
 		{
-			std::string ip;
-			std::string announcedIp;
-                        int port;
+                    std::string ip;
+                    std::string announcedIp;
+                    int port;
 
 		};
 
@@ -81,6 +83,8 @@ namespace RTC
 	private:
 		// Allocated by this.
 
+                RTC::IceServer* iceServer{ nullptr };        
+                TransportTuple* tuple{ nullptr };
 		// Map of UdpSocket/TcpServer and local announced IP (if any).
 		std::unordered_map<base::net::UdpServer*, std::string> udpSockets;
 		std::unordered_map<base::net::TcpServer*, std::string> tcpServers;

@@ -4,7 +4,7 @@
 CC	= gcc
 CXX     = g++
 TARGET=runwebRTCserver # define the name of the executable
-SOURCES=$(wildcard testDtlsServer.cpp ../src/*.cpp ../dtls/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp )
+SOURCES=$(wildcard testDtlsServer.cpp ../src/*.cpp ../dtls/*.cpp ../../json/src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp )
 
 CXXFLAGS   := -g -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL
 

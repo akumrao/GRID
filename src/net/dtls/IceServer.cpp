@@ -27,7 +27,7 @@ namespace RTC
 
 		for (; it != this->tuples.end(); ++it)
 		{
-			TransportTuple* storedTuple = std::addressof(*it);
+			TransportTuple* storedTuple = *it;
 
 			if (storedTuple->Compare(tuple))
 			{
@@ -54,7 +54,7 @@ namespace RTC
 		// Mark the first tuple as selected tuple (if any).
 		if (this->tuples.begin() != this->tuples.end())
 		{
-			SetSelectedTuple(std::addressof(*this->tuples.begin()));
+			SetSelectedTuple((*this->tuples.begin()));
 		}
 		// Or just emit 'disconnected'.
 		else
@@ -83,22 +83,18 @@ namespace RTC
 
 	}
 
-	inline TransportTuple* IceServer::AddTuple(TransportTuple* tuple)
+	 TransportTuple* IceServer::AddTuple(TransportTuple* tuple)
 	{
-		
-
 		// Add the new tuple at the beginning of the list.
-		this->tuples.push_front(*tuple);
+            tuples.push_front(tuple);
+            //auto* storedTuple = std::addressof(this->tuples.begin());
 
-		auto* storedTuple = std::addressof(*this->tuples.begin());
+            // If it is UDP then we must store the remote address (until now it is
+            // just a pointer that will be freed soon).
+            if (tuple->GetProtocol() == TransportTuple::Protocol::UDP)
+                    tuple->StoreUdpRemoteAddress();
 
-		// If it is UDP then we must store the remote address (until now it is
-		// just a pointer that will be freed soon).
-		if (storedTuple->GetProtocol() == TransportTuple::Protocol::UDP)
-			storedTuple->StoreUdpRemoteAddress();
-
-		// Return the address of the inserted tuple.
-		return storedTuple;
+            return tuple;
 	}
 
 	inline TransportTuple* IceServer::HasTuple(const TransportTuple* tuple) const
@@ -117,7 +113,7 @@ namespace RTC
 		// Otherwise check other stored tuples.
 		for (const auto& it : this->tuples)
 		{
-			auto* storedTuple = const_cast<TransportTuple*>(std::addressof(it));
+			auto* storedTuple = const_cast<TransportTuple*>(it);
 
 			if (storedTuple->Compare(tuple))
 				return storedTuple;
