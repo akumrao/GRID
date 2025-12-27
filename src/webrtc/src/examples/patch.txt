@@ -1,0 +1,141 @@
+diff --git a/examples/desktop_capture/desktop_capture.cc b/examples/desktop_capture/desktop_capture.cc
+index 91bf9f6dac..62695e2586 100644
+--- a/examples/desktop_capture/desktop_capture.cc
++++ b/examples/desktop_capture/desktop_capture.cc
+@@ -33,8 +33,19 @@ DesktopCapture* DesktopCapture::Create(size_t target_fps,
+ }
+ 
+ bool DesktopCapture::Init(size_t target_fps, size_t capture_screen_index) {
+-  dc_ = webrtc::DesktopCapturer::CreateScreenCapturer(
+-      webrtc::DesktopCaptureOptions::CreateDefault());
++
++    /* Enable allow_directx_capturer in DesktopCaptureOptions,
++      but let
++          // DesktopCapturer::CreateScreenCapturer to decide whether a DirectX
++          // capturer should be used.
++     */
++
++     webrtc:: DesktopCaptureOptions options(webrtc::DesktopCaptureOptions::CreateDefault());
++     #if defined(WEBRTC_WIN)
++     options.set_allow_directx_capturer(true);
++     #endif 
++     dc_ = webrtc::DesktopCapturer::CreateScreenCapturer(options);
++     
+ 
+   if (!dc_)
+     return false;
+@@ -95,10 +106,11 @@ void DesktopCapture::OnCaptureResult(
+                         i420_buffer_->StrideU(), i420_buffer_->MutableDataV(),
+                         i420_buffer_->StrideV(), 0, 0, width, height, width,
+                         height, libyuv::kRotate0, libyuv::FOURCC_ARGB);
+-
++  int64_t static id = 0;
+   int64_t curr=  rtc::TimeMicros();
+   webrtc::VideoFrame captureFrame =
+       webrtc::VideoFrame::Builder()
++          .set_id(++id)
+           .set_video_frame_buffer(i420_buffer_)
+           .set_timestamp_rtp((curr*9)/100)     // 90Hz value
+           .set_timestamp_us(rtc::TimeMicros())
+diff --git a/examples/desktop_capture/main.cc b/examples/desktop_capture/main.cc
+index 5fd8d31c89..8c5b1e864b 100644
+--- a/examples/desktop_capture/main.cc
++++ b/examples/desktop_capture/main.cc
+@@ -6,6 +6,11 @@
+ #include <thread>
+ 
+ int main() {
++
++
++  rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);  // LS_VERBOSE, LS_INFO, LS_ERROR
++  rtc::LogMessage::LogThreads(true);
++  rtc::LogMessage::LogTimestamps();
+   std::unique_ptr<webrtc_demo::DesktopCapture> capturer(webrtc_demo::DesktopCapture::Create(30,0));
+ 
+   capturer->StartCapture();
+diff --git a/examples/desktop_capture/video_encode_handler.cc b/examples/desktop_capture/video_encode_handler.cc
+index 7b18dafaa6..970dd235c6 100644
+--- a/examples/desktop_capture/video_encode_handler.cc
++++ b/examples/desktop_capture/video_encode_handler.cc
+@@ -115,16 +115,24 @@ void VideoEncodeHandler::OnFrame(const webrtc::VideoFrame& frame) {
+     ReInitEncoder();
+   }
+ 
++  int64_t enc_start_time_us = rtc::TimeMicros();
++
+   if (video_encoder_) {
+     video_encoder_->Encode(frame, nullptr);
+   }
++
++  
++  RTC_LOG(LS_INFO) << "id: " << frame.id()
++                    << " enc_start_time_us: " << enc_start_time_us
++                   << " enc_end_time_us: " << rtc::TimeMicros();
++
+ }
+ 
+ webrtc::EncodedImageCallback::Result VideoEncodeHandler::OnEncodedImage(
+     const webrtc::EncodedImage& encoded_image,
+     const webrtc::CodecSpecificInfo* codec_specific_info,
+     const webrtc::RTPFragmentationHeader* fragmentation) {
+-  RTC_LOG(LS_INFO) << time_in_HH_MM_SS_MMM() << " OnEncodedImage--"<<   encoded_image.size() << ", " <<  encoded_image.Timestamp() << "--" << (encoded_image._frameType == webrtc::VideoFrameType::kVideoFrameKey ? "I":"P"); 
++  RTC_LOG(LS_INFO) << "id: " <<   encoded_image.NtpTimeMs() <<   " size: " <<    encoded_image.size() << " rtpts: " <<  encoded_image.Timestamp() << " frametype: " << (encoded_image._frameType == webrtc::VideoFrameType::kVideoFrameKey ? "I":"P"); 
+ 
+   return webrtc::EncodedImageCallback::Result(
+       webrtc::EncodedImageCallback::Result::OK);
+diff --git a/modules/desktop_capture/win/screen_capturer_win_directx.cc b/modules/desktop_capture/win/screen_capturer_win_directx.cc
+index df3bee8f26..e2756c0308 100644
+--- a/modules/desktop_capture/win/screen_capturer_win_directx.cc
++++ b/modules/desktop_capture/win/screen_capturer_win_directx.cc
+@@ -116,10 +116,16 @@ void ScreenCapturerWinDirectx::SetSharedMemoryFactory(
+ }
+ 
+ void ScreenCapturerWinDirectx::CaptureFrame() {
+-  RTC_DCHECK(callback_);
+-  TRACE_EVENT0("webrtc", "ScreenCapturerWinDirectx::CaptureFrame");
++//  RTC_DCHECK(callback_);
++ // TRACE_EVENT0("webrtc", "ScreenCapturerWinDirectx::CaptureFrame");
++
++
++
++  int64_t capture_start_time_us = rtc::TimeMicros();
++
++  static int64_t id = 0;
++
+ 
+-  int64_t capture_start_time_nanos = rtc::TimeNanos();
+ 
+   frames_.MoveToNextFrame();
+   if (!frames_.current_frame()) {
+@@ -166,11 +172,17 @@ void ScreenCapturerWinDirectx::CaptureFrame() {
+       callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
+       break;
+     }
++                                          
+     case DuplicateResult::SUCCEEDED: {
++
++     RTC_LOG(LS_INFO) << "id: " << ++id
++                       << " capture_start_time_ns: " << capture_start_time_us
++                       << " capture_end_time_us: " << rtc::TimeMicros();
++
+       std::unique_ptr<DesktopFrame> frame =
+           frames_.current_frame()->frame()->Share();
+-      frame->set_capture_time_ms((rtc::TimeNanos() - capture_start_time_nanos) /
+-                                 rtc::kNumNanosecsPerMillisec);
++      frame->set_capture_time_ms((rtc::TimeMicros() - capture_start_time_us) /
++                                 rtc::kNumMicrosecsPerMillisec);
+       frame->set_capturer_id(DesktopCapturerId::kScreenCapturerWinDirectx);
+ 
+       // TODO(julien.isorce): http://crbug.com/945468. Set the icc profile on
+diff --git a/modules/video_coding/codecs/vp8/libvpx_vp8_encoder.cc b/modules/video_coding/codecs/vp8/libvpx_vp8_encoder.cc
+index ac04bc3e50..bb1024f8d2 100644
+--- a/modules/video_coding/codecs/vp8/libvpx_vp8_encoder.cc
++++ b/modules/video_coding/codecs/vp8/libvpx_vp8_encoder.cc
+@@ -1181,6 +1181,7 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image,
+         break;
+       }
+     }
++    encoded_images_[encoder_idx].ntp_time_ms_ = input_image.id();
+     encoded_images_[encoder_idx].SetTimestamp(input_image.timestamp());
+     encoded_images_[encoder_idx].SetRetransmissionAllowed(
+         retransmission_allowed);
