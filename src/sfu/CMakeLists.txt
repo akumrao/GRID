@@ -2,8 +2,11 @@ cmake_minimum_required(VERSION 3.7)
 
 if (${CROSS_PLATEFORM} STREQUAL "x86_64")
 
-SET(SSL_ROOT "/workspace/MagicAI/src/openssl/buildx64")
-SET(SSL_LIB "/workspace/MagicAI/src/openssl/buildx64/lib")
+message("Current List File Directory: ${CMAKE_SOURCE_DIR}/../../openssl/buildx64")
+
+SET(SSL_ROOT "${CMAKE_SOURCE_DIR}/../openssl/buildx64")
+SET(SSL_LIB "${CMAKE_SOURCE_DIR}/../openssl/buildx64/lib")
+
 
 
 elseif (${CROSS_PLATEFORM} STREQUAL "mipsel")
