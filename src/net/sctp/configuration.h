@@ -8,7 +8,7 @@
 #include <vector>
 
 
-namespace rtc {
+namespace RTC {
 
 const size_t MAX_NUMERICNODE_LEN = 48; // Max IPv6 string representation length
 const size_t MAX_NUMERICSERV_LEN = 6;  // Max port string representation length
@@ -30,28 +30,28 @@ const int MIN_THREADPOOL_SIZE = 4; // Minimum number of threads in the global th
 
 const size_t DEFAULT_MTU = RTC_DEFAULT_MTU; // defined in rtc.h
 
-} // namespace rtc
+} // namespace RTC
 
 
 
 
-namespace rtc {
+namespace RTC {
 
-struct RTC_CPP_EXPORT IceServer {
+struct RTC_CPP_EXPORT IceServer_conf {
 	enum class Type { Stun, Turn };
 	enum class RelayType { TurnUdp, TurnTcp, TurnTls };
 
 	// Any type
-	IceServer(const string &url);
+	IceServer_conf(const string &url);
 
 	// STUN
-	IceServer(string hostname_, uint16_t port_);
-	IceServer(string hostname_, string service_);
+	IceServer_conf(string hostname_, uint16_t port_);
+	IceServer_conf(string hostname_, string service_);
 
 	// TURN
-	IceServer(string hostname_, uint16_t port, string username_, string password_,
+	IceServer_conf(string hostname_, uint16_t port, string username_, string password_,
 	          RelayType relayType_ = RelayType::TurnUdp);
-	IceServer(string hostname_, string service_, string username_, string password_,
+	IceServer_conf(string hostname_, string service_, string username_, string password_,
 	          RelayType relayType_ = RelayType::TurnUdp);
 
 	string hostname;
@@ -80,7 +80,7 @@ enum class TransportPolicy { All = RTC_TRANSPORT_POLICY_ALL, Relay = RTC_TRANSPO
         
 struct RTC_CPP_EXPORT Configuration {
 	// ICE settings
-	std::vector<IceServer> iceServers;
+	std::vector<IceServer_conf> iceServers;
 
 
 	// Options
@@ -111,6 +111,6 @@ struct RTC_CPP_EXPORT Configuration {
 
 
 
-} // namespace rtc
+} // namespace RTC
 
 #endif

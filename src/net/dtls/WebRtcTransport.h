@@ -8,6 +8,7 @@
 #include "net/netInterface.h"
 #include "net/TcpConnection.h"
 #include "net/TcpServer.h"
+#include "Transport.h"
 #include "TransportTuple.h"
 #include "net/UdpSocket.h"
 #include <vector>
@@ -17,7 +18,8 @@ using namespace base::net;
 
 namespace RTC
 {
-	class WebRtcTransport :  public  base::net::UdpServer::Listener,
+	class WebRtcTransport : public RTC::Transport,
+			        public  base::net::UdpServer::Listener,
 	                       // public RTC::TcpServer::Listener,
 	                       // public RTC::TcpConnection::Listener,
                                 public base::net::Listener,
@@ -33,8 +35,8 @@ namespace RTC
 		};
 
 	public:
-		WebRtcTransport(const std::string& id, int localPort, int remotePort );
-		~WebRtcTransport() ;
+		WebRtcTransport(const std::string& id,  RTC::Transport::Listener* listener, int localPort, int remotePort );
+		~WebRtcTransport() override;;
 
 	public:
                 void HandleRequest(bool server);
@@ -44,7 +46,7 @@ namespace RTC
 		void MayRunDtlsTransport();
                 
 
-		//void SendSctpData(const uint8_t* data, size_t len) override;
+		void SendSctpData(const uint8_t* data, size_t len) ;
 		void OnPacketReceived(base::net::TransportTuple* tuple, const char* data, size_t len);
 		void OnStunDataReceived(base::net::TransportTuple* tuple, const char* data, size_t len);
 		void OnDtlsDataReceived(const base::net::TransportTuple* tuple, const char* data, size_t len);

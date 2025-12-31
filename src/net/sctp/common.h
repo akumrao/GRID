@@ -45,7 +45,7 @@
 #include <variant>
 #include <vector>
 
-namespace rtc {
+namespace RTC {
 
 //using std::byte;
 //using std::nullopt;
@@ -72,6 +72,6 @@ using std::uint32_t;
 using std::uint64_t;
 using std::uint8_t;
 
-} // namespace rtc
+} // namespace RTC
 
 #endif

@@ -18,7 +18,7 @@
 //#include <future>
 #include <tuple>
 
-namespace rtc {
+namespace RTC {
 
 class Certificate {
 public:
@@ -63,6 +63,6 @@ string make_fingerprint(X509 *x509, CertificateFingerprint::Algorithm fingerprin
 
  shared_ptr<Certificate> make_certificate(CertificateType type = CertificateType::Default);
 
-} // namespace rtc::impl
+} // namespace RTC::impl
 
 #endif

@@ -13,7 +13,7 @@
 
 #define ICE_MAX_CANDIDATES_COUNT 20 
 
-namespace rtc {
+namespace RTC {
 
 const string DEFAULT_OPUS_AUDIO_PROFILE =
     "minptime=10;maxaveragebitrate=96000;stereo=1;sprop-stereo=1;useinbandfec=1";
@@ -367,6 +367,6 @@ RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, Description::Type typ
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, Description::Role role);
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, const Description::Direction &direction);
 
-} // namespace rtc
+} // namespace RTC
 
 #endif

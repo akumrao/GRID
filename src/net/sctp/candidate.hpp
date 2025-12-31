@@ -10,7 +10,7 @@
 using namespace base::net;
 //using namespace stun;
 
-namespace rtc {
+namespace RTC {
 
 #define ICE_CANDIDATE_PREF_HOST 126
 #define ICE_CANDIDATE_PREF_PEER_REFLEXIVE 110
@@ -78,6 +78,6 @@ RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, const Candidate::Type
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out,
                                         const Candidate::TransportType &transportType);
 
-} // namespace rtc
+} // namespace RTC
 
 #endif

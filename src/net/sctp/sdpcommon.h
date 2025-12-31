@@ -23,7 +23,7 @@
 
 
 
-namespace rtc {
+namespace RTC {
     
     int ice_type_suffix(const Candidate *candidate,  char **type , char **suffix  );
   

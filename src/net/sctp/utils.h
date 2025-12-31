@@ -12,7 +12,7 @@
 #include <stdexcept>
 #include <vector>
 
-namespace rtc::utils {
+namespace RTC::utils {
 
 std::vector<string> explode(const string &str, char delim);
 string implode(const std::vector<string> &tokens, char delim);
@@ -77,6 +77,6 @@ void set_name(const string &name);
 
 } // namespace this_thread
 
-} // namespace rtc::impl::utils
+} // namespace RTC::impl::utils
 
 #endif

@@ -1,0 +1,222 @@
+#ifndef MS_RTC_TRANSPORT_HPP
+#define MS_RTC_TRANSPORT_HPP
+#define ENABLE_RTC_SENDER_BANDWIDTH_ESTIMATOR
+
+#include "common.h"
+#include "base/application.h"
+#include "sctptransport.hpp"
+
+#include "DataConsumer.h"
+#include "DataProducer.h"
+
+//#include "RTC/SctpTransport.h"
+//#include "RTC/SctpListener.h"
+//
+//#ifdef ENABLE_RTC_SENDER_BANDWIDTH_ESTIMATOR
+//#include "RTC/SenderBandwidthEstimator.h"
+//#endif
+//#include "RTC/TransportCongestionControlClient.h"
+//#include "RTC/TransportCongestionControlServer.h"
+#include "base/Timer.h"
+#include <string>
+#include <unordered_map>
+
+using namespace base;
+
+using json = nlohmann::json;
+
+namespace RTC
+{
+	class Transport : 
+	                public RTC::SctpTransport::Listener,
+	                public Timer::Listener
+	{
+	protected:
+		using onSendCallback = const std::function<void(bool sent)>;
+
+	public:
+		class Listener
+		{
+		public:
+		
+			//virtual void OnTransportDataProducerSctpMessageReceived(  RTC::Transport* transport,  RTC::DataProducer* dataProducer,	  uint32_t ppid,  const uint8_t* msg,   size_t len) = 0;
+		};
+
+	private:
+		struct TraceEventTypes
+		{
+			bool probation{ false };
+			bool bwe{ false };
+		};
+
+	public:
+		Transport(const std::string& id, Listener* listener);
+		virtual ~Transport();
+
+	public:
+		virtual void HandleRequest();
+
+	protected:
+		// Must be called from the subclass.
+		void Connected();
+		void Disconnected();
+		void DataReceived(size_t len);
+		void DataSent(size_t len);
+		//void ReceiveRtpPacket(RTC::RtpPacket* packet);
+		//void ReceiveRtcpPacket(RTC::RTCP::Packet* packet);
+		void ReceiveSctpData(const uint8_t* data, size_t len);
+
+	private:
+//		void SetNewProducerIdFromRequest(Channel::Request* request, std::string& producerId) const;
+//		RTC::Producer* GetProducerFromRequest(Channel::Request* request) const;
+//		void SetNewConsumerIdFromRequest(Channel::Request* request, std::string& consumerId) const;
+//		RTC::Consumer* GetConsumerFromRequest(Channel::Request* request) const;
+//		RTC::Consumer* GetConsumerByMediaSsrc(uint32_t ssrc) const;
+//		RTC::Consumer* GetConsumerByRtxSsrc(uint32_t ssrc) const;
+//		void SetNewDataProducerIdFromRequest(Channel::Request* request, std::string& dataProducerId) const;
+//		RTC::DataProducer* GetDataProducerFromRequest(Channel::Request* request) const;
+//		void SetNewDataConsumerIdFromRequest(Channel::Request* request, std::string& dataConsumerId) const;
+//		RTC::DataConsumer* GetDataConsumerFromRequest(Channel::Request* request) const;
+//		virtual bool IsConnected() const                                                 = 0;
+//		virtual void SendRtpPacket(RTC::RtpPacket* packet, onSendCallback cb = nullptr) = 0;
+//		void HandleRtcpPacket(RTC::RTCP::Packet* packet);
+//		void SendRtcp(uint64_t nowMs);
+//		virtual void SendRtcpPacket(RTC::RTCP::Packet* packet)                 = 0;
+//		virtual void SendRtcpCompoundPacket(RTC::RTCP::CompoundPacket* packet) = 0;
+//		virtual void SendSctpData(const uint8_t* data, size_t len)             = 0;
+//		void DistributeAvailableOutgoingBitrate();
+//		void ComputeOutgoingDesiredBitrate(bool forceBitrate = false);
+//		void EmitTraceEventProbationType(RTC::RtpPacket* packet) const;
+//		void EmitTraceEventBweType(RTC::TransportCongestionControlClient::Bitrates& bitrates) const;
+
+		/* Pure virtual methods inherited from RTC::Producer::Listener. */
+	public:
+//		void OnProducerPaused(RTC::Producer* producer) override;
+//		void OnProducerResumed(RTC::Producer* producer) override;
+//		void OnProducerNewRtpStream(
+//		  RTC::Producer* producer, RTC::RtpStream* rtpStream, uint32_t mappedSsrc) override;
+//		void OnProducerRtpStreamScore(
+//		  RTC::Producer* producer, RTC::RtpStream* rtpStream, uint8_t score, uint8_t previousScore) override;
+//		void OnProducerRtcpSenderReport(
+//		  RTC::Producer* producer, RTC::RtpStream* rtpStream, bool first) override;
+//		void OnProducerRtpPacketReceived(RTC::Producer* producer, RTC::RtpPacket* packet) override;
+//		void OnProducerSendRtcpPacket(RTC::Producer* producer, RTC::RTCP::Packet* packet) override;
+//		void OnProducerNeedWorstRemoteFractionLost(
+//		  RTC::Producer* producer, uint32_t mappedSsrc, uint8_t& worstRemoteFractionLost) override;
+
+		/* Pure virtual methods inherited from RTC::Consumer::Listener. */
+//	public:
+//		void OnConsumerSendRtpPacket(RTC::Consumer* consumer, RTC::RtpPacket* packet) override;
+//		void OnConsumerRetransmitRtpPacket(RTC::Consumer* consumer, RTC::RtpPacket* packet) override;
+//		void OnConsumerKeyFrameRequested(RTC::Consumer* consumer, uint32_t mappedSsrc) override;
+//		void OnConsumerNeedBitrateChange(RTC::Consumer* consumer) override;
+//		void OnConsumerNeedZeroBitrate(RTC::Consumer* consumer) override;
+//		void OnConsumerProducerClosed(RTC::Consumer* consumer) override;
+
+		/* Pure virtual methods inherited from RTC::DataProducer::Listener. */
+	public:
+		void OnDataProducerSctpMessageReceived(
+		  RTC::DataProducer* dataProducer, uint32_t ppid, const uint8_t* msg, size_t len) ;
+
+		/* Pure virtual methods inherited from RTC::DataConsumer::Listener. */
+	public:
+		void OnDataConsumerSendSctpMessage(
+		  RTC::DataConsumer* dataConsumer, uint32_t ppid, const uint8_t* msg, size_t len) ;
+		void OnDataConsumerDataProducerClosed(RTC::DataConsumer* dataConsumer) ;
+
+		/* Pure virtual methods inherited from RTC::SctpTransport::Listener. */
+	public:
+		void OnSctpTransportConnecting(RTC::SctpTransport* sctpAssociation) ;
+		void OnSctpTransportConnected(RTC::SctpTransport* sctpAssociation) ;
+		void OnSctpTransportFailed(RTC::SctpTransport* sctpAssociation) ;
+		void OnSctpTransportClosed(RTC::SctpTransport* sctpAssociation) ;
+		void OnSctpTransportSendData(
+		  RTC::SctpTransport* sctpAssociation, const uint8_t* data, size_t len) ;
+		void OnSctpTransportMessageReceived(
+		  RTC::SctpTransport* sctpAssociation,
+		  uint16_t streamId,
+		  uint32_t ppid,
+		  const uint8_t* msg,
+		  size_t len) ;
+
+		/* Pure virtual methods inherited from RTC::TransportCongestionControlClient::Listener. */
+//	public:
+//		void OnTransportCongestionControlClientBitrates(
+//		  RTC::TransportCongestionControlClient* tccClient,
+//		  RTC::TransportCongestionControlClient::Bitrates& bitrates) override;
+//		void OnTransportCongestionControlClientSendRtpPacket(
+//		  RTC::TransportCongestionControlClient* tccClient,
+//		  RTC::RtpPacket* packet,
+//		  const webrtc::PacedPacketInfo& pacingInfo) override;
+//
+//		/* Pure virtual methods inherited from RTC::TransportCongestionControlServer::Listener. */
+//	public:
+//		void OnTransportCongestionControlServerSendRtcpPacket(
+//		  RTC::TransportCongestionControlServer* tccServer, RTC::RTCP::Packet* packet) override;
+//
+//#ifdef ENABLE_RTC_SENDER_BANDWIDTH_ESTIMATOR
+//		/* Pure virtual methods inherited from RTC::SenderBandwidthEstimator::Listener. */
+//	public:
+//		void OnSenderBandwidthEstimatorAvailableBitrate(
+//		  RTC::SenderBandwidthEstimator* senderBwe,
+//		  uint32_t availableBitrate,
+//		  uint32_t previousAvailableBitrate) override;
+//#endif
+
+		/* Pure virtual methods inherited from Timer::Listener. */
+	public:
+		void OnTimer(Timer* timer) override;
+
+	public:
+		// Passed by argument.
+		const std::string id;
+
+	private:
+		// Passed by argument.
+		Listener* listener{ nullptr };
+		// Allocated by this.
+//		std::unordered_map<std::string, RTC::Producer*> mapProducers;
+//		std::unordered_map<std::string, RTC::Consumer*> mapConsumers;
+//		std::unordered_map<std::string, RTC::DataProducer*> mapDataProducers;
+//		std::unordered_map<std::string, RTC::DataConsumer*> mapDataConsumers;
+//		std::unordered_map<uint32_t, RTC::Consumer*> mapSsrcConsumer;
+//		std::unordered_map<uint32_t, RTC::Consumer*> mapRtxSsrcConsumer;
+		RTC::SctpTransport* sctpAssociation{ nullptr };
+//		Timer* rtcpTimer{ nullptr };
+//		RTC::TransportCongestionControlClient* tccClient{ nullptr };
+//		RTC::TransportCongestionControlServer* tccServer{ nullptr };
+//#ifdef ENABLE_RTC_SENDER_BANDWIDTH_ESTIMATOR
+//		RTC::SenderBandwidthEstimator* senderBwe{ nullptr };
+//#endif
+		// Others.
+//		bool destroying{ false };
+//		struct RTC::RtpHeaderExtensionIds recvRtpHeaderExtensionIds;
+//		RTC::RtpListener rtpListener;
+//		RTC::SctpListener sctpListener;
+//		RTC::RateCalculator recvTransmission;
+//		RTC::RateCalculator sendTransmission;
+//		RTC::RtpDataCounter recvRtpTransmission;
+//		RTC::RtpDataCounter sendRtpTransmission;
+//		RTC::RtpDataCounter recvRtxTransmission;
+//		RTC::RtpDataCounter sendRtxTransmission;
+//		RTC::RtpDataCounter sendProbationTransmission;
+//		uint16_t transportWideCcSeq{ 0u };
+//		uint32_t initialAvailableOutgoingBitrate{ 600000u };
+//		uint32_t maxIncomingBitrate{ 0u };
+//		struct TraceEventTypes traceEventTypes;
+	};
+
+	/* Inline instance methods. */
+
+//	inline void Transport::DataReceived(size_t len)  // TBD
+//	{
+//		this->recvTransmission.Update(len, base::Application::GetTimeMs());
+//	}
+//
+//	inline void Transport::DataSent(size_t len) // TBD
+//	{
+//		this->sendTransmission.Update(len, base::Application::GetTimeMs());
+//	}
+} // namespace RTC
+
+#endif

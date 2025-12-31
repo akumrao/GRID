@@ -18,7 +18,7 @@
 #include "mbedtls/ssl.h"
 #include "mbedtls/x509_crt.h"
 
-namespace rtc::mbedtls {
+namespace RTC::mbedtls {
 
 bool check(int ret, const string &message = "MbedTLS error");
 
@@ -27,7 +27,7 @@ string format_time(const std::chrono::system_clock::time_point &tp);
 std::shared_ptr<mbedtls_pk_context> new_pk_context();
 std::shared_ptr<mbedtls_x509_crt> new_x509_crt();
 
-} // namespace rtc::mbedtls
+} // namespace RTC::mbedtls
 
 #else // OPENSSL
 
@@ -47,7 +47,7 @@ std::shared_ptr<mbedtls_x509_crt> new_x509_crt();
 #define BIO_EOF -1
 #endif
 
-namespace rtc::openssl {
+namespace RTC::openssl {
 
 void init();
 string error_string(unsigned long error);
@@ -57,7 +57,7 @@ bool check_error(int err, const string &message = "OpenSSL error");
 
 BIO *BIO_new_from_file(const string &filename);
 
-} // namespace rtc::openssl
+} // namespace RTC::openssl
 
 #endif
 

@@ -4,12 +4,15 @@
 #define RTC_GLOBAL_H
 
 #include "common.h"
+#include "json/json.hpp"
 
 #include <chrono>
 #include <future>
 #include <iostream>
 
-namespace rtc {
+using namespace nlohmann;
+
+namespace RTC {
 
 enum class LogLevel { // Don't change, it must match plog severity
 	None = 0,
@@ -61,10 +64,27 @@ RTC_CPP_EXPORT std::shared_future<void> Cleanup();
 	std::chrono::milliseconds heartbeatInterval{10000};
 };
 
+
+
+	class SctpStreamParameters
+	{
+	public:
+		SctpStreamParameters() = default;
+		explicit SctpStreamParameters(json& data);
+
+		void FillJson(json& jsonObject) const;
+
+	public:
+		uint16_t streamId{ 0u };
+		bool ordered{ true };
+		uint16_t maxPacketLifeTime{ 0u };
+		uint16_t maxRetransmits{ 0u };
+	};
+        
 RTC_CPP_EXPORT void SetSctpSettings(SctpSettings s);
 
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, LogLevel level);
 
-} // namespace rtc
+} // namespace RTC
 
 #endif

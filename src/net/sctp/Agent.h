@@ -18,7 +18,7 @@
 
 using namespace base::net;
 
-using namespace rtc;
+using namespace RTC;
 using namespace base;
 using namespace stun;
 

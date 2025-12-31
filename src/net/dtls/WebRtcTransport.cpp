@@ -29,7 +29,8 @@ namespace RTC
 
 	/* Instance methods. */
 
-	WebRtcTransport::WebRtcTransport(const std::string& id, int localPort, int remotePort )
+	WebRtcTransport::WebRtcTransport(const std::string& id, RTC::Transport::Listener* listener, int localPort, int remotePort )
+	  : RTC::Transport::Transport(id, listener)
 	{
 		
             uint16_t iceLocalPreferenceDecrement{ 0 };
@@ -318,20 +319,20 @@ namespace RTC
 
 
 
-//	void WebRtcTransport::SendSctpData(const uint8_t* data, size_t len)
-//	{
-//		
-//
-//		
-//		if (!IsConnected())
-//		{
-//			MS_WARN_TAG(sctp, "DTLS not connected, cannot send SCTP data");
-//
-//			return;
-//		}
-//
-//		this->dtlsTransport->SendApplicationData(data, len);
-//	}
+	void WebRtcTransport::SendSctpData(const uint8_t* data, size_t len)
+	{
+		
+
+		
+		if (!IsConnected())
+		{
+			SWarn <<  "DTLS not connected, cannot send SCTP data";
+
+			return;
+		}
+
+		this->dtlsTransport->SendApplicationData(data, len);
+	}
 
 	inline void WebRtcTransport::OnPacketReceived(
 	  base::net::TransportTuple* tuple, const char* data, size_t len)
@@ -445,7 +446,7 @@ namespace RTC
 //            RTC::TcpConnection* connection = (RTC::TcpConnection*) conn;
 //            base::net::TransportTuple tuple(connection);
 //
-//            OnPacketReceived(&tuple, (const uint8_t*)data, len);
+//            OnPacketReceived(&tuple, (const uint8_t*)data, len);   TBD
 
         }
 
@@ -526,7 +527,7 @@ namespace RTC
 //		Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
 //
 //		// Tell the parent class.
-//		RTC::Transport::Connected();
+		RTC::Transport::Connected();
 	}
 
 	inline void WebRtcTransport::OnDtlsTransportFailed(const RTC::DtlsTransport* /*dtlsTransport*/)
@@ -553,7 +554,7 @@ namespace RTC
 
 
 		// Tell the parent class.
-		//RTC::Transport::Disconnected();
+	      RTC::Transport::Disconnected();
 	}
 
 	inline void WebRtcTransport::OnDtlsTransportSendData(
@@ -576,7 +577,7 @@ namespace RTC
 		this->iceServer->GetSelectedTuple()->Send(data, len);
 
             // Increase send transmission.
-		//RTC::Transport::DataSent(len);
+	      RTC::Transport::DataSent(len);
 	}
 
 	inline void WebRtcTransport::OnDtlsTransportApplicationDataReceived(
@@ -588,6 +589,6 @@ namespace RTC
             assertm(this->dtlsTransport, "no dtlsTransport");
 
             // Pass it to the parent transport.
-            //RTC::Transport::ReceiveSctpData(data, len);
+            RTC::Transport::ReceiveSctpData(data, len);
 	}
 } // namespace RTC

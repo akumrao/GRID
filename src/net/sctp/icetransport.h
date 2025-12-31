@@ -17,7 +17,7 @@
 
 using namespace stun;
 
-namespace rtc {
+namespace RTC {
 	
 
         
@@ -94,6 +94,6 @@ public:
 
 };
 
-} // namespace rtc::impl
+} // namespace RTC::impl
 
 #endif

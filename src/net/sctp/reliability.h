@@ -13,7 +13,7 @@
 
 #include <chrono>
 
-namespace rtc {
+namespace RTC {
 
 struct Reliability {
 	// It true, the channel does not enforce message ordering and out-of-order delivery is allowed
@@ -38,6 +38,6 @@ struct Reliability {
 	std::chrono::milliseconds rexmit{0};
 };
 
-} // namespace rtc
+} // namespace RTC
 
 #endif

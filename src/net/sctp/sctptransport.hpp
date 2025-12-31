@@ -6,8 +6,8 @@
 #include "configuration.h"
 #include "global.hpp"
 //#include "processor.hpp"
-//#include "queue.hpp"
-#include "transport.hpp"
+#include "message.hpp"
+#include "Transport.h"
 
 #include <condition_variable>
 #include <functional>
@@ -15,7 +15,7 @@
 #include <mutex>
 #include "usrsctp.h"
 
-namespace rtc {
+namespace RTC {
 
 
 
@@ -29,7 +29,8 @@ namespace rtc {
 
 
     
-class SctpTransport final : public Transport, public std::enable_shared_from_this<SctpTransport> {
+class SctpTransport 
+{
 public:
 	static void Init();
 	static void SetSettings(const SctpSettings &s);
@@ -41,17 +42,38 @@ public:
 		uint16_t local = DEFAULT_SCTP_PORT;
 		uint16_t remote = DEFAULT_SCTP_PORT;
 	};
+        
+        
+        
+                
+        class Listener
+        {
+        public:
+                virtual void OnSctpAssociationConnecting(SctpTransport* sctpAssociation) = 0;
+                virtual void OnSctpAssociationConnected(SctpTransport* sctpAssociation)  = 0;
+                virtual void OnSctpAssociationFailed(SctpTransport* sctpAssociation)     = 0;
+                virtual void OnSctpAssociationClosed(SctpTransport* sctpAssociation)     = 0;
+                virtual void OnSctpAssociationSendData(
+                SctpTransport* sctpAssociation, const uint8_t* data, size_t len) = 0;
+                virtual void OnSctpAssociationMessageReceived(
+                  SctpTransport* sctpAssociation,
+                  uint16_t streamId,
+                  uint32_t ppid,
+                  const uint8_t* msg,
+                  size_t len) = 0;
+        };
+        
 
-	SctpTransport(shared_ptr<Transport> lower, const Configuration &config, Ports ports,
-	              message_callback recvCallback, amount_callback bufferedAmountCallback,
-	              state_callback stateChangeCallback);
+	SctpTransport(Listener* listener, const Configuration &config, Ports ports );
+        
+        
 	~SctpTransport();
 
 	void onBufferedAmount(amount_callback callback);
 
-	void start() override;
-	void stop() override;
-	bool send(message_ptr message) override; // false if buffered
+//	void start() override;
+//	void stop() override;
+	bool send(message_ptr message);  // false if buffered
 	bool flush();
 	void closeStream(unsigned int stream);
 	void close();
@@ -76,13 +98,18 @@ private:
 		PPID_STRING_EMPTY = 56,
 		PPID_BINARY_EMPTY = 57
 	};
+        
+        
+
+
+        
 
 	struct sockaddr_conn getSockAddrConn(uint16_t port);
 
 	void connect();
 	void shutdown();
-	void incoming(message_ptr message) override;
-	bool outgoing(message_ptr message) override;
+	void incoming(message_ptr message) ;
+	bool outgoing(message_ptr message) ;
 
 	void doRecv();
 	void doFlush();
@@ -134,6 +161,6 @@ private:
 	static std::unique_ptr<InstancesSet> Instances;
 };
 
-} // namespace rtc::impl
+} // namespace RTC::impl
 
 #endif

@@ -5,7 +5,7 @@
 
 #include "common.hpp"
 
-namespace rtc {
+namespace RTC {
 
 struct RTC_CPP_EXPORT FrameInfo {
 	FrameInfo(uint8_t payloadType, uint32_t timestamp) : payloadType(payloadType), timestamp(timestamp){};
@@ -13,6 +13,6 @@ struct RTC_CPP_EXPORT FrameInfo {
 	uint32_t timestamp = 0; // RTP Timestamp
 };
 
-} // namespace rtc
+} // namespace RTC
 
 #endif // RTC_FRAMEINFO_H
