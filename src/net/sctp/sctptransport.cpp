@@ -146,14 +146,12 @@ void SctpTransport::Cleanup() {
 		std::this_thread::sleep_for(100ms);
 }
 
-SctpTransport::SctpTransport(shared_ptr<Transport> lower, const Configuration &config, Ports ports,
-                             message_callback recvCallback, amount_callback bufferedAmountCallback,
-                             state_callback stateChangeCallback)
+SctpTransport::SctpTransport(Listener* listener, const Configuration &config, Ports ports )
     : mMaxMessageSize(config.maxMessageSize),
-      mPorts(ports),
-     mBufferedAmountCallback(bufferedAmountCallback) 
+      mPorts(ports)//,
+//     mBufferedAmountCallback(bufferedAmountCallback) 
     {
-	onRecv(recvCallback);
+//	onRecv(recvCallback);
 
 	SDebug << "Initializing SCTP transport";
 
@@ -314,7 +312,7 @@ SctpTransport::~SctpTransport() {
 	mWrittenOnce = true;
 	mWrittenCondition.notify_all();
 
-	unregisterIncoming();
+//	unregisterIncoming();
 
 	usrsctp_close(mSock);
 
@@ -327,7 +325,7 @@ void SctpTransport::onBufferedAmount(amount_callback callback) {
 }
 
 void SctpTransport::start() {
-	registerIncoming();
+	//registerIncoming();
 	connect();
 }
 
@@ -443,7 +441,7 @@ void SctpTransport::incoming(message_ptr message) {
 	if (!message) {
 		SInfo << "SCTP disconnected";
 		changeState(State::Disconnected);
-		recv(nullptr);
+		recv(nullptr);// TBD
 		return;
 	}
 
@@ -456,7 +454,8 @@ bool SctpTransport::outgoing(message_ptr message) {
 	// Set recommended medium-priority DSCP value
 	// See https://www.rfc-editor.org/rfc/rfc8837.html#section-5
 	message->dscp = 10; // AF11: Assured Forwarding class 1, low drop probability
-	return Transport::outgoing(std::move(message));
+	//return Transport::outgoing(std::move(message)); TBD
+        return false;
 }
 
 void SctpTransport::doRecv() {
@@ -994,5 +993,28 @@ void SctpTransport::DebugCallback(const char *format, ...) {
 
 	STrace << "usrsctp: " << buffer; // usrsctp debug as verbose
 }
+
+
+    SctpTransport::State SctpTransport::state() const { return mState; }
+    
+    
+    void SctpTransport::changeState(State state) {
+    
+        try {
+            // if (mState.exchange(state) != state)
+                    // mStateChangeCallback(state);
+            } catch (const std::exception &e) {
+             SWarn << e.what();
+        }
+    }
+     
+    void SctpTransport::recv(message_ptr message) {
+	try {
+		//mRecvCallback(message);
+	} catch (const std::exception &e) {
+		SWarn << e.what();
+	}
+}
+
 
 } // namespace RTC::impl

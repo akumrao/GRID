@@ -19,7 +19,8 @@
 #include "net/certificate.h"
 #include "json/confSettings.h"
 #include "json/configuration.h"
-#include "WebRtcTransport.h"
+
+#include "Router.h"
 
 
 using std::endl;
@@ -148,19 +149,7 @@ int main(int argc, char** argv) {
         SInfo << "http://localhost:8000";
         #endif
         
-        if(argc> 1)
-        {
-            std::string transportId = "101";
-            auto* webRtcTransport = new RTC::WebRtcTransport(transportId ,8000, 9000);
-            webRtcTransport->HandleRequest(false);
-        }
-        else
-        {
-            std::string transportId = "102";
-            auto* webRtcTransport = new RTC::WebRtcTransport(transportId, 9000, 8000);
-            webRtcTransport->HandleRequest(true);
-        }
-        
+
 
 
         app.waitForShutdown([&](void*) {

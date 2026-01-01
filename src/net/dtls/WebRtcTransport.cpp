@@ -577,7 +577,7 @@ namespace RTC
 		this->iceServer->GetSelectedTuple()->Send(data, len);
 
             // Increase send transmission.
-	      RTC::Transport::DataSent(len);
+	    //  RTC::Transport::DataSent(len);
 	}
 
 	inline void WebRtcTransport::OnDtlsTransportApplicationDataReceived(

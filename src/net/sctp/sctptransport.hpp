@@ -7,7 +7,7 @@
 #include "global.hpp"
 //#include "processor.hpp"
 #include "message.hpp"
-#include "Transport.h"
+//#include "Transport.h"
 
 #include <condition_variable>
 #include <functional>
@@ -44,18 +44,21 @@ public:
 	};
         
         
-        
+        enum class State { Disconnected, Connecting, Connected, Completed, Failed };
+        State state() const;
+        void changeState(State state);
+        std::atomic<State> mState = State::Disconnected;
                 
         class Listener
         {
         public:
-                virtual void OnSctpAssociationConnecting(SctpTransport* sctpAssociation) = 0;
-                virtual void OnSctpAssociationConnected(SctpTransport* sctpAssociation)  = 0;
-                virtual void OnSctpAssociationFailed(SctpTransport* sctpAssociation)     = 0;
-                virtual void OnSctpAssociationClosed(SctpTransport* sctpAssociation)     = 0;
-                virtual void OnSctpAssociationSendData(
+                virtual void OnSctpTransportConnecting(SctpTransport* sctpAssociation) = 0;
+                virtual void OnSctpTransportConnected(SctpTransport* sctpAssociation)  = 0;
+                virtual void OnSctpTransportFailed(SctpTransport* sctpAssociation)     = 0;
+                virtual void OnSctpTransportClosed(SctpTransport* sctpAssociation)     = 0;
+                virtual void OnSctpTransportSendData(
                 SctpTransport* sctpAssociation, const uint8_t* data, size_t len) = 0;
-                virtual void OnSctpAssociationMessageReceived(
+                virtual void OnSctpTransportMessageReceived(
                   SctpTransport* sctpAssociation,
                   uint16_t streamId,
                   uint32_t ppid,
@@ -108,8 +111,13 @@ private:
 
 	void connect();
 	void shutdown();
+        void start();
+        void stop();
 	void incoming(message_ptr message) ;
 	bool outgoing(message_ptr message) ;
+        
+        void recv(message_ptr message);
+                
 
 	void doRecv();
 	void doFlush();

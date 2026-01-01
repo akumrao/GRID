@@ -28,7 +28,7 @@ using json = nlohmann::json;
 namespace RTC
 {
 	class Transport : 
-	                public RTC::SctpTransport::Listener,
+	                public SctpTransport::Listener,
 	                public Timer::Listener
 	{
 	protected:
@@ -50,6 +50,8 @@ namespace RTC
 		};
 
 	public:
+
+                
 		Transport(const std::string& id, Listener* listener);
 		virtual ~Transport();
 
