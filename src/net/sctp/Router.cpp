@@ -53,23 +53,16 @@ namespace RTC
 	}
 
 
-	void Router::HandleRequest()
+	void Router::HandleRequest(bool server, const Configuration &config, int localPort, int remotePort )
 	{
-		//        if(argc> 1)
-//        {
-//            std::string transportId = "101";
-//            auto* webRtcTransport = new RTC::WebRtcTransport(transportId ,8000, 9000);
-//            webRtcTransport->HandleRequest(false);
-//        }
-//        else
-//        {
-//            std::string transportId = "102";
-//            auto* webRtcTransport = new RTC::WebRtcTransport(transportId, 9000, 8000);
-//            webRtcTransport->HandleRequest(true);
-//        }
-//        
+
+            auto* webRtcTransport = new RTC::WebRtcTransport(id , config, this, localPort,  remotePort );
+            webRtcTransport->HandleRequest(server);
             
-	}
+            mapTransports[id] = webRtcTransport;
+        }
+       
+
 
 	
 

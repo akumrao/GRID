@@ -52,7 +52,7 @@ namespace RTC
 	public:
 
                 
-		Transport(const std::string& id, Listener* listener);
+		Transport(const std::string& id, const Configuration &config, Listener* listener);
 		virtual ~Transport();
 
 	public:

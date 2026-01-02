@@ -29,8 +29,8 @@ namespace RTC
 
 	/* Instance methods. */
 
-	WebRtcTransport::WebRtcTransport(const std::string& id, RTC::Transport::Listener* listener, int localPort, int remotePort )
-	  : RTC::Transport::Transport(id, listener)
+	WebRtcTransport::WebRtcTransport(const std::string& id, const Configuration &config, RTC::Transport::Listener* listener, int localPort, int remotePort )
+	  : RTC::Transport::Transport(id, config, listener)
 	{
 		
             uint16_t iceLocalPreferenceDecrement{ 0 };
@@ -353,7 +353,9 @@ namespace RTC
 		}
 		else
 		{
-			LWarn("ignoring received packet of unknown type");
+                    SInfo << "OnUdpSocketPacketReceived len: " << len << " data " << data;
+                    
+		    LWarn("ignoring received packet of unknown type");
 		}
 	}
 
@@ -420,7 +422,7 @@ namespace RTC
 	inline void WebRtcTransport::OnUdpSocketPacketReceived(
 	  base::net::UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr)
 	{
-            SInfo << "OnUdpSocketPacketReceived " << len;
+            SInfo << "OnUdpSocketPacketReceived len: " << len ;
 
             base::net::TransportTuple tuple(socket, remoteAddr);
 

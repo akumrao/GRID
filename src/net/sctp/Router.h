@@ -20,7 +20,7 @@ namespace RTC
 		virtual ~Router();
 
 
-		void HandleRequest();
+		void HandleRequest( bool server , const Configuration &config,  int localPort, int remotePort );
 
 	private:
 

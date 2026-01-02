@@ -104,9 +104,9 @@ struct RTC_CPP_EXPORT Configuration {
 	size_t maxMessageSize{DEFAULT_LOCAL_MAX_MESSAGE_SIZE};
 
 	// Certificates and private keys
-	string certificatePemFile;
-	string keyPemFile;
-	string keyPemPass;
+	//string certificatePemFile;  // moved to certificate config file
+	//string keyPemFile;
+	//string keyPemPass;
 };
 
 

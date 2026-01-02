@@ -19,6 +19,7 @@
 #include "net/certificate.h"
 #include "json/confSettings.h"
 #include "json/configuration.h"
+#include "configuration.h"
 
 #include "Router.h"
 
@@ -121,7 +122,8 @@ int main(int argc, char** argv) {
         Application app;
         //SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true);
         
-        
+        RTC::Router router1("101");
+        RTC::Router router2("102");
         
         
         base::cnfg::Configuration cnfgSet;
@@ -138,6 +140,11 @@ int main(int argc, char** argv) {
     
 
 
+        
+        RTC::SctpTransport::Init();
+        RTC::SctpSettings mCurrentSctpSettings = {};
+	RTC::SctpTransport::SetSettings(mCurrentSctpSettings);
+        
         RTC::DtlsTransport::ClassInit();
                 
         #if HTTPSSL
@@ -149,8 +156,12 @@ int main(int argc, char** argv) {
         SInfo << "http://localhost:8000";
         #endif
         
-
-
+        
+      
+        RTC::Configuration transportconfig;
+        
+        router1.HandleRequest(true, transportconfig, 8000, 9000);
+        router2.HandleRequest(false,transportconfig, 9000, 8000);
 
         app.waitForShutdown([&](void*) {
 

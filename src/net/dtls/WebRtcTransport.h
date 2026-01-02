@@ -35,7 +35,7 @@ namespace RTC
 		};
 
 	public:
-		WebRtcTransport(const std::string& id,  RTC::Transport::Listener* listener, int localPort, int remotePort );
+		WebRtcTransport(const std::string& id, const Configuration &config, RTC::Transport::Listener* listener, int localPort, int remotePort );
 		~WebRtcTransport() override;;
 
 	public:

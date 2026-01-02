@@ -12,30 +12,13 @@ namespace RTC
 {
 	/* Instance methods. */
 
-	Transport::Transport(const std::string& id, Listener* listener)
+	Transport::Transport(const std::string& id, const Configuration &config, Listener* listener)
 	  : id(id), listener(listener)
 	{
+            
+            int x = 1;
 //	
 //
-//		auto jsonInitialAvailableOutgoingBitrateIt = data.find("initialAvailableOutgoingBitrate");
-//
-//		if (jsonInitialAvailableOutgoingBitrateIt != data.end())
-//		{
-//			if (!Utils::Json::IsPositiveInteger(*jsonInitialAvailableOutgoingBitrateIt))
-//				base::uv::throwError("wrong initialAvailableOutgoingBitrate (not a number)");
-//
-//			this->initialAvailableOutgoingBitrate = jsonInitialAvailableOutgoingBitrateIt->get<uint32_t>();
-//		}
-//
-//		auto jsonEnableSctpIt = data.find("enableSctp");
-//
-//		
-//		if (
-//			jsonEnableSctpIt != data.end() &&
-//			jsonEnableSctpIt->is_boolean() &&
-//			jsonEnableSctpIt->get<bool>()
-//		)
-//		
 //		{
 //			auto jsonNumSctpStreamsIt     = data.find("numSctpStreams");
 //			auto jsonMaxSctpMessageSizeIt = data.find("maxSctpMessageSize");
@@ -96,6 +79,40 @@ namespace RTC
 //                        
 //                        SInfo << "sctpAssociation " <<  sctpAssociation;
 //		}
+            
+            
+                RTC::SctpTransport::Ports ports = {};
+		ports.local = 3868;
+		ports.remote = 3868;
+
+		//auto transport = std::make_shared<SctpTransport>(  this , config, ports );
+                
+		//    weak_bind(&PeerConnection::forwardBufferedAmount, this, _1, _2),
+//		    [this, weak_this = weak_from_this()](SctpTransport::State transportState) {
+//			    auto shared_this = weak_this.lock();
+//			    if (!shared_this)
+//				    return;
+//
+//			    switch (transportState) {
+//			    case SctpTransport::State::Connected:
+//				    changeState(State::Connected);
+//				    assignDataChannels();
+//				    mProcessor.enqueue(&PeerConnection::openDataChannels, shared_from_this());
+//				    break;
+//			    case SctpTransport::State::Failed:
+//				    changeState(State::Failed);
+//				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+//				    break;
+//			    case SctpTransport::State::Disconnected:
+//				    changeState(State::Disconnected);
+//				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+//				    break;
+//			    default:
+//				    // Ignore
+//				    break;
+//			 
+                                    
+            
 
 		// Create the RTCP timer.
 //		this->rtcpTimer = new Timer(this);
