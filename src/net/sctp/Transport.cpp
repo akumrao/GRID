@@ -85,7 +85,7 @@ namespace RTC
 		ports.local = 3868;
 		ports.remote = 3868;
 
-		//auto transport = std::make_shared<SctpTransport>(  this , config, ports );
+		sctptransport = new RTC::SctpTransport(  this , config, ports );
                 
 		//    weak_bind(&PeerConnection::forwardBufferedAmount, this, _1, _2),
 //		    [this, weak_this = weak_from_this()](SctpTransport::State transportState) {
@@ -120,7 +120,10 @@ namespace RTC
 
 	Transport::~Transport()
 	{
-                SInfo << "~Transport delete sctp "  <<  sctpAssociation; 
+                SInfo << "~Transport delete sctp "  << sctptransport ; 
+                
+                
+                delete sctptransport;
 
 		// Set the destroying flag.
 		//this->destroying = true;
@@ -162,6 +165,10 @@ namespace RTC
 
 	void Transport::Connected()
 	{
+            
+            
+            sctptransport->start();
+            int x = 1;
 	
 //		// Tell all DataConsumers.
 //		for (auto& kv : this->mapDataConsumers)
@@ -229,7 +236,7 @@ namespace RTC
 	  RTC::DataConsumer* dataConsumer, uint32_t ppid, const uint8_t* msg, size_t len)
 	{
 
-                 SInfo << " OnDataProducerSctpMessageReceived dataConsumer " <<  dataConsumer->id << " sctpAssociation "  << sctpAssociation;
+                 SInfo << " OnDataProducerSctpMessageReceived dataConsumer " <<  dataConsumer->id << " sctptransport "  << sctptransport;
                  
 		//this->sctpAssociation->SendSctpMessage(dataConsumer, ppid, msg, len);
 	}

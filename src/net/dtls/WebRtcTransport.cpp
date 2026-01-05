@@ -476,8 +476,8 @@ namespace RTC
 		
                 SInfo << "OnDtlsTransportConnected";
                 
-                const uint8_t tmp[7]="arvind";
-                OnDtlsTransportSendData( dtlsTransport, tmp, 7);
+              //  const uint8_t tmp[7]="arvind";
+               // OnDtlsTransportSendData( dtlsTransport, tmp, 7);
                 
                 
 //		assertm(this->iceServer, "no iceServer");

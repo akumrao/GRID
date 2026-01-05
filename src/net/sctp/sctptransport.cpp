@@ -329,7 +329,10 @@ void SctpTransport::start() {
 	connect();
 }
 
-void SctpTransport::stop() { close(); }
+void SctpTransport::stop() 
+{
+    close(); 
+}
 
 struct sockaddr_conn SctpTransport::getSockAddrConn(uint16_t port) {
 	struct sockaddr_conn sconn = {};
@@ -1000,6 +1003,37 @@ void SctpTransport::DebugCallback(const char *format, ...) {
     
     void SctpTransport::changeState(State state) {
     
+        SInfo << " SctpTransport::changeState " ;
+        
+        switch(state)
+        {
+            case State::Disconnected:
+            {
+                SInfo << "disconnected";
+                break;
+            }
+             case State::Connecting:
+            {
+                SInfo << "Connecting";
+                break;
+            }
+            case State::Connected:
+            {
+                SInfo << "Connected";
+                break;
+            }case State::Completed:
+            {
+                SInfo << "Completed";
+                break;
+            }case State::Failed:
+            {
+                SInfo << "Failed";
+                break;
+            }
+
+        };
+                
+        
         try {
             // if (mState.exchange(state) != state)
                     // mStateChangeCallback(state);

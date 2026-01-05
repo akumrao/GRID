@@ -88,6 +88,11 @@ public:
 	size_t bytesSent();
 	size_t bytesReceived();
 	std::chrono::milliseconds rtt();
+        
+        
+        void start();
+        void stop();
+        
 
 private:
 	// Order seems wrong but these are the actual values
@@ -111,8 +116,7 @@ private:
 
 	void connect();
 	void shutdown();
-        void start();
-        void stop();
+
 	void incoming(message_ptr message) ;
 	bool outgoing(message_ptr message) ;
         

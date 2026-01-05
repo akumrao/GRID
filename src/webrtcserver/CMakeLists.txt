@@ -336,7 +336,7 @@ add_subdirectory(deps/libsrtp)
 if(USE_MBEDTLS)  
 file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"   "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" "../net/src/*.cpp" "../net/srcmbedtls/*.cpp"  "../net/dtls/*.cpp")
 else()
-file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"  "../net/src/*.cpp" "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" "../net/dtls/*.cpp")
+file(GLOB SOURCES  "../libuv/src/*.cpp" "../libuv/src/unix/*.cpp" "../src/*.cpp" "../src/x64/*.cpp" "../base/src/*.cpp"  "../net/src/*.cpp" "../http/src/*.cpp" "../http_parser/*.cpp" "../facedetec/src/configuration.cpp" "../signal/src/*.cpp" )
 endif()   
 
 
