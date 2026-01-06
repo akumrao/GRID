@@ -148,7 +148,7 @@ void SctpTransport::Cleanup() {
 
 SctpTransport::SctpTransport(Listener* listener, const Configuration &config, Ports ports )
     : mMaxMessageSize(config.maxMessageSize),
-      mPorts(ports)//,
+      mPorts(ports), listener(listener) //,
 //     mBufferedAmountCallback(bufferedAmountCallback) 
     {
 //	onRecv(recvCallback);
@@ -457,8 +457,11 @@ bool SctpTransport::outgoing(message_ptr message) {
 	// Set recommended medium-priority DSCP value
 	// See https://www.rfc-editor.org/rfc/rfc8837.html#section-5
 	message->dscp = 10; // AF11: Assured Forwarding class 1, low drop probability
-	//return Transport::outgoing(std::move(message)); TBD
-        return false;
+        
+        listener->OnSctpTransportSendData( this,  (const uint8_t*)message->data(), message->size()   );
+                
+	///return Transport::outgoing(std::move(message)); TBD
+        return true;
 }
 
 void SctpTransport::doRecv() {
@@ -975,10 +978,10 @@ int SctpTransport::WriteCallback(void *ptr, void *data, size_t len, uint8_t tos,
 
 	// Workaround for sctplab/usrsctp#405: Send callback is invoked on already closed socket
 	// https://github.com/sctplab/usrsctp/issues/405
-	if (auto locked = Instances->lock(transport))
+	//if (auto locked = Instances->lock(transport))
 		return transport->handleWrite(static_cast<byte *>(data), len, tos, set_df);
-	else
-		return -1;
+	//else
+		//return -1;
 }
 
 void SctpTransport::DebugCallback(const char *format, ...) {

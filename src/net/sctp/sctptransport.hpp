@@ -110,7 +110,7 @@ private:
         
 
 
-        
+        Listener* listener{ nullptr };
 
 	struct sockaddr_conn getSockAddrConn(uint16_t port);
 
