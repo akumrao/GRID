@@ -327,8 +327,8 @@ namespace RTC
 //		if (this->destroying)
 //			return;
 //
-//		if (this->sctpAssociation)
-//			SendSctpData(data, len);
+		//if (this->sctpAssociation)
+		SendSctpData(data, len);
 	}
 
 	inline void Transport::OnSctpTransportMessageReceived(

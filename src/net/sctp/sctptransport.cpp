@@ -960,7 +960,7 @@ milliseconds SctpTransport::rtt() {
 void SctpTransport::UpcallCallback(struct socket *, void *arg, int /* flags */) {
 	auto *transport = static_cast<SctpTransport *>(arg);
 
-	if (auto locked = Instances->lock(transport))
+	//if (auto locked = Instances->lock(transport))
 		transport->handleUpcall();
 }
 

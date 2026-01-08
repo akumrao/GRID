@@ -85,7 +85,7 @@ namespace RTC
 //		void SendRtcp(uint64_t nowMs);
 //		virtual void SendRtcpPacket(RTC::RTCP::Packet* packet)                 = 0;
 //		virtual void SendRtcpCompoundPacket(RTC::RTCP::CompoundPacket* packet) = 0;
-//		virtual void SendSctpData(const uint8_t* data, size_t len)             = 0;
+		virtual void SendSctpData(const uint8_t* data, size_t len)             = 0;
 //		void DistributeAvailableOutgoingBitrate();
 //		void ComputeOutgoingDesiredBitrate(bool forceBitrate = false);
 //		void EmitTraceEventProbationType(RTC::RtpPacket* packet) const;
