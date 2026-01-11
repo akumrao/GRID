@@ -13,6 +13,7 @@
 #include <functional>
 #include <map>
 #include <mutex>
+#include <queue>
 #include "usrsctp.h"
 
 namespace RTC {
@@ -58,12 +59,15 @@ public:
                 virtual void OnSctpTransportClosed(SctpTransport* sctpAssociation)     = 0;
                 virtual void OnSctpTransportSendData(
                 SctpTransport* sctpAssociation, const uint8_t* data, size_t len) = 0;
-                virtual void OnSctpTransportMessageReceived(
-                  SctpTransport* sctpAssociation,
-                  uint16_t streamId,
-                  uint32_t ppid,
-                  const uint8_t* msg,
-                  size_t len) = 0;
+//                virtual void OnSctpTransportMessageReceived(
+//                SctpTransport* sctpAssociation,
+//                uint16_t streamId,
+//                uint32_t ppid,
+//                const uint8_t* msg,
+//                size_t len) = 0;
+                    
+                  virtual void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message )=0;
+                
         };
         
 
@@ -72,7 +76,7 @@ public:
         
 	~SctpTransport();
 
-	void onBufferedAmount(amount_callback callback);
+	//void onBufferedAmount(amount_callback callback);
 
 //	void start() override;
 //	void stop() override;
@@ -92,7 +96,7 @@ public:
         
         void start();
         void stop();
-        
+        void incoming(message_ptr message) ;
 
 private:
 	// Order seems wrong but these are the actual values
@@ -117,7 +121,7 @@ private:
 	void connect();
 	void shutdown();
 
-	void incoming(message_ptr message) ;
+	
 	bool outgoing(message_ptr message) ;
         
         void recv(message_ptr message);
@@ -127,10 +131,10 @@ private:
 	void doFlush();
 	void enqueueRecv();
 	void enqueueFlush();
-	//bool trySendQueue();
+	bool trySendQueue();
 	bool trySendMessage(message_ptr message);
-	void updateBufferedAmount(uint16_t streamId, ptrdiff_t delta);
-	void triggerBufferedAmount(uint16_t streamId, size_t amount);
+	//void updateBufferedAmount(uint16_t streamId, ptrdiff_t delta);
+	//void triggerBufferedAmount(uint16_t streamId, size_t amount);
 	void sendReset(uint16_t streamId);
 
 	void handleUpcall() noexcept;
@@ -149,10 +153,10 @@ private:
 	//std::atomic<int> mPendingFlushCount{0};
 	//std::mutex mRecvMutex;
 	std::recursive_mutex mSendMutex; // buffered amount callback is synchronous
-	//Queue<message_ptr> mSendQueue;
-	bool mSendShutdown = false;
+	std::queue<message_ptr> mSendQueue;
+	std::atomic< bool> mSendShutdown{ false};
 	std::map<uint16_t, size_t> mBufferedAmount;
-	amount_callback mBufferedAmountCallback;
+	//amount_callback mBufferedAmountCallback;
 
 	std::mutex mWriteMutex;
 	std::condition_variable mWrittenCondition;

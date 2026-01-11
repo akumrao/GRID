@@ -200,7 +200,7 @@ namespace RTC
 	}
 
 
-	void Transport::ReceiveSctpData(const uint8_t* data, size_t len)
+	void Transport::ReceiveSctpData(byte * data, size_t len)
 	{   
 // 		
 //                 SDebug << "ReceiveSctpData sctpAssociation:" << sctpAssociation;
@@ -213,7 +213,9 @@ namespace RTC
 //		}
 //
 //		// Pass it to the SctpTransport.
-//		this->sctpAssociation->ProcessSctpData(data, len);
+                if(sctptransport)
+		sctptransport->incoming(make_message(data, data + len));
+		
 	}
 
 
@@ -225,7 +227,9 @@ namespace RTC
 	inline void Transport::OnDataProducerSctpMessageReceived(
 	  RTC::DataProducer* dataProducer, uint32_t ppid, const uint8_t* msg, size_t len)
 	{
-		
+	
+            int x = 1;
+
 //                
 //                SInfo << "OnDataProducerSctpMessageReceived dataProducer " <<  dataProducer->id  << " sctpAssociation "  << sctpAssociation;
 //
@@ -257,6 +261,13 @@ namespace RTC
 	inline void Transport::OnSctpTransportConnected(RTC::SctpTransport* /*sctpAssociation*/)
 	{
 		
+            SInfo << "OnSctpTransportConnected";
+                    
+            //const uint8_t data[] ="arvind"; 
+            
+           // SInfo << "data " << data <<  " len " << sizeof(data);
+
+          //  SendSctpData(data, sizeof(data));
 
 //		// Tell all DataConsumers.
 //		for (auto& kv : this->mapDataConsumers)
@@ -276,7 +287,7 @@ namespace RTC
 
 	inline void Transport::OnSctpTransportFailed(RTC::SctpTransport* /*sctpAssociation*/)
 	{
-	
+            SInfo << "OnSctpTransportFailed";
 
 //		// Tell all DataConsumers.
 //		for (auto& kv : this->mapDataConsumers)
@@ -296,7 +307,7 @@ namespace RTC
 
 	inline void Transport::OnSctpTransportClosed(RTC::SctpTransport* /*sctpAssociation*/)
 	{
-	
+             SInfo << "OnSctpTransportClosed";
 //
 //		// Tell all DataConsumers.
 //		for (auto& kv : this->mapDataConsumers)
@@ -331,31 +342,34 @@ namespace RTC
 		SendSctpData(data, len);
 	}
 
-	inline void Transport::OnSctpTransportMessageReceived(
-	  RTC::SctpTransport* /*sctpAssociation*/,
-	  uint16_t streamId,
-	  uint32_t ppid,
-	  const uint8_t* msg,
-	  size_t len)
-	{
-                SInfo << "OnSctpTransportMessageReceived " ;
-//		
-//
-//		RTC::DataProducer* dataProducer = this->sctpListener.GetDataProducer(sctpAssociation);
-//
-//		if (!dataProducer)
-//		{
-//			MS_WARN_TAG(
-//			  sctp, "no suitable DataProducer for received SCTP message [streamId:%" PRIu16 "]", streamId);
-//
-//			return;
-//		}
-//
-//		// Pass the SCTP message to the corresponding DataProducer.
-//		dataProducer->ReceiveSctpMessage(ppid, msg, len);
-	}
+//	inline void Transport::OnSctpTransportMessageReceived(
+//	  RTC::SctpTransport* /*sctpAssociation*/,
+//	  uint16_t streamId,
+//	  uint32_t ppid,
+//	  const uint8_t* msg,
+//	  size_t len)
+//	{
+//                SInfo << "OnSctpTransportMessageReceived " ;
+////		
+////
+////		RTC::DataProducer* dataProducer = this->sctpListener.GetDataProducer(sctpAssociation);
+////
+////		if (!dataProducer)
+////		{
+////			MS_WARN_TAG(
+////			  sctp, "no suitable DataProducer for received SCTP message [streamId:%" PRIu16 "]", streamId);
+////
+////			return;
+////		}
+////
+////		// Pass the SCTP message to the corresponding DataProducer.
+////		dataProducer->ReceiveSctpMessage(ppid, msg, len);
+//	}
 
-	
+	void  Transport::OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message )
+        {
+            SInfo << "OnSctpTransportMessageReceived" << message->data() << " len " <<  message->size();
+        }
 
 
 	inline void Transport::OnTimer(Timer* timer)

@@ -66,7 +66,7 @@ namespace RTC
 		void DataSent(size_t len);
 		//void ReceiveRtpPacket(RTC::RtpPacket* packet);
 		//void ReceiveRtcpPacket(RTC::RTCP::Packet* packet);
-		void ReceiveSctpData(const uint8_t* data, size_t len);
+		void ReceiveSctpData(byte * data, size_t len);
 
 	private:
 //		void SetNewProducerIdFromRequest(Channel::Request* request, std::string& producerId) const;
@@ -132,14 +132,15 @@ namespace RTC
 		void OnSctpTransportConnected(RTC::SctpTransport* sctpAssociation) ;
 		void OnSctpTransportFailed(RTC::SctpTransport* sctpAssociation) ;
 		void OnSctpTransportClosed(RTC::SctpTransport* sctpAssociation) ;
-		void OnSctpTransportSendData(
-		  RTC::SctpTransport* sctpAssociation, const uint8_t* data, size_t len) ;
-		void OnSctpTransportMessageReceived(
-		  RTC::SctpTransport* sctpAssociation,
-		  uint16_t streamId,
-		  uint32_t ppid,
-		  const uint8_t* msg,
-		  size_t len) ;
+		void OnSctpTransportSendData(  RTC::SctpTransport* sctpAssociation, const uint8_t* data, size_t len) ;
+//		void OnSctpTransportMessageReceived(
+//		  RTC::SctpTransport* sctpAssociation,
+//		  uint16_t streamId,
+//		  uint32_t ppid,
+//		  const uint8_t* msg,
+//		  size_t len) ;
+                
+             void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message );
 
 		/* Pure virtual methods inherited from RTC::TransportCongestionControlClient::Listener. */
 //	public:

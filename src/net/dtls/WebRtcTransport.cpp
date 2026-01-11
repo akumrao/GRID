@@ -591,6 +591,6 @@ namespace RTC
             assertm(this->dtlsTransport, "no dtlsTransport");
 
             // Pass it to the parent transport.
-            RTC::Transport::ReceiveSctpData(data, len);
+            RTC::Transport::ReceiveSctpData((byte *)data, len);
 	}
 } // namespace RTC

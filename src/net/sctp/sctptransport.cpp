@@ -320,9 +320,9 @@ SctpTransport::~SctpTransport() {
 	//Instances->erase(this);
 }
 
-void SctpTransport::onBufferedAmount(amount_callback callback) {
-	mBufferedAmountCallback = std::move(callback);
-}
+//void SctpTransport::onBufferedAmount(amount_callback callback) {
+//	mBufferedAmountCallback = std::move(callback);
+//}
 
 void SctpTransport::start() {
 	//registerIncoming();
@@ -368,6 +368,8 @@ bool SctpTransport::send(message_ptr message) {
 	if (state() != State::Connected)
 		return false;
 
+	if (!message)
+		return trySendQueue();
 
 	STrace << "Send size=" << message->size();
 
@@ -375,41 +377,42 @@ bool SctpTransport::send(message_ptr message) {
 		throw std::invalid_argument("Message is too large");
 
 	// Flush the queue, and if nothing is pending, try to send directly
-	trySendMessage(message);
-
-	//mSendQueue.push(message);
-//	updateBufferedAmount(to_uint16(message->stream), ptrdiff_t(message_size_func(message)));
+	if (trySendQueue() && trySendMessage(message))
+		return true;
+        mSendMutex.lock();
+	mSendQueue.push(message);
+        mSendMutex.unlock();
+	//updateBufferedAmount(to_uint16(message->stream), ptrdiff_t(message_size_func(message)));
 	return false;
 }
 
 bool SctpTransport::flush() {
-
-		//std::lock_guard lock(mSendMutex);
+	
+		
     if (state() != State::Connected)
-            return false;
-
-   //  trySendMessage(message); TBD
+        return false;
+    std::lock_guard lock(mSendMutex);
+    trySendQueue();
     return true;
 
 }
 
 void SctpTransport::closeStream(unsigned int stream) {
-//	std::lock_guard lock(mSendMutex);
+	std::lock_guard lock(mSendMutex);
 
 	// RFC 8831 6.7. Closing a Data Channel
 	// Closing of a data channel MUST be signaled by resetting the corresponding outgoing streams
 	// See https://www.rfc-editor.org/rfc/rfc8831.html#section-6.7
-	trySendMessage(make_message(0, Message::Reset, stream));
+	mSendQueue.push(make_message(0, Message::Reset, to_uint16(stream)));
 
 	// This method must not call the buffered callback synchronously
-	//mProcessor.enqueue(&SctpTransport::flush, shared_from_this());
+	flush();
 }
 
 void SctpTransport::close() {
-	//mSendQueue.clear()
+//	mSendQueue.stop();
 	if (state() == State::Connected) {
-		//mProcessor.enqueue(&SctpTransport::flush, shared_from_this());
-            flush();
+		flush();
 	} else if (state() == State::Connecting) {
 		SDebug << "SCTP early shutdown";
 		if (usrsctp_shutdown(mSock, SHUT_RDWR)) {
@@ -449,6 +452,13 @@ void SctpTransport::incoming(message_ptr message) {
 	}
 
 	STrace << "Incoming size=" << message->size();
+        
+        int xx = message->size();
+        
+        if(xx == 7)
+        {
+            xx = 8;
+        }
 
 	usrsctp_conninput(this, message->data(), message->size(), 0);
 }
@@ -467,6 +477,9 @@ bool SctpTransport::outgoing(message_ptr message) {
 void SctpTransport::doRecv() {
 //	std::lock_guard lock(mRecvMutex);
 //	--mPendingRecvCount;
+    
+    SInfo << "doRecv()";
+    
 	try {
 		while (state() != State::Disconnected && state() != State::Failed) {
 			const size_t bufferSize = 65536;
@@ -528,9 +541,13 @@ void SctpTransport::doRecv() {
 }
 
 void SctpTransport::doFlush() {
-
-	
-   // trySendQueue(); TBD
+	std::lock_guard lock(mSendMutex);
+	//--mPendingFlushCount;
+	//try {
+		trySendQueue();
+	//} catch (const std::exception &e) {
+	///	PLOG_WARNING << e.what();
+	//}
 }
 
 
@@ -556,35 +573,49 @@ void SctpTransport::enqueueFlush() {
 //	}
 }
 
-//bool SctpTransport::trySendQueue() {
-//	// Requires mSendMutex to be locked
-//	while (auto next = mSendQueue.peek()) {
-//		message_ptr message = std::move(*next);
-//		if (!trySendMessage(message))
-//			return false;
-//
-//		mSendQueue.pop();
-//		updateBufferedAmount(to_uint16(message->stream), -ptrdiff_t(message_size_func(message)));
-//	}
-//
-//	if (!mSendQueue.running() && !std::exchange(mSendShutdown, true)) {
-//		SDebug << "SCTP shutdown";
-//		if (usrsctp_shutdown(mSock, SHUT_WR)) {
-//			if (errno == ENOTCONN) {
-//				STrace << "SCTP already shut down";
-//			} else {
-//				SWarn << "SCTP shutdown failed, errno=" << errno;
-//				changeState(State::Disconnected);
-//				recv(nullptr);
-//			}
-//		}
-//	}
-//
-//	return true;
-//}
+bool SctpTransport::trySendQueue() {
+    
+    
+        mSendMutex.lock();
+    
+        int nSize = mSendQueue.size();
+             
+	// Requires mSendMutex to be locked
+        if ( nSize)
+	while (auto next = mSendQueue.front()) {
+		//message_ptr message = std::move(*next);
+		if (!trySendMessage(next))
+			return false;
+
+		mSendQueue.pop();
+		//updateBufferedAmount(to_uint16(message->stream), -ptrdiff_t(message_size_func(message)));
+	}
+        
+   
+        
+        mSendMutex.unlock();
+         
+	if ( !nSize && mSendShutdown) {
+		SDebug << "SCTP shutdown";
+		if (usrsctp_shutdown(mSock, SHUT_WR)) {
+			if (errno == ENOTCONN) {
+				STrace << "SCTP already shut down";
+			} else {
+				SDebug << "SCTP shutdown failed, errno=" << errno;
+				changeState(State::Disconnected);
+				recv(nullptr);
+			}
+		}
+	}
+
+	return true;
+}
 
 bool SctpTransport::trySendMessage(message_ptr message) {
 	// Requires mSendMutex to be locked
+    
+        STrace << "trySendMessage";
+            
 	if (state() != State::Connected)
 		return false;
 
@@ -686,30 +717,30 @@ bool SctpTransport::trySendMessage(message_ptr message) {
 	return true;
 }
 
-void SctpTransport::updateBufferedAmount(uint16_t streamId, ptrdiff_t delta) {
-	// Requires mSendMutex to be locked
+//void SctpTransport::updateBufferedAmount(uint16_t streamId, ptrdiff_t delta) {
+//	// Requires mSendMutex to be locked
+//
+//	if (delta == 0)
+//		return;
+//
+//	auto it = mBufferedAmount.insert(std::make_pair(streamId, 0)).first;
+//	size_t amount = size_t(std::max(ptrdiff_t(it->second) + delta, ptrdiff_t(0)));
+//	if (amount == 0)
+//		mBufferedAmount.erase(it);
+//	else
+//		it->second = amount;
+//
+//	// Synchronously call the buffered amount callback
+//	triggerBufferedAmount(streamId, amount);
+//}
 
-	if (delta == 0)
-		return;
-
-	auto it = mBufferedAmount.insert(std::make_pair(streamId, 0)).first;
-	size_t amount = size_t(std::max(ptrdiff_t(it->second) + delta, ptrdiff_t(0)));
-	if (amount == 0)
-		mBufferedAmount.erase(it);
-	else
-		it->second = amount;
-
-	// Synchronously call the buffered amount callback
-	triggerBufferedAmount(streamId, amount);
-}
-
-void SctpTransport::triggerBufferedAmount(uint16_t streamId, size_t amount) {
-	try {
-		mBufferedAmountCallback(streamId, amount);
-	} catch (const std::exception &e) {
-		SWarn << "SCTP buffered amount callback: " << e.what();
-	}
-}
+//void SctpTransport::triggerBufferedAmount(uint16_t streamId, size_t amount) {
+//	try {
+//		mBufferedAmountCallback(streamId, amount);
+//	} catch (const std::exception &e) {
+//		SWarn << "SCTP buffered amount callback: " << e.what();
+//	}
+//}
 
 void SctpTransport::sendReset(uint16_t streamId) {
 	// Requires mSendMutex to be locked
@@ -865,14 +896,20 @@ void SctpTransport::processNotification(const union sctp_notification *notify, s
 
 			SInfo << "SCTP connected";
 			changeState(State::Connected);
+                        
+                        listener-> OnSctpTransportConnected( this );
+                        
 		} else {
 			if (state() == State::Connected) {
 				SInfo << "SCTP disconnected";
 				changeState(State::Disconnected);
+                                
 				recv(nullptr);
+                                 listener->OnSctpTransportClosed( this );
 			} else {
 				SError << "SCTP connection failed";
 				changeState(State::Failed);
+                                listener->OnSctpTransportFailed( this );
 			}
 			mWrittenCondition.notify_all();
 		}
@@ -997,7 +1034,7 @@ void SctpTransport::DebugCallback(const char *format, ...) {
 	len = std::min(len, int(bufferSize - 1));
 	buffer[len - 1] = '\0'; // remove newline
 
-	STrace << "usrsctp: " << buffer; // usrsctp debug as verbose
+	SInfo << "usrsctp: " << buffer; // usrsctp debug as verbose
 }
 
 
@@ -1038,8 +1075,8 @@ void SctpTransport::DebugCallback(const char *format, ...) {
                 
         
         try {
-            // if (mState.exchange(state) != state)
-                    // mStateChangeCallback(state);
+             if (mState.exchange(state) != state)
+                     mState = state;
             } catch (const std::exception &e) {
              SWarn << e.what();
         }
@@ -1047,7 +1084,9 @@ void SctpTransport::DebugCallback(const char *format, ...) {
      
     void SctpTransport::recv(message_ptr message) {
 	try {
-		//mRecvCallback(message);
+		
+            listener->OnSctpTransportMessageReceived(this,message );
+            //mRecvCallback(message);
 	} catch (const std::exception &e) {
 		SWarn << e.what();
 	}
