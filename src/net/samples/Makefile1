@@ -6,7 +6,7 @@ CXX     = g++
 TARGET=runtestTcpServer # define the name of the executable
 SOURCES=$(wildcard testTcpServer.cpp ../src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp )
 
-CXXFLAGS   := -g   -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized
+CXXFLAGS   := -g   -std=c++17 -Wno-inconsistent-missing-override -Wno-uninitialized
 
 
 CPPFLAGS   := -I../../json/include/ -I../../crypto/include/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../../http_parser/ -I../../../src/openssl/buildx64/include \

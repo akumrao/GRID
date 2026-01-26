@@ -1,9 +1,9 @@
 /*
 
-  Message
+  MessageStun
   --------
 
-  Represents a stun::Message. When you're using Message-Integrity and Fingerprint
+  Represents a stun::MessageStun. When you're using MessageStun-Integrity and Fingerprint
   attributes, make sure to call computeMessageIntegrity(), before you call computeFingerprint().
   The fingerprint (crc32) is computer over the buffer including the message-integrity value, whne 
   you don't compute this first, the crc will be incorrect.
@@ -85,13 +85,13 @@ typedef struct stun_credentials {
 } stun_credentials_t;
 
 
-  class Message {
+  class MessageStun {
   public:
-    Message( stun_class_t msg_class , stun_method_t msg_method );
-    Message(uint16_t type = STUN_MSG_TYPE_NONE);
-    ~Message();
+    MessageStun( stun_class_t msg_class , stun_method_t msg_method );
+    MessageStun(uint16_t type = STUN_MSG_TYPE_NONE);
+    ~MessageStun();
     void addAttribute(Attribute* attr);                        /* Add an attribute to the message who takes ownership (will delete all attributes in the d'tor. */
-    void copyTransactionID(Message* from);                     /* Copy the transaction ID from the given messsage. */
+    void copyTransactionID(MessageStun* from);                     /* Copy the transaction ID from the given messsage. */
     void setTransactionID(); 
     void setTransactionID( uint8_t *transaction_id);           /* Set the transaction ID from the given values. */
     bool hasAttribute(AttributeType atype);                    /* Check if the given attribute is found in one of the attributes */

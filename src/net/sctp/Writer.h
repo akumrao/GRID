@@ -4,9 +4,9 @@
   -------------
   
   This will fill the `buffer` member with the binary representation
-  of the values in the Message. It will also compute the message integrity
+  of the values in the MessageStun. It will also compute the message integrity
   and fingerprint CRC32 value when they're found in the attributes of the 
-  Message that is passed into Writer::writeMessage().
+  MessageStun that is passed into Writer::writeMessage().
 
  */
 #ifndef STUN_WRITER_H
@@ -16,20 +16,20 @@
 #include <vector>
 #include <string>
 #include <Attribute.h>
-#include <Message.h>
+#include <MessageStun.h>
 #include <Types.h>
 
 namespace stun {
 
   class Writer {
   public:
-    int writeMessage(Message* msg);
-    int writeMessage(Message* msg, std::string messageIntegrityPassword);   /* When you call this, we assume that the message contains a MessageIntegrity attribute. We calculate the hmac-sha and rewrite our internal buffer. This also checks for a Fingerprint attribute; and computers + writes this crc32-value. */
+    int writeMessage(MessageStun* msg);
+    int writeMessage(MessageStun* msg, std::string messageIntegrityPassword);   /* When you call this, we assume that the message contains a MessageIntegrity attribute. We calculate the hmac-sha and rewrite our internal buffer. This also checks for a Fingerprint attribute; and computers + writes this crc32-value. */
 
   private:
     void writeErrorCode(ErrorIce* p);  
     void writeUseCandidate(Attribute* p);
-    void writeAttribute(Attribute* attr , Message* msg);
+    void writeAttribute(Attribute* attr , MessageStun* msg);
     void writeUsername(Username* u);
     void writeSoftware(Software* s);
     void writePriority(Priority* p);
@@ -37,7 +37,7 @@ namespace stun {
     void writeIceControlling(IceControlling* ic);
     void writeMessageIntegrity(MessageIntegrity* integ);
     void writeFingerprint(Fingerprint* fp);
-    void writeXorMappedAddress(XorMappedAddress* xma, Message* msg);
+    void writeXorMappedAddress(XorMappedAddress* xma, MessageStun* msg);
     void writeU8(uint8_t v);
     void writeU16(uint16_t v);
     void writeU32(uint32_t v);

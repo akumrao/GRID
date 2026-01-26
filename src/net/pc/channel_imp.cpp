@@ -1,7 +1,7 @@
-
-#include "channel.hpp"
-#include "internals.hpp"
-
+#include "base/logger.h"
+#include "channel_imp.hpp"
+//#include "internals.hpp"
+using namespace base;
 namespace rtc::impl {
 
 void Channel::triggerOpen() {
@@ -9,7 +9,7 @@ void Channel::triggerOpen() {
 	try {
 		openCallback();
 	} catch (const std::exception &e) {
-		PLOG_WARNING << "Uncaught exception in callback: " << e.what();
+		SWarn << "Uncaught exception in callback: " << e.what();
 	}
 	flushPendingMessages();
 }
@@ -18,7 +18,7 @@ void Channel::triggerClosed() {
 	try {
 		closedCallback();
 	} catch (const std::exception &e) {
-		PLOG_WARNING << "Uncaught exception in callback: " << e.what();
+		SWarn << "Uncaught exception in callback: " << e.what();
 	}
 }
 
@@ -26,7 +26,7 @@ void Channel::triggerError(string error) {
 	try {
 		errorCallback(std::move(error));
 	} catch (const std::exception &e) {
-		PLOG_WARNING << "Uncaught exception in callback: " << e.what();
+		SWarn << "Uncaught exception in callback: " << e.what();
 	}
 }
 
@@ -35,7 +35,7 @@ void Channel::triggerAvailable(size_t count) {
 		try {
 			availableCallback();
 		} catch (const std::exception &e) {
-			PLOG_WARNING << "Uncaught exception in callback: " << e.what();
+			SWarn << "Uncaught exception in callback: " << e.what();
 		}
 	}
 
@@ -49,7 +49,7 @@ void Channel::triggerBufferedAmount(size_t amount) {
 		try {
 			bufferedAmountLowCallback();
 		} catch (const std::exception &e) {
-			PLOG_WARNING << "Uncaught exception in callback: " << e.what();
+			SWarn << "Uncaught exception in callback: " << e.what();
 		}
 	}
 }
@@ -66,7 +66,7 @@ void Channel::flushPendingMessages() {
 		try {
 			messageCallback(*next);
 		} catch (const std::exception &e) {
-			PLOG_WARNING << "Uncaught exception in callback: " << e.what();
+			SWarn << "Uncaught exception in callback: " << e.what();
 		}
 	}
 }

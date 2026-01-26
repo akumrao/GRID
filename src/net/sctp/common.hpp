@@ -30,7 +30,7 @@
 #endif
 
 #ifndef RTC_ENABLE_MEDIA
-#define RTC_ENABLE_MEDIA 1
+#define RTC_ENABLE_MEDIA 0
 #endif
 
 #include "rtc.h" // for C API defines

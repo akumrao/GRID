@@ -14,7 +14,7 @@
 #if !USE_NICE
 //#include <juice/juice.h>
 #include <Agent.h>
-#include "configuration.hpp"
+#include "configuration.h"
 #include "peerconnection.hpp"
 #include "net/tls.h"
 #include "json/json.hpp" 
@@ -52,7 +52,7 @@ public:
 	Description getLocalDescription(Description::Type type) ;
 	void setRemoteDescription(const Description &description);
 	bool addRemoteCandidate(const Candidate &candidate);
-	void gatherLocalCandidates(string mid, std::vector<IceServer> additionalIceServers = {});
+	void gatherLocalCandidates(string mid, std::vector<IceServer_conf> additionalIceServers = {});
 	void setIceAttributes(string uFrag, string pwd);
 
 	optional<string> getLocalAddress() ;
@@ -74,7 +74,7 @@ private:
 	void processGatheringDone();
 	void processTimeout();
 
-	void addIceServer(IceServer server);
+	void addIceServer(IceServer_conf server);
 
 	
 	string mMid;

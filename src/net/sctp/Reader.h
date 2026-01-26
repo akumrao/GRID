@@ -26,17 +26,17 @@
 #include <string>
 #include <Types.h>
 #include <Attribute.h>
-#include <Message.h>
+#include <MessageStun.h>
 
 namespace stun {
 
-  size_t generate_hmac_key(Message* msg, std::string &password, std::string &key);
+  size_t generate_hmac_key(MessageStun* msg, std::string &password, std::string &key);
     
   class Reader {
 
   public:
     Reader();
-    int process(uint8_t* data, uint32_t nbytes, Message* msg);  /* parses the incoming data and fills msg if the data contains a valid stun message, if so it returns 0, when other data is passed into this function it will return 1, on error it returns -1 */
+    int process(uint8_t* data, uint32_t nbytes, MessageStun* msg);  /* parses the incoming data and fills msg if the data contains a valid stun message, if so it returns 0, when other data is passed into this function it will return 1, on error it returns -1 */
 
   private:
     uint8_t readU8();                                           /* read one uint8_t from buffer and increment the index. */
@@ -45,14 +45,14 @@ namespace stun {
     uint64_t readU64();                                         /* read an uint64_t from the buffer, expecting the buffer to hold Big Endian data and moving the dx member. */
     StringValue readString(uint16_t len);                       /* read a StringValue from the current buffer */
     unsigned char * getArray(uint16_t len); 
-    XorMappedAddress* readXorMappedAddress( Message* msg, int len);                   /* reads a XorMappedAddress */
+    XorMappedAddress* readXorMappedAddress( MessageStun* msg, int len);                   /* reads a XorMappedAddress */
     void skip(uint32_t nbytes);                                 /* skip the next nbytes. */    
     uint32_t bytesLeft();                                       /* returns the number of bytes that still need to be parsed, this is not the same as the size of the buffer! */
     uint8_t* ptr();                                             /* returns a pointer to the current read index of the buffer. */
     
   public:
-    bool computeMessageIntegrity(Message* msg, std::string key);             /* When the message contains a MessageIntegrity element, this will compute the HMAC-SHA1 message integrity. */
-    bool computeFingerprint(Message* msg);                                 /* When the message contains a Fingerprint attriute (must be added after the MessageInterity attribute), this will calculate and set CRC value. Important: make sure that you computer the fingerprint AFTER you've computed the message-integrity  */
+    bool computeMessageIntegrity(MessageStun* msg, std::string key);             /* When the message contains a MessageIntegrity element, this will compute the HMAC-SHA1 message integrity. */
+    bool computeFingerprint(MessageStun* msg);                                 /* When the message contains a Fingerprint attriute (must be added after the MessageInterity attribute), this will calculate and set CRC value. Important: make sure that you computer the fingerprint AFTER you've computed the message-integrity  */
 
     
     private:

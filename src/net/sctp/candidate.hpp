@@ -7,10 +7,11 @@
 #include <Types.h>
 #include "net/IP.h"
 
+using namespace std;
 using namespace base::net;
 //using namespace stun;
 
-namespace RTC {
+namespace rtc {
 
 #define ICE_CANDIDATE_PREF_HOST 126
 #define ICE_CANDIDATE_PREF_PEER_REFLEXIVE 110

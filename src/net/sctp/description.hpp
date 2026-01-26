@@ -10,10 +10,10 @@
 #include <map>
 #include <vector>
 
+using namespace std;
 
 #define ICE_MAX_CANDIDATES_COUNT 20 
-
-namespace RTC {
+namespace rtc {
 
 const string DEFAULT_OPUS_AUDIO_PROFILE =
     "minptime=10;maxaveragebitrate=96000;stereo=1;sprop-stereo=1;useinbandfec=1";
@@ -51,7 +51,7 @@ typedef struct ice_description {
 	int candidates_count{0};
 	bool finished{false};
         
-        
+    
     Candidate *ice_find_candidate_from_addr( const addr_record_t *record,  Candidate::Type type)
     {
 
@@ -74,6 +74,24 @@ typedef struct ice_description {
             return NULL;
     }
         
+    
+    #if AGENT_DEBUG
+       
+    std::string dump()
+    {
+        std::string ret = "[";
+        for( int i =0; i < candidates_count; ++i)
+        {
+
+            Candidate *cur = & candidates[i];
+
+            ret += "\"" +cur->dump() + (i < candidates_count-1? "\", ":"\"");
+        }
+         ret +="]";
+        return ret;
+    }
+    #endif 
+
         
 } ice_description_t;
 
@@ -90,10 +108,7 @@ public:
 		Unknown = RTC_DIRECTION_UNKNOWN
 	};
 
-	void readSdp(const string &sdp, Type type = Type::Unspec, Role role = Role::ActPass);
-        
-        
-        Description();
+	Description(const string &sdp, Type type = Type::Unspec, Role role = Role::ActPass);
 	Description(const string &sdp, string typeString);
 
 	Type type() const;
@@ -120,7 +135,7 @@ public:
 	bool hasCandidate(const Candidate &candidate) const;
         //bool hasRecord(const Candidate &candidate) const;
         Candidate* ice_find_candidate_from_addr(const addr_record_t *record,  Candidate::Type type);
-	Candidate* addCandidate(Candidate candidate);
+	Candidate* addCandidate(Candidate &candidate);
 	void addCandidates(std::vector<Candidate> candidates);
 	void endCandidates();
 
@@ -212,120 +227,120 @@ public:
 	private:
 		virtual string generateSdpLines(const string& eol) const override;
 
-		uint16_t mSctpPort;
+		uint16_t mSctpPort{5000};   // const uint16_t DEFAULT_SCTP_PORT = 5000; // SCTP port to use by default
 		size_t mMaxMessageSize;
 	};
 
-//	// Media (non-data)
-//	class RTC_CPP_EXPORT Media : public Entry {
-//	public:
-//		Media(const string &mline, string mid, Direction dir = Direction::SendOnly);
-//		Media(const string &sdp);
-//		virtual ~Media() = default;
-//
-//		string description() const override;
-//		Media reciprocate() const;
-//
-//		void addSSRC(uint32_t ssrc, optional<string> name, optional<string> msid = nullopt,
-//		             optional<string> trackId = nullopt);
-//		void removeSSRC(uint32_t ssrc);
-//		void replaceSSRC(uint32_t old, uint32_t ssrc, optional<string> name,
-//		                 optional<string> msid = nullopt, optional<string> trackID = nullopt);
-//		bool hasSSRC(uint32_t ssrc) const;
-//		void clearSSRCs();
-//		std::vector<uint32_t> getSSRCs() const;
-//		optional<std::string> getCNameForSsrc(uint32_t ssrc) const;
-//
-//		int bitrate() const;
-//		void setBitrate(int bitrate);
-//
-//		struct RTC_CPP_EXPORT RtpMap {
-//			static int parsePayloadType(const string& description);
-//
-//			explicit RtpMap(int payloadType);
-//			RtpMap(const string& description);
-//
-//			void setDescription(const string& description);
-//
-//			void addFeedback(string fb);
-//			void removeFeedback(const string &str);
-//			void addParameter(string p);
-//			void removeParameter(const string &str);
-//
-//			int payloadType;
-//			string format;
-//			int clockRate;
-//			string encParams;
-//
-//			std::vector<string> rtcpFbs;
-//			std::vector<string> fmtps;
-//		};
-//
-//		bool hasPayloadType(int payloadType) const;
-//		std::vector<int> payloadTypes() const;
-//		RtpMap *rtpMap(int payloadType);
-//		const RtpMap *rtpMap(int payloadType) const;
-//		void addRtpMap(RtpMap map);
-//		void removeRtpMap(int payloadType);
-//		void removeFormat(const string &format);
-//
-//		void addRtxCodec(int payloadType, int origPayloadType, unsigned int clockRate);
-//
-//		virtual void parseSdpLine(const string& line) override;
-//
-//	private:
-//		virtual string generateSdpLines(const string& eol) const override;
-//
-//		int mBas = -1;
-//
-//		std::vector<int> mOrderedPayloadTypes;
-//		std::map<int, RtpMap> mRtpMaps;
-//		std::vector<uint32_t> mSsrcs;
-//		std::map<uint32_t, string> mCNameMap;
-//	};
-//
-//	class RTC_CPP_EXPORT Audio : public Media {
-//	public:
-//		Audio(string mid = "audio", Direction dir = Direction::SendOnly);
-//
-//		void addAudioCodec(int payloadType, string codec, optional<string> profile = std::nullopt);
-//		void addOpusCodec(int payloadType, optional<string> profile = DEFAULT_OPUS_AUDIO_PROFILE);
-//		void addPCMACodec(int payloadType, optional<string> profile = std::nullopt);
-//		void addPCMUCodec(int payloadType, optional<string> profile = std::nullopt);
-//		void addAACCodec(int payloadType, optional<string> profile = std::nullopt);
-//
-//		[[deprecated("Use addAACCodec")]] inline void
-//		addAacCodec(int payloadType, optional<string> profile = std::nullopt) {
-//			addAACCodec(payloadType, std::move(profile));
-//		};
-//	};
-//
-//	class RTC_CPP_EXPORT Video : public Media {
-//	public:
-//		Video(string mid = "video", Direction dir = Direction::SendOnly);
-//
-//		void addVideoCodec(int payloadType, string codec, optional<string> profile = std::nullopt);
-//
-//		void addH264Codec(int payloadType, optional<string> profile = DEFAULT_H264_VIDEO_PROFILE);
-//		void addH265Codec(int payloadType, optional<string> profile = std::nullopt);
-//		void addVP8Codec(int payloadType, optional<string> profile = std::nullopt);
-//		void addVP9Codec(int payloadType, optional<string> profile = std::nullopt);
-//		void addAV1Codec(int payloadType, optional<string> profile = std::nullopt);
-//	};
+	// Media (non-data)
+	class RTC_CPP_EXPORT Media : public Entry {
+	public:
+		Media(const string &mline, string mid, Direction dir = Direction::SendOnly);
+		Media(const string &sdp);
+		virtual ~Media() = default;
+
+		string description() const override;
+		Media reciprocate() const;
+
+		void addSSRC(uint32_t ssrc, optional<string> name, optional<string> msid = nullopt,
+		             optional<string> trackId = nullopt);
+		void removeSSRC(uint32_t ssrc);
+		void replaceSSRC(uint32_t old, uint32_t ssrc, optional<string> name,
+		                 optional<string> msid = nullopt, optional<string> trackID = nullopt);
+		bool hasSSRC(uint32_t ssrc) const;
+		void clearSSRCs();
+		std::vector<uint32_t> getSSRCs() const;
+		optional<std::string> getCNameForSsrc(uint32_t ssrc) const;
+
+		int bitrate() const;
+		void setBitrate(int bitrate);
+
+		struct RTC_CPP_EXPORT RtpMap {
+			static int parsePayloadType(string description);
+
+			explicit RtpMap(int payloadType);
+			RtpMap(string  description);
+
+			void setDescription(string description);
+
+			void addFeedback(string fb);
+			void removeFeedback(const string &str);
+			void addParameter(string p);
+			void removeParameter(const string &str);
+
+			int payloadType;
+			string format;
+			int clockRate;
+			string encParams;
+
+			std::vector<string> rtcpFbs;
+			std::vector<string> fmtps;
+		};
+
+		bool hasPayloadType(int payloadType) const;
+		std::vector<int> payloadTypes() const;
+		RtpMap *rtpMap(int payloadType);
+		const RtpMap *rtpMap(int payloadType) const;
+		void addRtpMap(RtpMap map);
+		void removeRtpMap(int payloadType);
+		void removeFormat(const string &format);
+
+		void addRtxCodec(int payloadType, int origPayloadType, unsigned int clockRate);
+
+		virtual void parseSdpLine(const string& line) override;
+
+	private:
+		virtual string generateSdpLines(const string& eol) const override;
+
+		int mBas = -1;
+
+		std::vector<int> mOrderedPayloadTypes;
+		std::map<int, RtpMap> mRtpMaps;
+		std::vector<uint32_t> mSsrcs;
+		std::map<uint32_t, string> mCNameMap;
+	};
+
+	class RTC_CPP_EXPORT Audio : public Media {
+	public:
+		Audio(string mid = "audio", Direction dir = Direction::SendOnly);
+
+		void addAudioCodec(int payloadType, string codec, optional<string> profile = std::nullopt);
+		void addOpusCodec(int payloadType, optional<string> profile = DEFAULT_OPUS_AUDIO_PROFILE);
+		void addPCMACodec(int payloadType, optional<string> profile = std::nullopt);
+		void addPCMUCodec(int payloadType, optional<string> profile = std::nullopt);
+		void addAACCodec(int payloadType, optional<string> profile = std::nullopt);
+
+		[[deprecated("Use addAACCodec")]] inline void
+		addAacCodec(int payloadType, optional<string> profile = std::nullopt) {
+			addAACCodec(payloadType, std::move(profile));
+		};
+	};
+
+	class RTC_CPP_EXPORT Video : public Media {
+	public:
+		Video(string mid = "video", Direction dir = Direction::SendOnly);
+
+		void addVideoCodec(int payloadType, string codec, optional<string> profile = std::nullopt);
+
+		void addH264Codec(int payloadType, optional<string> profile = DEFAULT_H264_VIDEO_PROFILE);
+		void addH265Codec(int payloadType, optional<string> profile = std::nullopt);
+		void addVP8Codec(int payloadType, optional<string> profile = std::nullopt);
+		void addVP9Codec(int payloadType, optional<string> profile = std::nullopt);
+		void addAV1Codec(int payloadType, optional<string> profile = std::nullopt);
+	};
 
 	bool hasApplication() const;
 	bool hasAudioOrVideo() const;
 	bool hasMid(const string& mid);
-//
-//	int addMedia(Media media);
+
+	int addMedia(Media media);
 	int addMedia(Application application);
 	int addApplication(string mid = "data");
-//	int addVideo(string mid = "video", Direction dir = Direction::SendOnly);
-//	int addAudio(string mid = "audio", Direction dir = Direction::SendOnly);
+	int addVideo(string mid = "video", Direction dir = Direction::SendOnly);
+	int addAudio(string mid = "audio", Direction dir = Direction::SendOnly);
 	void clearMedia();
-//
-//	variant<Media *, Application *> media(int index);
-//	variant<const Media *, const Application *> media(int index) const;
+
+	variant<Media *, Application *> media(int index);
+	variant<const Media *, const Application *> media(int index) const;
 	int mediaCount() const;
 
 	const Application *application() const;
@@ -333,7 +348,7 @@ public:
 
 	static Type stringToType(const string &typeString);
 	static string typeToString(Type type);
-
+        Role mRole;
 private:
 	Candidate defaultCandidate() const;
 	shared_ptr<Entry> createEntry(string mline, string mid, Direction dir);
@@ -342,7 +357,7 @@ private:
 	Type mType;
 
 	// Session-level attributes
-	Role mRole;
+	
 	string mUsername;
 	string mSessionId;
 	std::vector<string> mIceOptions;
@@ -367,6 +382,6 @@ RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, Description::Type typ
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, Description::Role role);
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, const Description::Direction &direction);
 
-} // namespace RTC
+} // namespace rtc
 
 #endif

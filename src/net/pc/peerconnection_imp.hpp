@@ -8,16 +8,19 @@
 #include "DtlsTransport.h"
 #include "icetransport.hpp"
 #include "init.hpp"
-#include "processor.hpp"
+//#include "processor.hpp"
 #include "sctptransport.hpp"
 #include "track.hpp"
-
-#include "rtc/peerconnection.hpp"
+#include "queue.hpp"
+#include "peerconnection.hpp"
+#include "certificate.h"
 
 #include <mutex>
 #include <shared_mutex>
 #include <unordered_map>
 #include <vector>
+
+using namespace rtc;
 
 namespace rtc::impl {
 
@@ -103,7 +106,7 @@ struct PeerConnection : std::enable_shared_from_this<PeerConnection> {
 		try {
 			(*cb)(std::move(args...));
 		} catch (const std::exception &e) {
-			PLOG_WARNING << "Uncaught exception in callback: " << e.what();
+			SWarn << "Uncaught exception in callback: " << e.what();
 		}
 	}
 
@@ -146,7 +149,7 @@ private:
 	const init_token mInitToken = Init::Instance().token();
 	Certificate* mCertificate;
 
-	Processor mProcessor;
+//	Processor mProcessor;
 	optional<Description> mLocalDescription;
 	optional<Description> mCurrentLocalDescription;
 	mutable std::mutex mLocalDescriptionMutex;

@@ -93,7 +93,7 @@ public:
 	void setLocalDescription(Description::Type type = Description::Type::Unspec, LocalDescriptionInit init = {});
 	void setRemoteDescription(Description description);
 	void addRemoteCandidate(Candidate candidate);
-	void gatherLocalCandidates(std::vector<IceServer> additionalIceServers = {});
+	void gatherLocalCandidates(std::vector<IceServer_conf> additionalIceServers = {});
 
 	void setMediaHandler(shared_ptr<MediaHandler> handler);
 	shared_ptr<MediaHandler> getMediaHandler();

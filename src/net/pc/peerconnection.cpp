@@ -1,15 +1,15 @@
 #include "peerconnection.hpp"
 #include "common.hpp"
-#include "rtp.hpp"
+//#include "rtp.hpp"
 
 #include "net/certificate.h"
-#include "impl/dtlstransport.hpp"
-#include "impl/icetransport.hpp"
-#include "impl/internals.hpp"
-#include "impl/peerconnection_imp.hpp"
-#include "impl/sctptransport.hpp"
-#include "impl/threadpool.hpp"
-#include "impl/track.hpp"
+#include "DtlsTransport.h"
+#include "icetransport.hpp"
+//#include "internals.hpp"
+#include "peerconnection_imp.hpp"
+#include "sctptransport.hpp"
+//#include "threadpool.hpp"
+#include "track.hpp"
 
 #if RTC_ENABLE_MEDIA
 #include "impl/dtlssrtptransport.hpp"

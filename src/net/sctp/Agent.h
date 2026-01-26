@@ -9,7 +9,7 @@
 #include "candidate.hpp"
 #include "description.hpp"
 #include "base/Timer.h"
-#include <Message.h>
+#include <MessageStun.h>
 #include <Connection.h>
 
 #include "net/dns.h"
@@ -18,7 +18,7 @@
 
 using namespace base::net;
 
-using namespace RTC;
+using namespace rtc;
 using namespace base;
 using namespace stun;
 
@@ -282,15 +282,15 @@ typedef struct agent_stun_entry {
     /// ON return messages 
     int gather_candidates();
     int onStunMessage( unsigned char *buf, size_t len, const addr_record_t *src,  const addr_record_t *relayed);
-    int agent_dispatch_stun( unsigned char *buf, size_t size, stun::Message  *msg,  const addr_record_t *src, const addr_record_t *relayed);
-    int agent_verify_stun_binding(unsigned char *buf, size_t size, stun::Message *msg);
-    int agent_verify_credentials( const agent_stun_entry_t *entry, unsigned char *buf,   size_t size, stun::Message *msg);
+    int agent_dispatch_stun( unsigned char *buf, size_t size, stun::MessageStun  *msg,  const addr_record_t *src, const addr_record_t *relayed);
+    int agent_verify_stun_binding(unsigned char *buf, size_t size, stun::MessageStun *msg);
+    int agent_verify_credentials( const agent_stun_entry_t *entry, unsigned char *buf,   size_t size, stun::MessageStun *msg);
     
  
     agent_stun_entry_t* agent_find_entry_from_transaction_id( const uint8_t *transaction_id) ;
     agent_stun_entry_t* agent_find_entry_from_record( const addr_record_t *record, const addr_record_t *relayed); 
     
-    int agent_process_stun_binding( stun::Message *msg,   agent_stun_entry_t *entry, const addr_record_t *src,    const addr_record_t *relayed);
+    int agent_process_stun_binding( stun::MessageStun *msg,   agent_stun_entry_t *entry, const addr_record_t *src,    const addr_record_t *relayed);
     
     int agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_class, unsigned int error_code, const uint8_t *transaction_id, const addr_record_t *mapped);
 

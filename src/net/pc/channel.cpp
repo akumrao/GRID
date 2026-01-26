@@ -1,8 +1,8 @@
 
 #include "channel.hpp"
 
-#include "impl/channel.hpp"
-#include "impl/internals.hpp"
+#include "channel_imp.hpp"
+//#include "impl/internals.hpp"
 
 namespace rtc {
 

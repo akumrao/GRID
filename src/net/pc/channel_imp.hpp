@@ -8,6 +8,10 @@
 
 #include <atomic>
 #include <functional>
+#include <optional>
+
+using namespace std;
+using namespace RTC;
 
 namespace rtc::impl {
 

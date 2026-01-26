@@ -1,11 +1,11 @@
 
 
 #include "icetransport.hpp"
-#include "configuration.hpp"
-#include "internals.hpp"
+#include "configuration.h"
+//#include "internals.hpp"
 #include "transport.hpp"
 #include "utils.hpp"
-
+#include "utils.h"
 #include <algorithm>
 #include <iostream>
 #include <random>
@@ -59,17 +59,17 @@ void IceTransport::setIceAttributes(string uFrag, string pwd) {
     
 }
 
-void IceTransport::addIceServer(IceServer server) {
+void IceTransport::addIceServer(IceServer_conf server) {
 	if (server.hostname.empty())
 		return;
 
-	if (server.type != IceServer::Type::Turn) {
-		PLOG_WARNING << "Only TURN servers are supported as additional ICE servers";
+	if (server.type != IceServer_conf::Type::Turn) {
+		SWarn << "Only TURN servers are supported as additional ICE servers";
 		return;
 	}
 
-	if (server.relayType != IceServer::RelayType::TurnUdp) {
-		PLOG_WARNING << "TURN transports TCP and TLS are not supported with libjuice";
+	if (server.relayType != IceServer_conf::RelayType::TurnUdp) {
+		SWarn << "TURN transports TCP and TLS are not supported with libjuice";
 		return;
 	}
 
@@ -152,7 +152,7 @@ bool IceTransport::addRemoteCandidate(const Candidate &candidate) {
 	
 }
 
-void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer> additionalIceServers) {
+void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer_conf> additionalIceServers) {
     
      SInfo << "Agent " << agent.agentNo  <<  "gatherLocalCandidates";
 	mMid = std::move(mid);

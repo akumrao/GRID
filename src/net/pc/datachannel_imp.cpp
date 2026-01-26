@@ -2,13 +2,14 @@
 
 #include "datachannel_imp.hpp"
 #include "common.hpp"
-#include "internals.hpp"
-#include "logcounter.hpp"
+//#include "internals.hpp"
+//#include "logcounter.hpp"
 #include "peerconnection_imp.hpp"
 #include "sctptransport.hpp"
 #include "utils.hpp"
-#include "rtc/datachannel.hpp"
-#include "rtc/track.hpp"
+#include "datachannel.hpp"
+#include "track.hpp"
+#include "utils.h"
 
 #include <algorithm>
 
@@ -73,23 +74,23 @@ DataChannel::DataChannel(weak_ptr<PeerConnection> pc, string label, string proto
     : mPeerConnection(pc), mLabel(std::move(label)), mProtocol(std::move(protocol)),
       mRecvQueue(RECV_QUEUE_LIMIT, message_size_func) {
 
-	if(reliability.maxPacketLifeTime && reliability.maxRetransmits)
+	if(reliability.maxPacketLifeTime.count() && reliability.maxRetransmits)
 		throw std::invalid_argument("Both maxPacketLifeTime and maxRetransmits are set");
 
     mReliability = std::make_shared<Reliability>(std::move(reliability));
 }
 
 DataChannel::~DataChannel() {
-	PLOG_VERBOSE << "Destroying DataChannel";
+	STrace << "Destroying DataChannel";
 	try {
 		close();
 	} catch (const std::exception &e) {
-		PLOG_ERROR << e.what();
+		SError << e.what();
 	}
 }
 
 void DataChannel::close() {
-	PLOG_VERBOSE << "Closing DataChannel";
+	STrace << "Closing DataChannel";
 
 	shared_ptr<SctpTransport> transport;
 	{
@@ -170,7 +171,7 @@ void DataChannel::open(shared_ptr<SctpTransport> transport) {
 }
 
 void DataChannel::processOpenMessage(message_ptr) {
-	PLOG_WARNING << "Received an open message for a user-negotiated DataChannel, ignoring";
+	SWarn << "Received an open message for a user-negotiated DataChannel, ignoring";
 }
 
 bool DataChannel::outgoing(message_ptr message) {
@@ -249,12 +250,12 @@ void OutgoingDataChannel::open(shared_ptr<SctpTransport> transport) {
 
 	uint8_t channelType;
 	uint32_t reliabilityParameter;
-	if (mReliability->maxPacketLifeTime) {
+	if (mReliability->maxPacketLifeTime.count()) {
 		channelType = CHANNEL_PARTIAL_RELIABLE_TIMED;
-		reliabilityParameter = to_uint32(mReliability->maxPacketLifeTime->count());
+		reliabilityParameter = to_uint32(mReliability->maxPacketLifeTime.count());
 	} else if (mReliability->maxRetransmits) {
 		channelType = CHANNEL_PARTIAL_RELIABLE_REXMIT;
-		reliabilityParameter = to_uint32(*mReliability->maxRetransmits);
+		reliabilityParameter = to_uint32(mReliability->maxRetransmits);
 	}
 	// else {
 	//	channelType = CHANNEL_RELIABLE;
@@ -265,12 +266,12 @@ void OutgoingDataChannel::open(shared_ptr<SctpTransport> transport) {
 		switch (mReliability->typeDeprecated) {
 		case Reliability::Type::Rexmit:
 			channelType = CHANNEL_PARTIAL_RELIABLE_REXMIT;
-			reliabilityParameter = to_uint32(std::max(std::get<int>(mReliability->rexmit), 0));
+			//reliabilityParameter = to_uint32(std::max(std::get<int>(mReliability->rexmit), 0));
 			break;
 
 		case Reliability::Type::Timed:
 			channelType = CHANNEL_PARTIAL_RELIABLE_TIMED;
-			reliabilityParameter = to_uint32(std::get<milliseconds>(mReliability->rexmit).count());
+			//reliabilityParameter = to_uint32(std::get<milliseconds>(mReliability->rexmit).count());
 			break;
 
 		default:
@@ -302,7 +303,7 @@ void OutgoingDataChannel::open(shared_ptr<SctpTransport> transport) {
 }
 
 void OutgoingDataChannel::processOpenMessage(message_ptr) {
-	PLOG_WARNING << "Received an open message for a locally-created DataChannel, ignoring";
+	SWarn << "Received an open message for a locally-created DataChannel, ignoring";
 }
 
 IncomingDataChannel::IncomingDataChannel(weak_ptr<PeerConnection> pc,
@@ -344,14 +345,14 @@ void IncomingDataChannel::processOpenMessage(message_ptr message) {
 	mProtocol.assign(end + open.labelLength, open.protocolLength);
 
 	mReliability->unordered = (open.channelType & 0x80) != 0;
-	mReliability->maxPacketLifeTime.reset();
-	mReliability->maxRetransmits.reset();
+//	mReliability->maxPacketLifeTime.reset();
+//	mReliability->maxRetransmits.reset();
 	switch (open.channelType & 0x7F) {
 	case CHANNEL_PARTIAL_RELIABLE_REXMIT:
-		mReliability->maxRetransmits.emplace(open.reliabilityParameter);
+		mReliability->maxRetransmits = open.reliabilityParameter;
 		break;
 	case CHANNEL_PARTIAL_RELIABLE_TIMED:
-		mReliability->maxPacketLifeTime.emplace(milliseconds(open.reliabilityParameter));
+		mReliability->maxPacketLifeTime = milliseconds(open.reliabilityParameter);
 		break;
 	default:
 		break;
@@ -361,7 +362,7 @@ void IncomingDataChannel::processOpenMessage(message_ptr message) {
 	switch (open.channelType & 0x7F) {
 	case CHANNEL_PARTIAL_RELIABLE_REXMIT:
 		mReliability->typeDeprecated = Reliability::Type::Rexmit;
-		mReliability->rexmit = int(open.reliabilityParameter);
+		//mReliability->rexmit = int(open.reliabilityParameter);
 		break;
 	case CHANNEL_PARTIAL_RELIABLE_TIMED:
 		mReliability->typeDeprecated = Reliability::Type::Timed;
@@ -369,7 +370,7 @@ void IncomingDataChannel::processOpenMessage(message_ptr message) {
 		break;
 	default:
 		mReliability->typeDeprecated = Reliability::Type::Reliable;
-		mReliability->rexmit = int(0);
+		//mReliability->rexmit = int(0);
 	}
 
 	lock.unlock();

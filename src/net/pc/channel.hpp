@@ -4,14 +4,17 @@
 
 #include "common.hpp"
 
+#include "utils.hpp"
+#include "channel_imp.hpp"
+
 #include <atomic>
 #include <functional>
 
 namespace rtc {
 
-namespace impl {
-struct Channel;
-}
+//namespace impl {
+//struct Channel;
+//}
 
 class RTC_CPP_EXPORT Channel : private CheshireCat<impl::Channel> {
 public:
