@@ -7,6 +7,9 @@
 
 #include <vector>
 
+#include "base/async.h"
+
+using namespace base;
 
 namespace RTC {
 
@@ -77,6 +80,15 @@ enum class TransportPolicy { All = RTC_TRANSPORT_POLICY_ALL, Relay = RTC_TRANSPO
 
 //#define RTC_DEFAULT_MTU 1280 // IPv6 minimum guaranteed MTU
 //#define DEFAULT_MTU  RTC_DEFAULT_MTU
+
+class RestAPI
+{
+public:
+    RestAPI(Async &async, std::string room)
+    {
+        
+    }
+};
         
 struct RTC_CPP_EXPORT Configuration {
 	// ICE settings
@@ -107,6 +119,22 @@ struct RTC_CPP_EXPORT Configuration {
 	//string certificatePemFile;  // moved to certificate config file
 	//string keyPemFile;
 	//string keyPemPass;
+        uint16_t portdefault{7345};
+        
+        void allocRestApi(Async &async, std::string room)
+        {
+            api = new RestAPI(async, room  );
+        }
+        void freeRestApi()
+        {
+            delete api;
+        }
+        
+        ~Configuration()
+        {
+//            freeRestApi();
+        }
+         RestAPI *api{nullptr};
 };
 
 

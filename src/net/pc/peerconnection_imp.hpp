@@ -13,7 +13,7 @@
 #include "track.hpp"
 #include "queue.hpp"
 #include "peerconnection.hpp"
-#include "certificate.h"
+#include "net/certificate.h"
 
 #include <mutex>
 #include <shared_mutex>

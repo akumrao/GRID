@@ -32,7 +32,7 @@ PeerConnection::~PeerConnection() {
 	try {
 		impl()->remoteClose();
 	} catch (const std::exception &e) {
-		PLOG_ERROR << e.what();
+		SError << e.what();
 	}
 }
 
@@ -73,7 +73,7 @@ bool PeerConnection::hasMedia() const {
 
 void PeerConnection::setLocalDescription(Description::Type type, LocalDescriptionInit init) {
 	std::unique_lock signalingLock(impl()->signalingMutex);
-	PLOG_INFO << "Setting local description, type=" << Description::typeToString(type);
+	SInfo << "Setting local description, type=" << Description::typeToString(type);
 
 	SignalingState signalingState = impl()->signalingState.load();
 	if (type == Description::Type::Rollback) {
@@ -120,7 +120,7 @@ void PeerConnection::setLocalDescription(Description::Type type, LocalDescriptio
 	default: {
 		std::ostringstream oss;
 		oss << "Unexpected local description in signaling state " << signalingState << ", ignoring";
-		LOG_WARNING << oss.str();
+		SWarn << oss.str();
 		return;
 	}
 	}
@@ -130,7 +130,7 @@ void PeerConnection::setLocalDescription(Description::Type type, LocalDescriptio
 		return; // closed
 
 	if (init.iceUfrag && init.icePwd) {
-		PLOG_DEBUG << "Using custom ICE attributes, ufrag=\"" << init.iceUfrag.value() << "\", pwd=\"" << init.icePwd.value() << "\"";
+		SDebug << "Using custom ICE attributes, ufrag=\"" << init.iceUfrag.value() << "\", pwd=\"" << init.icePwd.value() << "\"";
 		iceTransport->setIceAttributes(init.iceUfrag.value(), init.icePwd.value());
 	}
 
@@ -151,7 +151,7 @@ void PeerConnection::setLocalDescription(Description::Type type, LocalDescriptio
 	}
 }
 
-void PeerConnection::gatherLocalCandidates(std::vector<IceServer> additionalIceServers) {
+void PeerConnection::gatherLocalCandidates(std::vector<IceServer_conf> additionalIceServers) {
 	auto iceTransport = impl()->getIceTransport();
 	if (!iceTransport) {
 		throw std::logic_error("No IceTransport. Local Description has not been set");
@@ -160,7 +160,7 @@ void PeerConnection::gatherLocalCandidates(std::vector<IceServer> additionalIceS
 	if (impl()->gatheringState == GatheringState::New) {
 		iceTransport->gatherLocalCandidates(impl()->localBundleMid(), additionalIceServers);
 	} else {
-		PLOG_WARNING << "Candidates gathering already started";
+		SWarn << "Candidates gathering already started";
 	}
 }
 
@@ -170,7 +170,7 @@ void PeerConnection::setRemoteDescription(Description description) {
 
 	if (description.type() == Description::Type::Rollback) {
 		// This is mostly useless because we accept any offer
-		PLOG_VERBOSE << "Rolling back pending remote description";
+		STrace << "Rolling back pending remote description";
 		impl()->changeSignalingState(SignalingState::Stable);
 		return;
 	}
@@ -370,7 +370,7 @@ size_t PeerConnection::bytesReceived() {
 
 optional<std::chrono::milliseconds> PeerConnection::rtt() {
 	auto sctpTransport = impl()->getSctpTransport();
-	return sctpTransport ? sctpTransport->rtt() : nullopt;
+//	return sctpTransport ? sctpTransport->rtt() : nullopt;
 }
 
 CertificateFingerprint PeerConnection::remoteFingerprint() {

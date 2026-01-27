@@ -2,9 +2,9 @@
 #include "common.hpp"
 #include "peerconnection.hpp"
 
-#include "impl/datachannel.hpp"
-#include "impl/internals.hpp"
-#include "impl/peerconnection_imp.hpp"
+#include "datachannel_imp.hpp"
+//#include "impl/internals.hpp"
+#include "peerconnection_imp.hpp"
 
 #ifdef _WIN32
 #include <winsock2.h>
