@@ -11,9 +11,9 @@
 
 
 
-namespace RTC
+namespace rtc
 {
-	class Router : public RTC::Transport::Listener
+	class Router : public rtc::Transport::Listener
 	{
 	public:
 		explicit Router(const std::string& id);
@@ -25,7 +25,7 @@ namespace RTC
 	private:
 
 
-		/* Pure virtual methods inherited from RTC::Transport::Listener. */
+		/* Pure virtual methods inherited from rtc::Transport::Listener. */
 	public:
 
 
@@ -35,10 +35,10 @@ namespace RTC
 
 	private:
 		// Allocated by this.
-		std::unordered_map<std::string, RTC::Transport*> mapTransports;
+		std::unordered_map<std::string, rtc::Transport*> mapTransports;
 
-		std::unordered_map<std::string, RTC::DataProducer*> mapDataProducers;
+		std::unordered_map<std::string, rtc::DataProducer*> mapDataProducers;
 	};
-} // namespace RTC
+} // namespace rtc
 
 #endif

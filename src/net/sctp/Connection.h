@@ -38,7 +38,7 @@ namespace stun {
     class Agent;
 }
 
-namespace RTC {
+namespace rtc {
     
 
     

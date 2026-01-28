@@ -7,7 +7,7 @@
 
 #include <string>
 
-namespace RTC
+namespace rtc
 {
 	class DataConsumer
 	{
@@ -16,14 +16,14 @@ namespace RTC
 		{
 		public:
 			virtual void OnDataConsumerSendSctpMessage(
-			  RTC::DataConsumer* dataConsumer, uint32_t ppid, const uint8_t* msg, size_t len) = 0;
-			virtual void OnDataConsumerDataProducerClosed(RTC::DataConsumer* dataConsumer)    = 0;
+			  rtc::DataConsumer* dataConsumer, uint32_t ppid, const uint8_t* msg, size_t len) = 0;
+			virtual void OnDataConsumerDataProducerClosed(rtc::DataConsumer* dataConsumer)    = 0;
 		};
 
 	public:
 		DataConsumer(
 		  const std::string& id,
-		  RTC::DataConsumer::Listener* listener,
+		  rtc::DataConsumer::Listener* listener,
 		  json& data,
 		  size_t maxSctpMessageSize);
 		virtual ~DataConsumer();
@@ -32,7 +32,7 @@ namespace RTC
 		void FillJson(json& jsonObject) const;
 		void FillJsonStats(json& jsonArray) const;
 		void HandleRequest();
-		RTC::SctpStreamParameters& GetSctpStreamParameters() ;
+		rtc::SctpStreamParameters& GetSctpStreamParameters() ;
 		bool IsActive() const;
 		void TransportConnected();
 		void TransportDisconnected();
@@ -47,10 +47,10 @@ namespace RTC
 
 	private:
 		// Passed by argument.
-		RTC::DataConsumer::Listener* listener{ nullptr };
+		rtc::DataConsumer::Listener* listener{ nullptr };
 		size_t maxSctpMessageSize{ 0 };
 		// Others.
-		RTC::SctpStreamParameters sctpStreamParameters;
+		rtc::SctpStreamParameters sctpStreamParameters;
 		std::string label;
 		std::string protocol;
 		bool transportConnected{ false };
@@ -62,7 +62,7 @@ namespace RTC
 
 	/* Inline methods. */
 
-	inline RTC::SctpStreamParameters& DataConsumer::GetSctpStreamParameters() 
+	inline rtc::SctpStreamParameters& DataConsumer::GetSctpStreamParameters() 
 	{
 		return this->sctpStreamParameters;
 	}
@@ -77,6 +77,6 @@ namespace RTC
 		);
 		
 	}
-} // namespace RTC
+} // namespace rtc
 
 #endif

@@ -38,7 +38,7 @@
 //#include <shared_mutex>
 
 
-namespace RTC {
+namespace rtc {
 
 struct DataChannel;    
 #if DATACHANNEL
@@ -296,6 +296,6 @@ RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, PeerConnection::IceSt
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, juice_state_t state);
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, PeerConnection::SignalingState state);
 
-} // namespace RTC
+} // namespace rtc
 
 #endif

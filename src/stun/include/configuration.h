@@ -4,9 +4,9 @@
 #define RTC_ICE_CONFIGURATION_H
 
 #include "common.h"
-
+#include "RestAPI.h"
 #include <vector>
-
+#include "net/certificate.h"
 
 namespace rtc {
 
@@ -107,6 +107,27 @@ struct RTC_CPP_EXPORT Configuration {
 	string certificatePemFile;
 	string keyPemFile;
 	string keyPemPass;
+
+        bool console{false}; /* allow to test from console with external ips" */
+        uint16_t portdefault{7345};
+        
+        void allocRestApi(Async &async, std::string room)
+        {
+            api = new RestAPI(async, room  );
+        }
+        void freeRestApi()
+        {
+            delete api;
+        }
+        
+        ~Configuration()
+        {
+//            freeRestApi();
+        }
+         RestAPI *api{nullptr};
+private:
+
+           
 };
 
 

@@ -7,7 +7,7 @@
 
 using namespace base::net;
 
-namespace RTC
+namespace rtc
 {
 	class IceServer
 	{
@@ -71,6 +71,6 @@ namespace RTC
 	}
 
 	
-} // namespace RTC
+} // namespace rtc
 
 #endif

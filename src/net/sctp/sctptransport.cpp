@@ -54,7 +54,7 @@ using namespace std::chrono;
 using namespace base;
 
 
-namespace RTC {
+namespace rtc {
 
 using utils::to_uint16;
 using utils::to_uint32;
@@ -1093,4 +1093,4 @@ void SctpTransport::DebugCallback(const char *format, ...) {
 }
 
 
-} // namespace RTC::impl
+} // namespace rtc::impl

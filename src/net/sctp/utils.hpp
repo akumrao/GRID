@@ -9,7 +9,7 @@
 #include <tuple>
 #include <utility>
 
-namespace RTC {
+namespace rtc {
 
 // overloaded helper
 template <class... Ts> struct overloaded : Ts... { using Ts::operator()...; };
@@ -147,6 +147,6 @@ private:
 	impl_ptr<T> mImpl;
 };
 
-} // namespace RTC
+} // namespace rtc
 
 #endif

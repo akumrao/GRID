@@ -11,7 +11,7 @@
 #include <optional>
 
 using namespace std;
-using namespace RTC;
+using namespace rtc;
 
 namespace rtc::impl {
 

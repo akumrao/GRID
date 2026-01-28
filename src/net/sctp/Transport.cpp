@@ -8,7 +8,7 @@
 #include <map>                                                   // std::multimap
 #include <sstream>                                               // std::ostringstream
 
-namespace RTC
+namespace rtc
 {
 	/* Instance methods. */
 
@@ -75,17 +75,17 @@ namespace RTC
 //
 //			// This may throw.
 //			this->sctpAssociation =
-//			  new RTC::SctpTransport(this, os, mis, maxSctpMessageSize, isDataChannel);
+//			  new rtc::SctpTransport(this, os, mis, maxSctpMessageSize, isDataChannel);
 //                        
 //                        SInfo << "sctpAssociation " <<  sctpAssociation;
 //		}
             
             
-                RTC::SctpTransport::Ports ports = {};
+                rtc::SctpTransport::Ports ports = {};
 		ports.local = 3868;
 		ports.remote = 3868;
 
-		sctptransport = new RTC::SctpTransport(  this , config, ports );
+		sctptransport = new rtc::SctpTransport(  this , config, ports );
                 
 		//    weak_bind(&PeerConnection::forwardBufferedAmount, this, _1, _2),
 //		    [this, weak_this = weak_from_this()](SctpTransport::State transportState) {
@@ -225,7 +225,7 @@ namespace RTC
 
 
 	inline void Transport::OnDataProducerSctpMessageReceived(
-	  RTC::DataProducer* dataProducer, uint32_t ppid, const uint8_t* msg, size_t len)
+	  rtc::DataProducer* dataProducer, uint32_t ppid, const uint8_t* msg, size_t len)
 	{
 	
             int x = 1;
@@ -237,7 +237,7 @@ namespace RTC
 	}
 
 	inline void Transport::OnDataConsumerSendSctpMessage(
-	  RTC::DataConsumer* dataConsumer, uint32_t ppid, const uint8_t* msg, size_t len)
+	  rtc::DataConsumer* dataConsumer, uint32_t ppid, const uint8_t* msg, size_t len)
 	{
 
                  SInfo << " OnDataProducerSctpMessageReceived dataConsumer " <<  dataConsumer->id << " sctptransport "  << sctptransport;
@@ -246,7 +246,7 @@ namespace RTC
 	}
 
 
-	inline void Transport::OnSctpTransportConnecting(RTC::SctpTransport* /*sctpAssociation*/)
+	inline void Transport::OnSctpTransportConnecting(rtc::SctpTransport* /*sctpAssociation*/)
 	{
 	
 
@@ -258,7 +258,7 @@ namespace RTC
 //		Channel::Notifier::Emit(this->id, "sctpstatechange ", data);
 	}
 
-	inline void Transport::OnSctpTransportConnected(RTC::SctpTransport* /*sctpAssociation*/)
+	inline void Transport::OnSctpTransportConnected(rtc::SctpTransport* /*sctpAssociation*/)
 	{
 		
             SInfo << "OnSctpTransportConnected";
@@ -285,7 +285,7 @@ namespace RTC
 //		Channel::Notifier::Emit(this->id, "sctpstatechange", data);
 	}
 
-	inline void Transport::OnSctpTransportFailed(RTC::SctpTransport* /*sctpAssociation*/)
+	inline void Transport::OnSctpTransportFailed(rtc::SctpTransport* /*sctpAssociation*/)
 	{
             SInfo << "OnSctpTransportFailed";
 
@@ -305,7 +305,7 @@ namespace RTC
 //		Channel::Notifier::Emit(this->id, "sctpstatechange", data);
 	}
 
-	inline void Transport::OnSctpTransportClosed(RTC::SctpTransport* /*sctpAssociation*/)
+	inline void Transport::OnSctpTransportClosed(rtc::SctpTransport* /*sctpAssociation*/)
 	{
              SInfo << "OnSctpTransportClosed";
 //
@@ -326,7 +326,7 @@ namespace RTC
 	}
 
 	inline void Transport::OnSctpTransportSendData(
-	  RTC::SctpTransport* /*sctpAssociation*/, const uint8_t* data, size_t len)
+	  rtc::SctpTransport* /*sctpAssociation*/, const uint8_t* data, size_t len)
 	{
 //		//
 //                SDebug << "OnSctpTransportSendData sctpAssociation " << sctpAssociation;
@@ -343,7 +343,7 @@ namespace RTC
 	}
 
 //	inline void Transport::OnSctpTransportMessageReceived(
-//	  RTC::SctpTransport* /*sctpAssociation*/,
+//	  rtc::SctpTransport* /*sctpAssociation*/,
 //	  uint16_t streamId,
 //	  uint32_t ppid,
 //	  const uint8_t* msg,
@@ -352,7 +352,7 @@ namespace RTC
 //                SInfo << "OnSctpTransportMessageReceived " ;
 ////		
 ////
-////		RTC::DataProducer* dataProducer = this->sctpListener.GetDataProducer(sctpAssociation);
+////		rtc::DataProducer* dataProducer = this->sctpListener.GetDataProducer(sctpAssociation);
 ////
 ////		if (!dataProducer)
 ////		{
@@ -379,7 +379,7 @@ namespace RTC
 //		// RTCP timer.
 //		if (timer == this->rtcpTimer)
 //		{
-//			auto interval  = static_cast<uint64_t>(RTC::RTCP::MaxVideoIntervalMs);
+//			auto interval  = static_cast<uint64_t>(rtc::RTCP::MaxVideoIntervalMs);
 //			uint64_t nowMs = base::Application::GetTimeMs();
 //
 //			SendRtcp(nowMs);
@@ -402,8 +402,8 @@ namespace RTC
 //				if (rate != 0u)
 //					interval = 360000 / rate;
 //
-//				if (interval > RTC::RTCP::MaxVideoIntervalMs)
-//					interval = RTC::RTCP::MaxVideoIntervalMs;
+//				if (interval > rtc::RTCP::MaxVideoIntervalMs)
+//					interval = rtc::RTCP::MaxVideoIntervalMs;
 //			}
 //
 //			/*
@@ -416,4 +416,4 @@ namespace RTC
 //			this->rtcpTimer->Start(interval);
 //		}
 	}
-} // namespace RTC
+} // namespace rtc

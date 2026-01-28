@@ -16,7 +16,7 @@
 #include <queue>
 #include "usrsctp.h"
 
-namespace RTC {
+namespace rtc {
 
 
 
@@ -177,6 +177,6 @@ private:
 	static std::unique_ptr<InstancesSet> Instances;
 };
 
-} // namespace RTC::impl
+} // namespace rtc::impl
 
 #endif

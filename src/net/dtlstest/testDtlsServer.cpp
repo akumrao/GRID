@@ -122,8 +122,8 @@ int main(int argc, char** argv) {
         Application app;
         //SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true);
         
-        RTC::Router router1("101");
-        RTC::Router router2("102");
+        rtc::Router router1("101");
+        rtc::Router router2("102");
         
         
         base::cnfg::Configuration cnfgSet;
@@ -141,11 +141,11 @@ int main(int argc, char** argv) {
 
 
         
-        RTC::SctpTransport::Init();
-        RTC::SctpSettings mCurrentSctpSettings = {};
-	RTC::SctpTransport::SetSettings(mCurrentSctpSettings);
+        rtc::SctpTransport::Init();
+        rtc::SctpSettings mCurrentSctpSettings = {};
+	rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
         
-        RTC::DtlsTransport::ClassInit();
+        rtc::DtlsTransport::ClassInit();
                 
         #if HTTPSSL
         
@@ -158,7 +158,7 @@ int main(int argc, char** argv) {
         
         
       
-        RTC::Configuration transportconfig;
+        rtc::Configuration transportconfig;
         
         router1.HandleRequest(true, transportconfig, 8000, 9000);
         router2.HandleRequest(false,transportconfig, 9000, 8000);
@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
 
            // socket.shutdown();
             
-             RTC::DtlsTransport::ClassDestroy();
+             rtc::DtlsTransport::ClassDestroy();
 
         });
 

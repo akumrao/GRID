@@ -11,7 +11,7 @@
 #include <cmath> // std::pow()
 
 using namespace base;
-namespace RTC
+namespace rtc
 {
 	/* Static. */
 
@@ -29,8 +29,8 @@ namespace RTC
 
 	/* Instance methods. */
 
-	WebRtcTransport::WebRtcTransport(const std::string& id, const Configuration &config, RTC::Transport::Listener* listener, int localPort, int remotePort )
-	  : RTC::Transport::Transport(id, config, listener)
+	WebRtcTransport::WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort )
+	  : rtc::Transport::Transport(id, config, listener)
 	{
 		
             uint16_t iceLocalPreferenceDecrement{ 0 };
@@ -47,7 +47,7 @@ namespace RTC
             bool preferUdp{ false };
             bool preferTcp{ false };
             
-            iceServer = new RTC::IceServer();
+            iceServer = new rtc::IceServer();
             
             for (auto& listenIp : listenIps)
             {
@@ -108,7 +108,7 @@ namespace RTC
 
 	    // Create a DTLS transport.
             STrace << " Create a DTLS transport.";
-			this->dtlsTransport = new RTC::DtlsTransport(this);
+			this->dtlsTransport = new rtc::DtlsTransport(this);
 	}
 
 	WebRtcTransport::~WebRtcTransport()
@@ -148,38 +148,38 @@ namespace RTC
 	{
 		
             if(server)
-                dtlsRole = RTC::DtlsTransport::Role::SERVER;
+                dtlsRole = rtc::DtlsTransport::Role::SERVER;
             else
-                dtlsRole = RTC::DtlsTransport::Role::CLIENT;
+                dtlsRole = rtc::DtlsTransport::Role::CLIENT;
             
              MayRunDtlsTransport();
 
 
-//            dtlsRemoteRole = RTC::DtlsTransport::Role::AUTO;
+//            dtlsRemoteRole = rtc::DtlsTransport::Role::AUTO;
 //
 //              // Set local DTLS role.
 //            switch (dtlsRemoteRole)
 //            {
-//                    case RTC::DtlsTransport::Role::CLIENT:
+//                    case rtc::DtlsTransport::Role::CLIENT:
 //                    {
-//                            this->dtlsRole = RTC::DtlsTransport::Role::SERVER;
+//                            this->dtlsRole = rtc::DtlsTransport::Role::SERVER;
 //
 //                            break;
 //                    }
-//                    case RTC::DtlsTransport::Role::SERVER:
+//                    case rtc::DtlsTransport::Role::SERVER:
 //                    {
-//                            this->dtlsRole = RTC::DtlsTransport::Role::CLIENT;
+//                            this->dtlsRole = rtc::DtlsTransport::Role::CLIENT;
 //
 //                            break;
 //                    }
 //                    // If the peer has role "auto" we become "client" since we are ICE controlled.
-//                    case RTC::DtlsTransport::Role::AUTO:
+//                    case rtc::DtlsTransport::Role::AUTO:
 //                    {
-//                            this->dtlsRole = RTC::DtlsTransport::Role::CLIENT;
+//                            this->dtlsRole = rtc::DtlsTransport::Role::CLIENT;
 //
 //                            break;
 //                    }
-//                    case RTC::DtlsTransport::Role::NONE:
+//                    case rtc::DtlsTransport::Role::NONE:
 //                    {
 //                            base::uv::throwError("invalid remote DTLS role");
 //                    }
@@ -198,11 +198,11 @@ namespace RTC
 //
 //            switch (this->dtlsRole)
 //            {
-//                    case RTC::DtlsTransport::Role::CLIENT:
+//                    case rtc::DtlsTransport::Role::CLIENT:
 //                            data["dtlsLocalRole"] = "client";
 //                            break;
 //
-//                    case RTC::DtlsTransport::Role::SERVER:
+//                    case rtc::DtlsTransport::Role::SERVER:
 //                            data["dtlsLocalRole"] = "server";
 //                            break;
 //
@@ -223,10 +223,10 @@ namespace RTC
 		
 		return (
 //			(
-//				this->iceServer->GetState() == RTC::IceServer::IceState::CONNECTED ||
-//				this->iceServer->GetState() == RTC::IceServer::IceState::COMPLETED
+//				this->iceServer->GetState() == rtc::IceServer::IceState::CONNECTED ||
+//				this->iceServer->GetState() == rtc::IceServer::IceState::COMPLETED
 //			) &&
-			this->dtlsTransport->GetState() == RTC::DtlsTransport::DtlsState::CONNECTED
+			this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CONNECTED
 		);
 		
 	}
@@ -247,19 +247,19 @@ namespace RTC
 		{
 			// If still 'auto' then transition to 'server' if ICE is 'connected' or
 			// 'completed'.
-			case RTC::DtlsTransport::Role::AUTO:
+			case rtc::DtlsTransport::Role::AUTO:
 			{
 				
 //				if (
-//					this->iceServer->GetState() == RTC::IceServer::IceState::CONNECTED ||
-//					this->iceServer->GetState() == RTC::IceServer::IceState::COMPLETED
+//					this->iceServer->GetState() == rtc::IceServer::IceState::CONNECTED ||
+//					this->iceServer->GetState() == rtc::IceServer::IceState::COMPLETED
 //				)
 				
 				{
 					LDebug( "transition from DTLS local role 'auto' to 'server' and running DTLS transport");
 
-					this->dtlsRole = RTC::DtlsTransport::Role::SERVER;
-					this->dtlsTransport->Run(RTC::DtlsTransport::Role::SERVER);
+					this->dtlsRole = rtc::DtlsTransport::Role::SERVER;
+					this->dtlsTransport->Run(rtc::DtlsTransport::Role::SERVER);
 				}
 
 				break;
@@ -272,18 +272,18 @@ namespace RTC
 			//
 			// NOTE: This is the theory, however let's be more flexible as told here:
 			//   https://bugs.chromium.org/p/webrtc/issues/detail?id=3661
-			case RTC::DtlsTransport::Role::CLIENT:
+			case rtc::DtlsTransport::Role::CLIENT:
 			{
 				
 //				if (
-//					this->iceServer->GetState() == RTC::IceServer::IceState::CONNECTED ||
-//					this->iceServer->GetState() == RTC::IceServer::IceState::COMPLETED
+//					this->iceServer->GetState() == rtc::IceServer::IceState::CONNECTED ||
+//					this->iceServer->GetState() == rtc::IceServer::IceState::COMPLETED
 //				)
 				
 				{
 					LTrace( "running DTLS transport in local role 'client'");
 
-					this->dtlsTransport->Run(RTC::DtlsTransport::Role::CLIENT);
+					this->dtlsTransport->Run(rtc::DtlsTransport::Role::CLIENT);
 				}
 
 				break;
@@ -291,24 +291,24 @@ namespace RTC
 
 			// If 'server' then run the DTLS transport if ICE is 'connected' (not yet
 			// USE-CANDIDATE) or 'completed'.
-			case RTC::DtlsTransport::Role::SERVER:
+			case rtc::DtlsTransport::Role::SERVER:
 			{
 				
 //				if (
-//					this->iceServer->GetState() == RTC::IceServer::IceState::CONNECTED ||
-//					this->iceServer->GetState() == RTC::IceServer::IceState::COMPLETED
+//					this->iceServer->GetState() == rtc::IceServer::IceState::CONNECTED ||
+//					this->iceServer->GetState() == rtc::IceServer::IceState::COMPLETED
 //				)
 //				
 				{
 					LTrace( "running DTLS transport in local role 'server'");
 
-					this->dtlsTransport->Run(RTC::DtlsTransport::Role::SERVER);
+					this->dtlsTransport->Run(rtc::DtlsTransport::Role::SERVER);
 				}
 
 				break;
 			}
 
-			case RTC::DtlsTransport::Role::NONE:
+			case rtc::DtlsTransport::Role::NONE:
 			{
 				MS_ABORT("local DTLS role not set");
 			}
@@ -343,11 +343,11 @@ namespace RTC
 		assertm(this->dtlsTransport, "no dtlsTransport");
 
 		// Increase receive transmission.
-//		RTC::Transport::DataReceived(len);
+//		rtc::Transport::DataReceived(len);
 
 		
 		// Check if it's DTLS.
-		if (RTC::DtlsTransport::IsDtls(data, len))
+		if (rtc::DtlsTransport::IsDtls(data, len))
 		{
 			OnDtlsDataReceived(tuple, data, len);
 		}
@@ -366,7 +366,7 @@ namespace RTC
 //
 //
 //
-//		RTC::StunPacket* packet = RTC::StunPacket::Parse(data, len);
+//		rtc::StunPacket* packet = rtc::StunPacket::Parse(data, len);
 //
 //		if (!packet)
 //		{
@@ -402,8 +402,8 @@ namespace RTC
 
             // Check that DTLS status is 'connecting' or 'connected'.
             if (
-              this->dtlsTransport->GetState() == RTC::DtlsTransport::DtlsState::CONNECTING ||
-              this->dtlsTransport->GetState() == RTC::DtlsTransport::DtlsState::CONNECTED)
+              this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CONNECTING ||
+              this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CONNECTED)
             {
                     //MS_DEBUG_DEV("DTLS data received, passing it to the DTLS transport");
 
@@ -445,7 +445,7 @@ namespace RTC
 
              SInfo << "on_read Len" <<  len;
              
-//            RTC::TcpConnection* connection = (RTC::TcpConnection*) conn;
+//            rtc::TcpConnection* connection = (rtc::TcpConnection*) conn;
 //            base::net::TransportTuple tuple(connection);
 //
 //            OnPacketReceived(&tuple, (const uint8_t*)data, len);   TBD
@@ -454,7 +454,7 @@ namespace RTC
 
 
 
-	inline void WebRtcTransport::OnDtlsTransportConnecting(const RTC::DtlsTransport* /*dtlsTransport*/)
+	inline void WebRtcTransport::OnDtlsTransportConnecting(const rtc::DtlsTransport* /*dtlsTransport*/)
 	{
 		
                  SInfo << "OnDtlsTransportConnecting";
@@ -471,7 +471,7 @@ namespace RTC
 //		Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
 	}
 
-	inline void WebRtcTransport::OnDtlsTransportConnected( const RTC::DtlsTransport* dtlsTransport ) 
+	inline void WebRtcTransport::OnDtlsTransportConnected( const rtc::DtlsTransport* dtlsTransport ) 
 	{
 		
                 SInfo << "OnDtlsTransportConnected";
@@ -499,8 +499,8 @@ namespace RTC
 //
 //		try
 //		{
-//			this->srtpSendSession = new RTC::SrtpSession(
-//			  RTC::SrtpSession::Type::OUTBOUND, srtpProfile, srtpLocalKey, srtpLocalKeyLen);
+//			this->srtpSendSession = new rtc::SrtpSession(
+//			  rtc::SrtpSession::Type::OUTBOUND, srtpProfile, srtpLocalKey, srtpLocalKeyLen);
 //		}
 //		catch (const std::exception& error)
 //		{
@@ -509,8 +509,8 @@ namespace RTC
 //
 //		try
 //		{
-//			this->srtpRecvSession = new RTC::SrtpSession(
-//			  RTC::SrtpSession::Type::INBOUND, srtpProfile, srtpRemoteKey, srtpRemoteKeyLen);
+//			this->srtpRecvSession = new rtc::SrtpSession(
+//			  rtc::SrtpSession::Type::INBOUND, srtpProfile, srtpRemoteKey, srtpRemoteKeyLen);
 //		}
 //		catch (const std::exception& error)
 //		{
@@ -529,10 +529,10 @@ namespace RTC
 //		Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
 //
 //		// Tell the parent class.
-		RTC::Transport::Connected();
+		rtc::Transport::Connected();
 	}
 
-	inline void WebRtcTransport::OnDtlsTransportFailed(const RTC::DtlsTransport* /*dtlsTransport*/)
+	inline void WebRtcTransport::OnDtlsTransportFailed(const rtc::DtlsTransport* /*dtlsTransport*/)
 	{
 		
 
@@ -546,7 +546,7 @@ namespace RTC
 	
 	}
 
-	inline void WebRtcTransport::OnDtlsTransportClosed(const RTC::DtlsTransport* /*dtlsTransport*/)
+	inline void WebRtcTransport::OnDtlsTransportClosed(const rtc::DtlsTransport* /*dtlsTransport*/)
 	{
 	
             
@@ -556,11 +556,11 @@ namespace RTC
 
 
 		// Tell the parent class.
-	      RTC::Transport::Disconnected();
+	      rtc::Transport::Disconnected();
 	}
 
 	inline void WebRtcTransport::OnDtlsTransportSendData(
-	  const RTC::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
+	  const rtc::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
 	{
 		
             SInfo << "OnDtlsTransportSendData len:" << len;
@@ -579,11 +579,11 @@ namespace RTC
 		this->iceServer->GetSelectedTuple()->Send(data, len);
 
             // Increase send transmission.
-	    //  RTC::Transport::DataSent(len);
+	    //  rtc::Transport::DataSent(len);
 	}
 
 	inline void WebRtcTransport::OnDtlsTransportApplicationDataReceived(
-	  const RTC::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
+	  const rtc::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
 	{
 		
             SInfo << "OnDtlsTransportApplicationDataReceived len:" << len;
@@ -591,6 +591,6 @@ namespace RTC
             assertm(this->dtlsTransport, "no dtlsTransport");
 
             // Pass it to the parent transport.
-            RTC::Transport::ReceiveSctpData((byte *)data, len);
+            rtc::Transport::ReceiveSctpData((byte *)data, len);
 	}
-} // namespace RTC
+} // namespace rtc

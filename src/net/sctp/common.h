@@ -25,9 +25,9 @@
 #endif
 #endif
 
-#ifndef RTC_ENABLE_WEBSOCKET
-#define RTC_ENABLE_WEBSOCKET 1
-#endif
+// #ifndef RTC_ENABLE_WEBSOCKET
+// #define RTC_ENABLE_WEBSOCKET 1
+// #endif
 
 //#ifndef RTC_ENABLE_MEDIA
 //#define RTC_ENABLE_MEDIA 1
@@ -45,7 +45,7 @@
 #include <variant>
 #include <vector>
 
-namespace RTC {
+namespace rtc {
 
 //using std::byte;
 //using std::nullopt;
@@ -72,6 +72,6 @@ using std::uint32_t;
 using std::uint64_t;
 using std::uint8_t;
 
-} // namespace RTC
+} // namespace rtc
 
 #endif

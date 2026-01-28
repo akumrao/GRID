@@ -18,7 +18,7 @@
 #include "candidate.hpp"
 
 
-using namespace RTC;
+using namespace rtc;
 
 
 #define STUN_TRANSACTION_ID_SIZE 12

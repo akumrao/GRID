@@ -8,7 +8,7 @@
 
 #include <functional>
 
-namespace RTC {
+namespace rtc {
 
 struct RTC_CPP_EXPORT Message : binary {
 	enum Type { Binary, String, Control, Reset };
@@ -72,6 +72,6 @@ RTC_CPP_EXPORT message_ptr make_message(message_variant data);
 RTC_CPP_EXPORT message_variant to_variant(Message &&message);
 RTC_CPP_EXPORT message_variant to_variant(const Message &message);
 
-} // namespace RTC
+} // namespace rtc
 
 #endif

@@ -3,13 +3,16 @@
 #ifndef RTC_CANDIDATE_H
 #define RTC_CANDIDATE_H
 
-#include "common.h"
+#include "common.hpp"
 #include <Types.h>
 #include "net/IP.h"
 
-using namespace std;
+#define AGENT_DEBUG 1
+
 using namespace base::net;
 //using namespace stun;
+
+using namespace std;
 
 namespace rtc {
 
@@ -38,7 +41,7 @@ public:
 
 //	enum class ResolveMode { Simple, Lookup };
 //	bool resolve(ResolveMode mode = ResolveMode::Simple);
-        void resolve();
+        bool resolve();
 
 	Type type() const;
 	TransportType transportType() const;
@@ -72,6 +75,22 @@ public:
 	//char mAddress[50];
 	//uint16_t mPort;
         mutable addr_record_t resolved{0};
+       
+        #if AGENT_DEBUG
+        std::string dump(bool full= false)
+        {
+            char ip[40];
+            uint16_t port;
+            IP::AddressToString(resolved, ip, 40, port);
+            
+            if(!full)
+            return ip; 
+            
+            std::string ret =  ip + std::string(":") + std::to_string(port);
+            return ret; 
+        }
+        #endif 
+       
 };
 
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, const Candidate &candidate);
@@ -79,6 +98,6 @@ RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, const Candidate::Type
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out,
                                         const Candidate::TransportType &transportType);
 
-} // namespace RTC
+} // namespace rtc
 
 #endif

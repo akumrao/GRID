@@ -25,7 +25,7 @@ There are 4 peers, so 4x6 = 24 consumers in total.
 
 using namespace base;
 
-namespace RTC
+namespace rtc
 {
 	/* Instance methods. */
 
@@ -56,7 +56,7 @@ namespace RTC
 	void Router::HandleRequest(bool server, const Configuration &config, int localPort, int remotePort )
 	{
 
-            auto* webRtcTransport = new RTC::WebRtcTransport(id , config, this, localPort,  remotePort );
+            auto* webRtcTransport = new rtc::WebRtcTransport(id , config, this, localPort,  remotePort );
             webRtcTransport->HandleRequest(server);
             
             mapTransports[id] = webRtcTransport;
@@ -69,4 +69,4 @@ namespace RTC
 	
 
 
-} // namespace RTC
+} // namespace rtc

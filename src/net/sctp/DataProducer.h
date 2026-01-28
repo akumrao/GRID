@@ -6,7 +6,7 @@
 #include "sctptransport.hpp"
 #include <string>
 
-namespace RTC
+namespace rtc
 {
 	class DataProducer
 	{
@@ -15,17 +15,17 @@ namespace RTC
 		{
 		public:
 			virtual void OnDataProducerSctpMessageReceived(
-			  RTC::DataProducer* dataProducer, uint32_t ppid, const uint8_t* msg, size_t len) = 0;
+			  rtc::DataProducer* dataProducer, uint32_t ppid, const uint8_t* msg, size_t len) = 0;
 		};
 
 	public:
-		DataProducer(const std::string& id, RTC::DataProducer::Listener* listener, json& data);
+		DataProducer(const std::string& id, rtc::DataProducer::Listener* listener, json& data);
 		virtual ~DataProducer();
 
 	public:
 
 		void HandleRequest();
-		 RTC::SctpStreamParameters& GetSctpStreamParameters() ;
+		 rtc::SctpStreamParameters& GetSctpStreamParameters() ;
 		void ReceiveSctpMessage(uint32_t ppid, const uint8_t* msg, size_t len);
 
 	public:
@@ -36,19 +36,19 @@ namespace RTC
 
 	private:
 		// Passed by argument.
-		RTC::DataProducer::Listener* listener{ nullptr };
+		rtc::DataProducer::Listener* listener{ nullptr };
 		// Others.
-		RTC::SctpStreamParameters sctpStreamParameters;
+		rtc::SctpStreamParameters sctpStreamParameters;
 		size_t messagesReceived{ 0 };
 		size_t bytesReceived{ 0 };
 	};
 
 	/* Inline methods. */
 
-	inline  RTC::SctpStreamParameters& DataProducer::GetSctpStreamParameters() 
+	inline  rtc::SctpStreamParameters& DataProducer::GetSctpStreamParameters() 
 	{
 		return this->sctpStreamParameters;
 	}
-} // namespace RTC
+} // namespace rtc
 
 #endif

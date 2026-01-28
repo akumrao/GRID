@@ -12,7 +12,7 @@
 
 using namespace nlohmann;
 
-namespace RTC {
+namespace rtc {
 
 enum class LogLevel { // Don't change, it must match plog severity
 	None = 0,
@@ -85,6 +85,6 @@ RTC_CPP_EXPORT void SetSctpSettings(SctpSettings s);
 
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, LogLevel level);
 
-} // namespace RTC
+} // namespace rtc
 
 #endif

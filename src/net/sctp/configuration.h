@@ -4,14 +4,11 @@
 #define RTC_ICE_CONFIGURATION_H
 
 #include "common.h"
-
+#include "RestAPI.h"
 #include <vector>
+#include "net/certificate.h"
 
-#include "base/async.h"
-
-using namespace base;
-
-namespace RTC {
+namespace rtc {
 
 const size_t MAX_NUMERICNODE_LEN = 48; // Max IPv6 string representation length
 const size_t MAX_NUMERICSERV_LEN = 6;  // Max port string representation length
@@ -33,12 +30,12 @@ const int MIN_THREADPOOL_SIZE = 4; // Minimum number of threads in the global th
 
 const size_t DEFAULT_MTU = RTC_DEFAULT_MTU; // defined in rtc.h
 
-} // namespace RTC
+} // namespace rtc
 
 
 
 
-namespace RTC {
+namespace rtc {
 
 struct RTC_CPP_EXPORT IceServer_conf {
 	enum class Type { Stun, Turn };
@@ -68,11 +65,11 @@ struct RTC_CPP_EXPORT IceServer_conf {
 
 
 
-enum class CertificateType {
-	Default = RTC_CERTIFICATE_DEFAULT, // ECDSA
-	Ecdsa = RTC_CERTIFICATE_ECDSA,
-	Rsa = RTC_CERTIFICATE_RSA
-};
+//enum class CertificateType {
+//	Default = RTC_CERTIFICATE_DEFAULT, // ECDSA
+//	Ecdsa = RTC_CERTIFICATE_ECDSA,
+//	Rsa = RTC_CERTIFICATE_RSA
+//};
 
 enum class TransportPolicy { All = RTC_TRANSPORT_POLICY_ALL, Relay = RTC_TRANSPORT_POLICY_RELAY };
 
@@ -81,14 +78,6 @@ enum class TransportPolicy { All = RTC_TRANSPORT_POLICY_ALL, Relay = RTC_TRANSPO
 //#define RTC_DEFAULT_MTU 1280 // IPv6 minimum guaranteed MTU
 //#define DEFAULT_MTU  RTC_DEFAULT_MTU
 
-class RestAPI
-{
-public:
-    RestAPI(Async &async, std::string room)
-    {
-        
-    }
-};
         
 struct RTC_CPP_EXPORT Configuration {
 	// ICE settings
@@ -135,10 +124,13 @@ struct RTC_CPP_EXPORT Configuration {
 //            freeRestApi();
         }
          RestAPI *api{nullptr};
+private:
+
+           
 };
 
 
 
-} // namespace RTC
+} // namespace rtc
 
 #endif

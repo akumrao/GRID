@@ -16,14 +16,14 @@
 
 using namespace base::net;
 
-namespace RTC
+namespace rtc
 {
-	class WebRtcTransport : public RTC::Transport,
+	class WebRtcTransport : public rtc::Transport,
 			        public  base::net::UdpServer::Listener,
-	                       // public RTC::TcpServer::Listener,
-	                       // public RTC::TcpConnection::Listener,
+	                       // public rtc::TcpServer::Listener,
+	                       // public rtc::TcpConnection::Listener,
                                 public base::net::Listener,
-	                        public RTC::DtlsTransport::Listener
+	                        public rtc::DtlsTransport::Listener
 	{
 	private:
 		struct ListenIp
@@ -35,7 +35,7 @@ namespace RTC
 		};
 
 	public:
-		WebRtcTransport(const std::string& id, const Configuration &config, RTC::Transport::Listener* listener, int localPort, int remotePort );
+		WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort );
 		~WebRtcTransport() override;;
 
 	public:
@@ -52,51 +52,51 @@ namespace RTC
 		void OnDtlsDataReceived(const base::net::TransportTuple* tuple, const char* data, size_t len);
 
 
-		/* Pure virtual methods inherited from RTC::UdpSocket::Listener. */
+		/* Pure virtual methods inherited from rtc::UdpSocket::Listener. */
 	public:
 		void OnUdpSocketPacketReceived(
 		   base::net::UdpServer* socket, const  char* data, size_t len,  struct sockaddr* remoteAddr) override;
 
-		/* Pure virtual methods inherited from RTC::TcpServer::Listener. */
+		/* Pure virtual methods inherited from rtc::TcpServer::Listener. */
 	public:
-		//void OnRtcTcpConnectionClosed(RTC::TcpServer* tcpServer, RTC::TcpConnection* connection) override;
+		//void OnRtcTcpConnectionClosed(rtc::TcpServer* tcpServer, rtc::TcpConnection* connection) override;
 		void on_close( base::net::Listener* conn);
-		/* Pure virtual methods inherited from RTC::TcpConnection::Listener. */
+		/* Pure virtual methods inherited from rtc::TcpConnection::Listener. */
 	public:
 //		void OnTcpConnectionPacketReceived(
-//		  RTC::TcpConnection* connection, const uint8_t* data, size_t len) override;  //
+//		  rtc::TcpConnection* connection, const uint8_t* data, size_t len) override;  //
                  void on_read( base::net::Listener* conn, const char* data, size_t len);
-		/* Pure virtual methods inherited from RTC::IceServer::Listener. */
+		/* Pure virtual methods inherited from rtc::IceServer::Listener. */
 	public:
 
 
-		/* Pure virtual methods inherited from RTC::DtlsTransport::Listener. */
+		/* Pure virtual methods inherited from rtc::DtlsTransport::Listener. */
 	public:
-		void OnDtlsTransportConnecting(const RTC::DtlsTransport* dtlsTransport) override;
-                void OnDtlsTransportConnected( const RTC::DtlsTransport* /*dtlsTransport*/) override;
+		void OnDtlsTransportConnecting(const rtc::DtlsTransport* dtlsTransport) override;
+                void OnDtlsTransportConnected( const rtc::DtlsTransport* /*dtlsTransport*/) override;
 		
-		void OnDtlsTransportFailed(const RTC::DtlsTransport* dtlsTransport) override;
-		void OnDtlsTransportClosed(const RTC::DtlsTransport* dtlsTransport) override;
+		void OnDtlsTransportFailed(const rtc::DtlsTransport* dtlsTransport) override;
+		void OnDtlsTransportClosed(const rtc::DtlsTransport* dtlsTransport) override;
 		void OnDtlsTransportSendData(
-		  const RTC::DtlsTransport* dtlsTransport, const uint8_t* data, size_t len) override;
+		  const rtc::DtlsTransport* dtlsTransport, const uint8_t* data, size_t len) override;
 		void OnDtlsTransportApplicationDataReceived(
-		  const RTC::DtlsTransport* dtlsTransport, const uint8_t* data, size_t len) override;
+		  const rtc::DtlsTransport* dtlsTransport, const uint8_t* data, size_t len) override;
 
 	private:
 		// Allocated by this.
 
-                RTC::IceServer* iceServer{ nullptr };        
+                rtc::IceServer* iceServer{ nullptr };        
                 TransportTuple* tuple{ nullptr };
 		// Map of UdpSocket/TcpServer and local announced IP (if any).
 		std::unordered_map<base::net::UdpServer*, std::string> udpSockets;
 		std::unordered_map<base::net::TcpServer*, std::string> tcpServers;
-		RTC::DtlsTransport* dtlsTransport{ nullptr };
+		rtc::DtlsTransport* dtlsTransport{ nullptr };
 		
 		// Others.
 		bool connectCalled{ false }; // Whether connect() was succesfully called.
 
-		RTC::DtlsTransport::Role dtlsRole{ RTC::DtlsTransport::Role::AUTO };
+		rtc::DtlsTransport::Role dtlsRole{ rtc::DtlsTransport::Role::AUTO };
 	};
-} // namespace RTC
+} // namespace rtc
 
 #endif

@@ -49,7 +49,7 @@ inline static int onSslCertificateVerify(int /*preverifyOk*/, X509_STORE_CTX* /*
 
 inline static void onSslInfo(const SSL* ssl, int where, int ret)
 {
-	static_cast<RTC::DtlsTransport*>(SSL_get_ex_data(ssl, 0))->OnSslInfo(where, ret);
+	static_cast<rtc::DtlsTransport*>(SSL_get_ex_data(ssl, 0))->OnSslInfo(where, ret);
 }
 
 inline static unsigned int onSslDtlsTimer(SSL* /*ssl*/, unsigned int timerUs)
@@ -62,7 +62,7 @@ inline static unsigned int onSslDtlsTimer(SSL* /*ssl*/, unsigned int timerUs)
 		return 2 * timerUs;
 }
 
-namespace RTC
+namespace rtc
 {
 	/* Static. */
 
@@ -974,9 +974,9 @@ namespace RTC
 //		}
 
 //		// Get the negotiated SRTP profile.
-//		RTC::SrtpSession::Profile srtpProfile = GetNegotiatedSrtpProfile();
+//		rtc::SrtpSession::Profile srtpProfile = GetNegotiatedSrtpProfile();
 //
-//		if (srtpProfile != RTC::SrtpSession::Profile::NONE)
+//		if (srtpProfile != rtc::SrtpSession::Profile::NONE)
 //		{
 //			// Extract the SRTP keys (will notify the listener with them).
 //			ExtractSrtpKeys(srtpProfile);
@@ -1105,4 +1105,4 @@ namespace RTC
 		// Set the DTLS timer again.
 		SetTimeout();
 	}
-} // namespace RTC
+} // namespace rtc

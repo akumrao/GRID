@@ -4,7 +4,7 @@
 #include "base/logger.h"
 #include "IceServer.h"
 
-namespace RTC
+namespace rtc
 {
 
 	
@@ -135,4 +135,4 @@ namespace RTC
 		// Notify the listener.
 		//this->listener->OnIceServerSelectedTuple(this, this->selectedTuple);
 	}
-} // namespace RTC
+} // namespace rtc
