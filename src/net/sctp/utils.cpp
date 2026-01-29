@@ -112,30 +112,30 @@ string url_decode(const string &str) {
 //	return out;
 //}
 
-//std::seed_seq random_seed() {
-//	std::vector<unsigned int> seed;
-//
-//	// Seed with random device
-//	try {
-//		// On some systems an exception might be thrown if the random_device can't be initialized
-//		std::random_device device;
-//		// 128 bits should be more than enough
-//		std::generate_n(std::back_inserter(seed), 4, std::ref(device));
-//	} catch (...) {
-//		// Ignore
-//	}
-//
-//	// Seed with high-resolution clock
-//	using std::chrono::high_resolution_clock;
-//	seed.push_back(
-//	    static_cast<unsigned int>(high_resolution_clock::now().time_since_epoch().count()));
-//
-//	// Seed with thread id
-//	seed.push_back(
-//	    static_cast<unsigned int>(std::hash<std::thread::id>{}(std::this_thread::get_id())));
-//
-//	return std::seed_seq(seed.begin(), seed.end());
-//}
+std::seed_seq random_seed() {
+	std::vector<unsigned int> seed;
+
+	// Seed with random device
+	try {
+		// On some systems an exception might be thrown if the random_device can't be initialized
+		std::random_device device;
+		// 128 bits should be more than enough
+		std::generate_n(std::back_inserter(seed), 4, std::ref(device));
+	} catch (...) {
+		// Ignore
+	}
+
+	// Seed with high-resolution clock
+	using std::chrono::high_resolution_clock;
+	seed.push_back(
+	    static_cast<unsigned int>(high_resolution_clock::now().time_since_epoch().count()));
+
+	// Seed with thread id
+	seed.push_back(
+	    static_cast<unsigned int>(std::hash<std::thread::id>{}(std::this_thread::get_id())));
+
+	return std::seed_seq(seed.begin(), seed.end());
+}
 
 namespace {
 

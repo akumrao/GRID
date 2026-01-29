@@ -4,7 +4,7 @@
 #define RTC_IMPL_TRANSPORT_H
 
 #include "common.hpp"
-#include "init.hpp"
+//#include "init.hpp"
 //#include "internals.hpp"
 #include "message.hpp"
 

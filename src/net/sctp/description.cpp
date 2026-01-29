@@ -3,7 +3,7 @@
 #include "description.hpp"
 
 //#include "impl/internals.hpp"
-#include "utils_imp.hpp"
+#include "utils.h"
 
 #include <algorithm>
 #include <array>
@@ -65,7 +65,7 @@ template <typename T> T to_integer(const string& s) {
 
 namespace rtc {
 
-namespace utils = impl::utils;
+//namespace utils = impl::utils;
 
 Description::Description(const string &sdp, Type type, Role role)
     : mType(Type::Unspec), mRole(role) {

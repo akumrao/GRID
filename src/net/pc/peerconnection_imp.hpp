@@ -7,7 +7,7 @@
 #include "datachannel.hpp"
 #include "DtlsTransport.h"
 #include "icetransport.hpp"
-#include "init.hpp"
+//#include "init.hpp"
 //#include "processor.hpp"
 #include "sctptransport.hpp"
 #include "track.hpp"
