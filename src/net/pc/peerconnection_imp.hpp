@@ -131,8 +131,8 @@ struct PeerConnection : std::enable_shared_from_this<PeerConnection> {
 	std::function<void(Description)> localDescriptionCallback;
 	std::function<void(Candidate)> localCandidateCallback;
 	std::function<void(State)> stateChangeCallback;
-    std::function<void(IceState)> iceStateChangeCallback;
-    std::function<void(GatheringState )> gatheringStateChangeCallback;
+       std::function<void(IceState)> iceStateChangeCallback;
+       std::function<void(GatheringState )> gatheringStateChangeCallback;
 	std::function<void(SignalingState)> signalingStateChangeCallback;
 
 
@@ -146,7 +146,7 @@ private:
 	void dispatchMedia(message_ptr message);
 	void updateTrackSsrcCache(const Description &description);
 
-	const init_token mInitToken = Init::Instance().token();
+	//const init_token mInitToken = Init::Instance().token();
 	Certificate* mCertificate;
 
 //	Processor mProcessor;

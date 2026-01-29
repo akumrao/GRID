@@ -10,41 +10,41 @@
 #include <future>
 #include <mutex>
 
-namespace rtc::impl {
+// namespace rtc::impl {
 
-using init_token = shared_ptr<void>;
+// using init_token = shared_ptr<void>;
 
-class Init {
-public:
-	static Init &Instance();
+// class Init {
+// public:
+// 	static Init &Instance();
 
-	Init(const Init &) = delete;
-	Init &operator=(const Init &) = delete;
-	Init(Init &&) = delete;
-	Init &operator=(Init &&) = delete;
+// 	Init(const Init &) = delete;
+// 	Init &operator=(const Init &) = delete;
+// 	Init(Init &&) = delete;
+// 	Init &operator=(Init &&) = delete;
 
-	init_token token();
-	void preload();
-	std::shared_future<void> cleanup();
-	void setSctpSettings(SctpSettings s);
+// 	init_token token();
+// 	void preload();
+// 	std::shared_future<void> cleanup();
+// 	void setSctpSettings(SctpSettings s);
 
-private:
-	Init();
-	~Init();
+// private:
+// 	Init();
+// 	~Init();
 
-	void doInit();
-	void doCleanup();
+// 	void doInit();
+// 	void doCleanup();
 
-	std::optional<shared_ptr<void>> mGlobal;
-	weak_ptr<void> mWeak;
-	bool mInitialized = false;
-	SctpSettings mCurrentSctpSettings = {};
-	std::mutex mMutex;
-	std::shared_future<void> mCleanupFuture;
+// 	std::optional<shared_ptr<void>> mGlobal;
+// 	weak_ptr<void> mWeak;
+// 	bool mInitialized = false;
+// 	SctpSettings mCurrentSctpSettings = {};
+// 	std::mutex mMutex;
+// 	std::shared_future<void> mCleanupFuture;
 
-	struct TokenPayload;
-};
+// 	struct TokenPayload;
+// };
 
-} // namespace rtc::impl
+// } // namespace rtc::impl
 
 #endif
