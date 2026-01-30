@@ -370,7 +370,7 @@ size_t PeerConnection::bytesReceived() {
 
 optional<std::chrono::milliseconds> PeerConnection::rtt() {
 	auto sctpTransport = impl()->getSctpTransport();
-//	return sctpTransport ? sctpTransport->rtt() : nullopt;
+//	return sctpTransport ? sctpTransport->rtt() : nullopt;  // Herman TBD
 }
 
 CertificateFingerprint PeerConnection::remoteFingerprint() {

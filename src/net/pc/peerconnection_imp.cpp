@@ -109,38 +109,38 @@ optional<Description> PeerConnection::remoteDescription() const {
 }
 
 size_t PeerConnection::remoteMaxMessageSize() const {
-//	const size_t localMax = config.maxMessageSize.value_or(DEFAULT_LOCAL_MAX_MESSAGE_SIZE);
-//
-//	size_t remoteMax = DEFAULT_REMOTE_MAX_MESSAGE_SIZE;
-//	std::lock_guard lock(mRemoteDescriptionMutex);
-//	if (mRemoteDescription)
-//		if (auto *application = mRemoteDescription->application())
-//			if (auto max = application->maxMessageSize()) {
-//				// RFC 8841: If the SDP "max-message-size" attribute contains a maximum message
-//				// size value of zero, it indicates that the SCTP endpoint will handle messages
-//				// of any size, subject to memory capacity, etc.
-//				remoteMax = max > 0 ? max : std::numeric_limits<size_t>::max();
-//			}
-//
-//	return std::min(remoteMax, localMax);
+	const size_t localMax = config.maxMessageSize;
+
+	size_t remoteMax = DEFAULT_REMOTE_MAX_MESSAGE_SIZE;
+	std::lock_guard lock(mRemoteDescriptionMutex);
+	if (mRemoteDescription)
+		if (auto *application = mRemoteDescription->application())
+			if (auto max = application->maxMessageSize()) {
+				// RFC 8841: If the SDP "max-message-size" attribute contains a maximum message
+				// size value of zero, it indicates that the SCTP endpoint will handle messages
+				// of any size, subject to memory capacity, etc.
+				remoteMax = max > 0 ? max : std::numeric_limits<size_t>::max();
+			}
+
+	return std::min(remoteMax, localMax);
 }
 
 // Helper for PeerConnection::initXTransport methods: start and emplace the transport
 template <typename T>
 shared_ptr<T> emplaceTransport(PeerConnection *pc, shared_ptr<T> *member, shared_ptr<T> transport) {
 	std::atomic_store(member, transport);
-//	try {
-//		transport->start();
-//	} catch (...) {
-//		std::atomic_store(member, decltype(transport)(nullptr));
-//		throw;
-//	}
-//
-//	if (pc->closing.load() || pc->state.load() == PeerConnection::State::Closed) {
-//		std::atomic_store(member, decltype(transport)(nullptr));
-//		transport->stop();
-//		return nullptr;
-//	}
+	try {
+		//transport->start();    // Herman TBD
+	} catch (...) {
+		std::atomic_store(member, decltype(transport)(nullptr));
+		throw;
+	}
+
+	if (pc->closing.load() || pc->state.load() == PeerConnection::State::Closed) {
+		std::atomic_store(member, decltype(transport)(nullptr));
+		//transport->stop();   // Herman TBD
+		return nullptr;
+	}
 
 	return transport;
 }
@@ -1280,20 +1280,20 @@ shared_ptr<MediaHandler> PeerConnection::getMediaHandler() {
 }
 
 void PeerConnection::triggerDataChannel(weak_ptr<DataChannel> weakDataChannel) {
-//	auto dataChannel = weakDataChannel.lock();
-//	if (dataChannel) {
-//		dataChannel->resetOpenCallback(); // might be set internally
-//		mPendingDataChannels.push(std::move(dataChannel));
-//	}
-//	triggerPendingDataChannels();
+	auto dataChannel = weakDataChannel.lock();
+	if (dataChannel) {
+//		dataChannel->resetOpenCallback(); // might be set internally  // Herman TBD
+		mPendingDataChannels.push(std::move(dataChannel));
+	}
+	triggerPendingDataChannels();
 }
 
 void PeerConnection::triggerTrack(weak_ptr<Track> weakTrack) {
 	auto track = weakTrack.lock();
-//	if (track) {
-//		track->resetOpenCallback(); // might be set internally
-//		mPendingTracks.push(std::move(track));
-//	}
+	if (track) {
+	//	track->resetOpenCallback(); // might be set internally // might be set internally  // Herman TBD
+		mPendingTracks.push(std::move(track));
+	}
 	triggerPendingTracks();
 }
 
@@ -1311,7 +1311,7 @@ void PeerConnection::triggerPendingDataChannels() {
 			SWarn << "Uncaught exception in callback: " << e.what();
 		}
 
-//		impl->triggerOpen();
+		//impl->triggerOpen();   // Herman TBD
 	}
 }
 
@@ -1442,36 +1442,36 @@ CertificateFingerprint PeerConnection::remoteFingerprint() {
 void PeerConnection::updateTrackSsrcCache(const Description &description) {
 	std::unique_lock lock(mTracksMutex); // for safely writing to mTracksBySsrc
 
-//	// Setup SSRC -> Track mapping
-//	for (int i = 0; i < description.mediaCount(); ++i)
-//		std::visit( // ssrc -> track mapping
-//		    rtc::overloaded{
-//		        [&](Description::Application const *) { return; },
-//		        [&](Description::Media const *media) {
-//			        const auto ssrcs = media->getSSRCs();
-//
-//			        // Note: We don't want to lock (or do any other lookups), if we
-//			        // already know there's no SSRCs to loop over.
-//			        if (ssrcs.size() <= 0) {
-//				        return;
-//			        }
-//
-//			        std::shared_ptr<Track> track{nullptr};
-//			        if (auto it = mTracks.find(media->mid()); it != mTracks.end())
-//				        if (auto track_for_mid = it->second.lock())
-//					        track = track_for_mid;
-//
-//			        if (!track) {
-//				        // Unable to find track for MID
-//				        return;
-//			        }
-//
-//			        for (auto ssrc : ssrcs) {
-//				        mTracksBySsrc.insert_or_assign(ssrc, track);
-//			        }
-//		        },
-//		    },
-//		    description.media(i));
+	// Setup SSRC -> Track mapping
+	for (int i = 0; i < description.mediaCount(); ++i)
+		std::visit( // ssrc -> track mapping
+		    rtc::overloaded{
+		        [&](Description::Application const *) { return; },
+		        [&](Description::Media const *media) {
+			        const auto ssrcs = media->getSSRCs();
+
+			        // Note: We don't want to lock (or do any other lookups), if we
+			        // already know there's no SSRCs to loop over.
+			        if (ssrcs.size() <= 0) {
+				        return;
+			        }
+
+			        std::shared_ptr<Track> track{nullptr};
+			        if (auto it = mTracks.find(media->mid()); it != mTracks.end())
+				        if (auto track_for_mid = it->second.lock())
+					        track = track_for_mid;
+
+			        if (!track) {
+				        // Unable to find track for MID
+				        return;
+			        }
+
+			        for (auto ssrc : ssrcs) {
+				        mTracksBySsrc.insert_or_assign(ssrc, track);
+			        }
+		        },
+		    },
+		    description.media(i));
 }
 
 } // namespace rtc::impl
