@@ -40,7 +40,8 @@ static LogCounter
 const string PemBeginCertificateTag = "-----BEGIN CERTIFICATE-----";
 
 PeerConnection::PeerConnection(Configuration config_) : config(std::move(config_)) {
-	STrace << "Creating PeerConnection";
+    
+    STrace << "Creating PeerConnection";
 
 //	if (config.certificatePemFile && config.keyPemFile) {
 //           mCertificate =  
@@ -58,16 +59,17 @@ PeerConnection::PeerConnection(Configuration config_) : config(std::move(config_
 //	if (config.portRangeEnd && config.portRangeBegin > config.portRangeEnd)
 //		throw std::invalid_argument("Invalid port range");
 //
-//	if (config.mtu) {
-//		if (config.mtu < 576) // Min MTU for IPv4
-//			throw std::invalid_argument("Invalid MTU value");
-//
-//		if (config.mtu > 1500) { // Standard Ethernet
-//			SWarn << "MTU set to " << config.mtu;
-//		} else {
-//			STrace << "MTU set to " << config.mtu;
-//		}
-//	}
+	if (config.mtu)
+        {
+		if (config.mtu < 576) // Min MTU for IPv4
+			throw std::invalid_argument("Invalid MTU value");
+
+		if (config.mtu > 1500) { // Standard Ethernet
+			SWarn << "MTU set to " << config.mtu;
+		} else {
+			STrace << "MTU set to " << config.mtu;
+		}
+	}
 }
 
 PeerConnection::~PeerConnection() {
@@ -230,49 +232,50 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
                
                 
                 
+/*
+                if( config.console)
+               // if(mIceTransport->mRole == Description::Role::ActPass) //arvind this if line is for console connect
+                mIceTransport->mRole = mIceTransport->agent.m_mode == AGENT_MODE_CONTROLLING ? Description::Role::Active: Description::Role::Passive;
+               
+		auto lower = std::atomic_load(&mIceTransport);
+		if (!lower)
+			throw std::logic_error("No underlying ICE transport for DTLS transport");
 
-//                if( config.console)
-//               // if(mIceTransport->mRole == Description::Role::ActPass) //arvind this if line is for console connect
-//                mIceTransport->mRole = mIceTransport->agent.m_mode == AGENT_MODE_CONTROLLING ? Description::Role::Active: Description::Role::Passive;
-//               
-//		auto lower = std::atomic_load(&mIceTransport);
-//		if (!lower)
-//			throw std::logic_error("No underlying ICE transport for DTLS transport");
-//
-//		auto certificate = mCertificate;
-//		auto verifierCallback = weak_bind(&PeerConnection::checkFingerprint, this, _1);
-//		auto dtlsStateChangeCallback =
-//		    [this, weak_this = weak_from_this()](DtlsTransport::State transportState) {
-//			    auto shared_this = weak_this.lock();
-//			    if (!shared_this)
-//				    return;
-//
-//			    switch (transportState) {
-//			    case DtlsTransport::State::Connected:
-//				    if (auto remote = remoteDescription(); remote && remote->hasApplication())
-//					    initSctpTransport();
-//				    else
-//					    changeState(State::Connected);
-//                                    SInfo << "DtlsTransport::State::Connected";
+		auto certificate = mCertificate;
+		auto verifierCallback = weak_bind(&PeerConnection::checkFingerprint, this, _1);
+		auto dtlsStateChangeCallback =
+		    [this, weak_this = weak_from_this()](DtlsTransport::State transportState) {
+			    auto shared_this = weak_this.lock();
+			    if (!shared_this)
+				    return;
+
+			    switch (transportState) {
+			    case DtlsTransport::State::Connected:
+				    if (auto remote = remoteDescription(); remote && remote->hasApplication())
+					    initSctpTransport();
+				    else
+					    changeState(State::Connected);
+                                    SInfo << "DtlsTransport::State::Connected";
 //				    mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
-//				    break;
-//			    case DtlsTransport::State::Failed:
-//                                    SInfo << "DtlsTransport::State::Failed";
-//				    changeState(State::Failed);
+				    break;
+			    case DtlsTransport::State::Failed:
+                                    SInfo << "DtlsTransport::State::Failed";
+				    changeState(State::Failed);
 //				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
-//				    break;
-//			    case DtlsTransport::State::Disconnected:
-//                                    SInfo << "DtlsTransport::State::Disconnected";
-//				    changeState(State::Disconnected);
-//				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
-//				    break;
-//			    default:
-//				    // Ignore
-//                                
-//                                SInfo << "DtlsTransport::State::Connecting";
-//				break;
-//			    }
-//		    };
+				    break;
+			    case DtlsTransport::State::Disconnected:
+                                    SInfo << "DtlsTransport::State::Disconnected";
+				    changeState(State::Disconnected);
+				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+				    break;
+			    default:
+				    // Ignore
+                                
+                                SInfo << "DtlsTransport::State::Connecting";
+				break;
+			    }
+		    };
+*/
 
 		shared_ptr<DtlsTransport> transport;
 		auto local = localDescription();
@@ -306,64 +309,66 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 }
 
 shared_ptr<SctpTransport> PeerConnection::initSctpTransport() {
-//	try {
-//		if (auto transport = std::atomic_load(&mSctpTransport))
-//			return transport;
-//
-//		STrace << "Starting SCTP transport";
-//
-//		auto lower = std::atomic_load(&mDtlsTransport);
-//		if (!lower)
-//			throw std::logic_error("No underlying DTLS transport for SCTP transport");
-//
-//		auto local = localDescription();
-//		if (!local || !local->application())
-//			throw std::logic_error("Starting SCTP transport without local application description");
-//
-//		auto remote = remoteDescription();
-//		if (!remote || !remote->application())
-//			throw std::logic_error(
-//			    "Starting SCTP transport without remote application description");
-//
-//		SctpTransport::Ports ports = {};
-//		ports.local = local->application()->sctpPort();
-//		ports.remote = remote->application()->sctpPort();
-//
-//		auto transport = std::make_shared<SctpTransport>(
-//		    lower, config, std::move(ports), weak_bind(&PeerConnection::forwardMessage, this, _1),
-//		    weak_bind(&PeerConnection::forwardBufferedAmount, this, _1, _2),
-//		    [this, weak_this = weak_from_this()](SctpTransport::State transportState) {
-//			    auto shared_this = weak_this.lock();
-//			    if (!shared_this)
-//				    return;
-//
-//			    switch (transportState) {
-//			    case SctpTransport::State::Connected:
-//				    changeState(State::Connected);
-//				    assignDataChannels();
-////				    mProcessor.enqueue(&PeerConnection::openDataChannels, shared_from_this());
-//				    break;
-//			    case SctpTransport::State::Failed:
-//				    changeState(State::Failed);
-////				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
-//				    break;
-//			    case SctpTransport::State::Disconnected:
-//				    changeState(State::Disconnected);
-////				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
-//				    break;
-//			    default:
-//				    // Ignore
-//				    break;
-//			    }
-//		    });
-//
-//		return emplaceTransport(this, &mSctpTransport, std::move(transport));
-//
-//	} catch (const std::exception &e) {
-//		SError << e.what();
-//		changeState(State::Failed);
-//		throw std::runtime_error("SCTP transport initialization failed");
-//	}
+/*
+	try {
+		if (auto transport = std::atomic_load(&mSctpTransport))
+			return transport;
+
+		STrace << "Starting SCTP transport";
+
+		auto lower = std::atomic_load(&mDtlsTransport);
+		if (!lower)
+			throw std::logic_error("No underlying DTLS transport for SCTP transport");
+
+		auto local = localDescription();
+		if (!local || !local->application())
+			throw std::logic_error("Starting SCTP transport without local application description");
+
+		auto remote = remoteDescription();
+		if (!remote || !remote->application())
+			throw std::logic_error(
+			    "Starting SCTP transport without remote application description");
+
+		SctpTransport::Ports ports = {};
+		ports.local = local->application()->sctpPort();
+		ports.remote = remote->application()->sctpPort();
+
+		auto transport = std::make_shared<SctpTransport>(
+		    lower, config, std::move(ports), weak_bind(&PeerConnection::forwardMessage, this, _1),
+		    weak_bind(&PeerConnection::forwardBufferedAmount, this, _1, _2),
+		    [this, weak_this = weak_from_this()](SctpTransport::State transportState) {
+			    auto shared_this = weak_this.lock();
+			    if (!shared_this)
+				    return;
+
+			    switch (transportState) {
+			    case SctpTransport::State::Connected:
+				    changeState(State::Connected);
+				    assignDataChannels();
+//				    mProcessor.enqueue(&PeerConnection::openDataChannels, shared_from_this());
+				    break;
+			    case SctpTransport::State::Failed:
+				    changeState(State::Failed);
+//				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+				    break;
+			    case SctpTransport::State::Disconnected:
+				    changeState(State::Disconnected);
+//				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+				    break;
+			    default:
+				    // Ignore
+				    break;
+			    }
+		    });
+
+		return emplaceTransport(this, &mSctpTransport, std::move(transport));
+
+	} catch (const std::exception &e) {
+		SError << e.what();
+		changeState(State::Failed);
+		throw std::runtime_error("SCTP transport initialization failed");
+	}
+*/
 }
 
 shared_ptr<IceTransport> PeerConnection::getIceTransport() const {

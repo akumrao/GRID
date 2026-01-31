@@ -8,6 +8,8 @@
 #include <vector>
 #include "net/certificate.h"
 
+extern ConfCert config;
+
 namespace rtc {
 
 const size_t MAX_NUMERICNODE_LEN = 48; // Max IPv6 string representation length
@@ -78,6 +80,7 @@ enum class TransportPolicy { All = RTC_TRANSPORT_POLICY_ALL, Relay = RTC_TRANSPO
 //#define RTC_DEFAULT_MTU 1280 // IPv6 minimum guaranteed MTU
 //#define DEFAULT_MTU  RTC_DEFAULT_MTU
 
+
         
 struct RTC_CPP_EXPORT Configuration {
 	// ICE settings
@@ -108,7 +111,10 @@ struct RTC_CPP_EXPORT Configuration {
 	//string certificatePemFile;  // moved to certificate config file
 	//string keyPemFile;
 	//string keyPemPass;
+
+        bool console{false}; /* allow to test from console with external ips" */
         uint16_t portdefault{7345};
+        ConfCert *gconfig{&config};
         
         void allocRestApi(Async &async, std::string room)
         {
