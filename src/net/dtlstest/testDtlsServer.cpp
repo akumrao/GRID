@@ -143,7 +143,7 @@ int main(int argc, char** argv) {
         
         rtc::SctpTransport::Init();
         rtc::SctpSettings mCurrentSctpSettings = {};
-	rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
+	    rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
         
         rtc::DtlsTransport::ClassInit();
                 
