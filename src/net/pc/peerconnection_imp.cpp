@@ -3,6 +3,9 @@
 #include "net/certificate.h"
 //#include "dtlstransport.hpp"
 #include "icetransport.hpp"
+
+#include "datachannel_imp.hpp"
+        
 //#include "internals.hpp"
 //#include "logcounter.hpp"
 //#include "peerconnection.hpp"
@@ -658,37 +661,37 @@ shared_ptr<DataChannel> PeerConnection::emplaceDataChannel(string label, DataCha
 	std::unique_lock lock(mDataChannelsMutex); // we are going to emplace
 
 	// If the DataChannel is user-negotiated, do not negotiate it in-band
-//	auto channel =
-//	    init.negotiated
-//	        ? std::make_shared<DataChannel>(weak_from_this(), std::move(label),
-//	                                        std::move(init.protocol), std::move(init.reliability))
-//	        : std::make_shared<OutgoingDataChannel>(weak_from_this(), std::move(label),
-//	                                                std::move(init.protocol),
-//	                                                std::move(init.reliability));
-//
-//	// If the user supplied a stream id, use it, otherwise assign it later
-//	if (init.id) {
-//		uint16_t stream = *init.id;
-//		if (stream > maxDataChannelStream())
-//			throw std::invalid_argument("DataChannel stream id is too high");
-//
-//		channel->assignStream(stream);
-//		mDataChannels.emplace(std::make_pair(stream, channel));
-//
-//	} else {
-//		mUnassignedDataChannels.push_back(channel);
-//	}
-//
-//	lock.unlock(); // we are going to call assignDataChannels()
-//
-//	// If SCTP is connected, assign and open now
-//	auto sctpTransport = std::atomic_load(&mSctpTransport);
-//	if (sctpTransport && sctpTransport->state() == SctpTransport::State::Connected) {
-//		assignDataChannels();
-//		channel->open(sctpTransport);
-//	}
-//
-//	return channel;
+	auto channel =
+	    init.negotiated
+	        ? std::make_shared<DataChannel>(weak_from_this(), std::move(label),
+	                                        std::move(init.protocol), std::move(init.reliability))
+	        : std::make_shared<OutgoingDataChannel>(weak_from_this(), std::move(label),
+	                                                std::move(init.protocol),
+	                                                std::move(init.reliability));
+
+	// If the user supplied a stream id, use it, otherwise assign it later
+	if (init.id) {
+		uint16_t stream = *init.id;
+		if (stream > maxDataChannelStream())
+			throw std::invalid_argument("DataChannel stream id is too high");
+
+		channel->assignStream(stream);
+		mDataChannels.emplace(std::make_pair(stream, channel));
+
+	} else {
+		mUnassignedDataChannels.push_back(channel);
+	}
+
+	lock.unlock(); // we are going to call assignDataChannels()
+
+	// If SCTP is connected, assign and open now
+	auto sctpTransport = std::atomic_load(&mSctpTransport);
+	if (sctpTransport && sctpTransport->state() == SctpTransport::State::Connected) {
+		assignDataChannels();
+		channel->open(sctpTransport);
+	}
+
+	return channel;
 }
 
 std::pair<shared_ptr<DataChannel>, bool> PeerConnection::findDataChannel(uint16_t stream) {
