@@ -10,9 +10,8 @@
  * https://web.postman.co/workspace/My-Workspace~292b44c7-cae4-44d6-8253-174622f0233e/request/create?requestId=e6995876-3b8c-4b7e-b170-83a733a631db
  */
 
-#define k1 "11AAIZCGA0ZrNXIa9aRuqO"
-#define k2 "_o0IYnoxMOlWrHdf4wiL7nqhCWHqpDW5o"
-#define k3 "hmIH5ZM2fdC7QZIK2Z454THFiEW"
+
+
 
 
 #include "RestAPI.h"
@@ -24,6 +23,17 @@
 #include "base/base64.hpp"
 
 using namespace base::net;
+
+
+//#define k1 "11AAIZCGA0ZrNXIa9aRuqO"
+//#define k2 "_o0IYnoxMOlWrHdf4wiL7nqhCWHqpDW5o"
+//#define k3 "hmIH5ZM2fdC7QZIK2Z454THFiEW"
+
+
+const std::string k1 = "11AAIZCGA0ZrNXIa9aRuqO";
+const std::string k2 = "_o0IYnoxMOlWrHdf4wiL7nqhCWHqpDW5o";
+const std::string k3 = "hmIH5ZM2fdC7QZIK2Z454THFiEW";
+
 
  #define URL  "https://api.github.com/repos/akumrao/akumrao.github.io/contents/"
 

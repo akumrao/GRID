@@ -46,22 +46,22 @@ PeerConnection::PeerConnection(Configuration config_) : config(std::move(config_
     
     STrace << "Creating PeerConnection";
 
-//	if (config.certificatePemFile && config.keyPemFile) {
-//           mCertificate =  
-//		    config.certificatePemFile->find(PemBeginCertificateTag) != string::npos
-//		        ? Certificate::FromString(*config.certificatePemFile, *config.keyPemFile)
-//		        : Certificate::FromFile(*config.certificatePemFile, *config.keyPemFile,
-//		                                config.keyPemPass.value_or(""));
-//	} else if (!config.certificatePemFile && !config.keyPemFile) {
-//		mCertificate = make_certificate(config.certificateType);
-//	} else {
-//		throw std::invalid_argument(
-//		    "Either none or both certificate and key PEM files must be specified");
-//	}
-//
-//	if (config.portRangeEnd && config.portRangeBegin > config.portRangeEnd)
-//		throw std::invalid_argument("Invalid port range");
-//
+	if (config.gconfig->certificatePemFile.size() && config.gconfig->keyPemFile.size()) {
+           mCertificate =  
+		    config.gconfig->certificatePemFile.find(PemBeginCertificateTag) != string::npos
+		        ? Certificate::FromString(config.gconfig->certificatePemFile, config.gconfig->keyPemFile)
+		        : Certificate::FromFile(config.gconfig->certificatePemFile, config.gconfig->keyPemFile,
+		                                config.gconfig->keyPemPass);
+	} else if (!config.gconfig->certificatePemFile.size() && !config.gconfig->keyPemFile.size()) {
+		mCertificate = make_certificate(config.certificateType);
+	} else {
+		throw std::invalid_argument(
+		    "Either none or both certificate and key PEM files must be specified");
+	}
+
+	if (config.portRangeEnd && config.portRangeBegin > config.portRangeEnd)
+		throw std::invalid_argument("Invalid port range");
+
 	if (config.mtu)
         {
 		if (config.mtu < 576) // Min MTU for IPv4
@@ -928,17 +928,17 @@ void PeerConnection::validateRemoteDescription(const Description &description) {
 		throw std::invalid_argument("Remote description has no media line");
 
 	int activeMediaCount = 0;
-//	for (int i = 0; i < description.mediaCount(); ++i)
-//		std::visit(rtc::overloaded{[&](const Description::Application *application) {
-//			                           if (!application->isRemoved())
-//				                           ++activeMediaCount;
-//		                           },
-//		                           [&](const Description::Media *media) {
-//			                           if (!media->isRemoved() ||
-//			                               media->direction() != Description::Direction::Inactive)
-//				                           ++activeMediaCount;
-//		                           }},
-//		           description.media(i));
+	for (int i = 0; i < description.mediaCount(); ++i)
+		std::visit(rtc::overloaded{[&](const Description::Application *application) {
+			                           if (!application->isRemoved())
+				                           ++activeMediaCount;
+		                           },
+		                           [&](const Description::Media *media) {
+			                           if (!media->isRemoved() ||
+			                               media->direction() != Description::Direction::Inactive)
+				                           ++activeMediaCount;
+		                           }},
+		           description.media(i));
 
 	if (activeMediaCount == 0)
 		throw std::invalid_argument("Remote description has no active media");
@@ -957,40 +957,40 @@ void PeerConnection::processLocalDescription(Description description) {
 	// Clean up the application entry the ICE transport might have added already (libnice)
 	description.clearMedia();
 
-//	if (auto remote = remoteDescription()) {
-//		// Reciprocate remote description
-//		for (int i = 0; i < remote->mediaCount(); ++i)
-//			std::visit( // reciprocate each media
-//			    rtc::overloaded{
-//			        [&](Description::Application *remoteApp) {
-//				        std::shared_lock lock(mDataChannelsMutex);
-//				        if (!mDataChannels.empty() || !mUnassignedDataChannels.empty()) {
-//					        // Prefer local description
-//					        Description::Application app(remoteApp->mid());
-//					        app.setSctpPort(localSctpPort);
-//					        app.setMaxMessageSize(localMaxMessageSize);
-//
-//					        SDebug << "Adding application to local description, mid=\""
-//					                   << app.mid() << "\"";
-//
-//					        description.addMedia(std::move(app));
-//					        return;
-//				        }
-//
-//				        auto reciprocated = remoteApp->reciprocate();
-//				        reciprocated.hintSctpPort(localSctpPort);
-//				        reciprocated.setMaxMessageSize(localMaxMessageSize);
-//
-//				        SDebug << "Reciprocating application in local description, mid=\""
-//				                   << reciprocated.mid() << "\"";
-//
-//				        description.addMedia(std::move(reciprocated));
-//			        },
-//			        [&](Description::Media *remoteMedia) {
-//				        std::unique_lock lock(mTracksMutex); // we may emplace a track
-//				        if (auto it = mTracks.find(remoteMedia->mid()); it != mTracks.end()) {
-//					        // Prefer local description
-//					        if (auto track = it->second.lock()) {
+	if (auto remote = remoteDescription()) {
+		// Reciprocate remote description
+		for (int i = 0; i < remote->mediaCount(); ++i)
+			std::visit( // reciprocate each media
+			    rtc::overloaded{
+			        [&](Description::Application *remoteApp) {
+				        std::shared_lock lock(mDataChannelsMutex);
+				        if (!mDataChannels.empty() || !mUnassignedDataChannels.empty()) {
+					        // Prefer local description
+					        Description::Application app(remoteApp->mid());
+					        app.setSctpPort(localSctpPort);
+					        app.setMaxMessageSize(localMaxMessageSize);
+
+					        SDebug << "Adding application to local description, mid=\""
+					                   << app.mid() << "\"";
+
+					        description.addMedia(std::move(app));
+					        return;
+				        }
+
+				        auto reciprocated = remoteApp->reciprocate();
+				        reciprocated.hintSctpPort(localSctpPort);
+				        reciprocated.setMaxMessageSize(localMaxMessageSize);
+
+				        SDebug << "Reciprocating application in local description, mid=\""
+				                   << reciprocated.mid() << "\"";
+
+				        description.addMedia(std::move(reciprocated));
+			        },
+			        [&](Description::Media *remoteMedia) {
+				        std::unique_lock lock(mTracksMutex); // we may emplace a track
+				        if (auto it = mTracks.find(remoteMedia->mid()); it != mTracks.end()) {
+					        // Prefer local description
+					        if (auto track = it->second.lock()) {
 //						        auto media = track->description();
 //
 //						        SDebug << "Adding media to local description, mid=\""
@@ -998,34 +998,34 @@ void PeerConnection::processLocalDescription(Description description) {
 //						                   << media.isRemoved();
 //
 //						        description.addMedia(std::move(media));
-//
-//					        } else {
-//						        auto reciprocated = remoteMedia->reciprocate();
-//						        reciprocated.markRemoved();
-//
-//						        SDebug << "Adding media to local description, mid=\""
-//						                   << reciprocated.mid()
-//						                   << "\", removed=true (track is destroyed)";
-//
-//						        description.addMedia(std::move(reciprocated));
-//					        }
-//					        return;
-//				        }
-//
-//				        auto reciprocated = remoteMedia->reciprocate();
-//#if !RTC_ENABLE_MEDIA
-//				        if (!reciprocated.isRemoved()) {
-//					        // No media support, mark as removed
-//					        SWarn << "Rejecting track (not compiled with media support)";
-//					        reciprocated.markRemoved();
-//				        }
-//#endif
-//
-//				        SDebug << "Reciprocating media in local description, mid=\""
-//				                   << reciprocated.mid() << "\", removed=" << std::boolalpha
-//				                   << reciprocated.isRemoved();
-//
-//				        // Create incoming track
+
+					        } else {
+						        auto reciprocated = remoteMedia->reciprocate();
+						        reciprocated.markRemoved();
+
+						        SDebug << "Adding media to local description, mid=\""
+						                   << reciprocated.mid()
+						                   << "\", removed=true (track is destroyed)";
+
+						        description.addMedia(std::move(reciprocated));
+					        }
+					        return;
+				        }
+
+				        auto reciprocated = remoteMedia->reciprocate();
+#if !RTC_ENABLE_MEDIA
+				        if (!reciprocated.isRemoved()) {
+					        // No media support, mark as removed
+					        SWarn << "Rejecting track (not compiled with media support)";
+					        reciprocated.markRemoved();
+				        }
+#endif
+
+				        SDebug << "Reciprocating media in local description, mid=\""
+				                   << reciprocated.mid() << "\", removed=" << std::boolalpha
+				                   << reciprocated.isRemoved();
+
+				        // Create incoming track
 //				        auto track =
 //				            std::make_shared<Track>(weak_from_this(), std::move(reciprocated));
 //				        mTracks.emplace(std::make_pair(track->mid(), track));
@@ -1040,31 +1040,31 @@ void PeerConnection::processLocalDescription(Description description) {
 //					        track->close();
 //
 //				        description.addMedia(track->description());
-//			        },
-//			    },
-//			    remote->media(i));
-//
-//		// We need to update the SSRC cache for newly-created incoming tracks
-//		updateTrackSsrcCache(*remote);
-//	}
+			        },
+			    },
+			    remote->media(i));
+
+		// We need to update the SSRC cache for newly-created incoming tracks
+		updateTrackSsrcCache(*remote);
+	}
 
 	if (description.type() == Description::Type::Offer) {
 		// This is an offer, add locally created data channels and tracks
 		// Add media for local tracks
 		std::shared_lock lock(mTracksMutex);
-//		for (auto it = mTrackLines.begin(); it != mTrackLines.end(); ++it) {
-//			if (auto track = it->lock()) {
+		for (auto it = mTrackLines.begin(); it != mTrackLines.end(); ++it) {
+			if (auto track = it->lock()) {
 //				if (description.hasMid(track->mid()))
 //					continue;
-//
+
 //				auto media = track->description();
 //
 //				SDebug << "Adding media to local description, mid=\"" << media.mid()
 //				           << "\", removed=" << std::boolalpha << media.isRemoved();
 //
 //				description.addMedia(std::move(media));
-//			}
-//		}
+			}
+		}
 
 		// Add application for data channels
 		if (!description.hasApplication()) {
