@@ -11,7 +11,7 @@
 
 using json = nlohmann::json;
 
-class Settings {
+class ConfSettings {
 public:
     static void init();
     static void exit();

@@ -16,17 +16,17 @@
 //#define LOGGING_LOG_TO_FILE 1
 /* Class variables. */
 
-struct Settings::Configuration Settings::configuration;
+struct ConfSettings::Configuration ConfSettings::configuration;
 
 
-void Settings::SetConfiguration(json &cnfg)
+void ConfSettings::SetConfiguration(json &cnfg)
 {
 
 
  
     if (cnfg.find("log") != cnfg.end())
     {
-        Settings::configuration.log = cnfg["log"];
+        ConfSettings::configuration.log = cnfg["log"];
     }
         
     
@@ -41,7 +41,7 @@ void Settings::SetConfiguration(json &cnfg)
 
 #if LOGGING_LOG_TO_FILE
         base::Logger::instance().add(
-            new base::RotatingFileChannel("webrtcserver",Settings::configuration.log, ld));
+            new base::RotatingFileChannel("webrtcserver",ConfSettings::configuration.log, ld));
         base::Logger::instance().setWriter(new base::AsyncLogWriter);
 #else
         base::Logger::instance().add(new base::ConsoleChannel("webrtcserver", ld));
@@ -52,25 +52,25 @@ void Settings::SetConfiguration(json &cnfg)
 
     if (cnfg.find("certFile") != cnfg.end())
     {
-        Settings::configuration.certFile = cnfg["certFile"].get<std::string>();
+        ConfSettings::configuration.certFile = cnfg["certFile"].get<std::string>();
     }
 
 
     if (cnfg.find("keyFile") != cnfg.end())
     {
-        Settings::configuration.keyFile = cnfg["keyFile"].get<std::string>();
+        ConfSettings::configuration.keyFile = cnfg["keyFile"].get<std::string>();
     }
     
     
     if (cnfg.find("server") != cnfg.end())
     {
-        Settings::configuration.server = cnfg["server"].get<std::string>();
+        ConfSettings::configuration.server = cnfg["server"].get<std::string>();
     }
 
 
-    if (cnfg.find("port") != cnfg.end()) { Settings::configuration.port = cnfg["port"].get<int>(); }
+    if (cnfg.find("port") != cnfg.end()) { ConfSettings::configuration.port = cnfg["port"].get<int>(); }
 
-   // if (cnfg.find("listenIps") != cnfg.end()) { Settings::configuration.listenIps = cnfg["listenIps"]; }
+   // if (cnfg.find("listenIps") != cnfg.end()) { ConfSettings::configuration.listenIps = cnfg["listenIps"]; }
     
     
 

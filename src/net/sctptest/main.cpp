@@ -24,6 +24,9 @@
 #include "json/configuration.h"
 #include "json/confSettings.h"
 
+#include "sctptransport.hpp"
+#include "DtlsTransport.h"
+
 #define localtesting 1
 //#define remotetesting 1
 //#define VIDEOMEDIA 1
@@ -309,9 +312,16 @@ int main(int argc, char **argv)
 
     cache.load("./cache.js");
 
-    Settings::SetConfiguration(cache.root);
+    ConfSettings::SetConfiguration(cache.root);
 
 
+            
+        rtc::SctpTransport::Init();
+        rtc::SctpSettings mCurrentSctpSettings = {};
+	    rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
+        
+        rtc::DtlsTransport::ClassInit();
+        
 
     bool printHelp = false;
     //int c = 0;

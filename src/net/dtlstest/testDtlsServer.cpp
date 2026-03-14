@@ -131,7 +131,7 @@ int main(int argc, char** argv) {
 
 
         try {
-            Settings::SetConfiguration(cnfgSet.root);
+            ConfSettings::SetConfiguration(cnfgSet.root);
         } catch (const std::exception& error) {
 
          //  Settings::exit();
@@ -149,8 +149,8 @@ int main(int argc, char** argv) {
                 
         #if HTTPSSL
         
-        config.certificatePemFile = Settings::configuration.certFile;
-        config.keyPemFile =Settings::configuration.keyFile  ;
+        config.certificatePemFile = ConfSettings::configuration.certFile;
+        config.keyPemFile =ConfSettings::configuration.keyFile  ;
 
         #else
         SInfo << "http://localhost:8000";
@@ -160,8 +160,8 @@ int main(int argc, char** argv) {
       
         rtc::Configuration transportconfig;
         
-        router1.HandleRequest(true, transportconfig, 8000, 9000);
-        router2.HandleRequest(false,transportconfig, 9000, 8000);
+        router1.HandleRequest(true, transportconfig, 8000, 9000, "127.0.0.1", "127.0.0.1");
+        router2.HandleRequest(false,transportconfig, 9000, 8000, "127.0.0.1", "127.0.0.1");
 
         app.waitForShutdown([&](void*) {
 

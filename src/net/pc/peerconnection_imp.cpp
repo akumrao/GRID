@@ -14,6 +14,8 @@
 #include "sctptransport.hpp"
 #include "utils.hpp"
 
+#include "Router.h"
+
 #if RTC_ENABLE_MEDIA
 //#include "dtlssrtptransport.hpp"
 #endif
@@ -235,7 +237,7 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
                
                 
                 
-/*
+
                 if( config.console)
                // if(mIceTransport->mRole == Description::Role::ActPass) //arvind this if line is for console connect
                 mIceTransport->mRole = mIceTransport->agent.m_mode == AGENT_MODE_CONTROLLING ? Description::Role::Active: Description::Role::Passive;
@@ -246,39 +248,39 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 
 		auto certificate = mCertificate;
 		auto verifierCallback = weak_bind(&PeerConnection::checkFingerprint, this, _1);
-		auto dtlsStateChangeCallback =
-		    [this, weak_this = weak_from_this()](DtlsTransport::State transportState) {
-			    auto shared_this = weak_this.lock();
-			    if (!shared_this)
-				    return;
-
-			    switch (transportState) {
-			    case DtlsTransport::State::Connected:
-				    if (auto remote = remoteDescription(); remote && remote->hasApplication())
-					    initSctpTransport();
-				    else
-					    changeState(State::Connected);
-                                    SInfo << "DtlsTransport::State::Connected";
-//				    mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
-				    break;
-			    case DtlsTransport::State::Failed:
-                                    SInfo << "DtlsTransport::State::Failed";
-				    changeState(State::Failed);
+//		auto dtlsStateChangeCallback =
+//		    [this, weak_this = weak_from_this()](DtlsTransport::State transportState) {
+//			    auto shared_this = weak_this.lock();
+//			    if (!shared_this)
+//				    return;
+//
+//			    switch (transportState) {
+//			    case DtlsTransport::State::Connected:
+//				    if (auto remote = remoteDescription(); remote && remote->hasApplication())
+//					    initSctpTransport();
+//				    else
+//					    changeState(State::Connected);
+//                                    SInfo << "DtlsTransport::State::Connected";
+////				    mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
+//				    break;
+//			    case DtlsTransport::State::Failed:
+//                                    SInfo << "DtlsTransport::State::Failed";
+//				    changeState(State::Failed);
+////				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+//				    break;
+//			    case DtlsTransport::State::Disconnected:
+//                                    SInfo << "DtlsTransport::State::Disconnected";
+//				    changeState(State::Disconnected);
 //				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
-				    break;
-			    case DtlsTransport::State::Disconnected:
-                                    SInfo << "DtlsTransport::State::Disconnected";
-				    changeState(State::Disconnected);
-				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
-				    break;
-			    default:
-				    // Ignore
-                                
-                                SInfo << "DtlsTransport::State::Connecting";
-				break;
-			    }
-		    };
-*/
+//				    break;
+//			    default:
+//				    // Ignore
+//                                
+//                                SInfo << "DtlsTransport::State::Connecting";
+//				break;
+//			    }
+//		    };
+
 
 		shared_ptr<DtlsTransport> transport;
 		auto local = localDescription();
@@ -300,6 +302,16 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 //			transport = std::make_shared<DtlsTransport>(lower, certificate, config.mtu,
 //			                                            fingerprintAlgorithm, verifierCallback,
 //			                                            dtlsStateChangeCallback);
+                    
+                    static int x = 100;
+                    
+                    Candidate local; Candidate remote;
+                    
+                    mIceTransport->getSelectedCandidatePair(&local, &remote);
+                    
+                    rtc::Router  *router1= new  rtc::Router( std::to_string(x));
+                    
+                    router1->HandleRequest(true, config,  local.port(), remote.port() , local.address() , remote.address() );
 		}
 
 		return emplaceTransport(this, &mDtlsTransport, std::move(transport));

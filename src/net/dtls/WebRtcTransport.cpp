@@ -29,7 +29,7 @@ namespace rtc
 
 	/* Instance methods. */
 
-	WebRtcTransport::WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort )
+	WebRtcTransport::WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort , std::string localip, std::string remoteip )
 	  : rtc::Transport::Transport(id, config, listener)
 	{
 		
@@ -38,7 +38,7 @@ namespace rtc
             std::vector<ListenIp> listenIps;
             listenIps.resize(1);
             listenIps[0].announcedIp = "0.0.0.0";
-            listenIps[0].ip = "127.0.0.1";
+            listenIps[0].ip = localip;
             listenIps[0].port = localPort;
             
             bool enableUdp{ true };
@@ -72,7 +72,7 @@ namespace rtc
                             
                              addr_record_t mapped;
                             
-                             IP::StringToAddress(listenIps[0].ip.data() , remotePort,  mapped);
+                             IP::StringToAddress(remoteip.data() , remotePort,  mapped);
                              
                             tuple = new TransportTuple(
                             udpSocket, reinterpret_cast<struct sockaddr*>(&mapped.addr)  );
