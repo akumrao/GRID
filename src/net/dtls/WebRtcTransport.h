@@ -14,7 +14,16 @@
 #include <vector>
 #include "IceServer.h"
 
+#include <Reader.h>
+#include <Writer.h>
+
+using namespace stun;
+
 using namespace base::net;
+
+namespace stun {
+    class Agent;
+}
 
 namespace rtc
 {
@@ -33,14 +42,25 @@ namespace rtc
                     int port;
 
 		};
+                
+                std::string IP;
+                int port;
+                Agent *agent;
+        public:
+            
+                UdpServer *udpServer;
 
 	public:
 		WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort, std::string localip , std::string remoteip );
-		~WebRtcTransport() override;;
+              
+            
+                WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, std::string IP, int port, Agent *agent);
+                
+		~WebRtcTransport() override;
 
 	public:
                 void HandleRequest(bool server);
-
+                void InitDtls(bool server, std::string announcedIp , addr_record_t &remotemapped);
 	private:
 		bool IsConnected() const ;
 		void MayRunDtlsTransport();
@@ -81,6 +101,7 @@ namespace rtc
 		  const rtc::DtlsTransport* dtlsTransport, const uint8_t* data, size_t len) override;
 		void OnDtlsTransportApplicationDataReceived(
 		  const rtc::DtlsTransport* dtlsTransport, const uint8_t* data, size_t len) override;
+                 int  agent_direct_send( uint8_t* data, uint32_t nbytes, addr_record_t &record );
 
 	private:
 		// Allocated by this.

@@ -12,6 +12,8 @@
 #include <MessageStun.h>
 #include <Connection.h>
 
+#include "WebRtcTransport.h"
+
 #include "net/dns.h"
 #include "configuration.h"
 #include "candidate.hpp"
@@ -170,7 +172,7 @@ typedef struct agent_stun_entry {
 	virtual void onRecvCallback( unsigned char *data, size_t size)=0;
     };
 
-  class Agent : public GetAddrInfoReq, GetNameInfoReq
+  class Agent : public GetAddrInfoReq, GetNameInfoReq, rtc::Transport::Listener
   {
   public:
       
@@ -300,8 +302,8 @@ typedef struct agent_stun_entry {
     
     int agent_send(  uint8_t* data, uint32_t nbytes, int ds);
     
-    testUdpServer *socket{nullptr};
-        
+    //testUdpServer *socket{nullptr};
+    WebRtcTransport *socket{nullptr}; 
     
     void agent_arm_keepalive(agent_stun_entry_t *entry);
     

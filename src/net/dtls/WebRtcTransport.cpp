@@ -9,6 +9,7 @@
 //#include "Utils.h"
 //#include "Channel/Notifier.h"
 #include <cmath> // std::pow()
+#include <Agent.h>
 
 using namespace base;
 namespace rtc
@@ -29,6 +30,59 @@ namespace rtc
 
 	/* Instance methods. */
 
+        
+       
+    
+        WebRtcTransport::WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, std::string IP, int port, Agent *agent)
+            : rtc::Transport::Transport(id, config, listener), IP(IP), port(port), agent(agent)
+        {
+    
+            
+            
+                     udpServer = new base::net::UdpServer(this, IP,  port );
+
+                     udpServer->bind();
+
+
+                   // this->udpSockets[udpSocket] = "listenIp.announcedIp";
+
+
+                   /*
+                         addr_record_t mapped;
+
+                         IP::StringToAddress(remoteip.data() , remotePort,  mapped);
+
+                        tuple = new TransportTuple(
+                        udpSocket, reinterpret_cast<struct sockaddr*>(&mapped.addr)  );
+
+                        tuple = iceServer->AddTuple(tuple);
+
+                        iceServer->SetSelectedTuple(tuple) ;
+                     * 
+                     * */
+ /*
+            testUdpServer(std::string IP, int port, Agent *agent);
+
+            void start() {
+                udpServer = new UdpServer( this, IP, port);
+                udpServer->bind();
+            }
+
+            char ip[40];  uint16_t port;
+            base::net::IP::AddressToString(local, ip, 40, port);
+     
+            this->udpSockets[udpSocket] = ip;
+            
+            tuple = new TransportTuple(
+                            udpSocket, reinterpret_cast<struct sockaddr*>(&remote.addr)  );
+
+            tuple = iceServer->AddTuple(tuple);
+
+            iceServer->SetSelectedTuple(tuple) ;
+                            
+   */        
+            
+        }
 	WebRtcTransport::WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort , std::string localip, std::string remoteip )
 	  : rtc::Transport::Transport(id, config, listener)
 	{
@@ -53,50 +107,50 @@ namespace rtc
             {
                     if (enableUdp)
                     {
-                            uint16_t iceLocalPreference =
-                              IceCandidateDefaultLocalPriority - iceLocalPreferenceDecrement;
+                        uint16_t iceLocalPreference =
+                          IceCandidateDefaultLocalPriority - iceLocalPreferenceDecrement;
 
-                            if (preferUdp)
-                                    iceLocalPreference += 1000;
+                        if (preferUdp)
+                                iceLocalPreference += 1000;
 
-                            uint32_t icePriority = generateIceCandidatePriority(iceLocalPreference);
+                        uint32_t icePriority = generateIceCandidatePriority(iceLocalPreference);
 
-                            // This may throw.
-                            auto* udpSocket = new base::net::UdpServer(this, listenIp.ip,  listenIp.port );
-                            
-                            udpSocket->bind();
-                            
+                        // This may throw.
+                        auto* udpSocket = new base::net::UdpServer(this, listenIp.ip,  listenIp.port );
 
-                            this->udpSockets[udpSocket] = listenIp.announcedIp;
-                            
-                            
-                             addr_record_t mapped;
-                            
-                             IP::StringToAddress(remoteip.data() , remotePort,  mapped);
-                             
-                            tuple = new TransportTuple(
-                            udpSocket, reinterpret_cast<struct sockaddr*>(&mapped.addr)  );
+                        udpSocket->bind();
 
-                            tuple = iceServer->AddTuple(tuple);
-                                   
-                            iceServer->SetSelectedTuple(tuple) ;
+
+                        this->udpSockets[udpSocket] = listenIp.announcedIp;
+
+
+                         addr_record_t mapped;
+
+                         IP::StringToAddress(remoteip.data() , remotePort,  mapped);
+
+                        tuple = new TransportTuple(
+                        udpSocket, reinterpret_cast<struct sockaddr*>(&mapped.addr)  );
+
+                        tuple = iceServer->AddTuple(tuple);
+
+                        iceServer->SetSelectedTuple(tuple) ;
                            
                     }
 
                     if (enableTcp)
                     {
-                            uint16_t iceLocalPreference =
-                              IceCandidateDefaultLocalPriority - iceLocalPreferenceDecrement;
+                        uint16_t iceLocalPreference =
+                          IceCandidateDefaultLocalPriority - iceLocalPreferenceDecrement;
 
-                            if (preferTcp)
-                                    iceLocalPreference += 1000;
+                        if (preferTcp)
+                                iceLocalPreference += 1000;
 
-                            uint32_t icePriority = generateIceCandidatePriority(iceLocalPreference);
+                        uint32_t icePriority = generateIceCandidatePriority(iceLocalPreference);
 
-                            // This may throw.
-                            auto* tcpServer = new base::net::TcpServer(this, listenIp.ip,  listenIp.port);
+                        // This may throw.
+                        auto* tcpServer = new base::net::TcpServer(this, listenIp.ip,  listenIp.port);
 
-                            this->tcpServers[tcpServer] = listenIp.announcedIp;
+                        this->tcpServers[tcpServer] = listenIp.announcedIp;
 
                     }
 
@@ -140,9 +194,21 @@ namespace rtc
 		
 	}
 
-	
+        void WebRtcTransport::InitDtls(bool server, std::string announcedIp , addr_record_t &remotemapped)
+	{
+            this->udpSockets[udpServer] = announcedIp;
 
 
+            tuple = new TransportTuple(
+            udpServer, reinterpret_cast<struct sockaddr*>(&remotemapped.addr)  );
+
+            tuple = iceServer->AddTuple(tuple);
+
+            iceServer->SetSelectedTuple(tuple) ;
+            
+            HandleRequest( server);
+        }
+       
 
 	void WebRtcTransport::HandleRequest(bool server)
 	{
@@ -418,15 +484,76 @@ namespace rtc
 	}
 
 
+        const uint8_t magicCookie[] = { 0x21, 0x12, 0xA4, 0x42 };
+        inline bool IsStun(const uint8_t* data, size_t len)
+        {
+
+                return (
+                        // STUN headers are 20 bytes.
+                        (len >= 20) &&
+                        // DOC: https://tools.ietf.org/html/draft-ietf-avtcore-rfc5764-mux-fixes
+                        (data[0] < 3) &&
+                        // Magic cookie must match.
+                        (data[4] == magicCookie[0]) && (data[5] == magicCookie[1]) &&
+                        (data[6] == magicCookie[2]) && (data[7] == magicCookie[3])
+                );
+
+        }
+
 
 	inline void WebRtcTransport::OnUdpSocketPacketReceived(
 	  base::net::UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr)
 	{
-            SInfo << "OnUdpSocketPacketReceived len: " << len ;
+            bool isStun = IsStun((const uint8_t*) data,  len);
+                    
+            
+            if(isStun)
+            {
+                int family;
 
-            base::net::TransportTuple tuple(socket, remoteAddr);
+                std::string peerIp;
+                uint16_t peerPort;
 
-            OnPacketReceived(&tuple, data, len);
+                IP::GetAddressInfo(
+                            remoteAddr, family, peerIp, peerPort);
+
+                SInfo  <<  " OnUdpSocketPacketReceived Stun " << peerIp << ":" << peerPort ;
+
+                addr_record_t remotesrc;
+
+
+                IP::CopyAddress(remoteAddr, remotesrc );
+
+
+                #if 0
+                std::string ret{"addr_record_is_equal "};
+                {
+
+                     char ip[40];
+                     uint16_t port;
+                     IP::AddressToString(remotesrc, ip, 40, port);
+                     ret +=  ip + std::string(":") + std::to_string(port);
+
+                     ret +=" < > ";
+
+
+                 }    
+
+                 #endif
+    
+    
+                IP::addr_unmap_inet6_v4mapped((struct sockaddr *)&remotesrc.addr , &remotesrc.len);
+                
+                agent->onStunMessage((unsigned char *)data, len,  &remotesrc, nullptr );
+            }
+            else
+            {
+                     SInfo << "OnUdpSocketPacketReceived len: " << len <<  " dtls";
+                     
+              base::net::TransportTuple tuple(socket, remoteAddr);
+
+               OnPacketReceived(&tuple, data, len);
+            }
 	}
 
        inline void WebRtcTransport::on_close(base::net::Listener* conn)
@@ -593,4 +720,11 @@ namespace rtc
             // Pass it to the parent transport.
             rtc::Transport::ReceiveSctpData((byte *)data, len);
 	}
+        
+        
+        int WebRtcTransport::agent_direct_send( uint8_t* data, uint32_t nbytes, addr_record_t &record )
+        {
+            return udpServer->send( (char*) data, nbytes , (const struct sockaddr*)&record.addr);
+        }
+      
 } // namespace rtc

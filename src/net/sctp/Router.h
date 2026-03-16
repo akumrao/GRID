@@ -8,8 +8,10 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include "net/IP.h"
+#include "net/UdpSocket.h"
 
-
+using namespace base::net;
 
 namespace rtc
 {
@@ -20,7 +22,7 @@ namespace rtc
 		virtual ~Router();
 
 
-		void HandleRequest( bool server , const Configuration &config,  int localPort, int remotePort, std::string, std::string );
+		void HandleRequest( bool server , const Configuration &config,  int localPort, int remotePort, std::string, std::string );          
 
 	private:
 

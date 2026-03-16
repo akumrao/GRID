@@ -105,9 +105,13 @@ namespace stun {
     bool Agent::getInterfaces( ) {
         
         int port = mConfig.portdefault;
-        socket = new testUdpServer("::", port , this );
+        
+        //socket = new testUdpServer("::", port , this );
        // socket = new testUdpServer("0.0.0.0", ++port , this );
-        socket->start();
+       // socket->start();
+        
+        
+        socket = new WebRtcTransport(std::to_string(port), mConfig, this,  "::", port , this);
         
         
         agent_change_state(JUICE_STATE_GATHERING);
@@ -1961,6 +1965,28 @@ void Agent::agent_change_state( juice_state_t state)
     STrace  << "AgentNo " << agentNo << " agent_change_state " << state;
     
     list->onStateChangeCallback(state);
+    
+    switch (state) {
+    case JUICE_STATE_DISCONNECTED:
+
+            break;
+    case JUICE_STATE_CONNECTING:
+
+            break;
+    case JUICE_STATE_CONNECTED:
+    {
+        
+        bool is_controlling = m_mode == AGENT_MODE_CONTROLLING;
+        
+        if(m_selected_pair)
+        socket->InitDtls( is_controlling, m_selected_pair->local->address() ,  m_selected_pair->remote->resolved);
+    }
+            break;
+    case JUICE_STATE_COMPLETED:
+            break;
+    case JUICE_STATE_FAILED:
+            break;
+    };
 }
 
 

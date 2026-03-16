@@ -14,7 +14,7 @@
 #include "sctptransport.hpp"
 #include "utils.hpp"
 
-#include "Router.h"
+//#include "Router.h"
 
 #if RTC_ENABLE_MEDIA
 //#include "dtlssrtptransport.hpp"
@@ -303,15 +303,6 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() {
 //			                                            fingerprintAlgorithm, verifierCallback,
 //			                                            dtlsStateChangeCallback);
                     
-                    static int x = 100;
-                    
-                    Candidate local; Candidate remote;
-                    
-                    mIceTransport->getSelectedCandidatePair(&local, &remote);
-                    
-                    rtc::Router  *router1= new  rtc::Router( std::to_string(x));
-                    
-                    router1->HandleRequest(true, config,  local.port(), remote.port() , local.address() , remote.address() );
 		}
 
 		return emplaceTransport(this, &mDtlsTransport, std::move(transport));
