@@ -43,6 +43,9 @@ namespace rtc
 
                      udpServer->bind();
 
+                    STrace << " Create a DTLS transport.";
+                    this->dtlsTransport = new rtc::DtlsTransport(this);
+                    iceServer = new rtc::IceServer();
 
                    // this->udpSockets[udpSocket] = "listenIp.announcedIp";
 
@@ -413,7 +416,7 @@ namespace rtc
 
 		
 		// Check if it's DTLS.
-		if (rtc::DtlsTransport::IsDtls(data, len))
+		if (rtc::DtlsTransport::IsDtls( (const uint8_t*)data, len))
 		{
 			OnDtlsDataReceived(tuple, data, len);
 		}
@@ -504,55 +507,51 @@ namespace rtc
 	inline void WebRtcTransport::OnUdpSocketPacketReceived(
 	  base::net::UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr)
 	{
+            int family;
+
+            std::string peerIp;
+            uint16_t peerPort;
+
+            IP::GetAddressInfo(
+                        remoteAddr, family, peerIp, peerPort);
+            SInfo  <<  " OnUdpSocketPacketReceived Stun " << peerIp << ":" << peerPort ;
+            addr_record_t remotesrc;
+            IP::CopyAddress(remoteAddr, remotesrc );
+
+            #if 0
+            std::string ret{"addr_record_is_equal "};
+            {
+
+                 char ip[40];
+                 uint16_t port;
+                 IP::AddressToString(remotesrc, ip, 40, port);
+                 ret +=  ip + std::string(":") + std::to_string(port);
+
+                 ret +=" < > ";
+
+
+             }    
+
+             #endif
+
+
+            IP::addr_unmap_inet6_v4mapped((struct sockaddr *)&remotesrc.addr , &remotesrc.len);
+                
+                
             bool isStun = IsStun((const uint8_t*) data,  len);
-                    
             
             if(isStun)
             {
-                int family;
 
-                std::string peerIp;
-                uint16_t peerPort;
-
-                IP::GetAddressInfo(
-                            remoteAddr, family, peerIp, peerPort);
-
-                SInfo  <<  " OnUdpSocketPacketReceived Stun " << peerIp << ":" << peerPort ;
-
-                addr_record_t remotesrc;
-
-
-                IP::CopyAddress(remoteAddr, remotesrc );
-
-
-                #if 0
-                std::string ret{"addr_record_is_equal "};
-                {
-
-                     char ip[40];
-                     uint16_t port;
-                     IP::AddressToString(remotesrc, ip, 40, port);
-                     ret +=  ip + std::string(":") + std::to_string(port);
-
-                     ret +=" < > ";
-
-
-                 }    
-
-                 #endif
-    
-    
-                IP::addr_unmap_inet6_v4mapped((struct sockaddr *)&remotesrc.addr , &remotesrc.len);
-                
                 agent->onStunMessage((unsigned char *)data, len,  &remotesrc, nullptr );
             }
             else
             {
-                     SInfo << "OnUdpSocketPacketReceived len: " << len <<  " dtls";
+                SInfo << "OnUdpSocketPacketReceived len: " << len <<  " dtls";
                      
-              base::net::TransportTuple tuple(socket, remoteAddr);
+                base::net::TransportTuple tuple(socket, (struct sockaddr *) &remotesrc.addr);
 
-               OnPacketReceived(&tuple, data, len);
+                OnPacketReceived(&tuple, data, len);
             }
 	}
 

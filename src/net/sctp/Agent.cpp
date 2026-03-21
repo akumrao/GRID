@@ -1978,6 +1978,8 @@ void Agent::agent_change_state( juice_state_t state)
         
         bool is_controlling = m_mode == AGENT_MODE_CONTROLLING;
         
+        SInfo << "\033[36m" << "AgentNo " << agentNo <<  " InitDtls "  << " is_controlling " << is_controlling << "\033[0m";
+        
         if(m_selected_pair)
         socket->InitDtls( is_controlling, m_selected_pair->local->address() ,  m_selected_pair->remote->resolved);
     }
@@ -2230,7 +2232,7 @@ int Agent::agent_bookkeeping( int64_t &now)
                         : "New selected pair");
                 m_selected_pair = selected_pair;
                 
-                 SInfo << "Nominated selected_pair " << selected_pair->dump();
+                SInfo << "\033[35m" << "AgentNo " << agentNo <<  "  Nominated selected_pair " << selected_pair->dump() << "\033[0m";
 
                 // Start nomination timer if controlling
                 if (m_mode == AGENT_MODE_CONTROLLING)

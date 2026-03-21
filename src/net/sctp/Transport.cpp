@@ -166,7 +166,7 @@ namespace rtc
 	void Transport::Connected()
 	{
             
-            
+            SInfo << "sctptransport->start";
             sctptransport->start();
             int x = 1;
 	
@@ -187,7 +187,7 @@ namespace rtc
 
 	void Transport::Disconnected()
 	{
-		
+		 SInfo << "~Disconnected "  << sctptransport ; 
 //				// Tell all DataConsumers.
 //		for (auto& kv : this->mapDataConsumers)
 //		{
@@ -203,7 +203,7 @@ namespace rtc
 	void Transport::ReceiveSctpData(byte * data, size_t len)
 	{   
 // 		
-//                 SDebug << "ReceiveSctpData sctpAssociation:" << sctpAssociation;
+                 SDebug << "ReceiveSctpData: " << len;
 //
 //		if (!this->sctpAssociation)
 //		{
@@ -227,6 +227,8 @@ namespace rtc
 	inline void Transport::OnDataProducerSctpMessageReceived(
 	  rtc::DataProducer* dataProducer, uint32_t ppid, const uint8_t* msg, size_t len)
 	{
+            
+             SInfo << "OnDataProducerSctpMessageReceived";
 	
             int x = 1;
 

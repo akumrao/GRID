@@ -78,7 +78,7 @@ namespace rtc
 		static void ClassInit();
 		static void ClassDestroy();
 		static Role StringToRole(const std::string& role);
-		static bool IsDtls(const char* data, size_t len);
+		static bool IsDtls(const uint8_t* data, size_t len);
 
 	private:
 		static void ReadCertificateAndPrivateKeyFromFiles();
@@ -155,7 +155,7 @@ namespace rtc
 
 
 
-	inline bool DtlsTransport::IsDtls(const char* data, size_t len)
+	inline bool DtlsTransport::IsDtls(const uint8_t* data, size_t len)
 	{
 		
 		return (
