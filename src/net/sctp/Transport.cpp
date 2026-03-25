@@ -12,8 +12,8 @@ namespace rtc
 {
 	/* Instance methods. */
 
-	Transport::Transport(const std::string& id, const Configuration &config, Listener* listener)
-	  : id(id), listener(listener)
+	Transport::Transport(const std::string& id, int agentNo, const Configuration &config, Listener* listener)
+	  : id(id), listener(listener), agentNo(agentNo)
 	{
             
             int x = 1;
@@ -85,7 +85,7 @@ namespace rtc
 		ports.local = 3868;
 		ports.remote = 3868;
 
-		sctptransport = new rtc::SctpTransport(  this , config, ports );
+		sctptransport = new rtc::SctpTransport(  this, agentNo , config, ports );
                 
 		//    weak_bind(&PeerConnection::forwardBufferedAmount, this, _1, _2),
 //		    [this, weak_this = weak_from_this()](SctpTransport::State transportState) {
@@ -235,7 +235,7 @@ namespace rtc
 //                
 //                SInfo << "OnDataProducerSctpMessageReceived dataProducer " <<  dataProducer->id  << " sctpAssociation "  << sctpAssociation;
 //
-//		this->listener->OnTransportDataProducerSctpMessageReceived(this, dataProducer, ppid, msg, len);
+		//this->listener->OnTransportDataProducerSctpMessageReceived(this, dataProducer, ppid, msg, len);
 	}
 
 	inline void Transport::OnDataConsumerSendSctpMessage(

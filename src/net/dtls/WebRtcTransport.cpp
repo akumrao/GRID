@@ -33,17 +33,17 @@ namespace rtc
         
        
     
-        WebRtcTransport::WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, std::string IP, int port, Agent *agent)
-            : rtc::Transport::Transport(id, config, listener), IP(IP), port(port), agent(agent)
+        WebRtcTransport::WebRtcTransport(const std::string& id, int agentNo,  const Configuration &config, rtc::Transport::Listener* listener, std::string IP, int port, Agent *agent)
+            : rtc::Transport::Transport(id, agentNo, config, listener), IP(IP), port(port), agent(agent), agentNo(agentNo)
         {
     
             
             
-                     udpServer = new base::net::UdpServer(this, IP,  port );
+                    udpServer = new base::net::UdpServer(this, IP,  port );
 
-                     udpServer->bind();
+                    udpServer->bind();
 
-                    STrace << " Create a DTLS transport.";
+                    STrace << "AgentNo " << agentNo << " Create a DTLS transport.";
                     this->dtlsTransport = new rtc::DtlsTransport(this);
                     iceServer = new rtc::IceServer();
 
@@ -87,7 +87,7 @@ namespace rtc
             
         }
 	WebRtcTransport::WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort , std::string localip, std::string remoteip )
-	  : rtc::Transport::Transport(id, config, listener)
+	  : agent(agent), rtc::Transport::Transport(id, agentNo, config, listener)
 	{
 		
             uint16_t iceLocalPreferenceDecrement{ 0 };
@@ -161,10 +161,8 @@ namespace rtc
                     iceLocalPreferenceDecrement += 100;
             }
 
-
-
 	    // Create a DTLS transport.
-            STrace << " Create a DTLS transport.";
+            STrace << "AgentNo " << agentNo <<" Create a DTLS transport.";
 			this->dtlsTransport = new rtc::DtlsTransport(this);
 	}
 
@@ -391,11 +389,9 @@ namespace rtc
 	void WebRtcTransport::SendSctpData(const uint8_t* data, size_t len)
 	{
 		
-
-		
 		if (!IsConnected())
 		{
-			SWarn <<  "DTLS not connected, cannot send SCTP data";
+			SWarn << "AgentNo " << agentNo << "  DTLS not connected, cannot send SCTP data";
 
 			return;
 		}
@@ -407,7 +403,7 @@ namespace rtc
 	  base::net::TransportTuple* tuple, const char* data, size_t len)
 	{
 		
-            SInfo << "OnPacketReceived" << len;
+            SInfo  << "AgentNo " << agentNo << " OnPacketReceived" << len;
 
 		assertm(this->dtlsTransport, "no dtlsTransport");
 
@@ -422,7 +418,7 @@ namespace rtc
 		}
 		else
 		{
-                    SInfo << "OnUdpSocketPacketReceived len: " << len << " data " << data;
+                    SInfo  << "AgentNo " << agentNo << " OnUdpSocketPacketReceived len: " << len << " data " << data;
                     
 		    LWarn("ignoring received packet of unknown type");
 		}
@@ -454,7 +450,7 @@ namespace rtc
 	  const base::net::TransportTuple* tuple, const char* data, size_t len)
 	{
 		
-            SInfo << "OnDtlsDataReceived" << len;
+            SInfo  << "AgentNo " << agentNo << " OnDtlsDataReceived" << len;
 
             assertm(this->dtlsTransport, "no dtlsTransport");
 
@@ -547,7 +543,7 @@ namespace rtc
             }
             else
             {
-                SInfo << "OnUdpSocketPacketReceived len: " << len <<  " dtls";
+                SInfo  << "AgentNo " << agentNo << " OnUdpSocketPacketReceived len: " << len <<  " dtls";
                      
                 base::net::TransportTuple tuple(socket, (struct sockaddr *) &remotesrc.addr);
 
@@ -557,7 +553,7 @@ namespace rtc
 
        inline void WebRtcTransport::on_close(base::net::Listener* conn)
 	{
-            SInfo << "on_close";
+            SInfo  << "AgentNo " << agentNo << " on_close";
 
             net::TcpConnection* connection = (net::TcpConnection*) conn;
 
@@ -569,7 +565,7 @@ namespace rtc
 
         void WebRtcTransport::on_read(base::net::Listener* conn, const char* data, size_t len) {
 
-             SInfo << "on_read Len" <<  len;
+             SInfo  << "AgentNo " << agentNo << " on_read Len" <<  len;
              
 //            rtc::TcpConnection* connection = (rtc::TcpConnection*) conn;
 //            base::net::TransportTuple tuple(connection);
@@ -583,7 +579,7 @@ namespace rtc
 	inline void WebRtcTransport::OnDtlsTransportConnecting(const rtc::DtlsTransport* /*dtlsTransport*/)
 	{
 		
-                 SInfo << "OnDtlsTransportConnecting";
+                 SInfo  << "AgentNo " << agentNo << " OnDtlsTransportConnecting";
 
 //		assertm(this->dtlsTransport, "no dtlsTransport");
 //
@@ -600,7 +596,7 @@ namespace rtc
 	inline void WebRtcTransport::OnDtlsTransportConnected( const rtc::DtlsTransport* dtlsTransport ) 
 	{
 		
-                SInfo << "OnDtlsTransportConnected";
+                SInfo  << "AgentNo " << agentNo << " OnDtlsTransportConnected";
                 
               //  const uint8_t tmp[7]="arvind";
                // OnDtlsTransportSendData( dtlsTransport, tmp, 7);
@@ -689,7 +685,7 @@ namespace rtc
 	  const rtc::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
 	{
 		
-            SInfo << "OnDtlsTransportSendData len:" << len;
+            SInfo  << "AgentNo " << agentNo << " OnDtlsTransportSendData len:" << len;
 
             assertm(this->dtlsTransport, "no dtlsTransport");
 
@@ -712,7 +708,7 @@ namespace rtc
 	  const rtc::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
 	{
 		
-            SInfo << "OnDtlsTransportApplicationDataReceived len:" << len;
+            SInfo  << "AgentNo " << agentNo << " OnDtlsTransportApplicationDataReceived len:" << len;
 
             assertm(this->dtlsTransport, "no dtlsTransport");
 

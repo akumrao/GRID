@@ -52,7 +52,7 @@ namespace rtc
 	public:
 
                 
-		Transport(const std::string& id, const Configuration &config, Listener* listener);
+		Transport(const std::string& id, int agentNo, const Configuration &config, Listener* listener);
 		virtual ~Transport();
 
 	public:
@@ -177,6 +177,7 @@ namespace rtc
 	private:
 		// Passed by argument.
 		Listener* listener{ nullptr };
+                int agentNo;
 		// Allocated by this.
 //		std::unordered_map<std::string, rtc::Producer*> mapProducers;
 //		std::unordered_map<std::string, rtc::Consumer*> mapConsumers;

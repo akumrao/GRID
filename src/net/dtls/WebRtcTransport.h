@@ -47,14 +47,12 @@ namespace rtc
                 int port;
                 Agent *agent;
         public:
-            
                 UdpServer *udpServer;
-
 	public:
-		WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort, std::string localip , std::string remoteip );
-              
             
-                WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, std::string IP, int port, Agent *agent);
+                WebRtcTransport(const std::string& id, int agentNo, const Configuration &config, rtc::Transport::Listener* listener, std::string IP, int port, Agent *agent);
+
+		WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort, std::string localip , std::string remoteip );
                 
 		~WebRtcTransport() override;
 
@@ -98,10 +96,10 @@ namespace rtc
 		void OnDtlsTransportFailed(const rtc::DtlsTransport* dtlsTransport) override;
 		void OnDtlsTransportClosed(const rtc::DtlsTransport* dtlsTransport) override;
 		void OnDtlsTransportSendData(
-		  const rtc::DtlsTransport* dtlsTransport, const uint8_t* data, size_t len) override;
+		const rtc::DtlsTransport* dtlsTransport, const uint8_t* data, size_t len) override;
 		void OnDtlsTransportApplicationDataReceived(
-		  const rtc::DtlsTransport* dtlsTransport, const uint8_t* data, size_t len) override;
-                 int  agent_direct_send( uint8_t* data, uint32_t nbytes, addr_record_t &record );
+		const rtc::DtlsTransport* dtlsTransport, const uint8_t* data, size_t len) override;
+               int  agent_direct_send( uint8_t* data, uint32_t nbytes, addr_record_t &record );
 
 	private:
 		// Allocated by this.
@@ -117,6 +115,8 @@ namespace rtc
 		bool connectCalled{ false }; // Whether connect() was succesfully called.
 
 		rtc::DtlsTransport::Role dtlsRole{ rtc::DtlsTransport::Role::AUTO };
+                
+                int agentNo{0};
 	};
 } // namespace rtc
 

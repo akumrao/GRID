@@ -146,9 +146,9 @@ void SctpTransport::Cleanup() {
 		std::this_thread::sleep_for(100ms);
 }
 
-SctpTransport::SctpTransport(Listener* listener, const Configuration &config, Ports ports )
+SctpTransport::SctpTransport(Listener* listener, int agentNo,  const Configuration &config, Ports ports )
     : mMaxMessageSize(config.maxMessageSize),
-      mPorts(ports), listener(listener) //,
+      mPorts(ports), listener(listener) ,agentNo(agentNo) //,
 //     mBufferedAmountCallback(bufferedAmountCallback) 
     {
 //	onRecv(recvCallback);
@@ -414,7 +414,7 @@ void SctpTransport::close() {
 	if (state() == State::Connected) {
 		flush();
 	} else if (state() == State::Connecting) {
-		SDebug << "SCTP early shutdown";
+		SInfo << "SCTP early shutdown";
 		if (usrsctp_shutdown(mSock, SHUT_RDWR)) {
 			if (errno == ENOTCONN) {
 				STrace << "SCTP already shut down";
@@ -596,12 +596,12 @@ bool SctpTransport::trySendQueue() {
         mSendMutex.unlock();
          
 	if ( !nSize && mSendShutdown) {
-		SDebug << "SCTP shutdown";
+		SInfo << "SCTP shutdown";
 		if (usrsctp_shutdown(mSock, SHUT_WR)) {
 			if (errno == ENOTCONN) {
-				STrace << "SCTP already shut down";
+				SInfo << "SCTP already shut down";
 			} else {
-				SDebug << "SCTP shutdown failed, errno=" << errno;
+				SInfo << "SCTP shutdown failed, errno=" << errno;
 				changeState(State::Disconnected);
 				recv(nullptr);
 			}

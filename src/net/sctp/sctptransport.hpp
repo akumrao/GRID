@@ -71,7 +71,7 @@ public:
         };
         
 
-	SctpTransport(Listener* listener, const Configuration &config, Ports ports );
+	SctpTransport(Listener* listener, int agentNo,  const Configuration &config, Ports ports );
         
         
 	~SctpTransport();
@@ -115,6 +115,8 @@ private:
 
 
         Listener* listener{ nullptr };
+        
+        int agentNo;
 
 	struct sockaddr_conn getSockAddrConn(uint16_t port);
 

@@ -670,6 +670,10 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
 
                 }
             }
+            else if (state == PeerConnection::GatheringState::InProgress)
+            {
+                 SInfo << "pc1 Gathering State: InProgress"  ;
+            }
         });
     #if VIDEOMEDIA
 
