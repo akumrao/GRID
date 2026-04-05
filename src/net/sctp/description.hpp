@@ -112,6 +112,7 @@ public:
 
 	Description(const string &sdp, Type type = Type::Unspec, Role role = Role::ActPass);
 	Description(const string &sdp, string typeString);
+       Description();
 
 	Type type() const;
 	string typeString() const;

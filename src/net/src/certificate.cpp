@@ -70,7 +70,7 @@ namespace rtc
             return true;
     }
 }
-namespace rtc::impl {
+namespace rtc{
 
 
 
@@ -509,7 +509,7 @@ CertificateFingerprint Certificate::fingerprint() const {
 	return CertificateFingerprint{CertificateFingerprint::Algorithm::Sha256, mFingerprint};
 }
 
-} // namespace rtc::impl
+} // namespace rtc
 
 
 

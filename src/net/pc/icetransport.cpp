@@ -3,7 +3,7 @@
 #include "icetransport.hpp"
 #include "configuration.h"
 //#include "internals.hpp"
-#include "transport.hpp"
+#include "Transport.h"
 #include "utils.hpp"
 #include "utils.h"
 #include <algorithm>
@@ -22,11 +22,13 @@
 #endif
 
 #include <sys/types.h>
+//#include <sctptransport.hpp>
+
 
 using namespace std::chrono_literals;
 using std::chrono::system_clock;
 
-namespace rtc::impl {
+namespace rtc {
     
     
 void IceTransport::Init() {
@@ -41,11 +43,12 @@ void IceTransport::Cleanup() {
 IceTransport::IceTransport(const Configuration &config, candidate_callback candidateCallback,
                            state_callback stateChangeCallback,
                            gathering_state_callback gatheringStateChangeCallback)
-    : Transport(nullptr, std::move(stateChangeCallback)), mRole(Description::Role::ActPass),
+    :
+//Transport(nullptr, std::move(stateChangeCallback)), mRole(Description::Role::ActPass),
       mMid("0"), mGatheringState(GatheringState::New),
       mCandidateCallback(std::move(candidateCallback)),
       mGatheringStateChangeCallback(std::move(gatheringStateChangeCallback)),
-      agent(  (Configuration &)config, this)  
+      agent(  (Configuration &)config, this, this)  
 {
 
 SDebug << "Initializing ICE transport";	
@@ -263,6 +266,14 @@ void IceTransport::onRecvCallback( unsigned char *data, size_t size)
 
 
 
+void IceTransport::changeState(State state) {
+	try {
+		//if (mState.exchange(state) != state)
+			//mStateChangeCallback(state);  // arvind TBD
+	} catch (const std::exception &e) {
+		SWarn << e.what();
+	}
+}
 
 void IceTransport::processStateChange(unsigned int state) {
 	switch (state) {
@@ -293,5 +304,18 @@ void IceTransport::changeGatheringState(GatheringState state) {
 
 void IceTransport::processGatheringDone() { changeGatheringState(GatheringState::Complete); }
 
+void IceTransport::OnSctpTransportStatus(rtc::SctpTransport* sctpAssociation) 
+{
+     
+     
+    //changeState(State::Connecting); // arvind
+}
 
-} // namespace rtc::impl
+IceTransport::State IceTransport::state() const { return mState; }
+
+} // namespace rtc
+
+
+void IceTransport::incoming(message_ptr message) {
+   // recv(message); 
+}

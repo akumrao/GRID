@@ -179,6 +179,6 @@ private:
 	static std::unique_ptr<InstancesSet> Instances;
 };
 
-} // namespace rtc::impl
+} // namespace rtc
 
 #endif

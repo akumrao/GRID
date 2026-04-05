@@ -39,6 +39,7 @@ namespace rtc
 		{
 		public:
 		
+                     virtual void OnSctpTransportStatus(SctpTransport* sctpAssociation){}  ;
 			//virtual void OnTransportDataProducerSctpMessageReceived(  rtc::Transport* transport,  rtc::DataProducer* dataProducer,	  uint32_t ppid,  const uint8_t* msg,   size_t len) = 0;
 		};
 

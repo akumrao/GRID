@@ -8,14 +8,13 @@
 #include "configuration.h"
 #include "description.hpp"
 #include "global.hpp"
-#include "peerconnection.hpp"
-#include "transport.hpp"
+//#include "peerconnection.h"
+#include "Transport.h"
 
 #if !USE_NICE
 //#include <juice/juice.h>
 #include <Agent.h>
 #include "configuration.h"
-#include "peerconnection.hpp"
 #include "net/tls.h"
 #include "json/json.hpp" 
 #else
@@ -27,12 +26,15 @@
 #include <mutex>
 #include <thread>
 
-namespace rtc::impl {
+#include "Transport.h"
+
+namespace rtc {
     
   
         
 
-class IceTransport : public Transport, IceListen {
+class IceTransport : rtc::Transport::Listener, IceListen {
+//class IceTransport : public Transport, IceListen {
 public:
 	static void Init();
 	static void Cleanup();
@@ -42,6 +44,11 @@ public:
 	using candidate_callback = std::function<void(const Candidate candidate)>;
 	using gathering_state_callback = std::function<void(GatheringState state)>;
         
+
+                    enum class State { Disconnected, Connecting, Connected, Completed, Failed };
+                    using state_callback = std::function<void(State state)>;
+                    
+                    
 	IceTransport(const Configuration &config, candidate_callback candidateCallback,
 	             state_callback stateChangeCallback,
 	             gathering_state_callback gatheringStateChangeCallback);
@@ -58,14 +65,22 @@ public:
 	optional<string> getLocalAddress() ;
 	optional<string> getRemoteAddress();
 
-	bool send(message_ptr message) override; // false if dropped
+	bool send(message_ptr message) ; // false if dropped
 
 	bool getSelectedCandidatePair(Candidate *local, Candidate *remote);
         
+        void OnSctpTransportStatus(rtc::SctpTransport* sctpAssociation);
+     
+        
         Description::Role mRole;
 
+        std::atomic<State> mState = State::Disconnected;
+        State state() const;
+        virtual void incoming(message_ptr message);
+	virtual bool outgoing(message_ptr message);
+        
 private:
-	bool outgoing(message_ptr message) override;
+	//bool outgoing(message_ptr message) ;
 
 	void changeGatheringState(GatheringState state);
 
@@ -73,6 +88,8 @@ private:
 	void processCandidate(const string &candidate);
 	void processGatheringDone();
 	void processTimeout();
+        
+        void changeState(State state);
 
 	void addIceServer(IceServer_conf server);
 
@@ -98,6 +115,6 @@ private:
 #endif
 };
 
-} // namespace rtc::impl
+} // namespace rtc
 
 #endif

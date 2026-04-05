@@ -3,7 +3,7 @@
 #ifndef RTC_IMPL_TRACK_H
 #define RTC_IMPL_TRACK_H
 
-#include "channel.hpp"
+#include "channel.h"
 #include "common.hpp"
 #include "description.hpp"
 #include "mediahandler.hpp"
@@ -16,63 +16,63 @@
 #include <atomic>
 #include <shared_mutex>
 
-namespace rtc::impl {
+namespace rtc {
 
 struct PeerConnection;
 
-class Track final : public std::enable_shared_from_this<Track>, public Channel {
-public:
-	Track(weak_ptr<PeerConnection> pc, Description::Media desc);
-	~Track();
-
-	void close();
-	void incoming(message_ptr message);
-	bool outgoing(message_ptr message);
-
-	optional<message_variant> receive() override;
-	optional<message_variant> peek() override;
-	size_t availableAmount() const override;
-	void flushPendingMessages() override;
-	message_variant trackMessageToVariant(message_ptr message);
-
-	void onFrame(std::function<void(binary data, FrameInfo frame)> callback);
-
-	bool isOpen() const;
-	bool isClosed() const;
-	size_t maxMessageSize() const;
-
-	string mid() const;
-	Description::Direction direction() const;
-	Description::Media description() const;
-	void setDescription(Description::Media desc);
-
-	shared_ptr<MediaHandler> getMediaHandler();
-	void setMediaHandler(shared_ptr<MediaHandler> handler);
-
-#if RTC_ENABLE_MEDIA
-	void open(shared_ptr<DtlsSrtpTransport> transport);
-#endif
-
-	bool transportSend(message_ptr message);
-
-private:
-	const weak_ptr<PeerConnection> mPeerConnection;
-#if RTC_ENABLE_MEDIA
-	weak_ptr<DtlsSrtpTransport> mDtlsSrtpTransport;
-#endif
-
-	Description::Media mMediaDescription;
-	shared_ptr<MediaHandler> mMediaHandler;
-
-	mutable std::shared_mutex mMutex;
-
-	std::atomic<bool> mIsClosed = false;
-
-	Queue<message_ptr> mRecvQueue;
-
-	synchronized_callback<binary, FrameInfo> frameCallback;
-};
-
-} // namespace rtc::impl
+//class Track final : public std::enable_shared_from_this<Track>, public Channel {
+//public:
+//	Track(weak_ptr<PeerConnection> pc, Description::Media desc);
+//	~Track();
+//
+//	void close();
+//	void incoming(message_ptr message);
+//	bool outgoing(message_ptr message);
+//
+//	optional<message_variant> receive() override;
+//	optional<message_variant> peek() override;
+//	size_t availableAmount() const override;
+//	void flushPendingMessages() override;
+//	message_variant trackMessageToVariant(message_ptr message);
+//
+//	void onFrame(std::function<void(binary data, FrameInfo frame)> callback);
+//
+//	bool isOpen() const;
+//	bool isClosed() const;
+//	size_t maxMessageSize() const;
+//
+//	string mid() const;
+//	Description::Direction direction() const;
+//	Description::Media description() const;
+//	void setDescription(Description::Media desc);
+//
+//	shared_ptr<MediaHandler> getMediaHandler();
+//	void setMediaHandler(shared_ptr<MediaHandler> handler);
+//
+//#if RTC_ENABLE_MEDIA
+//	void open(shared_ptr<DtlsSrtpTransport> transport);
+//#endif
+//
+//	bool transportSend(message_ptr message);
+//
+//private:
+//	const weak_ptr<PeerConnection> mPeerConnection;
+//#if RTC_ENABLE_MEDIA
+//	weak_ptr<DtlsSrtpTransport> mDtlsSrtpTransport;
+//#endif
+//
+//	Description::Media mMediaDescription;
+//	shared_ptr<MediaHandler> mMediaHandler;
+//
+//	mutable std::shared_mutex mMutex;
+//
+//	std::atomic<bool> mIsClosed = false;
+//
+////	Queue<message_ptr> mRecvQueue;
+//
+//	synchronized_callback<binary, FrameInfo> frameCallback;
+//};
+//
+} // namespace rtc
 
 #endif

@@ -30,7 +30,7 @@
 #define localtesting 1
 //#define remotetesting 1
 //#define VIDEOMEDIA 1
-#include "peerconnection.hpp"
+#include "peerconnection.h"
 
 //#define CERTFROMFILE 1
 

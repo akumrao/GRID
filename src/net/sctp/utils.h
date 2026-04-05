@@ -77,6 +77,6 @@ void set_name(const string &name);
 
 } // namespace this_thread
 
-} // namespace rtc::impl::utils
+} // namespace rtc::utils
 
 #endif

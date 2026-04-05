@@ -191,11 +191,11 @@ typedef struct agent_stun_entry {
       
     Agent() = delete;
     
-    Agent( Configuration &config, IceListen *list );
+    Agent( Configuration &config, IceListen *list , rtc::Transport::Listener *listener);
     ~Agent();
     bool getInterfaces( );
     IceListen *list;
-           
+    rtc::Transport::Listener *listener;       
   public:
     uint16_t type;
     uint16_t length;
@@ -225,7 +225,7 @@ typedef struct agent_stun_entry {
     Candidate * ice_add_candidate( Candidate *candidate, ice_description_t *description);
         
     
-        
+
    //candidate_callback mCandidateCallback;
   // gathering_state_callback mstateCallback;
   // recv_callback mrecvcallback;

@@ -2,7 +2,7 @@
 
 #ifndef helpers_hpp
 #define helpers_hpp
-#include "peerconnection.hpp"
+#include "peerconnection.h"
 //#include "rtc/rtc.hpp"
 
 #include <shared_mutex>

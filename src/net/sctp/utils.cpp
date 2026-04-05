@@ -177,4 +177,4 @@ void set_name(const string &name) { thread_set_name_self(name.c_str()); }
 
 } // namespace this_thread
 
-} // namespace rtc::impl::utils
+} // namespace rtc::utils

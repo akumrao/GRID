@@ -248,10 +248,11 @@ namespace rtc
 	}
 
 
-	inline void Transport::OnSctpTransportConnecting(rtc::SctpTransport* /*sctpAssociation*/)
+	inline void Transport::OnSctpTransportConnecting(rtc::SctpTransport* sctpAssociation)
 	{
 	
-
+              listener->OnSctpTransportStatus(sctpAssociation);
+            //listener->OnSctpTransportClosed()
 		// Notify the Node Transport.
 		json data = json::object();
 //
@@ -260,10 +261,11 @@ namespace rtc
 //		Channel::Notifier::Emit(this->id, "sctpstatechange ", data);
 	}
 
-	inline void Transport::OnSctpTransportConnected(rtc::SctpTransport* /*sctpAssociation*/)
+	inline void Transport::OnSctpTransportConnected(rtc::SctpTransport* sctpAssociation)
 	{
 		
             SInfo << "OnSctpTransportConnected";
+             listener->OnSctpTransportStatus(sctpAssociation);
                     
             //const uint8_t data[] ="arvind"; 
             

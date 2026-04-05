@@ -8,7 +8,7 @@ SOURCES=$(wildcard main.cpp helpers.cpp ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp
 
 CXXFLAGS   := -g -std=c++17 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL
 
-CPPFLAGS   := -I../../json/include/ -I../sctp/ -I../pc/ -I../dtls/ -I../../http/include/ -I../../http_parser/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../../../src/openssl/buildx64/include -I../../webrtcserver/deps/usrsctp/usrsctplib/ -DHTTPSSL
+CPPFLAGS   := -I../../json/include/ -I../../net/include/ -I../../net/include/net/ -I../sctp/ -I../pc/ -I../dtls/ -I../../http/include/ -I../../http_parser/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../../../src/openssl/buildx64/include -I../../webrtcserver/deps/usrsctp/usrsctplib/ -DHTTPSSL
 
 
 

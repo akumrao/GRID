@@ -40,7 +40,7 @@ namespace stun {
     /* --------------------------------------------------------------------- */
 
     static int agentCount = 0;
-    Agent::Agent( Configuration &config, IceListen *list  ): mConfig(config), list(list)
+    Agent::Agent( Configuration &config, IceListen *list ,  rtc::Transport::Listener *listener): mConfig(config), list(list), listener(listener)
     {
 
         random_bytes(&ice_tiebreaker, sizeof(ice_tiebreaker));
@@ -111,7 +111,7 @@ namespace stun {
        // socket->start();
         
         
-        socket = new WebRtcTransport(std::to_string(port), agentNo ,  mConfig, this,  "::", port , this);
+        socket = new WebRtcTransport(std::to_string(port), agentNo ,  mConfig, listener,  "::", port , this);
         
         
         agent_change_state(JUICE_STATE_GATHERING);

@@ -44,7 +44,7 @@ namespace rtc {
 }
 
 
-namespace rtc::impl {
+namespace rtc {
 
 
 class Certificate {
@@ -111,7 +111,7 @@ string make_fingerprint(X509 *x509, CertificateFingerprint::Algorithm fingerprin
 
 Certificate* make_certificate(CertificateType type = CertificateType::Default);
 
-} // namespace rtc::impl
+} // namespace rtc
 
 
 
@@ -127,18 +127,18 @@ struct  ConfCert {
     string keyPemFile;
     string keyPemPass;
 
-    rtc::impl::Certificate* mCertificate;
+    rtc::Certificate* mCertificate;
 
     void init()
     {
        if (certificatePemFile.size() && keyPemFile.size()) {
            mCertificate =  
             certificatePemFile.find(PemBeginCertificateTag) != string::npos
-                ? rtc::impl::Certificate::FromString(certificatePemFile, keyPemFile)
-                : rtc::impl::Certificate::FromFile(certificatePemFile, keyPemFile,
+                ? rtc::Certificate::FromString(certificatePemFile, keyPemFile)
+                : rtc::Certificate::FromFile(certificatePemFile, keyPemFile,
                                             keyPemPass);
         } else if (!certificatePemFile.size() && !keyPemFile.size()) {
-            mCertificate = rtc::impl::make_certificate(certificateType);
+            mCertificate = rtc::make_certificate(certificateType);
         } else {
             throw std::invalid_argument(
                 "Either none or both certificate and key PEM files must be specified");

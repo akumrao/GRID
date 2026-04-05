@@ -153,7 +153,7 @@ SctpTransport::SctpTransport(Listener* listener, int agentNo,  const Configurati
     {
 //	onRecv(recvCallback);
 
-	SDebug << "Initializing SCTP transport";
+	SInfo << "AgentNo " << agentNo << " Initializing SCTP transport";
 
 	mSock = usrsctp_socket(AF_CONN, SOCK_STREAM, IPPROTO_SCTP, nullptr, nullptr, 0, nullptr);
 	if (!mSock)
@@ -346,7 +346,7 @@ struct sockaddr_conn SctpTransport::getSockAddrConn(uint16_t port) {
 }
 
 void SctpTransport::connect() {
-	SDebug << "SCTP connecting (local port=" << mPorts.local
+	SInfo << "AgentNo " << agentNo << " SCTP connecting (local port=" << mPorts.local
 	           << ", remote port=" << mPorts.remote << ")";
 	changeState(State::Connecting);
 
@@ -445,7 +445,7 @@ void SctpTransport::incoming(message_ptr message) {
 		return;
 
 	if (!message) {
-		SInfo << "SCTP disconnected";
+		SInfo << "AgentNo " << agentNo << " SCTP disconnected";
 		changeState(State::Disconnected);
 		recv(nullptr);// TBD
 		return;
@@ -500,7 +500,7 @@ void SctpTransport::doRecv() {
 				break;
 			}
 
-			STrace << "SCTP recv, len=" << len;
+			SInfo << "AgentNo " << " SCTP recv, len=" << len;
 
 			// SCTP_FRAGMENT_INTERLEAVE does not seem to work as expected for messages > 64KB,
 			// therefore partial notifications and messages need to be handled separately.
@@ -596,12 +596,12 @@ bool SctpTransport::trySendQueue() {
         mSendMutex.unlock();
          
 	if ( !nSize && mSendShutdown) {
-		SInfo << "SCTP shutdown";
+		SInfo << "AgentNo " << agentNo << " SCTP shutdown";
 		if (usrsctp_shutdown(mSock, SHUT_WR)) {
 			if (errno == ENOTCONN) {
 				SInfo << "SCTP already shut down";
 			} else {
-				SInfo << "SCTP shutdown failed, errno=" << errno;
+				SInfo << "AgentNo " << agentNo << " SCTP shutdown failed, errno=" << errno;
 				changeState(State::Disconnected);
 				recv(nullptr);
 			}
@@ -894,20 +894,20 @@ void SctpTransport::processNotification(const union sctp_notification *notify, s
 			           << ", outgoing=" << sac.sac_outbound_streams;
 			mNegotiatedStreamsCount=  std::min(sac.sac_inbound_streams, sac.sac_outbound_streams);
 
-			SInfo << "SCTP connected";
+			SInfo << "AgentNo " << agentNo << " SCTP connected";
 			changeState(State::Connected);
                         
                         listener-> OnSctpTransportConnected( this );
                         
 		} else {
 			if (state() == State::Connected) {
-				SInfo << "SCTP disconnected";
+				SInfo << "AgentNo " << agentNo << " SCTP disconnected";
 				changeState(State::Disconnected);
                                 
 				recv(nullptr);
                                  listener->OnSctpTransportClosed( this );
 			} else {
-				SError << "SCTP connection failed";
+				SError << "AgentNo " << agentNo << " SCTP connection failed";
 				changeState(State::Failed);
                                 listener->OnSctpTransportFailed( this );
 			}
@@ -1043,31 +1043,32 @@ void SctpTransport::DebugCallback(const char *format, ...) {
     
     void SctpTransport::changeState(State state) {
     
+     
         SInfo << " SctpTransport::changeState " ;
         
         switch(state)
         {
             case State::Disconnected:
             {
-                SInfo << "disconnected";
+                SInfo << "AgentNo " << agentNo << " disconnected";
                 break;
             }
              case State::Connecting:
             {
-                SInfo << "Connecting";
+                SInfo << "AgentNo " << agentNo << " Connecting";
                 break;
             }
             case State::Connected:
             {
-                SInfo << "Connected";
+                SInfo << "AgentNo " << agentNo << " Connected";
                 break;
             }case State::Completed:
             {
-                SInfo << "Completed";
+                SInfo << "AgentNo " << agentNo << " Completed";
                 break;
             }case State::Failed:
             {
-                SInfo << "Failed";
+                SInfo << "AgentNo " << agentNo << " Failed";
                 break;
             }
 
@@ -1093,4 +1094,4 @@ void SctpTransport::DebugCallback(const char *format, ...) {
 }
 
 
-} // namespace rtc::impl
+} // namespace rtc

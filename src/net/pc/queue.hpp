@@ -11,7 +11,7 @@
 #include <mutex>
 #include <queue>
 
-namespace rtc::impl {
+namespace rtc {
 
 template <typename T> class Queue {
 public:
@@ -117,6 +117,6 @@ template <typename T> optional<T> Queue<T>::exchange(T element) {
 	return std::make_optional(std::move(element));
 }
 
-} // namespace rtc::impl
+} // namespace rtc
 
 #endif
