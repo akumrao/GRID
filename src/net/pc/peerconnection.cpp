@@ -74,6 +74,8 @@ void PeerConnection::close() {
 	STrace << "Closing PeerConnection";
 
 	mNegotiationNeeded = false;
+        
+        auto ice = std::atomic_exchange(&mIceTransport, decltype(mIceTransport)(nullptr));
 
 	// Close data channels asynchronously
 	//mProcessor->enqueue(&PeerConnection::closeDataChannels, this);
@@ -87,12 +89,12 @@ bool PeerConnection::negotiationNeeded() const {
 	return true;
 }
 
-Description PeerConnection::localDescription() const {
+optional<Description> PeerConnection::localDescription() const {
 	std::lock_guard<std::recursive_mutex> lock(mLocalDescriptionMutex);
 	return mLocalDescription;
 }
 
-Description PeerConnection::remoteDescription() const {
+optional<Description> PeerConnection::remoteDescription() const {
 	std::lock_guard<std::recursive_mutex> lock(mRemoteDescriptionMutex);
 	return mRemoteDescription;
 }
@@ -106,7 +108,7 @@ const size_t localMax = config.maxMessageSize;
 size_t remoteMax = DEFAULT_REMOTE_MAX_MESSAGE_SIZE;
 	std::lock_guard lock(mRemoteDescriptionMutex);
 	//if (mRemoteDescription)
-		if (auto *application = mRemoteDescription.application())
+		if (auto *application = mRemoteDescription->application())
 			if (auto max = application->maxMessageSize()) {
 				// RFC 8841: If the SDP "max-message-size" attribute contains a maximum message
 				// size value of zero, it indicates that the SCTP endpoint will handle messages
@@ -127,100 +129,287 @@ size_t remoteMax = DEFAULT_REMOTE_MAX_MESSAGE_SIZE;
 
 
 
-void PeerConnection::processLocalDescription(Description *description) {
+//void PeerConnection::processLocalDescription(Description *description) {
+//    
+//    	const uint16_t localSctpPort = 5000;
+//        //const size_t DEFAULT_LOCAL_MAX_MESSAGE_SIZE = 256 * 1024;
+//	const size_t localMaxMessageSize = config.maxMessageSize;//(DEFAULT_LOCAL_MAX_MESSAGE_SIZE);
+//        
+//        
+//        description->clearMedia();
+//        
+//	uint16_t remoteSctpPort;
+////	if (auto remote = remoteDescription())
+////		remoteSctpPort = remote->sctpPort();
+//
+////	//std::lock_guard lock(mLocalDescriptionMutex);
+////	mLocalDescription.emplace(std::move(description));
+//        
+//        
+//        	// Add application for data channels
+//        if (!description->hasApplication())
+//        {
+//                    //std::shared_lock<std::mutex> lock(mDataChannelsMutex);
+//                    if (!mDataChannels.size() || !mUnassignedDataChannels.size()) {
+//                            // Prevents mid collision with remote or local tracks
+//                            unsigned int m = 0;
+//                            while (description->hasMid(std::to_string(m)))
+//                                    ++m;
+//
+//                            Description::Application app(std::to_string(m));
+//                            app.setSctpPort(localSctpPort);
+//                            app.setMaxMessageSize(localMaxMessageSize);
+//
+//                            SDebug << "Adding application to local description, mid=\"" << app.mid()      << "\"";
+//
+//                            description->addMedia(std::move(app));
+//                    }
+//        }
+//
+//        // There might be no media at this point, for instance if the user deleted tracks
+//        if (description->mediaCount() == 0)
+//                throw std::runtime_error("No DataChannel or Track to negotiate");
+//
+//
+//	// Set local fingerprint (wait for certificate if necessary)
+//	description->setFingerprint(mCertificate->fingerprint());
+//        
+//       
+//        //std::cout << "Issuing local description: " << description->generateSdp("\r\n") << std::endl << std::flush;
+//        
+//
+//	STrace << "Issuing local description: " << description->generateSdp("\r\n");
+//
+//
+//	//updateTrackSsrcCache(description); TBD
+//
+////	{
+////		// Set as local description
+////		std::lock_guard<std::recursive_mutex> lock(mLocalDescriptionMutex);
+////
+////		std::vector<Candidate> existingCandidates;
+////		if (mLocalDescription.desc.candidates.size()) {
+////			existingCandidates = mLocalDescription.extractCandidates();
+////			//mCurrentLocalDescription.emplace(std::move(*mLocalDescription));
+////		}
+////
+////		//mLocalDescription.emplace(description);
+////		mLocalDescription.addCandidates(std::move(existingCandidates));
+////	}
+//
+////	mProcessor.enqueue(&PeerConnection::trigger<Description>, shared_from_this(),
+////	                   &localDescriptionCallback, std::move(description));
+//
+////	// Reciprocated tracks might need to be open
+////	if (auto dtlsTransport = std::atomic_load(&mDtlsTransport);
+////	    dtlsTransport && dtlsTransport->state() == Transport::State::Connected)
+////		mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
+//                     
+//         //   description->setFingerprint(mCertificate.get()->fingerprint());
+//        
+//        
+//        
+//
+//	mLocalDescriptionCallback(*description);
+//}
+
+
+
+void PeerConnection::processLocalDescription(Description &description) {
     
-    	const uint16_t localSctpPort = 5000;
-        //const size_t DEFAULT_LOCAL_MAX_MESSAGE_SIZE = 256 * 1024;
-	const size_t localMaxMessageSize = config.maxMessageSize;//(DEFAULT_LOCAL_MAX_MESSAGE_SIZE);
+        SInfo << "processLocalDescription";
         
-        
-        description->clearMedia();
-        
-	uint16_t remoteSctpPort;
-//	if (auto remote = remoteDescription())
-//		remoteSctpPort = remote->sctpPort();
+	const uint16_t localSctpPort = DEFAULT_SCTP_PORT;
+	const size_t localMaxMessageSize =0;
+	    //config.maxMessageSize.value_or(DEFAULT_LOCAL_MAX_MESSAGE_SIZE);
 
-//	//std::lock_guard lock(mLocalDescriptionMutex);
-//	mLocalDescription.emplace(std::move(description));
-        
-        
-        	// Add application for data channels
-        if (!description->hasApplication())
-        {
-                    //std::shared_lock<std::mutex> lock(mDataChannelsMutex);
-                    if (!mDataChannels.size() || !mUnassignedDataChannels.size()) {
-                            // Prevents mid collision with remote or local tracks
-                            unsigned int m = 0;
-                            while (description->hasMid(std::to_string(m)))
-                                    ++m;
+	// Clean up the application entry the ICE transport might have added already (libnice)
+	description.clearMedia();
 
-                            Description::Application app(std::to_string(m));
-                            app.setSctpPort(localSctpPort);
-                            app.setMaxMessageSize(localMaxMessageSize);
+	if (auto remote = remoteDescription()) {
+		// Reciprocate remote description
+		for (int i = 0; i < remote->mediaCount(); ++i)
+			std::visit( // reciprocate each media
+			    rtc::overloaded{
+			        [&](Description::Application *remoteApp) {
+				        std::shared_lock lock(mDataChannelsMutex);
+				        if (!mDataChannels.empty() || !mUnassignedDataChannels.empty()) {
+					        // Prefer local description
+					        Description::Application app(remoteApp->mid());
+					        app.setSctpPort(localSctpPort);
+					        app.setMaxMessageSize(localMaxMessageSize);
 
-                            SDebug << "Adding application to local description, mid=\"" << app.mid()      << "\"";
+					        SDebug << "Adding application to local description, mid=\""
+					                   << app.mid() << "\"";
 
-                            description->addMedia(std::move(app));
-                    }
-        }
+					        description.addMedia(std::move(app));
+					        return;
+				        }
 
-        // There might be no media at this point, for instance if the user deleted tracks
-        if (description->mediaCount() == 0)
-                throw std::runtime_error("No DataChannel or Track to negotiate");
+				        auto reciprocated = remoteApp->reciprocate();
+				        reciprocated.hintSctpPort(localSctpPort);
+				        reciprocated.setMaxMessageSize(localMaxMessageSize);
 
+				        SDebug << "Reciprocating application in local description, mid=\""
+				                   << reciprocated.mid() << "\"";
+
+				        description.addMedia(std::move(reciprocated));
+			        },
+			        [&](Description::Media *remoteMedia) {
+//				        std::unique_lock lock(mTracksMutex); // we may emplace a track
+//				        if (auto it = mTracks.find(remoteMedia->mid()); it != mTracks.end()) {
+//					        // Prefer local description
+//					        if (auto track = it->second.lock()) {
+////						        auto media = track->description();
+////
+////						        SDebug << "Adding media to local description, mid=\""
+////						                   << media.mid() << "\", removed=" << std::boolalpha
+////						                   << media.isRemoved();
+////
+////						        description.addMedia(std::move(media));
+//
+//					        } else {
+//						        auto reciprocated = remoteMedia->reciprocate();
+//						        reciprocated.markRemoved();
+//
+//						        SDebug << "Adding media to local description, mid=\""
+//						                   << reciprocated.mid()
+//						                   << "\", removed=true (track is destroyed)";
+//
+//						        description.addMedia(std::move(reciprocated));
+//					        }
+//					        return;
+//				        }
+
+				        auto reciprocated = remoteMedia->reciprocate();
+#if !RTC_ENABLE_MEDIA
+				        if (!reciprocated.isRemoved()) {
+					        // No media support, mark as removed
+					        SWarn << "Rejecting track (not compiled with media support)";
+					        reciprocated.markRemoved();
+				        }
+#endif
+
+				        SDebug << "Reciprocating media in local description, mid=\""
+				                   << reciprocated.mid() << "\", removed=" << std::boolalpha
+				                   << reciprocated.isRemoved();
+
+				        // Create incoming track
+//				        auto track =
+//				            std::make_shared<Track>(weak_from_this(), std::move(reciprocated));
+//				        mTracks.emplace(std::make_pair(track->mid(), track));
+//				        mTrackLines.emplace_back(track);
+//				        triggerTrack(track); // The user may modify the track description
+//
+//				        auto handler = getMediaHandler();
+//				        if (handler)
+//					        handler->media(track->description());
+//
+//				        if (track->description().isRemoved())
+//					        track->close();
+//
+//				        description.addMedia(track->description());
+			        },
+			    },
+			    remote->media(i));
+
+		// We need to update the SSRC cache for newly-created incoming tracks
+		//updateTrackSsrcCache(*remote);
+	}
+
+	if (description.type() == Description::Type::Offer) {
+		// This is an offer, add locally created data channels and tracks
+		// Add media for local tracks
+//		std::shared_lock lock(mTracksMutex);
+//		for (auto it = mTrackLines.begin(); it != mTrackLines.end(); ++it) {
+//			if (auto track = it->lock()) {
+////				if (description.hasMid(track->mid()))
+////					continue;
+//
+////				auto media = track->description();
+////
+////				SDebug << "Adding media to local description, mid=\"" << media.mid()
+////				           << "\", removed=" << std::boolalpha << media.isRemoved();
+////
+////				description.addMedia(std::move(media));
+//			}
+//		}
+
+		// Add application for data channels
+		if (!description.hasApplication()) {
+			std::shared_lock lock(mDataChannelsMutex);
+			if (!mDataChannels.empty() || !mUnassignedDataChannels.empty()) {
+				// Prevents mid collision with remote or local tracks
+				unsigned int m = 0;
+				while (description.hasMid(std::to_string(m)))
+					++m;
+
+				Description::Application app(std::to_string(m));
+				app.setSctpPort(localSctpPort);
+				app.setMaxMessageSize(localMaxMessageSize);
+
+				SDebug << "Adding application to local description, mid=\"" << app.mid()
+				           << "\"";
+
+				description.addMedia(std::move(app));
+			}
+		}
+
+		// There might be no media at this point, for instance if the user deleted tracks
+		if (description.mediaCount() == 0)
+			throw std::runtime_error("No DataChannel or Track to negotiate");
+	}
 
 	// Set local fingerprint (wait for certificate if necessary)
-	description->setFingerprint(mCertificate->fingerprint());
-        
-       
-        //std::cout << "Issuing local description: " << description->generateSdp("\r\n") << std::endl << std::flush;
-        
+	description.setFingerprint(mCertificate->fingerprint());
 
-	STrace << "Issuing local description: " << description->generateSdp("\r\n");
+	STrace << "Issuing local description: " << description;
 
+	if (description.mediaCount() == 0)
+		throw std::logic_error("Local description has no media line");
 
-	//updateTrackSsrcCache(description); TBD
+	//updateTrackSsrcCache(description);
 
-//	{
-//		// Set as local description
-//		std::lock_guard<std::recursive_mutex> lock(mLocalDescriptionMutex);
-//
-//		std::vector<Candidate> existingCandidates;
-//		if (mLocalDescription.desc.candidates.size()) {
-//			existingCandidates = mLocalDescription.extractCandidates();
-//			//mCurrentLocalDescription.emplace(std::move(*mLocalDescription));
-//		}
-//
-//		//mLocalDescription.emplace(description);
-//		mLocalDescription.addCandidates(std::move(existingCandidates));
-//	}
+	{
+		// Set as local description
+		std::lock_guard lock(mLocalDescriptionMutex);
+
+		std::vector<Candidate> existingCandidates;
+		if (mLocalDescription) {
+			existingCandidates = mLocalDescription->extractCandidates();
+			//mCurrentLocalDescription.emplace(std::move(*mLocalDescription));
+		}
+
+		mLocalDescription.emplace(description);
+		mLocalDescription->addCandidates(std::move(existingCandidates));
+	}
 
 //	mProcessor.enqueue(&PeerConnection::trigger<Description>, shared_from_this(),
 //	                   &localDescriptionCallback, std::move(description));
+        
+        //localDescriptionCallback(description);
+        mLocalDescriptionCallback(description);
 
-//	// Reciprocated tracks might need to be open
+	// Reciprocated tracks might need to be open
 //	if (auto dtlsTransport = std::atomic_load(&mDtlsTransport);
 //	    dtlsTransport && dtlsTransport->state() == Transport::State::Connected)
 //		mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
-                     
-         //   description->setFingerprint(mCertificate.get()->fingerprint());
-        
-        
-        
-
-	mLocalDescriptionCallback(*description);
 }
+
+
 
 
 string PeerConnection::localBundleMid() {
 	//std::lock_guard lock(mLocalDescriptionMutex);
-	return  mLocalDescription.bundleMid();
+	return  mLocalDescription->bundleMid();
 }
 
 
 void PeerConnection::setLocalDescription(Description::Type type) {
-	STrace << "AgentNo " << iceTransport->agent.agentNo << " SetLocalDescription, type=" << Description::typeToString(type);
+	
 
+        std::unique_lock signalingLock(signalingMutex); 
+                
 	SignalingState signalingState = mSignalingState.load();
 	if (type == Description::Type::Rollback) {
 		if (signalingState == SignalingState::HaveLocalOffer ||
@@ -291,17 +480,21 @@ void PeerConnection::setLocalDescription(Description::Type type) {
 	}
 
         
+        mIceTransport = initIceTransport();
 
-	Description local = iceTransport->getLocalDescription(type);
+	Description local = mIceTransport->getLocalDescription(type);
         
-	processLocalDescription(&local);
+	processLocalDescription(local);
 
 	changeSignalingState(newSignalingState);
 
         if (mGatheringState == GatheringState::New) 
         {
-		iceTransport->gatherLocalCandidates(localBundleMid());
+		mIceTransport->gatherLocalCandidates(localBundleMid());
 	}
+        
+        
+        STrace << "AgentNo " << mIceTransport->agent.agentNo << " SetLocalDescription, type=" << Description::typeToString(type);
 }
 
 
@@ -319,19 +512,115 @@ bool PeerConnection::changeSignalingState(SignalingState newState) {
 }
 
 void PeerConnection::setRemoteDescription(Description description) {
-	SDebug << "Setting remote description: " << string(description);
-        mRemoteDescription = std::move(description);
-        iceTransport->setRemoteDescription(mRemoteDescription );            
-        return ;
+    
+          std::unique_lock signalingLock(signalingMutex);
+////	SDebug << "Setting remote description: " << string(description);
+////        mRemoteDescription = std::move(description);
+////        iceTransport->setRemoteDescription(mRemoteDescription );            
+////        return ;
+//        
+//	if (description.type() == Description::Type::Rollback) {
+//		// This is mostly useless because we accept any offer
+//		STrace << "Rolling back pending remote description";
+//		//changeSignalingState(SignalingState::Stable);
+//		return;
+//	}
+//
+//	//validateRemoteDescription(description);
+//
+//	// Get the new signaling state
+//	SignalingState signalingState = mSignalingState.load();
+//	SignalingState newSignalingState;
+//	switch (signalingState) {
+//	case SignalingState::Stable:
+//		description.hintType(Description::Type::Offer);
+//		if (description.type() != Description::Type::Offer) {
+//			std::ostringstream oss;
+//			oss << "Unexpected remote " << description.type() << " description in signaling state "
+//			    << signalingState;
+//			throw std::logic_error(oss.str());
+//		}
+//		newSignalingState = SignalingState::HaveRemoteOffer;
+//		break;
+//
+//	case SignalingState::HaveLocalOffer:
+//		description.hintType(Description::Type::Answer);
+//		if (description.type() == Description::Type::Offer) {
+//			// The ICE agent will automatically initiate a rollback when a peer that had previously
+//			// created an offer receives an offer from the remote peer
+//			setLocalDescription(Description::Type::Rollback);
+//			newSignalingState = SignalingState::HaveRemoteOffer;
+//			break;
+//		}
+//		if (description.type() != Description::Type::Answer &&
+//		    description.type() != Description::Type::Pranswer) {
+//			std::ostringstream oss;
+//			oss << "Unexpected remote " << description.type() << " description in signaling state "
+//			    << signalingState;
+//			throw std::logic_error(oss.str());
+//		}
+//		newSignalingState = SignalingState::Stable;
+//		break;
+//
+//	case SignalingState::HaveRemotePranswer:
+//		description.hintType(Description::Type::Answer);
+//		if (description.type() != Description::Type::Answer &&
+//		    description.type() != Description::Type::Pranswer) {
+//			std::ostringstream oss;
+//			oss << "Unexpected remote " << description.type() << " description in signaling state "
+//			    << signalingState;
+//			throw std::logic_error(oss.str());
+//		}
+//		newSignalingState = SignalingState::Stable;
+//		break;
+//
+//	default: {
+//		std::ostringstream oss;
+//		oss << "Unexpected remote description in signaling state " << signalingState;
+//		throw std::logic_error(oss.str());
+//	}
+//	}
+//
+//	// Candidates will be added at the end, extract them for now
+//	auto remoteCandidates = description.extractCandidates();
+//	auto type = description.type();
+//	//processRemoteDescription(std::move(description));
+//
+//	//changeSignalingState(newSignalingState);
+//
+//	if (type == Description::Type::Offer) {
+//		// This is an offer, we need to answer
+//		setLocalDescription(Description::Type::Answer);
+//	} else {
+//		// This is an answer
+////		auto iceTransport = std::atomic_load(&mIceTransport);
+////		auto sctpTransport = std::atomic_load(&mSctpTransport);
+////		if (!sctpTransport && iceTransport && iceTransport->role() == Description::Role::Active) {
+////			// Since we assumed passive role during DataChannel creation, we need to shift the
+////			// stream numbers by one to shift them from odd to even.
+////			std::unique_lock lock(mDataChannelsMutex); // we are going to swap the container
+////			decltype(mDataChannels) newDataChannels;
+////			auto it = mDataChannels.begin();
+////			while (it != mDataChannels.end()) {
+////				auto channel = it->second.lock();
+////				if (channel->stream() % 2 == 1)
+////					channel->mStream -= 1;
+////				newDataChannels.emplace(channel->stream(), channel);
+////				++it;
+////			}
+////			std::swap(mDataChannels, newDataChannels);
+////		}
+//	}
+////
+////	for (const auto &candidate : remoteCandidates)
+////		addRemoteCandidate(candidate);
+//        
+//        
         
-	if (description.type() == Description::Type::Rollback) {
-		// This is mostly useless because we accept any offer
-		STrace << "Rolling back pending remote description";
-		//changeSignalingState(SignalingState::Stable);
-		return;
-	}
-
-	//validateRemoteDescription(description);
+        //////////////////////////////////////
+        
+        
+       validateRemoteDescription(description);
 
 	// Get the new signaling state
 	SignalingState signalingState = mSignalingState.load();
@@ -353,9 +642,17 @@ void PeerConnection::setRemoteDescription(Description description) {
 		if (description.type() == Description::Type::Offer) {
 			// The ICE agent will automatically initiate a rollback when a peer that had previously
 			// created an offer receives an offer from the remote peer
-			setLocalDescription(Description::Type::Rollback);
+                    
+                        setLocalDescription(Description::Type::Rollback);
 			newSignalingState = SignalingState::HaveRemoteOffer;
 			break;
+                    
+                    
+//			rollbackLocalDescription();
+//			>changeSignalingState(SignalingState::Stable);
+//			signalingState = SignalingState::Stable;
+//			newSignalingState = SignalingState::HaveRemoteOffer;
+//			break;
 		}
 		if (description.type() != Description::Type::Answer &&
 		    description.type() != Description::Type::Pranswer) {
@@ -388,72 +685,80 @@ void PeerConnection::setRemoteDescription(Description description) {
 
 	// Candidates will be added at the end, extract them for now
 	auto remoteCandidates = description.extractCandidates();
-	auto type = description.type();
-	//processRemoteDescription(std::move(description));
 
-	//changeSignalingState(newSignalingState);
+	mIceTransport = initIceTransport();
+	if (!mIceTransport)
+		return; // closed
 
-	if (type == Description::Type::Offer) {
-		// This is an offer, we need to answer
-		setLocalDescription(Description::Type::Answer);
-	} else {
-		// This is an answer
-//		auto iceTransport = std::atomic_load(&mIceTransport);
-//		auto sctpTransport = std::atomic_load(&mSctpTransport);
-//		if (!sctpTransport && iceTransport && iceTransport->role() == Description::Role::Active) {
-//			// Since we assumed passive role during DataChannel creation, we need to shift the
-//			// stream numbers by one to shift them from odd to even.
-//			std::unique_lock lock(mDataChannelsMutex); // we are going to swap the container
-//			decltype(mDataChannels) newDataChannels;
-//			auto it = mDataChannels.begin();
-//			while (it != mDataChannels.end()) {
-//				auto channel = it->second.lock();
-//				if (channel->stream() % 2 == 1)
-//					channel->mStream -= 1;
-//				newDataChannels.emplace(channel->stream(), channel);
-//				++it;
-//			}
-//			std::swap(mDataChannels, newDataChannels);
-//		}
+	mIceTransport->setRemoteDescription(description); // ICE transport might reject the description
+
+	processRemoteDescription(std::move(description));
+	changeSignalingState(newSignalingState);
+	signalingLock.unlock();
+
+	for (const auto &candidate : remoteCandidates)
+		addRemoteCandidate(candidate);
+
+	if (!config.disableAutoNegotiation) {
+		switch (newSignalingState) {
+		case SignalingState::Stable:
+			// We might need to make a new offer
+			if (negotiationNeeded())
+				setLocalDescription(Description::Type::Offer);
+			break;
+
+		case SignalingState::HaveRemoteOffer:
+			// We need to answer
+			setLocalDescription(Description::Type::Answer);
+			break;
+
+		default:
+			break;
+		}
 	}
-//
-//	for (const auto &candidate : remoteCandidates)
-//		addRemoteCandidate(candidate);
+        
+        
+        
+        
+        
+        
+        
 }
 
 void PeerConnection::addRemoteCandidate(Candidate candidate) {
-	SInfo << "AgentNo " << iceTransport->agent.agentNo << " Adding remote candidate: " << string(candidate);
+    
+        std::unique_lock signalingLock(signalingMutex);
+	
 	processRemoteCandidate(candidate);
 }
 
 
 
 void PeerConnection::processRemoteCandidate(Candidate candidate) {
-//	    Candidate  *cand  = mRemoteDescription.addCandidate(candidate);
-//            if(cand)
-//		iceTransport->addRemoteCandidate(cand);
+
+    Candidate *cand = nullptr;
+
+    auto iceTransport = initIceTransport();
     
+    SInfo << "AgentNo " << iceTransport->agent.agentNo << " Adding remote candidate: " << string(candidate);
     
-    
-        Candidate *cand = nullptr;
-	auto iceTransport = std::atomic_load(&mIceTransport);
 	{
 		// Set as remote candidate
 		std::lock_guard lock(mRemoteDescriptionMutex);
-//		if (!mRemoteDescription)
-//			throw std::logic_error("Got a remote candidate without remote description");
+		if (!mRemoteDescription)
+			throw std::logic_error("Got a remote candidate without remote description");
 
 		if (!iceTransport)
 			throw std::logic_error("Got a remote candidate without ICE transport");
 
-		candidate.hintMid(mRemoteDescription.bundleMid());
+		candidate.hintMid(mRemoteDescription->bundleMid());
 
-		if (mRemoteDescription.hasCandidate(candidate))
+		if (mRemoteDescription->hasCandidate(candidate))
 			return; // already in description, ignore
 
 		//if(candidate.resolve())
 		//{
-                   cand = mRemoteDescription.addCandidate(candidate);
+                   cand = mRemoteDescription->addCandidate(candidate);
                // }
 	}
 
@@ -476,11 +781,16 @@ void PeerConnection::processRemoteCandidate(Candidate candidate) {
 //		}
             
             //exit(0);
+	}
+
+
+
+    /*
+        Candidate  *cand  = mRemoteDescription->addCandidate(candidate);
+            if(cand)
+		iceTransport->addRemoteCandidate(candidate);
     
-    
-    
-    
-}
+    */
 }
 //void PeerConnection::setMediaHandler(shared_ptr<MediaHandler> handler) {
 //	impl()->setMediaHandler(std::move(handler));
@@ -552,6 +862,8 @@ shared_ptr<DataChannel> PeerConnection::emplaceDataChannel(string label, DataCha
 void PeerConnection::assignDataChannels() {
 	std::unique_lock lock(mDataChannelsMutex); // we are going to emplace
 
+        auto iceTransport = initIceTransport();
+            
 	//auto iceTransport = std::atomic_load(&iceTransport);
 	if (!iceTransport)
 		throw std::logic_error("Attempted to assign DataChannels without ICE transport");
@@ -633,8 +945,8 @@ shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport()
 		CertificateFingerprint::Algorithm fingerprintAlgorithm;
 		{
 			std::lock_guard lock(mRemoteDescriptionMutex);
-			if (mRemoteDescription.fingerprint().value.size()) {
-				mRemoteFingerprintAlgorithm = mRemoteDescription.fingerprint().algorithm;
+			if (mRemoteDescription->fingerprint().value.size()) {
+				mRemoteFingerprintAlgorithm = mRemoteDescription->fingerprint().algorithm;
 			}
 			fingerprintAlgorithm = mRemoteFingerprintAlgorithm;
 		}
@@ -726,17 +1038,17 @@ shared_ptr<SctpTransport> PeerConnection::initSctpTransport()
 			throw std::logic_error("No underlying DTLS transport for SCTP transport");
 
 		auto local = localDescription();
-		if (!local.application())
+		if (!local->application())
 			throw std::logic_error("Starting SCTP transport without local application description");
 
 		auto remote = remoteDescription();
-		if (!remote.application())
+		if (!remote->application())
 			throw std::logic_error(
 			    "Starting SCTP transport without remote application description");
 
 		SctpTransport::Ports ports = {};
-		ports.local = local.application()->sctpPort();
-		ports.remote = remote.application()->sctpPort();
+		ports.local = local->application()->sctpPort();
+		ports.remote = remote->application()->sctpPort();
 
 //		auto transport = std::make_shared<SctpTransport>(
 //		    lower, config, std::move(ports), weak_bind(&PeerConnection::forwardMessage, this, _1),
@@ -881,29 +1193,60 @@ void PeerConnection::onIceStateChange(std::function<void(IceState state)> callba
 //
 void PeerConnection::processLocalCandidate(Candidate candidate) 
 {
-	//std::lock_guard lock(mLocalDescriptionMutex);
-//	if (!mLocalDescription)
-//		throw std::logic_error("Got a local candidate without local description");
+//	//std::lock_guard lock(mLocalDescriptionMutex);
+////	if (!mLocalDescription)
+////		throw std::logic_error("Got a local candidate without local description");
+//
+//	if (config.iceTransportPolicy == TransportPolicy::Relay &&
+//		candidate.type() != Candidate::Type::Relayed) {
+//		STrace << "Not issuing local candidate because of transport policy: " << candidate;
+//		return;
+//	}
+//
+        auto iceTransport = initIceTransport();
+	STrace << "AgentNo " << iceTransport->agent.agentNo << " Issuing local candidate: " << candidate;
+//
+//	//candidate.resolve(Candidate::ResolveMode::Simple);
+//	// mLocalDescription.addCandidate(candidate, false);
+//         
+//        {
+//        
+//            if(mLocalCandidateCallback)
+//            mLocalCandidateCallback(candidate);
+//
+//        }
+//	//mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),
+//	//				   &localCandidateCallback, std::move(candidate));
+    
+    
+        
+        STrace << "processLocalCandidate" <<   std::string(candidate);
+        
+
+    
+	std::lock_guard lock(mLocalDescriptionMutex);
+	if (!mLocalDescription)
+		throw std::logic_error("Got a local candidate without local description");
 
 	if (config.iceTransportPolicy == TransportPolicy::Relay &&
-		candidate.type() != Candidate::Type::Relayed) {
+	    candidate.type() != Candidate::Type::Relayed) {
 		STrace << "Not issuing local candidate because of transport policy: " << candidate;
 		return;
-	}
+	}   
 
-	//STrace << "AgentNo " << iceTransport->agent.agentNo << " Issuing local candidate: " << candidate;
 
-	//candidate.resolve(Candidate::ResolveMode::Simple);
-	// mLocalDescription.addCandidate(candidate, false);
-         
-        {
-        
-            if(mLocalCandidateCallback)
-            mLocalCandidateCallback(candidate);
+          
+          Candidate  *cand  =  mLocalDescription->addCandidate(candidate);
+          if(cand)
+	  {
+//              mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),
+//	                   &localCandidateCallback, std::move(*cand));
+              if(mLocalCandidateCallback)
+              mLocalCandidateCallback(*cand);
+          }
 
-        }
-	//mProcessor.enqueue(&PeerConnection::trigger<Candidate>, shared_from_this(),
-	//				   &localCandidateCallback, std::move(candidate));
+    
+    
 }
 
 void PeerConnection::iceState(IceTransport::State state) {
@@ -1030,13 +1373,36 @@ void PeerConnection::iceGathering(IceTransport::GatheringState state) {
 }
 
 shared_ptr<IceTransport> PeerConnection::initIceTransport() {
-	try {
+
+    
+
 		if (auto transport = std::atomic_load(&mIceTransport))
 			return transport;
 
 		STrace << "Starting ICE transport";
 
-		auto transport = std::make_shared<IceTransport>(
+//		IceTransport *transport = new IceTransport(
+//		    mConfig, mLocalDescription , mRemoteDescription,
+//                     std::bind(&PeerConnection::processLocalCandidate, this, _1),    
+//		    std::bind(&PeerConnection::iceState, this, _1),
+//		    std::bind(&PeerConnection::iceGathering, this, _1), std::bind(&PeerConnection::recv, this, _1, _2)   ) ;
+//
+////		std::atomic_store(&mIceTransport, transport);
+////		if (mState == State::Closed) {
+////			mIceTransport.reset();
+////			throw std::runtime_error("Connection is closed");
+////		}
+////		transport->start();
+//		return transport;
+//
+//	} catch (const std::exception &e) {
+//		STrace << e.what();
+//		//changeState(State::Failed);
+//		throw std::runtime_error("ICE transport initialization failed");
+//	}
+//    
+
+               auto transport = std::make_shared<IceTransport>(
 		    config, weak_bind(&PeerConnection::processLocalCandidate, this, _1),
 		    [this, weak_this = weak_from_this()](IceTransport::State transportState) {
 			    auto shared_this = weak_this.lock();
@@ -1086,14 +1452,8 @@ shared_ptr<IceTransport> PeerConnection::initIceTransport() {
 				    break;
 			    }
 		    });
-
-		return emplaceTransport(this, &mIceTransport, std::move(transport));
-
-	} catch (const std::exception &e) {
-		SError << e.what();
-		changeState(State::Failed);
-		throw std::runtime_error("ICE transport initialization failed");
-	}
+                    
+                    return transport;
 }
 //void PeerConnection::onLocalCandidate(std::function<void(Candidate candidate)> callback) {
 //	impl()->localCandidateCallback = callback;
@@ -1151,6 +1511,7 @@ shared_ptr<IceTransport> PeerConnection::initIceTransport() {
 
 bool PeerConnection::getSelectedCandidatePair(Candidate *local, Candidate *remote)
 {
+    auto iceTransport = initIceTransport();
     return iceTransport->getSelectedCandidatePair(local, remote);
 }
 
@@ -1160,10 +1521,10 @@ void PeerConnection::recv(unsigned char * data , size_t size)
      mRecvChangeCallback( data, size );
 }
 
-int PeerConnection::send(unsigned char * data , size_t size)
-{
-    return iceTransport->agent.agent_send(data, size,0);
-}
+//int PeerConnection::send(unsigned char * data , size_t size)
+//{
+//    return miceTransport->agent.agent_send(data, size,0);
+//}
 
 std::ostream &operator<<(std::ostream &out, PeerConnection::State state) {
 	using State = PeerConnection::State;
@@ -1292,8 +1653,8 @@ bool PeerConnection::checkFingerprint(const std::string &fingerprint) {
 	std::lock_guard lock(mRemoteDescriptionMutex);
 	mRemoteFingerprint = fingerprint;
 
-	if (!mRemoteDescription.fingerprint().value.size()
-			|| mRemoteFingerprintAlgorithm != mRemoteDescription.fingerprint().algorithm)
+	if (!mRemoteDescription->fingerprint().value.size()
+			|| mRemoteFingerprintAlgorithm != mRemoteDescription->fingerprint().algorithm)
 		return false;
 
 	if (config.disableFingerprintVerification) {
@@ -1301,7 +1662,7 @@ bool PeerConnection::checkFingerprint(const std::string &fingerprint) {
 		return true;
 	}
 
-	auto expectedFingerprint = mRemoteDescription.fingerprint().value;
+	auto expectedFingerprint = mRemoteDescription->fingerprint().value;
 	if (expectedFingerprint == fingerprint) {
 		STrace << "Valid fingerprint \"" << fingerprint << "\"";
 		return true;
@@ -1322,7 +1683,7 @@ void PeerConnection::forwardMessage(message_ptr message) {
 		return;
 	}
 
-	//auto iceTransport = std::atomic_load(&iceTransport);
+	auto iceTransport = initIceTransport();;
 	auto sctpTransport = std::atomic_load(&mSctpTransport);
 	if (!iceTransport || !sctpTransport)
 		return;
@@ -1498,9 +1859,76 @@ void PeerConnection::triggerDataChannel(weak_ptr<DataChannel> weakDataChannel) {
 void PeerConnection::endLocalCandidates() {
 	std::lock_guard lock(mLocalDescriptionMutex);
 
-		mLocalDescription.endCandidates();
+		mLocalDescription->endCandidates();
 }
 
+
+void PeerConnection::validateRemoteDescription(const Description &description) 
+{
+	if (*description.desc.ice_ufrag == '\0')
+		throw std::invalid_argument("Remote description has no ICE user fragment");
+
+	if (*description.desc.ice_pwd == '\0' )
+		throw std::invalid_argument("Remote description has no ICE password");
+
+	if (!description.fingerprint().value.size())
+		throw std::invalid_argument("Remote description has no valid fingerprint");
+
+	if (description.mediaCount() == 0)
+		throw std::invalid_argument("Remote description has no media line");
+
+	int activeMediaCount = 0;
+	for (int i = 0; i < description.mediaCount(); ++i)
+		std::visit(rtc::overloaded{[&](const Description::Application *application) {
+			                           if (!application->isRemoved())
+				                           ++activeMediaCount;
+		                           },
+		                           [&](const Description::Media *media) {
+			                           if (!media->isRemoved() ||
+			                               media->direction() != Description::Direction::Inactive)
+				                           ++activeMediaCount;
+		                           }},
+		           description.media(i));
+
+	if (activeMediaCount == 0)
+		throw std::invalid_argument("Remote description has no active media");
+
+	STrace << "Remote description looks valid";
+}
+
+
+void PeerConnection::processRemoteDescription(Description description) 
+{
+	// Update the SSRC cache for existing tracks
+	//updateTrackSsrcCache(description);
+
+	{
+		// Set as remote description
+		std::lock_guard lock(mRemoteDescriptionMutex);
+
+		std::vector<Candidate> existingCandidates;
+          //SInfo << "Issuing local candidate: " <<  std::string(candidate);
+		if (mRemoteDescription)
+			existingCandidates = mRemoteDescription->extractCandidates();
+
+		mRemoteDescription.emplace(description);
+		mRemoteDescription->addCandidates(std::move(existingCandidates));
+	}
+
+//	auto dtlsTransport = std::atomic_load(&mDtlsTransport);
+//	if (description.hasApplication()) {
+//		auto sctpTransport = std::atomic_load(&mSctpTransport);
+//		if (!sctpTransport && dtlsTransport &&
+//		    dtlsTransport->state() == Transport::State::Connected)
+//			initSctpTransport();
+//	} else {
+//		//mProcessor.enqueue(&PeerConnection::remoteCloseDataChannels, shared_from_this());
+//	}
+
+	//if (dtlsTransport && dtlsTransport->state() == Transport::State::Connected)
+	//	mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
+
+}
 
 
 } // namespace rtc

@@ -113,8 +113,8 @@ public:
 	SignalingState signalingState() const;
 	bool negotiationNeeded() const;
 	bool hasMedia() const;
-	Description localDescription() const;
-	Description remoteDescription() const;
+	optional<Description> localDescription() const;
+	optional<Description> remoteDescription() const;
 	size_t remoteMaxMessageSize() const;
 	string localAddress() const;
 	string remoteAddress() const;
@@ -139,7 +139,7 @@ public:
 //	 shared_ptr<Track> addTrack(Description::Media description);
 //	void onTrack(std::function<void(std::shared_ptr<Track> track)> callback);
         
-        void processLocalDescription(Description *description);
+        void processLocalDescription(Description &description);
         
         
         void processRemoteCandidate(Candidate candidate);
@@ -149,6 +149,11 @@ public:
         
         string localBundleMid();
 
+        
+        void validateRemoteDescription(const Description &description);
+        
+        void processRemoteDescription(Description description);
+        
 	void onLocalDescription(std::function<void(Description description)> callback);
 	void onLocalCandidate(std::function<void(Candidate candidate)> callback);
 	void onStateChange(std::function<void(State state)> callback);
@@ -207,7 +212,9 @@ public:
         
         
         mutable std::recursive_mutex mLocalDescriptionMutex, mRemoteDescriptionMutex;
-        Description mLocalDescription, mRemoteDescription;  
+        optional<Description> mLocalDescription, mRemoteDescription;  
+        
+        std::mutex signalingMutex;
 
         void processLocalCandidate(Candidate candidate);
          
@@ -218,7 +225,7 @@ public:
         void iceGathering(IceTransport::GatheringState state );
         bool changeGatheringState(GatheringState newState);
         
-        IceTransport *iceTransport{nullptr};
+        shared_ptr<IceTransport> mIceTransport{nullptr};
                
         std::vector<weak_ptr<DataChannel>> mUnassignedDataChannels;
         
@@ -229,7 +236,7 @@ public:
         shared_ptr<DtlsTransport> mDtlsTransport;
         shared_ptr<SctpTransport> mSctpTransport;
 
-        shared_ptr<IceTransport> mIceTransport;
+      //  shared_ptr<IceTransport> mIceTransport;
 
 
         //std::unordered_map<uint16_t, DataChannel*> mDataChannels; // by stream ID
