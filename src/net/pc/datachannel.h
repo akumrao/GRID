@@ -47,6 +47,10 @@ struct DataChannel : Channel, std::enable_shared_from_this<DataChannel> {
 	virtual void open(shared_ptr<SctpTransport> transport);
 	virtual void processOpenMessage(message_ptr);
 
+
+	bool send(message_variant data) override;
+	bool send(const byte *data, size_t size) override;
+
 protected:
 	const weak_ptr<PeerConnection> mPeerConnection;
 	weak_ptr<SctpTransport> mSctpTransport;

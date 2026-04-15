@@ -53,6 +53,7 @@ public:
         class Listener
         {
         public:
+                virtual void OnSctpState(SctpTransport::State) = 0;
                 virtual void OnSctpTransportConnecting(SctpTransport* sctpAssociation) = 0;
                 virtual void OnSctpTransportConnected(SctpTransport* sctpAssociation)  = 0;
                 virtual void OnSctpTransportFailed(SctpTransport* sctpAssociation)     = 0;

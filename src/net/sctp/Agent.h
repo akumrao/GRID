@@ -194,7 +194,7 @@ typedef struct agent_stun_entry {
     Agent( Configuration &config, IceListen *list , rtc::Transport::Listener *listener);
     ~Agent();
     bool getInterfaces( );
-    IceListen *list;
+    IceListen *iceList;
     rtc::Transport::Listener *listener;       
   public:
     uint16_t type;

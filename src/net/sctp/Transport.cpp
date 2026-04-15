@@ -13,7 +13,7 @@ namespace rtc
 	/* Instance methods. */
 
 	Transport::Transport(const std::string& id, int agentNo, const Configuration &config, Listener* listener)
-	  : id(id), listener(listener), agentNo(agentNo)
+	  : id(id), iceListener(listener), agentNo(agentNo), config(config)
 	{
             
             int x = 1;
@@ -81,11 +81,11 @@ namespace rtc
 //		}
             
             
-                rtc::SctpTransport::Ports ports = {};
-		ports.local = 3868;
-		ports.remote = 3868;
+//                rtc::SctpTransport::Ports ports = {};
+//		ports.local = 3868;
+//		ports.remote = 3868;
 
-		sctptransport = new rtc::SctpTransport(  this, agentNo , config, ports );
+		//sctptransport = new rtc::SctpTransport(  this, agentNo , config, ports );
                 
 		//    weak_bind(&PeerConnection::forwardBufferedAmount, this, _1, _2),
 //		    [this, weak_this = weak_from_this()](SctpTransport::State transportState) {
@@ -162,10 +162,30 @@ namespace rtc
 	{
 	
 	}
+        
+        rtc::SctpTransport*  Transport::Connected(rtc::SctpTransport::Ports &ports)
+	{
+            
+            sctptransport = new rtc::SctpTransport(  this, agentNo , config, ports );
+        
+           // mSctpTransport = std::make_shared<rtc::SctpTransport*>(transport->agent.socket->sctptransport );
+            
+            sctptransport->start();
+             
+            return sctptransport;
+        }
 
 	void Transport::Connected()
 	{
             
+            
+            rtc::SctpTransport::Ports ports = {};
+	    ports.local = 3868;
+	    ports.remote = 3868;
+
+	    sctptransport = new rtc::SctpTransport(  this, agentNo , config, ports );
+                
+                    
             SInfo << "sctptransport->start";
             sctptransport->start();
             int x = 1;
@@ -235,7 +255,7 @@ namespace rtc
 //                
 //                SInfo << "OnDataProducerSctpMessageReceived dataProducer " <<  dataProducer->id  << " sctpAssociation "  << sctpAssociation;
 //
-		//this->listener->OnTransportDataProducerSctpMessageReceived(this, dataProducer, ppid, msg, len);
+		//this->iceListener->OnTransportDataProducerSctpMessageReceived(this, dataProducer, ppid, msg, len);
 	}
 
 	inline void Transport::OnDataConsumerSendSctpMessage(
@@ -251,8 +271,8 @@ namespace rtc
 	inline void Transport::OnSctpTransportConnecting(rtc::SctpTransport* sctpAssociation)
 	{
 	
-              listener->OnSctpTransportStatus(sctpAssociation);
-            //listener->OnSctpTransportClosed()
+              //iceListener->OnDtlsTransportStatus(sctpAssociation);
+            //iceListener->OnSctpTransportClosed()
 		// Notify the Node Transport.
 		json data = json::object();
 //
@@ -265,7 +285,7 @@ namespace rtc
 	{
 		
             SInfo << "OnSctpTransportConnected";
-             listener->OnSctpTransportStatus(sctpAssociation);
+          //   iceListener->OnDtlsTransportStatus(sctpAssociation);
                     
             //const uint8_t data[] ="arvind"; 
             
@@ -372,10 +392,17 @@ namespace rtc
 
 	void  Transport::OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message )
         {
-            SInfo << "OnSctpTransportMessageReceived" << message->data() << " len " <<  message->size();
+            ///SInfo << "OnSctpTransportMessageReceived" << message->data() << " len " <<  message->size();
+            iceListener->OnSctpTransportMessageReceived( sctpAssociation, message );
         }
 
-
+        void Transport::OnSctpState(SctpTransport::State state)
+        {
+            int x = 1;
+            
+            iceListener->OnSctpState(state);
+        }
+        
 	inline void Transport::OnTimer(Timer* timer)
 	{
 		

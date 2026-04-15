@@ -391,20 +391,22 @@ bool SctpTransport::flush() {
 		
     if (state() != State::Connected)
         return false;
-    std::lock_guard lock(mSendMutex);
+   // std::lock_guard lock(mSendMutex);
     trySendQueue();
     return true;
 
 }
 
 void SctpTransport::closeStream(unsigned int stream) {
-	std::lock_guard lock(mSendMutex);
+	
+    {
+         std::lock_guard lock(mSendMutex);
 
 	// RFC 8831 6.7. Closing a Data Channel
 	// Closing of a data channel MUST be signaled by resetting the corresponding outgoing streams
 	// See https://www.rfc-editor.org/rfc/rfc8831.html#section-6.7
-	mSendQueue.push(make_message(0, Message::Reset, to_uint16(stream)));
-
+	  mSendQueue.push(make_message(0, Message::Reset, to_uint16(stream)));
+    }
 	// This method must not call the buffered callback synchronously
 	flush();
 }
@@ -451,7 +453,7 @@ void SctpTransport::incoming(message_ptr message) {
 		return;
 	}
 
-	STrace << "Incoming size=" << message->size();
+	SDebug << "Incoming size=" << message->size();
         
         int xx = message->size();
         
@@ -478,7 +480,7 @@ void SctpTransport::doRecv() {
 //	std::lock_guard lock(mRecvMutex);
 //	--mPendingRecvCount;
     
-    SInfo << "doRecv()";
+    SDebug << "doRecv()";
     
 	try {
 		while (state() != State::Disconnected && state() != State::Failed) {
@@ -500,7 +502,7 @@ void SctpTransport::doRecv() {
 				break;
 			}
 
-			SInfo << "AgentNo " << " SCTP recv, len=" << len;
+			SDebug << "AgentNo " << " SCTP recv, len=" << len;
 
 			// SCTP_FRAGMENT_INTERLEAVE does not seem to work as expected for messages > 64KB,
 			// therefore partial notifications and messages need to be handled separately.
@@ -541,7 +543,7 @@ void SctpTransport::doRecv() {
 }
 
 void SctpTransport::doFlush() {
-	std::lock_guard lock(mSendMutex);
+	//std::lock_guard lock(mSendMutex);
 	//--mPendingFlushCount;
 	//try {
 		trySendQueue();
@@ -575,40 +577,42 @@ void SctpTransport::enqueueFlush() {
 
 bool SctpTransport::trySendQueue() {
     
-    
-        mSendMutex.lock();
-    
-        int nSize = mSendQueue.size();
-             
-	// Requires mSendMutex to be locked
-        if ( nSize)
-	while (auto next = mSendQueue.front()) {
-		//message_ptr message = std::move(*next);
-		if (!trySendMessage(next))
+      
+    {
+        std::lock_guard lock(mSendMutex);
+      
+       while (!mSendQueue.empty()) {
+           
+           auto next = mSendQueue.front();
+           if (!trySendMessage(next))
 			return false;
+           mSendQueue.pop();
+       }
+        
+    }
 
-		mSendQueue.pop();
-		//updateBufferedAmount(to_uint16(message->stream), -ptrdiff_t(message_size_func(message)));
-	}
-        
-   
-        
-        mSendMutex.unlock();
+    
+       
+    {
+        std::lock_guard lock(mSendMutex);
          
-	if ( !nSize && mSendShutdown) {
-		SInfo << "AgentNo " << agentNo << " SCTP shutdown";
-		if (usrsctp_shutdown(mSock, SHUT_WR)) {
-			if (errno == ENOTCONN) {
-				SInfo << "SCTP already shut down";
-			} else {
-				SInfo << "AgentNo " << agentNo << " SCTP shutdown failed, errno=" << errno;
-				changeState(State::Disconnected);
-				recv(nullptr);
-			}
-		}
-	}
-
-	return true;
+        if ( mSendQueue.empty() && mSendShutdown) {
+                SInfo << "AgentNo " << agentNo << " SCTP shutdown";
+                if (usrsctp_shutdown(mSock, SHUT_WR)) {
+                        if (errno == ENOTCONN) {
+                                SInfo << "SCTP already shut down";
+                        } else {
+                                SInfo << "AgentNo " << agentNo << " SCTP shutdown failed, errno=" << errno;
+                                changeState(State::Disconnected);
+                                recv(nullptr);
+                        }
+                }
+        }
+             
+    }
+    
+    
+    return true;
 }
 
 bool SctpTransport::trySendMessage(message_ptr message) {
@@ -683,12 +687,8 @@ bool SctpTransport::trySendMessage(message_ptr message) {
 //		spa.sendv_prinfo.pr_value = to_uint32(std::get<milliseconds>(reliability.rexmit).count());
 //		break;
 	default:
-//		spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
-//		break;
-            
-            
-            std::cerr<< " typeDeprecated rexmit not supported ";
-            exit(0);
+                spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
+		break;
             
 	}
 
@@ -902,10 +902,9 @@ void SctpTransport::processNotification(const union sctp_notification *notify, s
 		} else {
 			if (state() == State::Connected) {
 				SInfo << "AgentNo " << agentNo << " SCTP disconnected";
-				changeState(State::Disconnected);
-                                
-				recv(nullptr);
-                                 listener->OnSctpTransportClosed( this );
+				 recv(nullptr);
+                              listener->OnSctpTransportClosed( this );
+                              changeState(State::Disconnected);
 			} else {
 				SError << "AgentNo " << agentNo << " SCTP connection failed";
 				changeState(State::Failed);
@@ -1043,9 +1042,15 @@ void SctpTransport::DebugCallback(const char *format, ...) {
     
     void SctpTransport::changeState(State state) {
     
-     
-        SInfo << " SctpTransport::changeState " ;
         
+           try {
+             if (mState.exchange(state) != state)
+                     mState = state;
+            } catch (const std::exception &e) {
+             SWarn << e.what();
+        }
+           
+           
         switch(state)
         {
             case State::Disconnected:
@@ -1074,13 +1079,10 @@ void SctpTransport::DebugCallback(const char *format, ...) {
 
         };
                 
+        SInfo << " SctpTransport::changeState " ;
         
-        try {
-             if (mState.exchange(state) != state)
-                     mState = state;
-            } catch (const std::exception &e) {
-             SWarn << e.what();
-        }
+        listener->OnSctpState( state );
+     
     }
      
     void SctpTransport::recv(message_ptr message) {

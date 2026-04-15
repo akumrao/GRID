@@ -40,12 +40,12 @@ void IceTransport::Cleanup() {
 }
 
 
-IceTransport::IceTransport(const Configuration &config, candidate_callback candidateCallback,
+IceTransport::IceTransport(const Configuration &config, dtls_state_callback dtlsstatecallback, sctp_state_callback sctpstatecallback,sctp_forward_message_callback sctpforwardmessagecallback, candidate_callback candidateCallback,
                            state_callback stateChangeCallback,
-                           gathering_state_callback gatheringStateChangeCallback)
+                           gathering_state_callback gatheringStateChangeCallback )
     :
 //Transport(nullptr, std::move(stateChangeCallback)), mRole(Description::Role::ActPass),
-      mMid("0"), mGatheringState(GatheringState::New),
+      mMid("0"), mDtlsstatecallback(std::move(dtlsstatecallback)),mSctpstatecallback(std::move(sctpstatecallback)), mSctpforwardmessagecallback(std::move(sctpforwardmessagecallback)),  mGatheringState(GatheringState::New),
       mCandidateCallback(std::move(candidateCallback)),
       mGatheringStateChangeCallback(std::move(gatheringStateChangeCallback)),
       agent(  (Configuration &)config, this, this)  
@@ -304,12 +304,19 @@ void IceTransport::changeGatheringState(GatheringState state) {
 
 void IceTransport::processGatheringDone() { changeGatheringState(GatheringState::Complete); }
 
-void IceTransport::OnSctpTransportStatus(rtc::SctpTransport* sctpAssociation) 
+void IceTransport::OnDtlsTransportStatus(DtlsTransport::DtlsState state) 
 {
-     
-     
+     mDtlsstatecallback(state);
+    
+    
     //changeState(State::Connecting); // arvind
 }
+
+void IceTransport::OnSctpState(SctpTransport::State state)
+{
+      mSctpstatecallback(state);
+}
+        
 
 IceTransport::State IceTransport::state() const { return mState; }
 
@@ -318,4 +325,18 @@ IceTransport::State IceTransport::state() const { return mState; }
 
 void IceTransport::incoming(message_ptr message) {
    // recv(message); 
+    
+    int x = 1;
 }
+
+
+ void IceTransport::OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message )
+ {
+     mSctpforwardmessagecallback(message);
+ }
+
+//void IceTransport::startSctp() {
+//   
+////    agent.socket.connet();
+//}
+

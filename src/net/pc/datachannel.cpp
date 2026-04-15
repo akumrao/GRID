@@ -117,6 +117,15 @@ void DataChannel::close() {
 
 void DataChannel::remoteClose() { close(); }
 
+
+bool DataChannel::send(message_variant data) {
+	return outgoing(make_message(std::move(data)));
+}
+
+bool DataChannel::send(const byte *data, size_t size) {
+	return outgoing(std::make_shared<Message>(data, data + size, Message::Binary));
+}
+
 optional<message_variant> DataChannel::receive() {
 	auto next = mRecvQueue.pop();
 	return next ? std::make_optional(to_variant(std::move(**next))) : nullopt;
@@ -282,12 +291,11 @@ void OutgoingDataChannel::open(shared_ptr<SctpTransport> transport) {
 //			break;
 //
 		default:
-//			channelType = CHANNEL_RELIABLE;
-//			reliabilityParameter = 0;
-//			break;
+			channelType = CHANNEL_RELIABLE;
+			reliabilityParameter = 0;
+			break;
                     
-                    exit(0);
-                    std::cerr << "mReliability->typeDeprecated not allowed ";
+                  //  std::cerr << "mReliability->typeDeprecated not allowed ";
 		}
 
 	if (mReliability->unordered)
@@ -323,7 +331,10 @@ IncomingDataChannel::IncomingDataChannel(weak_ptr<PeerConnection> pc,
 	mSctpTransport = transport;
 }
 
-IncomingDataChannel::~IncomingDataChannel() {}
+IncomingDataChannel::~IncomingDataChannel() {
+
+    int x = 1;
+}
 
 void IncomingDataChannel::open(shared_ptr<SctpTransport>) {
 	// Ignore
@@ -379,10 +390,10 @@ void IncomingDataChannel::processOpenMessage(message_ptr message) {
 //		mReliability->rexmit = milliseconds(open.reliabilityParameter);
 //		break;
 	default:
-//		mReliability->typeDeprecated = Reliability::Type::Reliable;
-//		mReliability->rexmit = int(0);
+		mReliability->typeDeprecated = Reliability::Type::Reliable;
+		// mReliability->rexmit = int(0);  // Arvind TBD
             
-            exit(0);
+                break;
 	}
 
 	lock.unlock();

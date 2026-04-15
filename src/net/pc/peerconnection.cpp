@@ -4,7 +4,7 @@
 #include "base/logger.h"
 
 #include "net/certificate.h"
-#include "DtlsTransport.h"
+
 #include "icetransport.hpp"
 //#include "internals.hpp"
 //#include "peerconnection_imp.hpp"
@@ -934,158 +934,158 @@ shared_ptr<T> emplaceTransport(PeerConnection *pc, shared_ptr<T> *member, shared
 }
 
 
-shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() 
-{
-	try {
-		if (auto transport = std::atomic_load(&mDtlsTransport))
-			return transport;
-
-		STrace << "Starting DTLS transport";
-
-		CertificateFingerprint::Algorithm fingerprintAlgorithm;
-		{
-			std::lock_guard lock(mRemoteDescriptionMutex);
-			if (mRemoteDescription->fingerprint().value.size()) {
-				mRemoteFingerprintAlgorithm = mRemoteDescription->fingerprint().algorithm;
-			}
-			fingerprintAlgorithm = mRemoteFingerprintAlgorithm;
-		}
-
-		//auto lower = std::atomic_load(&mIceTransport);
-		//if (!lower)
-			//throw std::logic_error("No underlying ICE transport for DTLS transport");
-
-		auto &certificate = mCertificate;
-		auto verifierCallback = weak_bind(&PeerConnection::checkFingerprint, this, _1);
-//		auto dtlsStateChangeCallback =
-//		    [this, weak_this = weak_from_this()](DtlsTransport::State transportState) {
-//			    auto shared_this = weak_this.lock();
-//			    if (!shared_this)
-//				    return;
+//shared_ptr<DtlsTransport> PeerConnection::initDtlsTransport() 
+//{
+//	try {
+//		if (auto transport = std::atomic_load(&mDtlsTransport))
+//			return transport;
 //
-//			    switch (transportState) {
-//			    case DtlsTransport::State::Connected:
-//                            {
-//				    auto remote = remoteDescription(); 
-//                                    if(remote.hasApplication())
-//					    initSctpTransport();
-//				    else{
-//					    changeState(State::Connected);
-//                                    }
-//                                    
+//		STrace << "Starting DTLS transport";
 //
-//				   // mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
-//                                    
-//			    break;
-//                            }
-//			    case DtlsTransport::State::Failed:
-//				    changeState(State::Failed);
-//				  //  mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
-//				    break;
-//			    case DtlsTransport::State::Disconnected:
-//				    changeState(State::Disconnected);
-//				   // mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
-//				    break;
-//			    default:
-//				    // Ignore
-//				    break;
-//			    }
-//		    };
+//		CertificateFingerprint::Algorithm fingerprintAlgorithm;
+//		{
+//			std::lock_guard lock(mRemoteDescriptionMutex);
+//			if (mRemoteDescription->fingerprint().value.size()) {
+//				mRemoteFingerprintAlgorithm = mRemoteDescription->fingerprint().algorithm;
+//			}
+//			fingerprintAlgorithm = mRemoteFingerprintAlgorithm;
+//		}
+//
+//		//auto lower = std::atomic_load(&mIceTransport);
+//		//if (!lower)
+//			//throw std::logic_error("No underlying ICE transport for DTLS transport");
+//
+//		auto &certificate = mCertificate;
+//		auto verifierCallback = weak_bind(&PeerConnection::checkFingerprint, this, _1);
+////		auto dtlsStateChangeCallback =
+////		    [this, weak_this = weak_from_this()](DtlsTransport::State transportState) {
+////			    auto shared_this = weak_this.lock();
+////			    if (!shared_this)
+////				    return;
+////
+////			    switch (transportState) {
+////			    case DtlsTransport::State::Connected:
+////                            {
+////				    auto remote = remoteDescription(); 
+////                                    if(remote.hasApplication())
+////					    initSctpTransport();
+////				    else{
+////					    changeState(State::Connected);
+////                                    }
+////                                    
+////
+////				   // mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
+////                                    
+////			    break;
+////                            }
+////			    case DtlsTransport::State::Failed:
+////				    changeState(State::Failed);
+////				  //  mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+////				    break;
+////			    case DtlsTransport::State::Disconnected:
+////				    changeState(State::Disconnected);
+////				   // mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+////				    break;
+////			    default:
+////				    // Ignore
+////				    break;
+////			    }
+////		    };
+//
+////		shared_ptr<DtlsTransport> transport;
+////		auto local = localDescription();
+////		if (config.forceMediaTransport || ( local.hasAudioOrVideo())) {
+////#if RTC_ENABLE_MEDIA
+////			STrace << "This connection requires media support";
+////
+////			// DTLS-SRTP
+//////			transport = std::make_shared<DtlsSrtpTransport>(
+//////			    lower, certificate, config.mtu, fingerprintAlgorithm, verifierCallback,
+//////			    weak_bind(&PeerConnection::forwardMedia, this, _1), dtlsStateChangeCallback);
+////#else
+////			//PLOG_WARNING << "Ignoring media support (not compiled with media support)";
+////#endif
+////		}
+////
+////		if (!transport) {
+////			// DTLS only
+////			transport = std::make_shared<DtlsTransport>(config, iceTransport->role(), certificate, config.mtu,
+////			                                            fingerprintAlgorithm, verifierCallback,
+////			                                            dtlsStateChangeCallback);    
+////		}
+////
+////		return emplaceTransport(this, &mDtlsTransport, std::move(transport));
+//
+//	} catch (const std::exception &e) {
+//		SError << e.what();
+//		changeState(State::Failed);
+//		throw std::runtime_error("DTLS transport initialization failed");
+//	}
+//}
 
-//		shared_ptr<DtlsTransport> transport;
+
+
+//shared_ptr<SctpTransport> PeerConnection::initSctpTransport()
+//{
+//	try {
+//		if (auto transport = std::atomic_load(&mSctpTransport))
+//			return transport;
+//
+//		STrace << "Starting SCTP transport";
+//
+//		auto lower = std::atomic_load(&mDtlsTransport);
+//		if (!lower)
+//			throw std::logic_error("No underlying DTLS transport for SCTP transport");
+//
 //		auto local = localDescription();
-//		if (config.forceMediaTransport || ( local.hasAudioOrVideo())) {
-//#if RTC_ENABLE_MEDIA
-//			STrace << "This connection requires media support";
+//		if (!local->application())
+//			throw std::logic_error("Starting SCTP transport without local application description");
 //
-//			// DTLS-SRTP
-////			transport = std::make_shared<DtlsSrtpTransport>(
-////			    lower, certificate, config.mtu, fingerprintAlgorithm, verifierCallback,
-////			    weak_bind(&PeerConnection::forwardMedia, this, _1), dtlsStateChangeCallback);
-//#else
-//			//PLOG_WARNING << "Ignoring media support (not compiled with media support)";
-//#endif
-//		}
+//		auto remote = remoteDescription();
+//		if (!remote->application())
+//			throw std::logic_error(
+//			    "Starting SCTP transport without remote application description");
 //
-//		if (!transport) {
-//			// DTLS only
-//			transport = std::make_shared<DtlsTransport>(config, iceTransport->role(), certificate, config.mtu,
-//			                                            fingerprintAlgorithm, verifierCallback,
-//			                                            dtlsStateChangeCallback);    
-//		}
+//		SctpTransport::Ports ports = {};
+//		ports.local = local->application()->sctpPort();
+//		ports.remote = remote->application()->sctpPort();
 //
-//		return emplaceTransport(this, &mDtlsTransport, std::move(transport));
-
-	} catch (const std::exception &e) {
-		SError << e.what();
-		changeState(State::Failed);
-		throw std::runtime_error("DTLS transport initialization failed");
-	}
-}
-
-
-
-shared_ptr<SctpTransport> PeerConnection::initSctpTransport()
-{
-	try {
-		if (auto transport = std::atomic_load(&mSctpTransport))
-			return transport;
-
-		STrace << "Starting SCTP transport";
-
-		auto lower = std::atomic_load(&mDtlsTransport);
-		if (!lower)
-			throw std::logic_error("No underlying DTLS transport for SCTP transport");
-
-		auto local = localDescription();
-		if (!local->application())
-			throw std::logic_error("Starting SCTP transport without local application description");
-
-		auto remote = remoteDescription();
-		if (!remote->application())
-			throw std::logic_error(
-			    "Starting SCTP transport without remote application description");
-
-		SctpTransport::Ports ports = {};
-		ports.local = local->application()->sctpPort();
-		ports.remote = remote->application()->sctpPort();
-
-//		auto transport = std::make_shared<SctpTransport>(
-//		    lower, config, std::move(ports), weak_bind(&PeerConnection::forwardMessage, this, _1),
-//		    weak_bind(&PeerConnection::forwardBufferedAmount, this, _1, _2),
-//		    [this, weak_this = weak_from_this()](SctpTransport::State transportState) {
-//			    auto shared_this = weak_this.lock();
-//			    if (!shared_this)
-//				    return;
+////		auto transport = std::make_shared<SctpTransport>(
+////		    lower, config, std::move(ports), weak_bind(&PeerConnection::forwardMessage, this, _1),
+////		    weak_bind(&PeerConnection::forwardBufferedAmount, this, _1, _2),
+////		    [this, weak_this = weak_from_this()](SctpTransport::State transportState) {
+////			    auto shared_this = weak_this.lock();
+////			    if (!shared_this)
+////				    return;
+////
+////			    switch (transportState) {
+////			    case SctpTransport::State::Connected:
+////				    changeState(State::Connected);
+////				    assignDataChannels();
+////				    openDataChannels();
+////				    break;
+////			    case SctpTransport::State::Failed:
+////				    changeState(State::Failed);
+////				    remoteClose();
+////				    break;
+////			    case SctpTransport::State::Disconnected:
+////				    changeState(State::Disconnected);
+////				    remoteClose();
+////				    break;
+////			    default:
+////				    // Ignore
+////				    break;
+////			    }
+////		    });
 //
-//			    switch (transportState) {
-//			    case SctpTransport::State::Connected:
-//				    changeState(State::Connected);
-//				    assignDataChannels();
-//				    openDataChannels();
-//				    break;
-//			    case SctpTransport::State::Failed:
-//				    changeState(State::Failed);
-//				    remoteClose();
-//				    break;
-//			    case SctpTransport::State::Disconnected:
-//				    changeState(State::Disconnected);
-//				    remoteClose();
-//				    break;
-//			    default:
-//				    // Ignore
-//				    break;
-//			    }
-//		    });
-
-		//return emplaceTransport(this, &mSctpTransport, std::move(transport));
-
-	} catch (const std::exception &e) {
-		SError << e.what();
-		changeState(State::Failed);
-		throw std::runtime_error("SCTP transport initialization failed");
-	}
-}
+//		//return emplaceTransport(this, &mSctpTransport, std::move(transport));
+//
+//	} catch (const std::exception &e) {
+//		SError << e.what();
+//		changeState(State::Failed);
+//		throw std::runtime_error("SCTP transport initialization failed");
+//	}
+//}
 
 
 
@@ -1105,30 +1105,30 @@ void PeerConnection::onDataChannel(
    std::function<void(std::shared_ptr<DataChannel> dataChannel)> callback) {
 	mDataChannelCallback = callback;
         
-        triggerPendingDataChannels();
+      //  triggerPendingDataChannels();
 }
 
-void PeerConnection::triggerPendingDataChannels() {
-//	while (mDataChannelCallback) {
-//		auto next = mPendingDataChannels.pop();
-//		if (!next)
-//			break;
-//
-//		auto impl = std::move(*next);
-//
-//		try {
-//			dataChannelCallback(std::make_shared<rtc::DataChannel>(impl));
-//		} catch (const std::exception &e) {
-//			PLOG_WARNING << "Uncaught exception in callback: " << e.what();
-//		}
-//
-//		impl->triggerOpen();
-//	}
-    
-    //mDataChannelCallback.triggerOpen();
-    
-  
-}
+//void PeerConnection::triggerPendingDataChannels() {
+////	while (mDataChannelCallback) {
+////		auto next = mPendingDataChannels.pop();
+////		if (!next)
+////			break;
+////
+////		auto impl = std::move(*next);
+////
+////		try {
+////			dataChannelCallback(std::make_shared<rtc::DataChannel>(impl));
+////		} catch (const std::exception &e) {
+////			PLOG_WARNING << "Uncaught exception in callback: " << e.what();
+////		}
+////
+////		impl->triggerOpen();
+////	}
+//    
+//    //mDataChannelCallback.triggerOpen();
+//    
+//  
+//}
 
 #endif 
 
@@ -1191,6 +1191,80 @@ void PeerConnection::onIceStateChange(std::function<void(IceState state)> callba
 //	mTrackCallback = callback;
 //}
 //
+
+ void PeerConnection::processDtlsState(DtlsTransport::DtlsState state)
+ {
+    if( state == DtlsTransport::DtlsState::CONNECTED)
+    {
+     
+        auto transport = std::atomic_load(&mIceTransport);
+
+        auto remote = remoteDescription();
+        auto local = localDescription();
+
+        if( remote->application())
+        {
+
+           SctpTransport::Ports ports = {};
+           ports.local = local->application()->sctpPort();
+           ports.remote = remote->application()->sctpPort();
+           mSctpTransport.reset( transport->agent.socket->Connected(ports));
+
+        }
+     
+    }
+	
+ }
+
+ 
+  void PeerConnection::processSctpState(SctpTransport::State  state)
+ {
+//    if( state == SctpTransport::State::Connected)
+//    {
+//        
+//        int x = 1;
+//     
+////        auto transport = std::atomic_load(&mIceTransport);
+////
+////        auto remote = remoteDescription();
+////        auto local = localDescription();
+////
+////        if( remote->application())
+////        {
+////
+////           SctpTransport::Ports ports = {};
+////           ports.local = local->application()->sctpPort();
+////           ports.remote = remote->application()->sctpPort();
+////           mSctpTransport.reset( transport->agent.socket->Connected(ports));
+////
+////        }
+//     
+//    }
+      
+      
+      	    switch (state) {
+            case SctpTransport::State::Connected:
+                    changeState(State::Connected);
+                    assignDataChannels();
+                    openDataChannels();
+                    break;
+            case SctpTransport::State::Failed:
+                    changeState(State::Failed);
+                    remoteClose();
+                    break;
+            case SctpTransport::State::Disconnected:
+                    changeState(State::Disconnected);
+                    remoteClose();
+                    break;
+            default:
+                    {
+                            // Ignore
+                            break;
+                    }
+            };
+	
+ }
+  
 void PeerConnection::processLocalCandidate(Candidate candidate) 
 {
 //	//std::lock_guard lock(mLocalDescriptionMutex);
@@ -1403,7 +1477,7 @@ shared_ptr<IceTransport> PeerConnection::initIceTransport() {
 //    
 
                auto transport = std::make_shared<IceTransport>(
-		    config, weak_bind(&PeerConnection::processLocalCandidate, this, _1),
+		    config,  weak_bind(&PeerConnection::processDtlsState, this, _1), weak_bind(&PeerConnection::processSctpState, this, _1), weak_bind(&PeerConnection::forwardMessage, this, _1), weak_bind(&PeerConnection::processLocalCandidate, this, _1),
 		    [this, weak_this = weak_from_this()](IceTransport::State transportState) {
 			    auto shared_this = weak_this.lock();
 			    if (!shared_this)
@@ -1453,6 +1527,7 @@ shared_ptr<IceTransport> PeerConnection::initIceTransport() {
 			    }
 		    });
                     
+                   
                     return transport;
 }
 //void PeerConnection::onLocalCandidate(std::function<void(Candidate candidate)> callback) {
@@ -1846,7 +1921,7 @@ void PeerConnection::triggerDataChannel(weak_ptr<DataChannel> weakDataChannel) {
 	auto dataChannel = weakDataChannel.lock();
 	if (!dataChannel)
 		return;
-
+       mDataChannelCallback( std::move(dataChannel));
 	//mProcessor->enqueue(mDataChannelCallback.wrap(), std::move(dataChannel));
 }
 

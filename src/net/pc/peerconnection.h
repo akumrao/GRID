@@ -217,6 +217,9 @@ public:
         std::mutex signalingMutex;
 
         void processLocalCandidate(Candidate candidate);
+        
+        void processDtlsState(DtlsTransport::DtlsState state);
+        void processSctpState(SctpTransport::State  state);
          
         shared_ptr<IceTransport> initIceTransport();
 
@@ -233,7 +236,7 @@ public:
                 
           
         #if DATACHANNEL
-        shared_ptr<DtlsTransport> mDtlsTransport;
+       // shared_ptr<DtlsTransport> mDtlsTransport;
         shared_ptr<SctpTransport> mSctpTransport;
 
       //  shared_ptr<IceTransport> mIceTransport;
@@ -256,7 +259,7 @@ public:
        // void onDataChannel(std::function<void(std::shared_ptr<DataChannel> dataChannel)> callback);
 
         synchronized_callback<std::shared_ptr<DataChannel>> mDataChannelCallback;
-        void triggerPendingDataChannels();
+        //void triggerPendingDataChannels();
         shared_ptr<DtlsTransport> initDtlsTransport();
         shared_ptr<SctpTransport> initSctpTransport();
         

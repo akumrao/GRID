@@ -396,6 +396,8 @@ namespace rtc
 			return;
 		}
 
+                //SInfo << "AgentNo " << agentNo << " SendSctpData " << len;
+
 		this->dtlsTransport->SendApplicationData(data, len);
 	}
 
@@ -403,7 +405,7 @@ namespace rtc
 	  base::net::TransportTuple* tuple, const char* data, size_t len)
 	{
 		
-            SInfo  << "AgentNo " << agentNo << " OnPacketReceived" << len;
+            SDebug  << "AgentNo " << agentNo << " OnPacketReceived" << len;
 
 		assertm(this->dtlsTransport, "no dtlsTransport");
 
@@ -450,7 +452,7 @@ namespace rtc
 	  const base::net::TransportTuple* tuple, const char* data, size_t len)
 	{
 		
-            SInfo  << "AgentNo " << agentNo << " OnDtlsDataReceived" << len;
+            SDebug  << "AgentNo " << agentNo << " OnDtlsDataReceived " << len;
 
             assertm(this->dtlsTransport, "no dtlsTransport");
 
@@ -651,7 +653,11 @@ namespace rtc
 //		Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
 //
 //		// Tell the parent class.
-		rtc::Transport::Connected();
+                
+                
+                iceListener->OnDtlsTransportStatus(DtlsTransport::DtlsState::CONNECTED);
+                
+		///rtc::Transport::Connected();
 	}
 
 	inline void WebRtcTransport::OnDtlsTransportFailed(const rtc::DtlsTransport* /*dtlsTransport*/)
@@ -677,6 +683,8 @@ namespace rtc
 
 
 
+             // agent->iceList->getRemoteDescriptio();
+            
 		// Tell the parent class.
 	      rtc::Transport::Disconnected();
 	}
@@ -685,7 +693,7 @@ namespace rtc
 	  const rtc::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
 	{
 		
-            SInfo  << "AgentNo " << agentNo << " OnDtlsTransportSendData len:" << len;
+           // SInfo  << "AgentNo " << agentNo << " OnDtlsTransportSendData len:" << len;
 
             assertm(this->dtlsTransport, "no dtlsTransport");
 
@@ -708,7 +716,7 @@ namespace rtc
 	  const rtc::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
 	{
 		
-            SInfo  << "AgentNo " << agentNo << " OnDtlsTransportApplicationDataReceived len:" << len;
+///            SInfo  << "AgentNo " << agentNo << " ReceiveSctpData len:" << len;
 
             assertm(this->dtlsTransport, "no dtlsTransport");
 

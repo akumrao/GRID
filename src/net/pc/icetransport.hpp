@@ -33,7 +33,7 @@ namespace rtc {
   
         
 
-class IceTransport : rtc::Transport::Listener, IceListen {
+class IceTransport : public rtc::Transport::Listener, IceListen {
 //class IceTransport : public Transport, IceListen {
 public:
 	static void Init();
@@ -43,15 +43,18 @@ public:
 
 	using candidate_callback = std::function<void(const Candidate candidate)>;
 	using gathering_state_callback = std::function<void(GatheringState state)>;
+        using dtls_state_callback = std::function<void(DtlsTransport::DtlsState state )>;
+        using sctp_state_callback = std::function<void(SctpTransport::State state )>;
+        using sctp_forward_message_callback = std::function<void(message_ptr message )>;
         
 
                     enum class State { Disconnected, Connecting, Connected, Completed, Failed };
                     using state_callback = std::function<void(State state)>;
                     
                     
-	IceTransport(const Configuration &config, candidate_callback candidateCallback,
+	IceTransport(const Configuration &config, dtls_state_callback dtlsstatecallback, sctp_state_callback sctpstatecallback, sctp_forward_message_callback sctpforwardmessagecallback, candidate_callback candidateCallback,
 	             state_callback stateChangeCallback,
-	             gathering_state_callback gatheringStateChangeCallback);
+	             gathering_state_callback gatheringStateChangeCallback );
 	~IceTransport();
 
 	Description::Role role() const;
@@ -69,7 +72,11 @@ public:
 
 	bool getSelectedCandidatePair(Candidate *local, Candidate *remote);
         
-        void OnSctpTransportStatus(rtc::SctpTransport* sctpAssociation);
+        void OnDtlsTransportStatus(DtlsTransport::DtlsState state);
+        void OnSctpState(SctpTransport::State state);
+        void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message );
+        
+        //void startSctp();
      
         
         Description::Role mRole;
@@ -78,6 +85,8 @@ public:
         State state() const;
         virtual void incoming(message_ptr message);
 	virtual bool outgoing(message_ptr message);
+        
+        
         
 private:
 	//bool outgoing(message_ptr message) ;
@@ -100,6 +109,10 @@ private:
 
 	candidate_callback mCandidateCallback;
 	gathering_state_callback mGatheringStateChangeCallback;
+        
+        dtls_state_callback mDtlsstatecallback;
+        sctp_state_callback mSctpstatecallback;
+        sctp_forward_message_callback mSctpforwardmessagecallback;
 
 #if USE_libjuice
 	unique_ptr<juice_agent_t, void (*)(juice_agent_t *)> mAgent;

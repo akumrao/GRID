@@ -40,7 +40,7 @@ namespace stun {
     /* --------------------------------------------------------------------- */
 
     static int agentCount = 0;
-    Agent::Agent( Configuration &config, IceListen *list ,  rtc::Transport::Listener *listener): mConfig(config), list(list), listener(listener)
+    Agent::Agent( Configuration &config, IceListen *iceList ,  rtc::Transport::Listener *listener): mConfig(config), iceList(iceList), listener(listener)
     {
 
         random_bytes(&ice_tiebreaker, sizeof(ice_tiebreaker));
@@ -266,7 +266,7 @@ namespace stun {
            return -1;
        }
        
-       list->onCandidateCallback(candStored);
+       iceList->onCandidateCallback(candStored);
         
         return 0;
     }
@@ -313,7 +313,7 @@ namespace stun {
             return -1;
         }
        
-       list->onCandidateCallback(candStored);
+       iceList->onCandidateCallback(candStored);
 
       
         
@@ -950,7 +950,7 @@ namespace stun {
 	case AGENT_STUN_ENTRY_TYPE_CHECK:
 		SInfo << "Received application datagram ";
 		
-	        list->onRecvCallback(buf, len);
+	        iceList->onRecvCallback(buf, len);
 		return 0;
 
 	default:
@@ -1952,7 +1952,7 @@ void Agent::agent_update_gathering_done()
 		//if (agent->config.cb_gathering_done)
 			//agent->config.cb_gathering_done(agent, agent->config.user_ptr);
                 
-                list->onGatheringDoneCallback();
+                iceList->onGatheringDoneCallback();
                 
 	}
     
@@ -1964,7 +1964,7 @@ void Agent::agent_change_state( juice_state_t state)
     m_state = state;
     STrace  << "AgentNo " << agentNo << " agent_change_state " << state;
     
-    list->onStateChangeCallback(state);
+    iceList->onStateChangeCallback(state);
     
     switch (state) {
     case JUICE_STATE_DISCONNECTED:

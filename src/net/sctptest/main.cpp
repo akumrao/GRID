@@ -752,7 +752,7 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
     				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
                         
                         
-                        sleep(500);
+                        sleep(5);
                         dc->send("PC1 to PC2");
                         
     		});
@@ -905,7 +905,7 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
     				SInfo << "onDataChannel:onMessage PC2 Binary message from " << id
     				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
                         
-                        sleep(500);
+                        sleep(5);
                         dc->send("PC2 tp PC1");
                         
     		});

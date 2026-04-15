@@ -117,6 +117,9 @@ namespace rtc
 		rtc::DtlsTransport::Role dtlsRole{ rtc::DtlsTransport::Role::AUTO };
                 
                 int agentNo{0};
+                
+                
+            //    Listener* iceListener{ nullptr };
 	};
 } // namespace rtc
 

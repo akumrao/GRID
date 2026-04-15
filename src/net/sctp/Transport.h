@@ -5,7 +5,7 @@
 #include "common.h"
 #include "base/application.h"
 #include "sctptransport.hpp"
-
+#include "DtlsTransport.h"
 #include "DataConsumer.h"
 #include "DataProducer.h"
 
@@ -39,7 +39,9 @@ namespace rtc
 		{
 		public:
 		
-                     virtual void OnSctpTransportStatus(SctpTransport* sctpAssociation){}  ;
+                    virtual void OnDtlsTransportStatus(DtlsTransport::DtlsState state) {} ;
+                    virtual void OnSctpState(SctpTransport::State state){};
+                    virtual void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message ){};
 			//virtual void OnTransportDataProducerSctpMessageReceived(  rtc::Transport* transport,  rtc::DataProducer* dataProducer,	  uint32_t ppid,  const uint8_t* msg,   size_t len) = 0;
 		};
 
@@ -49,6 +51,8 @@ namespace rtc
 			bool probation{ false };
 			bool bwe{ false };
 		};
+                
+                const Configuration &config;
 
 	public:
 
@@ -59,8 +63,10 @@ namespace rtc
 	public:
 		virtual void HandleRequest();
 
-	protected:
+	public:
 		// Must be called from the subclass.
+            
+                rtc::SctpTransport*  Connected(rtc::SctpTransport::Ports &port);
 		void Connected();
 		void Disconnected();
 		void DataReceived(size_t len);
@@ -129,6 +135,7 @@ namespace rtc
 
 		/* Pure virtual methods inherited from rtc::SctpTransport::Listener. */
 	public:
+                void OnSctpState(SctpTransport::State);
 		void OnSctpTransportConnecting(rtc::SctpTransport* sctpAssociation) ;
 		void OnSctpTransportConnected(rtc::SctpTransport* sctpAssociation) ;
 		void OnSctpTransportFailed(rtc::SctpTransport* sctpAssociation) ;
@@ -174,10 +181,12 @@ namespace rtc
 	public:
 		// Passed by argument.
 		const std::string id;
+                Listener* iceListener{ nullptr };
+                
+                rtc::SctpTransport* sctptransport{ nullptr };
 
 	private:
 		// Passed by argument.
-		Listener* listener{ nullptr };
                 int agentNo;
 		// Allocated by this.
 //		std::unordered_map<std::string, rtc::Producer*> mapProducers;
@@ -186,7 +195,7 @@ namespace rtc
 //		std::unordered_map<std::string, rtc::DataConsumer*> mapDataConsumers;
 //		std::unordered_map<uint32_t, rtc::Consumer*> mapSsrcConsumer;
 //		std::unordered_map<uint32_t, rtc::Consumer*> mapRtxSsrcConsumer;
-		rtc::SctpTransport* sctptransport{ nullptr };
+		
 //		Timer* rtcpTimer{ nullptr };
 //		rtc::TransportCongestionControlClient* tccClient{ nullptr };
 //		rtc::TransportCongestionControlServer* tccServer{ nullptr };
