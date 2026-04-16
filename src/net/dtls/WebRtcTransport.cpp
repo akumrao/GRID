@@ -512,7 +512,7 @@ namespace rtc
 
             IP::GetAddressInfo(
                         remoteAddr, family, peerIp, peerPort);
-            SInfo  <<  " OnUdpSocketPacketReceived Stun " << peerIp << ":" << peerPort ;
+            SDebug  <<  " OnUdpSocketPacketReceived Stun " << peerIp << ":" << peerPort ;
             addr_record_t remotesrc;
             IP::CopyAddress(remoteAddr, remotesrc );
 
@@ -545,7 +545,7 @@ namespace rtc
             }
             else
             {
-                SInfo  << "AgentNo " << agentNo << " OnUdpSocketPacketReceived len: " << len <<  " dtls";
+                SDebug  << "AgentNo " << agentNo << " OnUdpSocketPacketReceived len: " << len <<  " dtls";
                      
                 base::net::TransportTuple tuple(socket, (struct sockaddr *) &remotesrc.addr);
 
