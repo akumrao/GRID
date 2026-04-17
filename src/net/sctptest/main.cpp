@@ -27,8 +27,8 @@
 #include "sctptransport.hpp"
 #include "DtlsTransport.h"
 
-#define localtesting 1
-//#define remotetesting 1
+//#define localtesting 1
+#define remotetesting 1
 //#define VIDEOMEDIA 1
 #include "peerconnection.h"
 
@@ -55,10 +55,10 @@ unordered_map<string, shared_ptr<Client>> clients{};
 /// @param wws Websocket for signaling
 /// @param id Client ID
 /// @returns Client
-shared_ptr<Client> createPeerConnection(const Configuration &config, string id, bool isClient);
+shared_ptr<Client> createPeerConnection( Configuration &config, string id, bool isClient);
 shared_ptr<Client> createPeerConnection_lc( Configuration &config, string id);
 
-shared_ptr<Client> createPeerConnection_rm(const Configuration &config, string id, Async &async, bool isClient);
+shared_ptr<Client> createPeerConnection_rm( Configuration &config, string id, Async &async, bool isClient);
 
 /// Creates stream
 /// @param h264Samples Directory with H264 samples
@@ -348,8 +348,6 @@ int main(int argc, char **argv)
     string stunServer = "stun:stun.l.google.com:19302";
     cout << "STUN server is " << stunServer << endl;
     settingconfig.iceServers.emplace_back(stunServer);
-    
-    
     settingconfig.disableAutoNegotiation = true;
     // read cert from file
 #if CERTFROMFILE == 1
@@ -922,7 +920,7 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
 
 
 // Create and setup a PeerConnection
-shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string id, Async &async, bool isClient)
+shared_ptr<Client> createPeerConnection_rm( Configuration &config,  string id, Async &async, bool isClient)
 {
     SInfo << "createPeerConnection" ;
     
@@ -990,7 +988,7 @@ shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string 
 
         rtc::Candidate tmp = candidate;
         tmp.mService = std::to_string(config.portdefault);
-        tmp.mNode = Settings::RemoteIP();
+        tmp.mNode = "192.168.0.20";//Settings::RemoteIP(); // always change it
 
         
         auto work_fn = [pc, tmp]() {
@@ -1019,7 +1017,7 @@ shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string 
 
     pc->onGatheringStateChange(
         [](PeerConnection::GatheringState state) {
-        SInfo << "Gathering State: " << state ;
+        SInfo << "Gathering State: " << "state" ;
         if (state == PeerConnection::GatheringState::Complete)
         {
           //  if(auto pc = wpc.lock())
@@ -1065,7 +1063,7 @@ shared_ptr<Client> createPeerConnection_rm(const Configuration &config,  string 
 
 #endif
 
- std::string dcchat =   Settings::getdatachannel();
+ std::string dcchat = "192.168.0.20"; //  Settings::getdatachannel();
             
 auto dc = pc->createDataChannel(dcchat);
     dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
