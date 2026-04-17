@@ -1108,7 +1108,7 @@ pc->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
 				SInfo << "Binary message from " << id
 				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
                         
-                        sleep(500);
+                        sleep(5);
                         dc->send("Send to web");
 		});
 
@@ -1269,7 +1269,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id,
 				SInfo << "Binary message from " << id
 				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
                         
-                        sleep(500);
+                        sleep(5);
                         dc->send("Send to web");
 		});
 

@@ -87,7 +87,7 @@ typedef struct ice_description {
 
             Candidate *cur = & candidates[i];
 
-            ret += "\"" +cur->dump() + (i < candidates_count-1? "\", ":"\"");
+            ret += "\"" +cur->dump(true) + (i < candidates_count-1? "\", ":"\"");
         }
          ret +="]";
         return ret;

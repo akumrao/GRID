@@ -227,7 +227,7 @@ void wsOnMessage(json const &m ) {
     
 
     if (type == "offer") {
-         clients.emplace(id, createPeerConnection(config,  id, false));
+         clients.emplace(id, createPeerConnection(settingconfig,  id, false));
          
          //clients.emplace(id, createPeerConnection(config,  id));
         if (auto jt = clients.find(id); jt != clients.end()) {
@@ -290,7 +290,7 @@ void initiate(std::string rm)
     room = rm;
     id = "client"; /// hard coded the id for client(second participant), since it will have only one instance. Second instance should only have one instance, otherwise throw error. TBD 
 
-    clients.emplace(id, createPeerConnection(config,  id, true));
+    clients.emplace(id, createPeerConnection(settingconfig,  id, true));
 }
 
 #endif
