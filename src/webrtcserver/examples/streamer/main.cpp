@@ -290,6 +290,9 @@ void initiate(std::string rm)
     room = rm;
     id = "client"; /// hard coded the id for client(second participant), since it will have only one instance. Second instance should only have one instance, otherwise throw error. TBD 
 
+    if( clients.find(id) != clients.end())
+        clients.erase(id);
+     
     clients.emplace(id, createPeerConnection(settingconfig,  id, true));
 }
 

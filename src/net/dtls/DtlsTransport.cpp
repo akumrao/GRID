@@ -599,6 +599,7 @@ namespace rtc
 
 		// Update local role.
 		this->localRole = localRole;
+                
 
 		// Set state and notify the listener.
 		this->state = DtlsState::CONNECTING;
@@ -608,7 +609,7 @@ namespace rtc
 		{
 			case Role::CLIENT:
 			{
-				LTrace( "running [role:client]");
+				SInfo <<  "running [role:client]";
 
 				SSL_set_connect_state(this->ssl);
 				SSL_do_handshake(this->ssl);
@@ -620,7 +621,7 @@ namespace rtc
 
 			case Role::SERVER:
 			{
-				LTrace( "running [role:server]");
+				SInfo << "running [role:server]";
 
 				SSL_set_accept_state(this->ssl);
 				SSL_do_handshake(this->ssl);
@@ -630,7 +631,8 @@ namespace rtc
 
 			default:
 			{
-				MS_ABORT("invalid local DTLS role");
+				SError << "invalid local DTLS role";
+                                exit(0);
 			}
 		}
 	}

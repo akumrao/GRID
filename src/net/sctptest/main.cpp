@@ -14,7 +14,7 @@
 //#include "h264fileparser.hpp"
 //#include "opusfileparser.hpp"
 #include "helpers.hpp"
-//#include "socketio/socketioClient.h"
+#include "socketio/socketioClient.h"
 
 //#include "Settings.h"
 #include "RestAPI.h"
@@ -27,8 +27,8 @@
 #include "sctptransport.hpp"
 #include "DtlsTransport.h"
 
-//#define localtesting 1
-#define remotetesting 1
+#define localtesting 1
+//#define remotetesting 1
 //#define VIDEOMEDIA 1
 #include "peerconnection.h"
 
@@ -92,14 +92,14 @@ string ip_address = defaultIPAddress;
 uint16_t port = defaultPort;
 
 
-//sockio::Socket *mysocket = nullptr;
+sockio::Socket *mysocket = nullptr;
 std::string from;
 std::string room;
 Configuration settingconfig;
 
 std::string id;
   
-#if 0
+#if 1
 void sendCandidate( const std::string &mid, int mlineindex, const std::string &sdp )
 {
     json desc;
@@ -235,7 +235,7 @@ void wsOnMessage(json const &m ) {
     
 
     if (type == "offer") {
-         clients.emplace(id, createPeerConnection(config,  id, false));
+         clients.emplace(id, createPeerConnection(settingconfig,  id, false));
          
          //clients.emplace(id, createPeerConnection(config,  id));
         if (auto jt = clients.find(id); jt != clients.end()) {
@@ -298,7 +298,11 @@ void initiate(std::string rm)
     room = rm;
     id = "client"; /// hard coded the id for client(second participant), since it will have only one instance. Second instance should only have one instance, otherwise throw error. TBD 
 
-    clients.emplace(id, createPeerConnection(config,  id, true));
+    if( clients.find(id) != clients.end())
+    clients.erase(id);
+
+        
+    clients.emplace(id, createPeerConnection(settingconfig,  id, true));
 }
 
 #endif
@@ -1126,7 +1130,7 @@ pc->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
 
 
 // Create and setup a PeerConnection
-shared_ptr<Client> createPeerConnection(const Configuration &config,  string id, bool isClient)
+shared_ptr<Client> createPeerConnection( Configuration &config,  string id, bool isClient)
 {
     SInfo << "createPeerConnection" ;
     
@@ -1180,7 +1184,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id,
 
     pc->onGatheringStateChange(
         [](PeerConnection::GatheringState state) {
-        SInfo << "Gathering State: " << state ;
+        SInfo << "Gathering State" ;
         if (state == PeerConnection::GatheringState::Complete)
         {
           //  if(auto pc = wpc.lock())
@@ -1225,7 +1229,7 @@ shared_ptr<Client> createPeerConnection(const Configuration &config,  string id,
     });
 
 #endif
-     std::string dcchat =   Settings::getdatachannel();
+     std::string dcchat =   "Settings::getdatachannel()";
     auto dc = pc->createDataChannel(dcchat);
     dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
         if (auto dc = wdc.lock()) {

@@ -268,6 +268,21 @@ void IceTransport::onRecvCallback( unsigned char *data, size_t size)
 
 void IceTransport::changeState(State state) {
 	try {
+            
+            if (mState.exchange(state) != state)
+            if (state == State::Connected)
+            {
+                
+                
+                  bool is_controlling = agent.m_mode == AGENT_MODE_CONTROLLING;
+                  
+                   mRole = agent.m_mode == AGENT_MODE_CONTROLLING ? Description::Role::Active: Description::Role::Passive;
+              
+                  SInfo << "\033[36m" << "AgentNo " << agent.agentNo <<  " InitDtls "  << " is_controlling " << is_controlling << "\033[0m";
+                    if(agent.m_selected_pair)
+                 agent.socket->InitDtls( is_controlling, agent.m_selected_pair->local->address() ,  agent.m_selected_pair->remote->resolved);
+                  
+            }
 		//if (mState.exchange(state) != state)
 			//mStateChangeCallback(state);  // arvind TBD
 	} catch (const std::exception &e) {

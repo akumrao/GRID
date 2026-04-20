@@ -883,3 +883,13 @@ const formattedDate = `${year}-${month}-${day}`;
 
 document.getElementById("txtshowRec").value = formattedDate;
 
+
+
+async function checkRole() {
+  const stats = await pc.getStats();
+  stats.forEach(report => {
+    if (report.type === 'transport') {
+      console.log('Selected Pair Role: %o:%o', report.dtlsRole,  report.iceRole,); // 'controlling' or 'controlled'
+    }
+  });
+}

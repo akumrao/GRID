@@ -13,6 +13,9 @@
 using namespace base;
 
 
+
+#define SInfo SDebug
+        
 #define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
 namespace stun {
@@ -1974,15 +1977,6 @@ void Agent::agent_change_state( juice_state_t state)
 
             break;
     case JUICE_STATE_CONNECTED:
-    {
-        
-        bool is_controlling = m_mode == AGENT_MODE_CONTROLLING;
-        
-        SInfo << "\033[36m" << "AgentNo " << agentNo <<  " InitDtls "  << " is_controlling " << is_controlling << "\033[0m";
-        
-        if(m_selected_pair)
-        socket->InitDtls( is_controlling, m_selected_pair->local->address() ,  m_selected_pair->remote->resolved);
-    }
             break;
     case JUICE_STATE_COMPLETED:
             break;
