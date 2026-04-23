@@ -1496,6 +1496,7 @@ shared_ptr<IceTransport> PeerConnection::initIceTransport() {
 
                                         bool is_controlling = iceTransport->agent.m_mode == AGENT_MODE_CONTROLLING;
 
+                                          if( config.console)
                                           iceTransport->mRole = iceTransport->agent.m_mode == AGENT_MODE_CONTROLLING ? Description::Role::Active: Description::Role::Passive;
 
                                         SInfo << "\033[36m" << "AgentNo " << iceTransport->agent.agentNo <<  " initDtlsTransport "  << " is_controlling " << is_controlling << "\033[0m";

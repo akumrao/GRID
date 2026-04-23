@@ -235,6 +235,10 @@ void wsOnMessage(json const &m ) {
     
 
     if (type == "offer") {
+        
+         if( clients.find(id) != clients.end())
+           clients.erase(id);
+
          clients.emplace(id, createPeerConnection(settingconfig,  id, false));
          
          //clients.emplace(id, createPeerConnection(config,  id));
@@ -1274,7 +1278,7 @@ shared_ptr<Client> createPeerConnection( Configuration &config,  string id, bool
 				SInfo << "Binary message from " << id
 				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
                         
-                        sleep(5);
+                        sleep(500);
                         dc->send("Send to web");
 		});
 
