@@ -22,7 +22,7 @@ namespace rtc
 		virtual ~Router();
 
 
-		void HandleRequest( bool server , const Configuration &config,  int localPort, int remotePort, std::string, std::string );          
+		void HandleRequest( bool server , const Configuration &config,  int localPort, int remotePort, std::string, std::string , CertificateFingerprint &dtlsRemoteFingerprint );          
 
 	private:
 

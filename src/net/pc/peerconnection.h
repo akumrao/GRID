@@ -166,7 +166,7 @@ public:
 	CertificateFingerprint remoteFingerprint();
         
         //shared_ptr<Certificate> mCertificate;
-        Certificate* mCertificate;
+       // Certificate* mCertificate;
 
 //	// Stats
 //	void clearStats();
@@ -263,7 +263,7 @@ public:
         shared_ptr<DtlsTransport> initDtlsTransport();
         shared_ptr<SctpTransport> initSctpTransport();
         
-        CertificateFingerprint::Algorithm mRemoteFingerprintAlgorithm = CertificateFingerprint::Algorithm::Sha256;
+       // CertificateFingerprint::Algorithm mRemoteFingerprintAlgorithm = CertificateFingerprint::Algorithm::Sha256;
         
         bool checkFingerprint(const std::string &fingerprint) ;
         bool changeState(State newState);

@@ -195,7 +195,7 @@ namespace rtc
 		
 	}
 
-        void WebRtcTransport::InitDtls(bool server, std::string announcedIp , addr_record_t &remotemapped)
+        void WebRtcTransport::InitDtls(bool server, std::string announcedIp , addr_record_t &remotemapped , CertificateFingerprint dtlsRemoteFingerprint)
 	{
             this->udpSockets[udpServer] = announcedIp;
 
@@ -207,11 +207,11 @@ namespace rtc
 
             iceServer->SetSelectedTuple(tuple) ;
             
-            HandleRequest( server);
+            HandleRequest( server , dtlsRemoteFingerprint);
         }
        
 
-	void WebRtcTransport::HandleRequest(bool server)
+	void WebRtcTransport::HandleRequest(bool server, CertificateFingerprint &dtlsRemoteFingerprint)
 	{
 		
             if(server)
@@ -219,6 +219,12 @@ namespace rtc
             else
                 dtlsRole = rtc::DtlsTransport::Role::CLIENT;
             
+            if (this->dtlsTransport->SetRemoteFingerprint(dtlsRemoteFingerprint))
+            {
+                    // If everything is fine, we may run the DTLS transport if ready.
+                    MayRunDtlsTransport();
+            }
+
              MayRunDtlsTransport();
 
 

@@ -30,7 +30,7 @@ namespace rtc {
     
     
     struct CertificateFingerprint {
-	enum class Algorithm { Sha1, Sha224, Sha256, Sha384, Sha512 };
+	enum class Algorithm { NONE, Sha1, Sha224, Sha256, Sha384, Sha512 };
 	static string AlgorithmIdentifier(Algorithm algorithm);
 	static size_t AlgorithmSize(Algorithm algorithm);
 
@@ -45,6 +45,12 @@ namespace rtc {
 
 
 namespace rtc {
+
+#if USE_MBEDTLS
+string make_fingerprint(mbedtls_x509_crt *crt, CertificateFingerprint::Algorithm fingerprintAlgorithm);
+#else
+string make_fingerprint(X509 *x509, CertificateFingerprint::Algorithm fingerprintAlgorithm);
+#endif
 
 
 class Certificate {
@@ -100,11 +106,7 @@ private:
 };
 
 
-#if USE_MBEDTLS
-string make_fingerprint(mbedtls_x509_crt *crt, CertificateFingerprint::Algorithm fingerprintAlgorithm);
-#else
-string make_fingerprint(X509 *x509, CertificateFingerprint::Algorithm fingerprintAlgorithm);
-#endif
+
 
 //using certificate_ptr = shared_ptr<Certificate>;
 //using future_certificate_ptr = std::shared_future<certificate_ptr>;
@@ -127,7 +129,7 @@ struct  ConfCert {
     string keyPemFile;
     string keyPemPass;
 
-    rtc::Certificate* mCertificate;
+    rtc::Certificate* mCertificate{nullptr};
 
     void init()
     {

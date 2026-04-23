@@ -39,12 +39,18 @@ using namespace base;
 
 /* Static methods for OpenSSL callbacks. */
 
-inline static int onSslCertificateVerify(int /*preverifyOk*/, X509_STORE_CTX* /*ctx*/)
-{
-	
 
-	// Always valid since DTLS certificates are self-signed.
-	return 1;
+
+inline static int onSslCertificateVerify(int /*preverify_ok*/, X509_STORE_CTX *ctx)
+{
+	SSL *ssl =
+	    static_cast<SSL *>(X509_STORE_CTX_get_ex_data(ctx, SSL_get_ex_data_X509_STORE_CTX_idx()));
+	rtc::DtlsTransport *t =
+	    static_cast<rtc::DtlsTransport *>(SSL_get_ex_data(ssl, 0));
+
+	X509 *crt = X509_STORE_CTX_get_current_cert(ctx);
+	string fingerprint = rtc::make_fingerprint(crt, t->remoteFingerprint.algorithm);
+        return t->checkFingerprint(fingerprint);
 }
 
 inline static void onSslInfo(const SSL* ssl, int where, int ret)
@@ -88,6 +94,8 @@ namespace rtc
 	//EVP_PKEY* DtlsTransport::privateKey{ nullptr };
 	SSL_CTX* DtlsTransport::sslCtx{ nullptr };
 	uint8_t DtlsTransport::sslReadBuffer[SslReadBufferSize];
+        
+       // int DtlsTransport::TransportExIndex = -1;
 	
 //	std::map<std::string, DtlsTransport::FingerprintAlgorithm> DtlsTransport::string2FingerprintAlgorithm =
 //	{
@@ -111,7 +119,15 @@ namespace rtc
 		{ "client", DtlsTransport::Role::CLIENT },
 		{ "server", DtlsTransport::Role::SERVER }
 	};
-	
+
+       std::vector<DtlsTransport::SrtpProfileMapEntry> DtlsTransport::srtpProfiles =
+	{
+		{  DtlsTransport::Profile::AEAD_AES_256_GCM, "SRTP_AEAD_AES_256_GCM" },
+		{  DtlsTransport::Profile::AEAD_AES_128_GCM, "SRTP_AEAD_AES_128_GCM" },
+		{  DtlsTransport::Profile::AES_CM_128_HMAC_SHA1_80, "SRTP_AES128_CM_SHA1_80" },
+		{  DtlsTransport::Profile::AES_CM_128_HMAC_SHA1_32, "SRTP_AES128_CM_SHA1_32" }
+	};
+
 //	std::vector<DtlsTransport::Fingerprint> DtlsTransport::localFingerprints;
 	
 
@@ -143,6 +159,10 @@ namespace rtc
 
 		// Create a global SSL_CTX.
 		CreateSslCtx();
+                
+//                if (TransportExIndex < 0) {
+//                    TransportExIndex = SSL_get_ex_new_index(0, NULL, NULL, NULL, NULL);
+//                }
 
 		// Generate certificate fingerprints.
 		//GenerateFingerprints();
@@ -347,7 +367,7 @@ namespace rtc
 		// versions makes this call required.
 		SSL_CTX_set_read_ahead(DtlsTransport::sslCtx, 1);
 
-		SSL_CTX_set_verify_depth(DtlsTransport::sslCtx, 4);
+		SSL_CTX_set_verify_depth(DtlsTransport::sslCtx, 1);
 
 		// Require certificate from peer.
 		SSL_CTX_set_verify(
@@ -399,28 +419,31 @@ namespace rtc
 		ecdh = nullptr;
 #endif
 
-//		// Set the "use_srtp" DTLS extension.
-//		for (auto it = DtlsTransport::srtpProfiles.begin(); it != DtlsTransport::srtpProfiles.end(); ++it)
-//		{
-//			if (it != DtlsTransport::srtpProfiles.begin())
-//				dtlsSrtpProfiles += ":";
-//
-//			SrtpProfileMapEntry* profileEntry = std::addressof(*it);
-//			dtlsSrtpProfiles += profileEntry->name;
-//		}
+                
 
-//		SDebug << "setting SRTP profiles for DTLS: " <<  dtlsSrtpProfiles ;
-//
-//		// NOTE: This function returns 0 on success.
-//		ret = SSL_CTX_set_tlsext_use_srtp(DtlsTransport::sslCtx, dtlsSrtpProfiles.c_str());
-//
-//		if (ret != 0)
-//		{
-//			LError("SSL_CTX_set_tlsext_use_srtp() failed when entering ", dtlsSrtpProfiles.c_str());
-//			LOG_OPENSSL_ERROR("SSL_CTX_set_tlsext_use_srtp() failed");
-//
-//			goto error;
-//		}
+                        
+		// Set the "use_srtp" DTLS extension.
+		for (auto it = DtlsTransport::srtpProfiles.begin(); it != DtlsTransport::srtpProfiles.end(); ++it)
+		{
+			if (it != DtlsTransport::srtpProfiles.begin())
+				dtlsSrtpProfiles += ":";
+
+			SrtpProfileMapEntry* profileEntry = std::addressof(*it);
+			dtlsSrtpProfiles += profileEntry->name;
+		}
+
+		SDebug << "setting SRTP profiles for DTLS: " <<  dtlsSrtpProfiles ;
+
+		// NOTE: This function returns 0 on success.
+		ret = SSL_CTX_set_tlsext_use_srtp(DtlsTransport::sslCtx, dtlsSrtpProfiles.c_str());
+
+		if (ret != 0)
+		{
+			LError("SSL_CTX_set_tlsext_use_srtp() failed when entering ", dtlsSrtpProfiles.c_str());
+			LOG_OPENSSL_ERROR("SSL_CTX_set_tlsext_use_srtp() failed");
+
+			//goto error;
+		}
 
 		return;
 		
@@ -447,6 +470,7 @@ namespace rtc
 
 		// Set this as custom data.
 		SSL_set_ex_data(this->ssl, 0, static_cast<void*>(this));
+                //SSL_set_ex_data(this->ssl, 0, this);
 
 		this->sslBioFromNetwork = BIO_new(BIO_s_mem());
 
@@ -637,26 +661,26 @@ namespace rtc
 		}
 	}
 
-//	bool DtlsTransport::SetRemoteFingerprint(Fingerprint fingerprint)
-//	{
-//		
-//
-//		assertm(
-//		  fingerprint.algorithm != FingerprintAlgorithm::NONE, "no fingerprint algorithm provided");
-//
-//		this->remoteFingerprint = fingerprint;
-//
-//		// The remote fingerpring may have been set after DTLS handshake was done,
-//		// so we may need to process it now.
-//		if (this->handshakeDone && this->state != DtlsState::CONNECTED)
-//		{
-//			LTrace( "handshake already done, processing it right now");
-//
-//			return ProcessHandshake();
-//		}
-//
-//		return true;
-//	}
+	bool DtlsTransport::SetRemoteFingerprint(CertificateFingerprint fingerprint)
+	{
+		
+
+		assertm(
+		  fingerprint.algorithm != CertificateFingerprint::Algorithm::NONE, "no fingerprint algorithm provided");
+
+		this->remoteFingerprint = fingerprint;
+
+		// The remote fingerpring may have been set after DTLS handshake was done,
+		// so we may need to process it now.
+		if (this->handshakeDone && this->state != DtlsState::CONNECTED)
+		{
+			LTrace( "handshake already done, processing it right now");
+
+			return ProcessHandshake();
+		}
+
+		return true;
+	}
 
 	void DtlsTransport::ProcessDtlsData(const uint8_t* data, size_t len)
 	{
@@ -960,20 +984,20 @@ namespace rtc
 		
 
 		assertm(this->handshakeDone, "handshake not done yet");
-//		assertm(
-//		  this->remoteFingerprint.algorithm != FingerprintAlgorithm::NONE, "remote fingerprint not set");
+		assertm(
+		 this->remoteFingerprint.algorithm != CertificateFingerprint::Algorithm::NONE, "remote fingerprint not set");
 
-//		// Validate the remote fingerprint.
-//		if (!CheckRemoteFingerprint())
-//		{
-//			Reset();
-//
-//			// Set state and notify the listener.
-//			this->state = DtlsState::FAILED;
-//			this->listener->OnDtlsTransportFailed(this);
-//
-//			return false;
-//		}
+		// Validate the remote fingerprint.
+		if (!CheckRemoteFingerprint())
+		{
+			Reset();
+
+			// Set state and notify the listener.
+			this->state = DtlsState::FAILED;
+			this->listener->OnDtlsTransportFailed(this);
+
+			return false;
+		}
 
 //		// Get the negotiated SRTP profile.
 //		rtc::SrtpSession::Profile srtpProfile = GetNegotiatedSrtpProfile();
@@ -1107,4 +1131,159 @@ namespace rtc
 		// Set the DTLS timer again.
 		SetTimeout();
 	}
+        
+        
+        
+        inline bool DtlsTransport::CheckRemoteFingerprint()
+	{
+		
+
+		assertm(
+		  this->remoteFingerprint.algorithm != CertificateFingerprint::Algorithm::NONE, "remote fingerprint not set");
+
+		X509* certificate;
+		uint8_t binaryFingerprint[EVP_MAX_MD_SIZE];
+		unsigned int size{ 0 };
+		char hexFingerprint[(EVP_MAX_MD_SIZE * 3) + 1];
+		const EVP_MD* hashFunction;
+		int ret;
+
+		certificate = SSL_get_peer_certificate(this->ssl);
+
+		if (!certificate)
+		{
+			SWarn <<  "no certificate was provided by the peer";
+
+			return false;
+		}
+
+		switch (this->remoteFingerprint.algorithm)
+		{
+			case CertificateFingerprint::Algorithm::Sha1:
+				hashFunction = EVP_sha1();
+				break;
+
+			case CertificateFingerprint::Algorithm::Sha224:
+				hashFunction = EVP_sha224();
+				break;
+
+			case CertificateFingerprint::Algorithm::Sha256:
+				hashFunction = EVP_sha256();
+				break;
+
+			case CertificateFingerprint::Algorithm::Sha384:
+				hashFunction = EVP_sha384();
+				break;
+
+			case CertificateFingerprint::Algorithm::Sha512:
+				hashFunction = EVP_sha512();
+				break;
+
+			default:
+				MS_ABORT("unknown algorithm");
+		}
+
+		// Compare the remote fingerprint with the value given via signaling.
+		ret = X509_digest(certificate, hashFunction, binaryFingerprint, &size);
+
+		if (ret == 0)
+		{
+			SError << "X509_digest() failed";
+
+			X509_free(certificate);
+
+			return false;
+		}
+
+		// Convert to hexadecimal format in uppercase with colons.
+		for (unsigned int i{ 0 }; i < size; ++i)
+		{
+			std::sprintf(hexFingerprint + (i * 3), "%.2X:", binaryFingerprint[i]);
+		}
+		hexFingerprint[(size * 3) - 1] = '\0';
+
+		if (this->remoteFingerprint.value != hexFingerprint)
+		{
+			SWarn <<   "fingerprint in the remote certificate " << hexFingerprint << " does not match the announced one  ( " << this->remoteFingerprint.value.c_str() << " )" ;
+			  
+			X509_free(certificate);
+
+			return false;
+		}
+
+		SDebug <<  "valid remote fingerprint";
+
+		// Get the remote certificate in PEM format.
+
+		BIO* bio = BIO_new(BIO_s_mem());
+
+		// Ensure the underlying BUF_MEM structure is also freed.
+		// NOTE: Avoid stupid "warning: value computed is not used [-Wunused-value]" since
+		// BIO_set_close() always returns 1.
+		(void)BIO_set_close(bio, BIO_CLOSE);
+
+		ret = PEM_write_bio_X509(bio, certificate);
+
+		if (ret != 1)
+		{
+			LOG_OPENSSL_ERROR("PEM_write_bio_X509() failed");
+
+			X509_free(certificate);
+			BIO_free(bio);
+
+			return false;
+		}
+
+		BUF_MEM* mem;
+
+		BIO_get_mem_ptr(bio, &mem); // NOLINT[cppcoreguidelines-pro-type-cstyle-cast]
+
+		if (!mem || !mem->data || mem->length == 0u)
+		{
+			LOG_OPENSSL_ERROR("BIO_get_mem_ptr() failed");
+
+			X509_free(certificate);
+			BIO_free(bio);
+
+			return false;
+		}
+
+		this->remoteCert = std::string(mem->data, mem->length);
+
+		X509_free(certificate);
+		BIO_free(bio);
+
+		return true;
+	}
+        
+        
+        
+                
+bool DtlsTransport::checkFingerprint(const std::string &fingerprint) {
+	
+	//mRemoteFingerprint = fingerprint;
+
+	if (!remoteFingerprint.value.size())
+		
+		return false;
+
+//	if (config.disableFingerprintVerification) {
+//		STrace << "Skipping fingerprint validation";
+//		return true;
+//	}
+
+	auto expectedFingerprint = remoteFingerprint.value;
+	if (expectedFingerprint == fingerprint) {
+		STrace << "Valid fingerprint \"" << fingerprint << "\"";
+		return true;
+	}
+
+	SError << "Invalid fingerprint \"" << fingerprint << "\", expected \""
+	           << expectedFingerprint << "\"";
+	return false;
+
+}
+        
+ 
+        
 } // namespace rtc

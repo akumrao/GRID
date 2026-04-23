@@ -1,6 +1,8 @@
 #ifndef RTC_DTLS_TRANSPORT_HPP
 #define RTC_DTLS_TRANSPORT_HPP
 
+#include "description.hpp"
+
 //#include "SrtpSession.h"
 #include "base/Timer.h"
 #include <openssl/bio.h>
@@ -42,10 +44,19 @@ namespace rtc
 
 	public:
 
+            enum class Profile
+		{
+			NONE                    = 0,
+			AES_CM_128_HMAC_SHA1_80 = 1,
+			AES_CM_128_HMAC_SHA1_32,
+			AEAD_AES_256_GCM,
+			AEAD_AES_128_GCM
+		};
+   
 	private:
 		struct SrtpProfileMapEntry
 		{
-			//rtc::SrtpSession::Profile profile;
+			Profile profile;
 			const char* name;
 		};
 
@@ -93,15 +104,18 @@ namespace rtc
 		static uint8_t sslReadBuffer[];
 		static std::map<std::string, Role> string2Role;
 		static std::vector<SrtpProfileMapEntry> srtpProfiles;
+                
 
 	public:
+                //static int TransportExIndex;
+            
 		explicit DtlsTransport(Listener* listener);
 		~DtlsTransport() override;
 
 	public:
 		void Dump() const;
 		void Run(Role localRole);
-		bool SetRemoteFingerprint();
+                bool SetRemoteFingerprint(CertificateFingerprint fingerprint);
 		void ProcessDtlsData(const uint8_t* data, size_t len);
 		DtlsState GetState() const;
 		Role GetLocalRole() const;
@@ -139,6 +153,11 @@ namespace rtc
 		bool handshakeDone{ false };
 		bool handshakeDoneNow{ false };
 		std::string remoteCert;
+                
+        public:
+                CertificateFingerprint remoteFingerprint;
+                
+                bool checkFingerprint(const std::string &fingerprint);
 	};
 
 	/* Inline static methods. */

@@ -110,6 +110,8 @@ private:
 	candidate_callback mCandidateCallback;
 	gathering_state_callback mGatheringStateChangeCallback;
         
+        state_callback mStateChangeCallback;
+          
         dtls_state_callback mDtlsstatecallback;
         sctp_state_callback mSctpstatecallback;
         sctp_forward_message_callback mSctpforwardmessagecallback;

@@ -34,15 +34,15 @@ PeerConnection::PeerConnection( Configuration &config1): config(config1)
 {
        
     STrace << "Creating PeerConnection";
-
+       if(!config.gconfig->mCertificate)
 	if (config.gconfig->certificatePemFile.size() && config.gconfig->keyPemFile.size()) {
-           mCertificate =  
+           config.gconfig->mCertificate =  
 		    config.gconfig->certificatePemFile.find(PemBeginCertificateTag) != string::npos
 		        ? Certificate::FromString(config.gconfig->certificatePemFile, config.gconfig->keyPemFile)
 		        : Certificate::FromFile(config.gconfig->certificatePemFile, config.gconfig->keyPemFile,
 		                                config.gconfig->keyPemPass);
 	} else if (!config.gconfig->certificatePemFile.size() && !config.gconfig->keyPemFile.size()) {
-		mCertificate = make_certificate(config.certificateType);
+		config.gconfig->mCertificate = make_certificate(config.certificateType);
 	} else {
 		throw std::invalid_argument(
 		    "Either none or both certificate and key PEM files must be specified");
@@ -67,7 +67,7 @@ PeerConnection::PeerConnection( Configuration &config1): config(config1)
 PeerConnection::~PeerConnection() {
 	STrace << "Destroying PeerConnection";
 	close();
-	delete mCertificate;
+	//delete mCertificate;
 }
 
 void PeerConnection::close() {
@@ -361,7 +361,7 @@ void PeerConnection::processLocalDescription(Description &description) {
 	}
 
 	// Set local fingerprint (wait for certificate if necessary)
-	description.setFingerprint(mCertificate->fingerprint());
+	description.setFingerprint(config.gconfig->mCertificate->fingerprint());
 
 	STrace << "Issuing local description: " << description;
 
@@ -1488,9 +1488,28 @@ shared_ptr<IceTransport> PeerConnection::initIceTransport() {
 				    changeState(State::Connecting);
 				    break;
 			    case IceTransport::State::Connected:
+                            {
+                                
+                                    //SInfo << "initDtlsTransport"
+                                    
+                                      auto iceTransport = initIceTransport();
+
+                                        bool is_controlling = iceTransport->agent.m_mode == AGENT_MODE_CONTROLLING;
+
+                                          iceTransport->mRole = iceTransport->agent.m_mode == AGENT_MODE_CONTROLLING ? Description::Role::Active: Description::Role::Passive;
+
+                                        SInfo << "\033[36m" << "AgentNo " << iceTransport->agent.agentNo <<  " initDtlsTransport "  << " is_controlling " << is_controlling << "\033[0m";
+                                          if(iceTransport->agent.m_selected_pair)
+                                       iceTransport->agent.socket->InitDtls( is_controlling, iceTransport->agent.m_selected_pair->local->address() ,  iceTransport->agent.m_selected_pair->remote->resolved , mRemoteDescription->fingerprint());
+
+                                  
+
 				    changeIceState(IceState::Connected);
 				  //  initDtlsTransport();
+                                    
+                                    int x = 1;
 				    break;
+                            }
 			    case IceTransport::State::Completed:
 				    changeIceState(IceState::Completed);
 				    break;
@@ -1723,30 +1742,30 @@ std::ostream &operator<<(std::ostream &out, PeerConnection::SignalingState state
 
  #if DATACHANNEL
 
-
-bool PeerConnection::checkFingerprint(const std::string &fingerprint) {
-	std::lock_guard lock(mRemoteDescriptionMutex);
-	mRemoteFingerprint = fingerprint;
-
-	if (!mRemoteDescription->fingerprint().value.size()
-			|| mRemoteFingerprintAlgorithm != mRemoteDescription->fingerprint().algorithm)
-		return false;
-
-	if (config.disableFingerprintVerification) {
-		STrace << "Skipping fingerprint validation";
-		return true;
-	}
-
-	auto expectedFingerprint = mRemoteDescription->fingerprint().value;
-	if (expectedFingerprint == fingerprint) {
-		STrace << "Valid fingerprint \"" << fingerprint << "\"";
-		return true;
-	}
-
-	SError << "Invalid fingerprint \"" << fingerprint << "\", expected \""
-	           << expectedFingerprint << "\"";
-	return false;
-}
+//
+//bool PeerConnection::checkFingerprint(const std::string &fingerprint) {
+//	std::lock_guard lock(mRemoteDescriptionMutex);
+//	mRemoteFingerprint = fingerprint;
+//
+//	if (!mRemoteDescription->fingerprint().value.size()
+//			|| mRemoteFingerprintAlgorithm != mRemoteDescription->fingerprint().algorithm)
+//		return false;
+//
+//	if (config.disableFingerprintVerification) {
+//		STrace << "Skipping fingerprint validation";
+//		return true;
+//	}
+//
+//	auto expectedFingerprint = mRemoteDescription->fingerprint().value;
+//	if (expectedFingerprint == fingerprint) {
+//		STrace << "Valid fingerprint \"" << fingerprint << "\"";
+//		return true;
+//	}
+//
+//	SError << "Invalid fingerprint \"" << fingerprint << "\", expected \""
+//	           << expectedFingerprint << "\"";
+//	return false;
+//}
 
 
 
@@ -1864,13 +1883,13 @@ void PeerConnection::remoteClose()
 
 
 
-CertificateFingerprint PeerConnection::remoteFingerprint() {
-	std::lock_guard lock(mRemoteDescriptionMutex);
-	if (mRemoteFingerprint.size())
-		return {CertificateFingerprint{mRemoteFingerprintAlgorithm, mRemoteFingerprint}};
-	else
-		return {};
-}
+//CertificateFingerprint PeerConnection::remoteFingerprint() {
+//	std::lock_guard lock(mRemoteDescriptionMutex);
+//	if (mRemoteFingerprint.size())
+//		return {CertificateFingerprint{mRemoteFingerprintAlgorithm, mRemoteFingerprint}};
+//	else
+//		return {};
+//}
 
 
 std::pair<shared_ptr<DataChannel>, bool> PeerConnection::findDataChannel(uint16_t stream) {

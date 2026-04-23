@@ -57,7 +57,11 @@ namespace stun {
 
     Agent::~Agent() {
         
+        SInfo << " AgentNo " << agentNo <<   "~Agent()";
          _timer.Stop();
+         
+         delete socket;
+         socket = nullptr;
 
     }
 
@@ -224,7 +228,7 @@ namespace stun {
        // JLOG_VERBOSE("Generated local SDP description: %s", buffer);
 
         if (m_mode == AGENT_MODE_UNKNOWN) {
-                SWarn << "no agent mode set so assuming controlling mode";
+                SWarn << "AgentNo " << agentNo <<  "  no agent mode set so assuming controlling mode";
                 m_mode = AGENT_MODE_CONTROLLING;
         }
 

@@ -57,8 +57,8 @@ namespace rtc
 		~WebRtcTransport() override;
 
 	public:
-                void HandleRequest(bool server);
-                void InitDtls(bool server, std::string announcedIp , addr_record_t &remotemapped);
+                void HandleRequest(bool server ,CertificateFingerprint &dtlsRemoteFingerprint);
+                void InitDtls(bool server, std::string announcedIp , addr_record_t &remotemapped, CertificateFingerprint dtlsRemoteFingerprint);
 	private:
 		bool IsConnected() const ;
 		void MayRunDtlsTransport();

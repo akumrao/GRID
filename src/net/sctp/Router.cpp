@@ -53,11 +53,11 @@ namespace rtc
 	}
 
 
-	void Router::HandleRequest(bool server, const Configuration &config, int localPort, int remotePort , std::string localIP, std::string remoteIp )
+	void Router::HandleRequest(bool server, const Configuration &config, int localPort, int remotePort , std::string localIP, std::string remoteIp , CertificateFingerprint &dtlsRemoteFingerprint )
 	{
 
             auto* webRtcTransport = new rtc::WebRtcTransport(id , config, this, localPort,  remotePort ,  localIP, remoteIp);
-            webRtcTransport->HandleRequest(server);
+            webRtcTransport->HandleRequest(server , dtlsRemoteFingerprint);
             
             mapTransports[id] = webRtcTransport;
         }

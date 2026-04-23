@@ -27,12 +27,12 @@
 #include "sctptransport.hpp"
 #include "DtlsTransport.h"
 
-#define localtesting 1
+//#define localtesting 1
 //#define remotetesting 1
 //#define VIDEOMEDIA 1
 #include "peerconnection.h"
 
-//#define CERTFROMFILE 1
+#define CERTFROMFILE 1
 
 using namespace rtc;
 using namespace std;
@@ -324,7 +324,7 @@ int main(int argc, char **argv)
         rtc::SctpSettings mCurrentSctpSettings = {};
 	    rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
         
-        rtc::DtlsTransport::ClassInit();
+  
         
 
     bool printHelp = false;
@@ -355,9 +355,9 @@ int main(int argc, char **argv)
     settingconfig.disableAutoNegotiation = true;
     // read cert from file
 #if CERTFROMFILE == 1
-    settingconfig.keyPemFile =  Settings::configuration.key;
-    settingconfig.certificatePemFile = Settings::configuration.certPemFile;  
-    settingconfig.keyPemPass = "12345678";
+    settingconfig.gconfig->keyPemFile =  ConfSettings::configuration.keyFile;
+    settingconfig.gconfig->certificatePemFile = ConfSettings::configuration.certFile;  
+    settingconfig.gconfig->keyPemPass = "12345678";
     
 #elif CERTFROMFILE == 2
 
@@ -375,7 +375,8 @@ int main(int argc, char **argv)
 
     string localId = "server";
     cout << "The local ID is: " << localId << endl;
-    
+
+    rtc::DtlsTransport::ClassInit();
    
 #if localtesting 
     settingconfig.console = true;

@@ -303,7 +303,7 @@ SctpTransport::SctpTransport(Listener* listener, int agentNo,  const Configurati
 }
 
 SctpTransport::~SctpTransport() {
-	SDebug << "Destroying SCTP transport";
+	SInfo << "Destroying SCTP transport";
 
 	
 
