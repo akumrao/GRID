@@ -5,16 +5,29 @@
 #include "base/logger.h"
 //#include "Settings.h"
 //#include "Utils.h"
-#include <openssl/asn1.h>
-#include <openssl/bn.h>
-#include <openssl/err.h>
-#include <openssl/evp.h>
-#include <openssl/rsa.h>
+
 #include <uv.h>
 #include <cstdio>  // std::sprintf(), std::fopen()
 #include <cstring> // std::memcpy(), std::strcmp()
 #include "IceServer.h"
 #include "net/certificate.h"
+#include <chrono>
+
+
+#if USE_MBEDTLS
+
+
+#else
+
+#include <openssl/asn1.h>
+#include <openssl/bn.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/rsa.h>
+
+
+#endif
+
 
 
 extern ConfCert config;
@@ -39,7 +52,10 @@ using namespace base;
 
 /* Static methods for OpenSSL callbacks. */
 
+#if USE_MBEDTLS
 
+
+#else
 
 inline static int onSslCertificateVerify(int /*preverify_ok*/, X509_STORE_CTX *ctx)
 {
@@ -58,6 +74,8 @@ inline static void onSslInfo(const SSL* ssl, int where, int ret)
 	static_cast<rtc::DtlsTransport*>(SSL_get_ex_data(ssl, 0))->OnSslInfo(where, ret);
 }
 
+
+
 inline static unsigned int onSslDtlsTimer(SSL* /*ssl*/, unsigned int timerUs)
 {
 	if (timerUs == 0)
@@ -67,7 +85,7 @@ inline static unsigned int onSslDtlsTimer(SSL* /*ssl*/, unsigned int timerUs)
 	else
 		return 2 * timerUs;
 }
-
+#endif
 namespace rtc
 {
 	/* Static. */
@@ -89,11 +107,281 @@ namespace rtc
 	
 
 	/* Class variables. */
+        
+        
+	void DtlsTransport::ClassInit()
+	{
+            STrace << "DtlsTransport::ClassInit()";
 
+		// Generate a X509 certificate and private key (unless PEM files are provided).
+//		if (
+//		  Settings::configuration.dtlsCertificateFile.empty() ||
+//		  Settings::configuration.dtlsPrivateKeyFile.empty())
+//		{
+//		    GenerateCertificateAndPrivateKey();
+//                    
+//                   // SError << "No certificate files.";
+//                   // base::uv::throwError("No certificate files");
+//                    //exit(0);
+//		}
+////		else
+////		{
+////			ReadCertificateAndPrivateKeyFromFiles();
+////		}
+            
+            
+                 config.init();
+
+
+		// Create a global SSL_CTX.
+		CreateSslCtx();
+                
+//                if (TransportExIndex < 0) {
+//                    TransportExIndex = SSL_get_ex_new_index(0, NULL, NULL, NULL, NULL);
+//                }
+
+		// Generate certificate fingerprints.
+		//GenerateFingerprints();
+	}
+
+        #if USE_MBEDTLS
+
+        
+        const mbedtls_ssl_srtp_profile srtpSupportedProtectionProfiles[] = {
+        MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_80,
+        MBEDTLS_TLS_SRTP_UNSET,
+        };
+        
+        void DtlsTransport::CreateSslCtx()
+	{
+
+         
+
+
+
+		return;
+		
+	}
+
+
+
+
+	DtlsTransport::DtlsTransport(Listener* listener) : listener(listener)
+	{
+            if (!config.mCertificate)
+             throw std::invalid_argument("DTLS certificate is null");
+
+            mbedtls_entropy_init(&mEntropy);
+            mbedtls_ctr_drbg_init(&mDrbg);
+            mbedtls_ssl_init(&mSsl);
+            mbedtls_ssl_config_init(&mConf);
+            mbedtls_ctr_drbg_set_prediction_resistance(&mDrbg, MBEDTLS_CTR_DRBG_PR_ON);
+
+            try {
+                    mbedtls::check(mbedtls_ctr_drbg_seed(&mDrbg, mbedtls_entropy_func, &mEntropy, NULL, 0));
+
+
+
+                    mbedtls_ssl_conf_max_version(&mConf, MBEDTLS_SSL_MAJOR_VERSION_3, MBEDTLS_SSL_MINOR_VERSION_3); // TLS 1.2
+                    mbedtls_ssl_conf_authmode(&mConf, MBEDTLS_SSL_VERIFY_OPTIONAL);
+                    mbedtls_ssl_conf_verify(&mConf, DtlsTransport::CertificateCallback, this);
+                    mbedtls_ssl_conf_rng(&mConf, mbedtls_ctr_drbg_random, &mDrbg);
+
+                    auto [crt, pk] = config.mCertificate->credentials();
+                    mbedtls::check(mbedtls_ssl_conf_own_cert(&mConf, crt, pk));
+
+                    mbedtls_ssl_conf_dtls_cookies(&mConf, NULL, NULL, NULL);
+                    mbedtls_ssl_conf_dtls_srtp_protection_profiles(&mConf, srtpSupportedProtectionProfiles);
+
+                    mbedtls::check(mbedtls_ssl_setup(&mSsl, &mConf));
+
+                    mbedtls_ssl_set_export_keys_cb(&mSsl, DtlsTransport::ExportKeysCallback, this);
+                    mbedtls_ssl_set_bio(&mSsl, this, WriteCallback, ReadCallback, NULL);
+                    mbedtls_ssl_set_timer_cb(&mSsl, this, SetTimerCallback, GetTimerCallback);
+
+            } catch (...) {
+                    mbedtls_entropy_free(&mEntropy);
+                    mbedtls_ctr_drbg_free(&mDrbg);
+                    mbedtls_ssl_free(&mSsl);
+                    mbedtls_ssl_config_free(&mConf);
+                    throw;
+            }
+
+
+	}
+
+	DtlsTransport::~DtlsTransport()
+	{
+         //stop();
+
+            SDebug << "Destroying DTLS transport";
+            mbedtls_entropy_free(&mEntropy);
+            mbedtls_ctr_drbg_free(&mDrbg);
+            mbedtls_ssl_free(&mSsl);
+            mbedtls_ssl_config_free(&mConf);
+
+	}
+
+        
+        
+        inline bool DtlsTransport::CheckRemoteFingerprint()
+        {
+            return true;
+        }
+        
+        void DtlsTransport::Reset()
+	{
+        }
+        
+        void DtlsTransport::SendApplicationData(const uint8_t* data, size_t len)
+        {
+        }
+        
+       	void DtlsTransport::ProcessDtlsData(const uint8_t* data, size_t len)
+        {
+            
+        }
+        
+        void DtlsTransport::Run(Role localRole)
+        {
+            
+      
+            mbedtls::check(mbedtls_ssl_config_defaults(
+                   &mConf, this->localRole == Role::CLIENT ? MBEDTLS_SSL_IS_CLIENT : MBEDTLS_SSL_IS_SERVER,
+                   MBEDTLS_SSL_TRANSPORT_DATAGRAM, MBEDTLS_SSL_PRESET_DEFAULT));
+            
+        }
+        
+        inline void DtlsTransport::OnTimer(Timer* /*timer*/)
+	{
+
+		// Workaround for https://github.com/openssl/openssl/issues/7998.
+		if (this->handshakeDone)
+		{
+			LDebug("handshake is done so return");
+
+			return;
+		}
+
+		//DTLSv1_handle_timeout(this->ssl);
+
+		// If required, send DTLS data.
+		SendPendingOutgoingDtlsData();
+
+		// Set the DTLS timer again.
+		SetTimeout();
+	}
+        
+        inline void DtlsTransport::SendPendingOutgoingDtlsData()
+	{
+            
+	}
+        
+        inline bool DtlsTransport::SetTimeout()
+        {
+            return true;
+        }
+        
+        
+        int DtlsTransport::ReadCallback(void *ctx, unsigned char *buf, size_t len) {
+	auto *t = static_cast<DtlsTransport *>(ctx);
+	try {
+//		while (t->mIncomingQueue.running()) {
+//			auto next = t->mIncomingQueue.pop();
+//			if (!next) {
+//				return MBEDTLS_ERR_SSL_WANT_READ;
+//			}
+//
+//			message_ptr message = std::move(*next);
+//			if (t->demuxMessage(message))
+//				continue;
+//
+//			auto bufMin = std::min(len, size_t(message->size()));
+//			std::memcpy(buf, message->data(), bufMin);
+//			return int(len);
+//		}
+
+		// Closed
+		return 0;
+
+	} catch (const std::exception &e) {
+		SWarn << e.what();
+		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
+
+	}
+    }
+
+        
+    int DtlsTransport::WriteCallback(void *ctx, const unsigned char *buf, size_t len) {
+	auto *t = static_cast<DtlsTransport *>(ctx);
+	try {
+		if (len > 0) {
+			auto b = reinterpret_cast<const byte *>(buf);
+			//t->outgoing(make_message(b, b + len));
+		}
+		return int(len);
+
+	} catch (const std::exception &e) {
+		SWarn << e.what();
+		return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
+	}
+    }
+        
+    void DtlsTransport::SetTimerCallback(void *ctx, uint32_t int_ms, uint32_t fin_ms) {
+            auto dtlsTransport = static_cast<DtlsTransport *>(ctx);
+            dtlsTransport->mIntMs = int_ms;
+            dtlsTransport->mFinMs = fin_ms;
+
+            if (fin_ms != 0) {
+                    dtlsTransport->mTimerSetAt = std::chrono::steady_clock::now();
+            }
+    }
+
+    int DtlsTransport::GetTimerCallback(void *ctx) {
+            auto dtlsTransport = static_cast<DtlsTransport *>(ctx);
+            auto now = std::chrono::steady_clock::now();
+
+            if (dtlsTransport->mFinMs == 0) {
+                    return -1;
+            } else if (now >= dtlsTransport->mTimerSetAt + std::chrono::milliseconds(dtlsTransport->mFinMs)) {
+                    return 2;
+            } else if (now >= dtlsTransport->mTimerSetAt + std::chrono::milliseconds(dtlsTransport->mIntMs)) {
+                    return 1;
+            } else {
+                    return 0;
+            }
+    }
+
+    int DtlsTransport::CertificateCallback(void *ctx, mbedtls_x509_crt *crt, int /*depth*/,
+                                       uint32_t * /*flags*/) {
+	auto t = static_cast<DtlsTransport *>(ctx);
+        
+	string fingerprint = rtc::make_fingerprint(crt, t->remoteFingerprint.algorithm);
+	std::transform(fingerprint.begin(), fingerprint.end(), fingerprint.begin(),
+	               [](char c) { return char(std::toupper(c)); });
+	return t->checkFingerprint(fingerprint);
+    }  
+    
+    
+    void DtlsTransport::ExportKeysCallback(void *ctx, mbedtls_ssl_key_export_type /*type*/,
+                                       const unsigned char *secret, size_t secret_len,
+                                       const unsigned char client_random[32],
+                                       const unsigned char server_random[32],
+                                       mbedtls_tls_prf_types tls_prf_type) {
+	auto dtlsTransport = static_cast<DtlsTransport *>(ctx);
+	std::memcpy(dtlsTransport->mMasterSecret, secret, secret_len);
+	std::memcpy(dtlsTransport->mRandBytes, client_random, 32);
+	std::memcpy(dtlsTransport->mRandBytes + 32, server_random, 32);
+	dtlsTransport->mTlsProfile = tls_prf_type;
+    }
+    
+    #else
+        
 	//X509* DtlsTransport::certificate{ nullptr };
 	//EVP_PKEY* DtlsTransport::privateKey{ nullptr };
 	SSL_CTX* DtlsTransport::sslCtx{ nullptr };
 	uint8_t DtlsTransport::sslReadBuffer[SslReadBufferSize];
+        
         
        // int DtlsTransport::TransportExIndex = -1;
 	
@@ -131,42 +419,7 @@ namespace rtc
 //	std::vector<DtlsTransport::Fingerprint> DtlsTransport::localFingerprints;
 	
 
-	/* Class methods. */
 
-	void DtlsTransport::ClassInit()
-	{
-            STrace << "DtlsTransport::ClassInit()";
-
-		// Generate a X509 certificate and private key (unless PEM files are provided).
-//		if (
-//		  Settings::configuration.dtlsCertificateFile.empty() ||
-//		  Settings::configuration.dtlsPrivateKeyFile.empty())
-//		{
-//		    GenerateCertificateAndPrivateKey();
-//                    
-//                   // SError << "No certificate files.";
-//                   // base::uv::throwError("No certificate files");
-//                    //exit(0);
-//		}
-////		else
-////		{
-////			ReadCertificateAndPrivateKeyFromFiles();
-////		}
-            
-            
-                 config.init();
-
-
-		// Create a global SSL_CTX.
-		CreateSslCtx();
-                
-//                if (TransportExIndex < 0) {
-//                    TransportExIndex = SSL_get_ex_new_index(0, NULL, NULL, NULL, NULL);
-//                }
-
-		// Generate certificate fingerprints.
-		//GenerateFingerprints();
-	}
 
 	void DtlsTransport::ClassDestroy()
 	{
@@ -661,26 +914,6 @@ namespace rtc
 		}
 	}
 
-	bool DtlsTransport::SetRemoteFingerprint(CertificateFingerprint fingerprint)
-	{
-		
-
-		assertm(
-		  fingerprint.algorithm != CertificateFingerprint::Algorithm::NONE, "no fingerprint algorithm provided");
-
-		this->remoteFingerprint = fingerprint;
-
-		// The remote fingerpring may have been set after DTLS handshake was done,
-		// so we may need to process it now.
-		if (this->handshakeDone && this->state != DtlsState::CONNECTED)
-		{
-			LTrace( "handshake already done, processing it right now");
-
-			return ProcessHandshake();
-		}
-
-		return true;
-	}
 
 	void DtlsTransport::ProcessDtlsData(const uint8_t* data, size_t len)
 	{
@@ -979,59 +1212,6 @@ namespace rtc
 		}
 	}
 
-	inline bool DtlsTransport::ProcessHandshake()
-	{
-		
-
-		assertm(this->handshakeDone, "handshake not done yet");
-		assertm(
-		 this->remoteFingerprint.algorithm != CertificateFingerprint::Algorithm::NONE, "remote fingerprint not set");
-
-		// Validate the remote fingerprint.
-		if (!CheckRemoteFingerprint())
-		{
-			Reset();
-
-			// Set state and notify the listener.
-			this->state = DtlsState::FAILED;
-			this->listener->OnDtlsTransportFailed(this);
-
-			return false;
-		}
-
-//		// Get the negotiated SRTP profile.
-//		rtc::SrtpSession::Profile srtpProfile = GetNegotiatedSrtpProfile();
-//
-//		if (srtpProfile != rtc::SrtpSession::Profile::NONE)
-//		{
-//			// Extract the SRTP keys (will notify the listener with them).
-//			ExtractSrtpKeys(srtpProfile);
-//
-//			return true;
-//		}
-//
-//		// NOTE: We assume that "use_srtp" DTLS extension is required even if
-		// there is no audio/video.
-                
-                
-                this->state = DtlsState::CONNECTED;
-		this->listener->OnDtlsTransportConnected(
-		  this );
-                
-                
-		SWarn <<  "SRTP profile not negotiated";
-                
-                return true;
-
-		Reset();
-
-		// Set state and notify the listener.
-		this->state = DtlsState::FAILED;
-		this->listener->OnDtlsTransportFailed(this);
-
-		return false;
-	}
-
 
 
 
@@ -1257,8 +1437,83 @@ namespace rtc
 	}
         
         
-        
+     #endif   
                 
+inline bool DtlsTransport::ProcessHandshake()
+{
+
+
+        assertm(this->handshakeDone, "handshake not done yet");
+        assertm(
+         this->remoteFingerprint.algorithm != CertificateFingerprint::Algorithm::NONE, "remote fingerprint not set");
+
+        // Validate the remote fingerprint.
+        if (!CheckRemoteFingerprint())
+        {
+                Reset();
+
+                // Set state and notify the listener.
+                this->state = DtlsState::FAILED;
+                this->listener->OnDtlsTransportFailed(this);
+
+                return false;
+        }
+
+//		// Get the negotiated SRTP profile.
+//		rtc::SrtpSession::Profile srtpProfile = GetNegotiatedSrtpProfile();
+//
+//		if (srtpProfile != rtc::SrtpSession::Profile::NONE)
+//		{
+//			// Extract the SRTP keys (will notify the listener with them).
+//			ExtractSrtpKeys(srtpProfile);
+//
+//			return true;
+//		}
+//
+//		// NOTE: We assume that "use_srtp" DTLS extension is required even if
+        // there is no audio/video.
+
+
+        this->state = DtlsState::CONNECTED;
+        this->listener->OnDtlsTransportConnected(
+          this );
+
+
+        SWarn <<  "SRTP profile not negotiated";
+
+        return true;
+
+        Reset();
+
+        // Set state and notify the listener.
+        this->state = DtlsState::FAILED;
+        this->listener->OnDtlsTransportFailed(this);
+
+        return false;
+}
+
+       
+bool DtlsTransport::SetRemoteFingerprint(CertificateFingerprint fingerprint)
+{
+
+
+    assertm(
+      fingerprint.algorithm != CertificateFingerprint::Algorithm::NONE, "no fingerprint algorithm provided");
+
+    this->remoteFingerprint = fingerprint;
+
+    // The remote fingerpring may have been set after DTLS handshake was done,
+    // so we may need to process it now.
+    if (this->handshakeDone && this->state != DtlsState::CONNECTED)
+    {
+            LTrace( "handshake already done, processing it right now");
+
+            return ProcessHandshake();
+    }
+
+    return true;
+}
+
 bool DtlsTransport::checkFingerprint(const std::string &fingerprint) {
 	
 	//mRemoteFingerprint = fingerprint;

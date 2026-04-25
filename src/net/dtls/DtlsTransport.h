@@ -5,9 +5,26 @@
 
 //#include "SrtpSession.h"
 #include "base/Timer.h"
+
+#if USE_MBEDTLS
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/ecdsa.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/error.h"
+#include "mbedtls/pk.h"
+#include "mbedtls/rsa.h"
+#include "mbedtls/sha256.h"
+#include "mbedtls/ssl.h"
+#include "mbedtls/x509_crt.h"
+
+#else
 #include <openssl/bio.h>
 #include <openssl/ssl.h>
 #include <openssl/x509.h>
+
+#endif
+
+
 #include <map>
 #include <string>
 #include <vector>
@@ -98,9 +115,45 @@ namespace rtc
                 static void onDtlError();
 
 	private:
+            #if USE_MBEDTLS
+
+            	 mbedtls_entropy_context mEntropy;
+                 mbedtls_ctr_drbg_context mDrbg;
+                 mbedtls_ssl_config mConf;
+                 mbedtls_ssl_context mSsl;
+
+                std::mutex mSslMutex;
+
+                uint32_t mFinMs = 0, mIntMs = 0;
+                std::chrono::time_point<std::chrono::steady_clock> mTimerSetAt;
+
+                char mMasterSecret[48];
+                char mRandBytes[64];
+                mbedtls_tls_prf_types mTlsProfile = MBEDTLS_SSL_TLS_PRF_NONE;
+
+                static int CertificateCallback(void *ctx, mbedtls_x509_crt *crt, int depth, uint32_t *flags);
+                static int WriteCallback(void *ctx, const unsigned char *buf, size_t len);
+                static int ReadCallback(void *ctx, unsigned char *buf, size_t len);
+                static void ExportKeysCallback(void *ctx, mbedtls_ssl_key_export_type type,
+                                               const unsigned char *secret, size_t secret_len,
+                                               const unsigned char client_random[32],
+                                               const unsigned char server_random[32],
+                                               mbedtls_tls_prf_types tls_prf_type);
+                static void SetTimerCallback(void *ctx, uint32_t int_ms, uint32_t fin_ms);
+                static int GetTimerCallback(void *ctx);
+
+            
+            
+            
+            
+            
+
+            #else
 		static X509* certificate;
 		static EVP_PKEY* privateKey;
 		static SSL_CTX* sslCtx;
+            #endif    
+                
 		static uint8_t sslReadBuffer[];
 		static std::map<std::string, Role> string2Role;
 		static std::vector<SrtpProfileMapEntry> srtpProfiles;
@@ -142,9 +195,17 @@ namespace rtc
 		// Passed by argument.
 		Listener* listener{ nullptr };
 		// Allocated by this.
+                
+                #if USE_MBEDTLS
+
+                #else
+
 		SSL* ssl{ nullptr };
 		BIO* sslBioFromNetwork{ nullptr }; // The BIO from which ssl reads.
 		BIO* sslBioToNetwork{ nullptr };   // The BIO in which ssl writes.
+                
+               #endif
+                
 		Timer* timer{ nullptr };
 		// Others.
 		DtlsState state{ DtlsState::NEW };
