@@ -41,7 +41,7 @@ struct server *server{nullptr};
 static void print_help() {
     // clang-format off
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
-            "USAGE:  ./ttyd bash  then browse    http://localhost:8000/ \n"
+            "USAGE:  ./ttyd bash  then browse    https://localhost:8000/ \n"
             "    ttyd [options] <command> [<arguments...>]\n\n"
             "VERSION:\n"
             "    %s\n\n"
