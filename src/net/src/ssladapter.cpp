@@ -27,9 +27,6 @@ https://github.com/deleisha/evt-tls/issues/21    // very bad code please do not 
 #include "net/tls.h"
 
 
-//#define FROMFILE 1
-//#define DEFULTTEST 1
-
 
 
 using namespace std;
@@ -40,6 +37,10 @@ ConfCert config;
 
 #if USE_MBEDTLS
 
+
+#define FROMFILE 1
+#define UNSAFE 1
+#define DEBUG_LEVEL 1
 
 namespace base
 {
@@ -266,8 +267,6 @@ void SSLAdapter::initSSL()
     }
              
    
-       
-       
             
     
 #elif DEFULTTEST 
@@ -537,7 +536,7 @@ std::string SSLAdapter::getTLSError(int err)  {
 void  SSLAdapter::addOutgoingData(const char* data, size_t len)
 {
 
-        // SInfo << "Send " <<  data   << " len "  << len;
+    //SInfo << " Possible len " <<  MBEDTLS_SSL_OUT_CONTENT_LEN   << " required buffer len "  << len;
     //if (len > MBEDTLS_SSL_MAX_CONTENT_LEN) // mbedtld2.5    
     if (len > MBEDTLS_SSL_OUT_CONTENT_LEN) 
     {

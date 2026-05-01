@@ -41,7 +41,7 @@ struct server *server{nullptr};
 static void print_help() {
     // clang-format off
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
-            "USAGE:  ./ttyd bash  then browse    http://localhost:8000/ \n"
+            "USAGE:  ./ttyd bash  then browse    https://localhost:8000/ \n"
             "    ttyd [options] <command> [<arguments...>]\n\n"
             "VERSION:\n"
             "    %s\n\n"
@@ -90,7 +90,7 @@ static void print_help() {
 
 static void print_config() {
     printf("tty configuration:\n");
-    printf("http://localhost:8000\n");
+    printf("https://localhost:8000\n");
     if (server->credential != NULL) printf("  credential: %s\n", server->credential);
     printf("  start command: %s\n", server->command);
     printf("  close signal: %s (%d)\n", server->sig_name, server->sig_code);

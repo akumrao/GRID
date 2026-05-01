@@ -166,8 +166,12 @@ namespace base {
                 std::ostringstream rep;
                 rep << "HTTP/1.1 " << closure->response_code << "\r\n"
                         << "Content-Type: " << closure->content_type << "\r\n"
-                        //<< "Connection: keep-alive\r\n"
+                        #ifdef USE_MBEDTLS
+                        << "Connection: keep-alive\r\n"
+                        << "Keep-Alive: timeout=5, max=100\r\n"
+                        #else
                         << "Connection: close\r\n"
+                        #endif
                         << "Content-Length: " << closure->result.size() << "\r\n"
                         << "Access-Control-Allow-Origin: *" << "\r\n"
                         << "\r\n";
@@ -176,9 +180,6 @@ namespace base {
 
                // SInfo << res;
 
-                //uv_buf_t resbuf;
-              //  resbuf.base = (char *) res.c_str();
-               // resbuf.len = res.size();
              
                 auto cb =  onSendCallback([&closure ](bool sent)
                 {
@@ -192,15 +193,30 @@ namespace base {
                 
                 );
                   
+            
+               // 
+#ifdef USE_MBEDTLS
+                const int chunkSize = 16*1024 - 64; // 1KB in bytes
+                char *startPointer = res.c_str();
+                char *endPointer = res.c_str()+ res.size();
+
+                while (startPointer < endPointer) {
+
+                    if( endPointer - startPointer >  chunkSize)
+                     closure->con->tcpsend( startPointer, chunkSize, nullptr );
+                    else
+                     closure->con->tcpsend( startPointer, endPointer - startPointer , cb );
+
+                     startPointer = startPointer + chunkSize;
+                    // Optional: add a tiny delay to not overwhelm the network
+                }
+#else
                 closure->con->tcpsend( res.c_str(), res.size(), cb );
+                        
+#endif
+                
 
-             //   client->write_req.data = closure;
 
-                // https://github.com/joyent/libuv/issues/344
-    //            int r = uv_write(&client->write_req,
-    //                    (uv_stream_t*) client->handle,
-    //                    &resbuf, 1, after_write);    //arvind
-                //CHECK(r, "write buff");
                 
                 
         }
