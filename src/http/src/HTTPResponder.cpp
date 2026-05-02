@@ -197,8 +197,8 @@ namespace base {
                // 
 #ifdef USE_MBEDTLS
                 const int chunkSize = 16*1024 - 64; // 1KB in bytes
-                char *startPointer = res.c_str();
-                char *endPointer = res.c_str()+ res.size();
+                const char *startPointer = res.c_str();
+                const char *endPointer = res.c_str()+ res.size();
 
                 while (startPointer < endPointer) {
 
