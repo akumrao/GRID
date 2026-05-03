@@ -141,11 +141,7 @@ int main(int argc, char** argv) {
 
 
         
-        rtc::SctpTransport::Init();
-        rtc::SctpSettings mCurrentSctpSettings = {};
-	    rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
         
-        rtc::DtlsTransport::ClassInit();
                 
         #if HTTPSSL
         
@@ -156,12 +152,19 @@ int main(int argc, char** argv) {
         SInfo << "http://localhost:8000";
         #endif
         
+        rtc::SctpTransport::Init();
+        rtc::SctpSettings mCurrentSctpSettings = {};
+	rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
         
+   
+        rtc::DtlsTransport::ClassInit();
       
         rtc::Configuration transportconfig;
         
-        router1.HandleRequest(true, transportconfig, 8000, 9000, "127.0.0.1", "127.0.0.1");
-        router2.HandleRequest(false,transportconfig, 9000, 8000, "127.0.0.1", "127.0.0.1");
+       rtc::CertificateFingerprint fingerPrint =  config.mCertificate->fingerprint();
+        
+        router1.HandleRequest(true, transportconfig, 8000, 9000, "127.0.0.1", "127.0.0.1",  fingerPrint);
+        router2.HandleRequest(false,transportconfig, 9000, 8000, "127.0.0.1", "127.0.0.1", fingerPrint);
 
         app.waitForShutdown([&](void*) {
 
