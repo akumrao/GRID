@@ -4,19 +4,17 @@
 CC	= gcc
 CXX     = g++
 TARGET=runtestDtlsUDPServer # define the name of the executable
-SOURCES=$(wildcard testDtlsServer.cpp ../src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../crypto/src/*.cpp ../../base/src/*.cpp )
+SOURCES=$(wildcard testDtlsServer.cpp Router.cpp ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp )
 
-CXXFLAGS   := -g  -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL -DENABLE_OPENSSL=1
+CXXFLAGS   := -g -std=c++17 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL
 
-
-CPPFLAGS   := -I../../json/include/ -I../../crypto/include/ -I../../http/include/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ \
-
+CPPFLAGS   := -I../../json/include/ -I../sctp/ -I../pc/ -I../dtls/ -I../../http/include/ -I../../http_parser/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../../../src/openssl/buildx64/include -I../../webrtcserver/deps/usrsctp/usrsctplib/ -DHTTPSSL
 
 
 
-LDLIBS    := -lpthread -lm -ldl
+LDLIBS    := -lpthread -lm -ldl -lz
 
-SLIBS     := ../../../src/openssl/buildx64/lib/libssl.a   ../../../src/openssl/buildx64/lib/libcrypto.a 
+SLIBS     := ../../../src/openssl/buildx64/lib/libssl.a   ../../../src/openssl/buildx64/lib/libcrypto.a  ../../webrtcserver/build/deps/usrsctp/usrsctplib/libusrsctp.a
 
 
 ################################################################################

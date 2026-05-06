@@ -11,75 +11,90 @@
 #include "base/base.h"
 #include "base/logger.h"
 #include "base/application.h"
-#include "net/netInterface.h"
-#include "net/SslConnection.h"
+#include "net/TcpServer.h"
 // #include "base/test.h"
 #include "base/time.h"
+#include "net/SslConnection.h"
+#include "DtlsTransport.h"
+#include "net/certificate.h"
+#include "json/confSettings.h"
+#include "json/configuration.h"
+#include "configuration.h"
 
-//#include "net/sslmanager.h"
+#include "Router.h"
+
 
 using std::endl;
 using namespace base;
 using namespace net;
-// using namespace base::test;
 
-
-class tesTcpClient : public SslConnection {
-public:
-
-    tesTcpClient(): SslConnection(false)
-    {
-        Connect("127.0.0.1", 5001);
-    }
+extern ConfCert config;
 
 
 
-    void on_close() {
-
-        std::cout << " Close Con LocalIP" << this->GetLocalIp() << " PeerIP" << this->GetPeerIp() << std::endl << std::flush;
-
-    }
-
-    void on_read( const char* data, size_t len) {
-        
-      std::cout << " on_read " << this->GetLocalIp() << " PeerIP " << this->GetPeerIp() << std::endl << std::flush;
-
-        std::cout << "data: " << data << " len: " << len << std::endl << std::flush;
-        std::string send = "12345";
-       // connection->send((const char*) send.c_str(), 5);
-
-    }
-    
-    void on_connect() {
-        
-       SslConnection::on_connect();
-        
-       std::cout << " on_read " << this->GetLocalIp() << " PeerIP " << this->GetPeerIp() << std::endl << std::flush;
-
-     
-       std::string send = "12345";
-       SslConnection::send((const char*) send.c_str(), 5);
-       std::cout << "TCP Client send data: " << send << "len: " << strlen((const char*) send.c_str()) << std::endl << std::flush;
-
-    }
-    
-  
-
-};
 
 int main(int argc, char** argv) {
-    Logger::instance().add(new ConsoleChannel("debug", Level::Trace));
+    
+        Logger::instance().add(new ConsoleChannel("debug", Level::Trace));
 
-      // net::SSLManager::initNoVerifyClient();
-       
+
+ 
+     //  net::SSLManager::initNoVerifyServer();
+
         Application app;
+        //SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true);
+        
+       // rtc::Router router1("101");
+        rtc::Router router2("102");
+        
+        
+        base::cnfg::Configuration cnfgSet;
+        cnfgSet.load("./config.js");
 
-        tesTcpClient socket;
 
-        app.run();
+        try {
+            ConfSettings::SetConfiguration(cnfgSet.root);
+        } catch (const std::exception& error) {
+
+         //  Settings::exit();
+            std::_Exit(-1);
+        } 
+    
+
 
         
+        
+                
+        #if HTTPSSL
+        
+        config.certificatePemFile = ConfSettings::configuration.certFile;
+        config.keyPemFile =ConfSettings::configuration.keyFile  ;
 
+        #else
+        SInfo << "http://localhost:8000";
+        #endif
+        
+        rtc::SctpTransport::Init();
+        rtc::SctpSettings mCurrentSctpSettings = {};
+        rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
+        
+   
+        rtc::DtlsTransport::ClassInit();
+      
+        rtc::Configuration transportconfig;
+        
+       rtc::CertificateFingerprint fingerPrint =  config.mCertificate->fingerprint();
+        
+        //router1.HandleRequest(true, transportconfig, 8000, 9000, "127.0.0.1", "127.0.0.1",  fingerPrint);
+        router2.HandleRequest(false,transportconfig, 9000, 8000, "127.0.0.1", "127.0.0.1", fingerPrint);
+
+        app.waitForShutdown([&](void*) {
+
+           // socket.shutdown();
+            
+             rtc::DtlsTransport::ClassDestroy();
+
+        });
 
 
 

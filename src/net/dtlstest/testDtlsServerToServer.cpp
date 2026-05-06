@@ -30,84 +30,6 @@ using namespace net;
 
 extern ConfCert config;
 
-class testSslCon :  public SslConnection{
-public:
-
-    testSslCon(bool server): SslConnection(true )
-    {
-    }
-
-
-    void on_close( ) {
-
-        std::cout << "TCP server closing, LocalIP" << this->GetLocalIp() << " PeerIP" << this->GetPeerIp() << std::endl << std::flush;
-
-    }
-
-    
-    void on_read(const char* data, size_t len) {
-        std::cout << "TCP server send data: " << data << "len: " << len << std::endl << std::flush;
-        std::string send = "12345";
-        SslConnection::send((const char*) send.c_str(), 5);
-
-    }
-
-};
-
-
-static constexpr size_t MaxTcpConnectionsPerServer{ 4000};
-  
-class SecTcpServer : public TcpServerBase
-{
-public:
-
-
-public:
-    SecTcpServer(Listener* listener, std::string ip, int port, bool multiThreaded=false, bool ssl=false ): TcpServerBase(BindTcp(ip, port), 256, multiThreaded), listener(listener),ssl(ssl){
-
-        }
-    ~SecTcpServer() {
-
-            if (uvHandle)
-                delete uvHandle;
-            //UnbindTcp(this->localIp, this->localPort); // please do not do it here . Drive your own class from TServerBase.
-        }
-    /* Pure virtual methods inherited from ::TcpServer. */
-public:
-    void UserOnTcpConnectionAlloc(TcpConnectionBase** connection) {
-
-
-             *connection = new testSslCon( true);
-         
-        }
-    
-    bool UserOnNewTcpConnection(TcpConnectionBase* connection) 
-    {
-    
-            if (GetNumConnections() >= MaxTcpConnectionsPerServer)
-            {
-                LError("cannot handle more than %zu connections", MaxTcpConnectionsPerServer);
-
-                return false;
-            }
-
-            return true;
-    }
-    
-    void UserOnTcpConnectionClosed(TcpConnectionBase* connection)
-    {
-        
-    }
-
-private:
-    // Passed by argument.
-    Listener* listener{ nullptr};
-    uv_tcp_t* uvHandle{ nullptr};
-    bool ssl;
-};
-
-
-
 
 
 
@@ -154,7 +76,7 @@ int main(int argc, char** argv) {
         
         rtc::SctpTransport::Init();
         rtc::SctpSettings mCurrentSctpSettings = {};
-	rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
+    rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
         
    
         rtc::DtlsTransport::ClassInit();
