@@ -61,7 +61,32 @@ namespace rtc
             
             mapTransports[id] = webRtcTransport;
         }
-       
+        
+        void Router::OnDtlsTransportStatus(DtlsTransport::DtlsState state) 
+        {
+      
+            if( state == DtlsTransport::DtlsState::CONNECTED)
+            {
+               const uint8_t tmp[] ="arvind";
+               mapTransports[id]->SendSctpData(tmp, 7);
+            }    
+        }
+        
+        void Router::OnReceiveData(byte * data, size_t len)
+        {
+            SInfo <<  (char*) data;  
+        }
+
+        void Router::OnSctpState(SctpTransport::State state)
+        {
+            
+        }
+        
+        void Router::OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message )
+        {
+            
+        }
+
 
 
 } // namespace rtc

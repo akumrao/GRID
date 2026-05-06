@@ -75,9 +75,7 @@ public:
         void OnDtlsTransportStatus(DtlsTransport::DtlsState state);
         void OnSctpState(SctpTransport::State state);
         void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message );
-        
-        //void startSctp();
-     
+        void OnReceiveData(byte * data, size_t len){};
         
         Description::Role mRole;
 

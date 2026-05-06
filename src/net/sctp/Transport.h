@@ -39,9 +39,10 @@ namespace rtc
 		{
 		public:
 		
-                    virtual void OnDtlsTransportStatus(DtlsTransport::DtlsState state) {} ;
-                    virtual void OnSctpState(SctpTransport::State state){};
-                    virtual void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message ){};
+                    virtual void OnDtlsTransportStatus(DtlsTransport::DtlsState state) = 0 ;
+                    virtual void OnSctpState(SctpTransport::State state)= 0 ;
+                    virtual void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message )= 0 ;
+                    virtual void OnReceiveData(byte * data, size_t len) = 0 ;
 			//virtual void OnTransportDataProducerSctpMessageReceived(  rtc::Transport* transport,  rtc::DataProducer* dataProducer,	  uint32_t ppid,  const uint8_t* msg,   size_t len) = 0;
 		};
 
@@ -92,7 +93,6 @@ namespace rtc
 //		void SendRtcp(uint64_t nowMs);
 //		virtual void SendRtcpPacket(rtc::RTCP::Packet* packet)                 = 0;
 //		virtual void SendRtcpCompoundPacket(rtc::RTCP::CompoundPacket* packet) = 0;
-		virtual void SendSctpData(const uint8_t* data, size_t len)             = 0;
 //		void DistributeAvailableOutgoingBitrate();
 //		void ComputeOutgoingDesiredBitrate(bool forceBitrate = false);
 //		void EmitTraceEventProbationType(rtc::RtpPacket* packet) const;
@@ -100,6 +100,7 @@ namespace rtc
 
 		/* Pure virtual methods inherited from rtc::Producer::Listener. */
 	public:
+                virtual void SendSctpData(const uint8_t* data, size_t len)             = 0;
 //		void OnProducerPaused(rtc::Producer* producer) override;
 //		void OnProducerResumed(rtc::Producer* producer) override;
 //		void OnProducerNewRtpStream(

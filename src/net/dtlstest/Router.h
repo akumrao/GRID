@@ -23,6 +23,13 @@ namespace rtc
 
 
 		void HandleRequest( bool server , const Configuration &config,  int localPort, int remotePort, std::string, std::string , CertificateFingerprint &dtlsRemoteFingerprint );          
+                
+                void OnDtlsTransportStatus(DtlsTransport::DtlsState state);                
+                void OnSctpState(SctpTransport::State state);
+                void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message ) ;
+                
+                void OnReceiveData(byte * data, size_t len);
+                
 
 	private:
 

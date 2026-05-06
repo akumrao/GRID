@@ -3,8 +3,8 @@
 
 CC	= gcc
 CXX     = g++
-TARGET=runUnitTest # define the name of the executable
-SOURCES=$(wildcard testDtlsServer.cpp ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp )
+TARGET=runDtlsServerToServer # define the name of the executable
+SOURCES=$(wildcard testDtlsServerToServer.cpp Router.cpp ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp )
 
 CXXFLAGS   := -g -std=c++17 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL
 

@@ -3,8 +3,8 @@
 
 CC	= gcc
 CXX     = g++
-TARGET=runtestSecUDPClient # define the name of the executable
-SOURCES=$(wildcard testDtlsClient.cpp ../src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../crypto/src/*.cpp ../../base/src/*.cpp )
+TARGET=runtestDtlsUDPServer # define the name of the executable
+SOURCES=$(wildcard testDtlsServer.cpp ../src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../crypto/src/*.cpp ../../base/src/*.cpp )
 
 CXXFLAGS   := -g  -std=c++14 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL -DENABLE_OPENSSL=1
 

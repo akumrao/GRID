@@ -224,6 +224,7 @@ namespace rtc
 	{   
 // 		
                  SDebug << "ReceiveSctpData: " << len;
+
 //
 //		if (!this->sctpAssociation)
 //		{
@@ -234,7 +235,9 @@ namespace rtc
 //
 //		// Pass it to the SctpTransport.
                 if(sctptransport)
-		sctptransport->incoming(make_message(data, data + len));
+		   sctptransport->incoming(make_message(data, data + len));
+               else
+                 iceListener->OnReceiveData(data, len);
 		
 	}
 

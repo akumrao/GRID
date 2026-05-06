@@ -172,7 +172,7 @@ typedef struct agent_stun_entry {
 	virtual void onRecvCallback( unsigned char *data, size_t size)=0;
     };
 
-  class Agent : public GetAddrInfoReq, GetNameInfoReq, rtc::Transport::Listener
+  class Agent : public GetAddrInfoReq, GetNameInfoReq//, rtc::Transport::Listener
   {
   public:
       
