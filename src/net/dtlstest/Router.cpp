@@ -39,17 +39,7 @@ namespace rtc
 
 
 		// Close all Transports.
-		for (auto& kv : this->mapTransports)
-		{
-			auto* transport = kv.second;
-
-			delete transport;
-		}
-		this->mapTransports.clear();
-
-		// Close all RtpObservers.
 	
-		this->mapDataProducers.clear();
 	}
 
 
@@ -85,6 +75,23 @@ namespace rtc
         void Router::OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message )
         {
             
+        }
+        
+        void Router::Close( )
+        {
+    
+            
+           	for (auto& kv : this->mapTransports)
+		{
+			auto* transport = kv.second;
+
+			delete transport;
+		}
+		this->mapTransports.clear();
+
+		// Close all RtpObservers.
+	
+		this->mapDataProducers.clear();
         }
 
 

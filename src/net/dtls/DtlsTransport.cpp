@@ -612,6 +612,11 @@ namespace rtc {
         return true;
     }
 
+  void DtlsTransport::ClassDestroy() {
+
+// TBD
+
+    }
 #else
 
     //X509* DtlsTransport::certificate{ nullptr };
@@ -655,6 +660,7 @@ namespace rtc {
 
     void DtlsTransport::ClassDestroy() {
 
+         SInfo << "DtlsTransport::ClassDestroy()";
 
         //		if (DtlsTransport::privateKey)
         //			EVP_PKEY_free(DtlsTransport::privateKey);
@@ -1241,6 +1247,8 @@ error:
     inline bool DtlsTransport::CheckStatus(int returnCode) {
 
 
+        SInfo << "DtlsTransport::CheckStatus()";
+        
         int err;
         bool wasHandshakeDone = this->handshakeDone;
 
@@ -1350,6 +1358,7 @@ error:
 
     inline bool DtlsTransport::SetTimeout() {
 
+        SInfo << "DtlsTransport::SetTimeout()";
 
         assertm(
                 this->state == DtlsState::CONNECTING || this->state == DtlsState::CONNECTED,
@@ -1467,6 +1476,9 @@ error:
     inline bool DtlsTransport::CheckRemoteFingerprint() {
 
 
+        
+        SInfo << "DtlsTransport::CheckRemoteFingerprint()";
+        
         assertm(
                 this->remoteFingerprint.algorithm != CertificateFingerprint::Algorithm::NONE, "remote fingerprint not set");
 
@@ -1580,7 +1592,8 @@ error:
 
     inline bool DtlsTransport::ProcessHandshake() {
 
-
+        SInfo << "DtlsTransport::ProcessHandshake()";
+        
         assertm(this->handshakeDone, "handshake not done yet");
         assertm(
                 this->remoteFingerprint.algorithm != CertificateFingerprint::Algorithm::NONE, "remote fingerprint not set");

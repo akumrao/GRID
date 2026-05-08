@@ -53,11 +53,11 @@ namespace rtc
 			bool bwe{ false };
 		};
                 
-                const Configuration &config;
+              
 
 	public:
 
-                
+               const Configuration &config;
 		Transport(const std::string& id, int agentNo, const Configuration &config, Listener* listener);
 		virtual ~Transport();
 

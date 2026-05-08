@@ -74,9 +74,9 @@ int main(int argc, char** argv) {
         SInfo << "http://localhost:8000";
         #endif
         
-        rtc::SctpTransport::Init();
-        rtc::SctpSettings mCurrentSctpSettings = {};
-        rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
+       // rtc::SctpTransport::Init();
+//        rtc::SctpSettings mCurrentSctpSettings = {};
+//        rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
         
    
         rtc::DtlsTransport::ClassInit();
@@ -90,7 +90,7 @@ int main(int argc, char** argv) {
 
         app.waitForShutdown([&](void*) {
 
-           // socket.shutdown();
+             router1.Close();
             
              rtc::DtlsTransport::ClassDestroy();
 

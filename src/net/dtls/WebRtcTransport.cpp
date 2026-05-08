@@ -32,16 +32,16 @@ namespace rtc
 
         
        
-    
+        /*with stun*/
         WebRtcTransport::WebRtcTransport(const std::string& id, int agentNo,  const Configuration &config, rtc::Transport::Listener* listener, std::string IP, int port, Agent *agent)
             : rtc::Transport::Transport(id, agentNo, config, listener), IP(IP), port(port), agent(agent), agentNo(agentNo)
         {
     
             
             
-                    udpServer = new base::net::UdpServer(this, IP,  port );
+                    m_udpServer = new base::net::UdpServer(this, IP,  port );
 
-                    udpServer->bind();
+                    m_udpServer->bind();
 
                     STrace << "AgentNo " << agentNo << " Create a DTLS transport.";
                     this->dtlsTransport = new rtc::DtlsTransport(this);
@@ -86,6 +86,8 @@ namespace rtc
    */        
             
         }
+        
+        /*with static*/
 	WebRtcTransport::WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort , std::string localip, std::string remoteip )
 	  : agent(agent), rtc::Transport::Transport(id, agentNo, config, listener)
 	{
@@ -179,7 +181,8 @@ namespace rtc
             for (auto& kv : this->udpSockets)
             {
                     auto* udpSocket = kv.first;
-
+                    udpSocket->Close();
+                    
                     delete udpSocket;
             }
             this->udpSockets.clear();
@@ -187,7 +190,7 @@ namespace rtc
             for (auto& kv : this->tcpServers)
             {
                     auto* tcpServer = kv.first;
-
+                     tcpServer->Close();
                     delete tcpServer;
             }
             this->tcpServers.clear();
@@ -197,11 +200,11 @@ namespace rtc
 
         void WebRtcTransport::InitDtls(bool server, std::string announcedIp , addr_record_t &remotemapped , CertificateFingerprint dtlsRemoteFingerprint)
 	{
-            this->udpSockets[udpServer] = announcedIp;
+            this->udpSockets[m_udpServer] = announcedIp;
 
 
             tuple = new TransportTuple(
-            udpServer, reinterpret_cast<struct sockaddr*>(&remotemapped.addr)  );
+            m_udpServer, reinterpret_cast<struct sockaddr*>(&remotemapped.addr)  );
 
             tuple = iceServer->AddTuple(tuple);
 
@@ -225,7 +228,7 @@ namespace rtc
                     MayRunDtlsTransport();
             }
 
-             MayRunDtlsTransport();
+            // MayRunDtlsTransport();
 
 
 //            dtlsRemoteRole = rtc::DtlsTransport::Role::AUTO;
@@ -473,6 +476,15 @@ namespace rtc
 		// Trick for clients performing aggressive ICE regardless we are ICE-Lite.
 		this->iceServer->ForceSelectedTuple(tuple);
 
+                
+            if ( this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CLOSED )
+            {    
+                 delete dtlsTransport;
+                 dtlsTransport = new DtlsTransport(this);
+                 dtlsTransport->SetRemoteFingerprint(config.gconfig->mCertificate->fingerprint());
+                 MayRunDtlsTransport();
+            }
+                
             // Check that DTLS status is 'connecting' or 'connected'.
             if (
               this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CONNECTING ||
@@ -518,7 +530,7 @@ namespace rtc
 
             IP::GetAddressInfo(
                         remoteAddr, family, peerIp, peerPort);
-            SDebug  <<  " OnUdpSocketPacketReceived Stun " << peerIp << ":" << peerPort ;
+            SDebug  <<  " OnUdpSocketPacketReceived " << peerIp << ":" << peerPort ;
             addr_record_t remotesrc;
             IP::CopyAddress(remoteAddr, remotesrc );
 
@@ -733,7 +745,7 @@ namespace rtc
         
         int WebRtcTransport::agent_direct_send( uint8_t* data, uint32_t nbytes, addr_record_t &record )
         {
-            return udpServer->send( (char*) data, nbytes , (const struct sockaddr*)&record.addr);
+            return m_udpServer->send( (char*) data, nbytes , (const struct sockaddr*)&record.addr);
         }
       
 } // namespace rtc

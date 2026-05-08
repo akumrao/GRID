@@ -1,0 +1,43 @@
+################################################################################
+### CUSTOMIZE BELOW HERE #######################################################
+
+CC	= gcc
+CXX     = g++
+TARGET=mbedtestDtlsUDPServer # define the name of the executable
+SOURCES=$(wildcard testDtlsServer.cpp Router.cpp ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp )
+
+CXXFLAGS   := -g -std=c++17 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL -DFROMFILE=1 -DUSE_MBEDTLS=1
+
+CPPFLAGS   := -I../../json/include/ -I../sctp/ -I../pc/ -I../dtls/ -I../../http/include/ -I../../http_parser/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../../webrtcserver/deps/usrsctp/usrsctplib/ -I../../webrtcserver/deps/mbedtls/include -I../../net/incmbedtls/  
+
+
+
+
+LDLIBS    := -lpthread -lm -ldl -lz
+
+
+SLIBS     := ../../webrtcserver/deps/mbedtls/build/library/libmbedtls.a ../../webrtcserver/deps/mbedtls/build/library/libmbedx509.a ../../webrtcserver/deps/mbedtls/build/library/libmbedcrypto.a  ../../webrtcserver/build/deps/usrsctp/usrsctplib/libusrsctp.a
+
+
+################################################################################
+### DO NOT EDIT THE FOLLOWING LINES ############################################
+
+
+# define list of objects
+OBJSC=$(SOURCES:.cpp=.o)
+OBJS=$(OBJSC:.cpp=.o)
+
+# the target is obtained linking all .o files
+all: $(SOURCES) $(TARGET)
+
+$(TARGET): $(OBJS)
+	$(CXX) $(CXXFLAGS) $(CPPFLAGS) $(LDFLAGS) $(OBJS) $(LDLIBS) $(SLIBS) -o $(TARGET)
+
+purge: clean
+	rm -f $(TARGET)
+
+clean:
+	rm -f  $(OBJS)
+
+################################################################################
+################################################################################

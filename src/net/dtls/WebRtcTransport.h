@@ -47,11 +47,11 @@ namespace rtc
                 int port;
                 Agent *agent;
         public:
-                UdpServer *udpServer;
+                UdpServer *m_udpServer{nullptr};
 	public:
-            
+                /*with stun*/
                 WebRtcTransport(const std::string& id, int agentNo, const Configuration &config, rtc::Transport::Listener* listener, std::string IP, int port, Agent *agent);
-
+                /*with static*/
 		WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort, std::string localip , std::string remoteip );
                 
 		~WebRtcTransport() override;

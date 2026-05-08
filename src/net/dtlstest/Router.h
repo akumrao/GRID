@@ -4,7 +4,7 @@
 #include "common.h"
 #include "DataConsumer.h"
 #include "DataProducer.h"
-#include "Transport.h"
+#include "WebRtcTransport.h"
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
@@ -39,12 +39,14 @@ namespace rtc
 
 
 	public:
+            
+           void Close();
 		// Passed by argument.
-		const std::string id;
+	    const std::string id;
 
 	private:
 		// Allocated by this.
-		std::unordered_map<std::string, rtc::Transport*> mapTransports;
+		std::unordered_map<std::string, rtc::WebRtcTransport*> mapTransports;
 
 		std::unordered_map<std::string, rtc::DataProducer*> mapDataProducers;
 	};

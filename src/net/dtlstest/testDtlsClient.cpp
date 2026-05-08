@@ -74,9 +74,9 @@ int main(int argc, char** argv) {
         SInfo << "http://localhost:8000";
         #endif
         
-        rtc::SctpTransport::Init();
-        rtc::SctpSettings mCurrentSctpSettings = {};
-        rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
+       // rtc::SctpTransport::Init();
+        //rtc::SctpSettings mCurrentSctpSettings = {};
+        //rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
         
    
         rtc::DtlsTransport::ClassInit();
@@ -87,14 +87,30 @@ int main(int argc, char** argv) {
         
         //router1.HandleRequest(true, transportconfig, 8000, 9000, "127.0.0.1", "127.0.0.1",  fingerPrint);
         router2.HandleRequest(false,transportconfig, 9000, 8000, "127.0.0.1", "127.0.0.1", fingerPrint);
+        
+        
+        //sleep(500);
+        
+        
 
-        app.waitForShutdown([&](void*) {
+//        uv_signal_t sig;
+//        uv_signal_init(app.uvGetLoop(), &sig);
+//        uv_signal_start(&sig, signal_cb, SIGINT);
+        
+  //      app.run();
+//
+      app.waitForShutdown([&](void*) 
+        {
 
-           // socket.shutdown();
+            router2.Close();
+        
+            rtc::DtlsTransport::ClassDestroy();
             
-             rtc::DtlsTransport::ClassDestroy();
+            // rtc::DtlsTransport::ClassDestroy();
 
-        });
+        }
+        
+       );
 
 
 
