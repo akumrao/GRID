@@ -126,7 +126,7 @@ namespace rtc {
         mbedtls_entropy_context mEntropy;
         mbedtls_ctr_drbg_context mDrbg;
         mbedtls_ssl_config mConf;
-        mbedtls_ssl_context mSsl;
+      
 
         std::mutex mSslMutex;
 
@@ -149,12 +149,20 @@ namespace rtc {
         static int GetTimerCallback(void *ctx);
 
 
-        bool handshake();
+       
 
         int swrap_error_handler(const int code);
         void stay_uptodate();
 
-
+    public:
+        bool handshake();
+        int timer_int_passed;
+        int timer_fin_passed;
+         mbedtls_ssl_context mSsl;
+         
+         uv_timer_t timer1;
+         
+        void shutdown();
 
 #else
         static X509* certificate;

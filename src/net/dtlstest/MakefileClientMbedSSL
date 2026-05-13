@@ -3,18 +3,20 @@
 
 CC	= gcc
 CXX     = g++
-TARGET=runtestDtlsUDPClient # define the name of the executable
+TARGET=mbedtestDtlsUDPClient # define the name of the executable
 SOURCES=$(wildcard testDtlsClient.cpp Router.cpp ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp )
 
-CXXFLAGS   := -g -std=c++17 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL
+CXXFLAGS   := -g -std=c++17 -Wno-inconsistent-missing-override -Wno-uninitialized -DHTTPSSL -DFROMFILE=1 -DUSE_MBEDTLS=1
 
-CPPFLAGS   := -I../../json/include/ -I../sctp/ -I../pc/ -I../dtls/ -I../../http/include/ -I../../http_parser/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../../../src/openssl/buildx64/include -I../../webrtcserver/deps/usrsctp/usrsctplib/ -DHTTPSSL
+CPPFLAGS   := -I../../json/include/ -I../sctp/ -I../pc/ -I../dtls/ -I../../http/include/ -I../../http_parser/ -I../../base/include/ -I../../net/include/ -I../../libuv/include -I../../libuv/src -I../../../build/ -I../../http_parser/ -I../../webrtcserver/deps/usrsctp/usrsctplib/ -I../../webrtcserver/deps/mbedtls/include -I../../net/incmbedtls/  
+
 
 
 
 LDLIBS    := -lpthread -lm -ldl -lz
 
-SLIBS     := ../../../src/openssl/buildx64/lib/libssl.a   ../../../src/openssl/buildx64/lib/libcrypto.a  ../../webrtcserver/build/deps/usrsctp/usrsctplib/libusrsctp.a
+SLIBS     := ../../webrtcserver/deps/mbedtls/build/library/libmbedtls.a ../../webrtcserver/deps/mbedtls/build/library/libmbedx509.a ../../webrtcserver/deps/mbedtls/build/library/libmbedcrypto.a  ../../webrtcserver/build/deps/usrsctp/usrsctplib/libusrsctp.a
+
 
 
 ################################################################################

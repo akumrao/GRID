@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
         
         rtc::SctpTransport::Init();
         rtc::SctpSettings mCurrentSctpSettings = {};
-    rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
+        rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
         
    
         rtc::DtlsTransport::ClassInit();
@@ -90,7 +90,8 @@ int main(int argc, char** argv) {
 
         app.waitForShutdown([&](void*) {
 
-           // socket.shutdown();
+         router1.Close();
+         router2.Close();
             
              rtc::DtlsTransport::ClassDestroy();
 
