@@ -422,6 +422,7 @@ void SSLAdapter::shutdown()
     }
     /* Ignore other errors, the connection may be closed or unusable */
 
+    stay_uptodate();
    
     mbedtls_ctr_drbg_free(&_ctr_drbg);
     mbedtls_entropy_free(&_entropy);
