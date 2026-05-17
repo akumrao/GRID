@@ -34,7 +34,7 @@ namespace rtc
        
         /*with stun*/
         WebRtcTransport::WebRtcTransport(const std::string& id, int agentNo,  const Configuration &config, rtc::Transport::Listener* listener, std::string IP, int port, Agent *agent)
-            : rtc::Transport::Transport(id, agentNo, config, listener), IP(IP), port(port), agent(agent), agentNo(agentNo)
+            : rtc::Transport::Transport(id, agentNo, config, listener), IP(IP), port(port), agent(agent)
         {
     
             
@@ -88,7 +88,7 @@ namespace rtc
         }
         
         /*with static*/
-	WebRtcTransport::WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort , std::string localip, std::string remoteip )
+	WebRtcTransport::WebRtcTransport(const std::string& id, int agentNo, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort , std::string localip, std::string remoteip )
 	  : agent(agent), rtc::Transport::Transport(id, agentNo, config, listener)
 	{
 		
@@ -405,7 +405,7 @@ namespace rtc
 			return;
 		}
 
-                //SInfo << "AgentNo " << agentNo << " SendSctpData " << len;
+                SInfo << "AgentNo " << agentNo << " SendAPP data " << len;
 
 		this->dtlsTransport->SendApplicationData(data, len);
 	}
@@ -414,7 +414,7 @@ namespace rtc
 	  base::net::TransportTuple* tuple, const char* data, size_t len)
 	{
 		
-            SDebug  << "AgentNo " << agentNo << " OnPacketReceived" << len;
+            SDebug  << "AgentNo " << agentNo << " OnPacketReceived " << len;
 
 		assertm(this->dtlsTransport, "no dtlsTransport");
 
@@ -429,7 +429,7 @@ namespace rtc
 		}
 		else
 		{
-                    SInfo  << "AgentNo " << agentNo << " OnUdpSocketPacketReceived len: " << len << " data " << data;
+                    SInfo  << "AgentNo " << agentNo << " OnPacketReceived len: " << len << " data " << data;
                     
 		    LWarn("ignoring received packet of unknown type");
 		}
@@ -530,7 +530,7 @@ namespace rtc
 
             IP::GetAddressInfo(
                         remoteAddr, family, peerIp, peerPort);
-            SDebug  <<  " OnUdpSocketPacketReceived " << peerIp << ":" << peerPort ;
+            SDebug  << "AgentNo " << agentNo <<  " OnUdpSocketPacketReceived " << peerIp << ":" << peerPort ;
             addr_record_t remotesrc;
             IP::CopyAddress(remoteAddr, remotesrc );
 
@@ -711,7 +711,7 @@ namespace rtc
 	  const rtc::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
 	{
 		
-           // SInfo  << "AgentNo " << agentNo << " OnDtlsTransportSendData len:" << len;
+            SInfo  << "AgentNo " << agentNo << " OnDtlsTransportSendData len:" << len;
 
             assertm(this->dtlsTransport, "no dtlsTransport");
 

@@ -44,8 +44,8 @@ int main(int argc, char** argv) {
         Application app;
         //SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true);
         
-        rtc::Router router1("101");
-        rtc::Router router2("102");
+        rtc::Router router1("1", 1);
+        rtc::Router router2("2", 2);
         
         
         base::cnfg::Configuration cnfgSet;

@@ -333,7 +333,7 @@ IncomingDataChannel::IncomingDataChannel(weak_ptr<PeerConnection> pc,
 
 IncomingDataChannel::~IncomingDataChannel() {
 
-    int x = 1;
+
 }
 
 void IncomingDataChannel::open(shared_ptr<SctpTransport>) {

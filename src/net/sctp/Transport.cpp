@@ -16,7 +16,6 @@ namespace rtc
 	  : id(id), iceListener(listener), agentNo(agentNo), config(config)
 	{
             
-            int x = 1;
 //	
 //
 //		{
@@ -188,7 +187,6 @@ namespace rtc
                     
             SInfo << "sctptransport->start";
             sctptransport->start();
-            int x = 1;
 	
 //		// Tell all DataConsumers.
 //		for (auto& kv : this->mapDataConsumers)
@@ -223,7 +221,7 @@ namespace rtc
 	void Transport::ReceiveSctpData(byte * data, size_t len)
 	{   
 // 		
-                 SDebug << "ReceiveSctpData: " << len;
+                 SDebug << "AgentNo " << agentNo << " ReceiveSctpData: " << len;
 
 //
 //		if (!this->sctpAssociation)
@@ -253,9 +251,6 @@ namespace rtc
             
              SInfo << "OnDataProducerSctpMessageReceived";
 	
-            int x = 1;
-
-//                
 //                SInfo << "OnDataProducerSctpMessageReceived dataProducer " <<  dataProducer->id  << " sctpAssociation "  << sctpAssociation;
 //
 		//this->iceListener->OnTransportDataProducerSctpMessageReceived(this, dataProducer, ppid, msg, len);
@@ -401,7 +396,6 @@ namespace rtc
 
         void Transport::OnSctpState(SctpTransport::State state)
         {
-            int x = 1;
             
             iceListener->OnSctpState(state);
         }

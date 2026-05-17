@@ -61,7 +61,7 @@ find_package(Threads REQUIRED)
 
 set(SOURCE_FILES testDtlsServerToServer.cpp Router.cpp)
 set(SOURCE_FILES_client testDtlsClient.cpp Router.cpp)
-set(SOURCE_FILES_server testDtlsServerToServer.cpp Router.cpp)
+set(SOURCE_FILES_server testDtlsServer.cpp Router.cpp)
 
 file(GLOB SOURCES   
     ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp

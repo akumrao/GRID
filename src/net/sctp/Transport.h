@@ -182,13 +182,13 @@ namespace rtc
 	public:
 		// Passed by argument.
 		const std::string id;
+              
                 Listener* iceListener{ nullptr };
-                
+                 int agentNo{0};
                 rtc::SctpTransport* sctptransport{ nullptr };
 
 	private:
 		// Passed by argument.
-                int agentNo;
 		// Allocated by this.
 //		std::unordered_map<std::string, rtc::Producer*> mapProducers;
 //		std::unordered_map<std::string, rtc::Consumer*> mapConsumers;

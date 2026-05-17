@@ -1508,7 +1508,7 @@ shared_ptr<IceTransport> PeerConnection::initIceTransport() {
 				    changeIceState(IceState::Connected);
 				  //  initDtlsTransport();
                                     
-                                    int x = 1;
+
 				    break;
                             }
 			    case IceTransport::State::Completed:

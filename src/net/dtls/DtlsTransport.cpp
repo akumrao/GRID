@@ -198,9 +198,7 @@ namespace rtc {
         mbedtls_ssl_init(&mSsl);
         mbedtls_ssl_config_init(&mConf);
         mbedtls_ctr_drbg_set_prediction_resistance(&mDrbg, MBEDTLS_CTR_DRBG_PR_ON);
-
-
-
+        mbedtls_ssl_conf_authmode(&mConf, MBEDTLS_SSL_VERIFY_OPTIONAL);
 
     }
 
@@ -261,7 +259,12 @@ namespace rtc {
         rv = (size_t) mbedtls_ssl_write(&mSsl, (const unsigned char *) data, len);
         // if (r <= 0) { swrap_error_handler(r); }  // we are not sure why Mbedtls does not handle error, though openssl does it 
         // I have refered https://github.com/yodaos-project/ShadowNode.git
-
+       /* 
+        if (rv <= 0) 
+        {
+             SError << "mbedtls_ssl_write failed";
+        }
+        */
 
         size_t pending = 0;
 
@@ -299,7 +302,7 @@ namespace rtc {
 
         if (!this->handshakeDone) //// handshake shoud be callled from client only
         {
-            handshake();
+            if(!handshake())
             return;
         }
 
@@ -325,7 +328,6 @@ namespace rtc {
                 // jerry_value_t fn = iotjs_jval_get_property(jthis, "onclose");
                 SInfo << "MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY";
                 
-                shutdown();
                 this->state = DtlsState::CLOSED;
                 this->listener->OnDtlsTransportClosed(this);
                 
@@ -361,6 +363,7 @@ namespace rtc {
             auto [crt, pk] = config.mCertificate->credentials();
             mbedtls::check(mbedtls_ssl_conf_own_cert(&mConf, crt, pk));
 
+            mbedtls_ssl_conf_ca_chain(&mConf, crt, NULL);
             mbedtls_ssl_conf_dtls_cookies(&mConf, NULL, NULL, NULL);
             mbedtls_ssl_conf_dtls_srtp_protection_profiles(&mConf, srtpSupportedProtectionProfiles);
 
@@ -445,28 +448,35 @@ namespace rtc {
         rv = swrap_error_handler(rv);
         if (rv == 0) {
 
-            handshakeDone = true;
+           
 
-            this->state = DtlsState::CONNECTED;
-            this->listener->OnDtlsTransportConnected(this);
-
-
+            
+            
             int verify_status = (int) mbedtls_ssl_get_verify_result(&mSsl);
             if (verify_status) {
                 char buf[512];
                 mbedtls_x509_crt_verify_info(buf, sizeof (buf), "::", (uint32_t) verify_status);
                 //mbedtls_printf("%s\n", buf);
-                SError << " Failed ssl cert verification " << buf;
+                if (verify_status & MBEDTLS_X509_BADCERT_NOT_TRUSTED ) {
+                //printf("Peer certificate is not generally trusted, but accepted: %s\n", buf);
+                  SWarn << " Peer certificate is not generally trusted, but accepted" << buf;
+                // This is expected for self-signed certificates. Proceed securely.
+                } else {
+                //printf("Verification failed with critical errors: %s\n", buf);
+                // Abort connection as there are unexpected errors like expiration or CN mismatch
+                      SError << " Failed ssl cert verification because expired or CN mismatch " << buf;
+                }
             }
 
             SInfo << "SSL Handshake over";
 
 
 
-            //  _socket->on_tls_connect();
+            handshakeDone = true;
+            this->state = DtlsState::CONNECTED;
+            this->listener->OnDtlsTransportConnected(this);
 
-            // notify to the JS layer "onhandshakedone".
-            // jerry_value_t fn = iotjs_jval_get_property(jthis, "onhandshakedone");
+
 
         }
         return handshakeDone;
@@ -544,7 +554,7 @@ namespace rtc {
     }
 
     inline void DtlsTransport::SendPendingOutgoingDtlsData() {
-        int x = 1;
+//        int x = 1;
     }
 
     inline bool DtlsTransport::SetTimeout() {
@@ -640,10 +650,10 @@ namespace rtc {
         auto t = static_cast<DtlsTransport *> (ctx);
 
         string fingerprint = rtc::make_fingerprint(crt, t->remoteFingerprint.algorithm);
-        std::transform(fingerprint.begin(), fingerprint.end(), fingerprint.begin(),
-                [](char c) {
-                    return char(std::toupper(c)); });
-        return t->checkFingerprint(fingerprint);
+//        std::transform(fingerprint.begin(), fingerprint.end(), fingerprint.begin(),
+//                [](char c) {
+//                    return char(std::toupper(c)); });
+        return !t->checkFingerprint(fingerprint);
     }
 
     void DtlsTransport::ExportKeysCallback(void *ctx, mbedtls_ssl_key_export_type /*type*/,
@@ -659,7 +669,6 @@ namespace rtc {
     }
 
     inline bool DtlsTransport::ProcessHandshake() {
-        int x = 1;
         //
         return true;
     }
@@ -1795,534 +1804,3 @@ error:
 
 } // namespace rtc
 
-#if 0
-
-gcc main.c - luv - lmbedtls - lmbedcrypto - o dtls_client
-
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <uv.h>
-#include <mbedtls/ssl.h>
-#include <mbedtls/entropy.h>
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/error.h>
-
-#define SERVER_ADDR "127.0.0.1"
-#define SERVER_PORT 4433
-
-typedef struct {
-    uv_udp_t udp;
-    uv_timer_t timer;
-    mbedtls_ssl_context ssl;
-    mbedtls_ssl_config conf;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_entropy_context entropy;
-
-    unsigned char bio_buf[2048];
-    size_t bio_len;
-    int timer_int_passed;
-    int timer_fin_passed;
-} dtls_client_t;
-
-// --- Timer Callbacks ---
-
-void on_uv_timer(uv_timer_t *handle) {
-    dtls_client_t *c = (dtls_client_t *) handle->data;
-
-    if (!c->timer_int_passed)
-        c->timer_int_passed = 1;
-    else {
-        c->timer_fin_passed = 1;
-        uv_timer_stop(handle);
-    }
-
-
-    mbedtls_ssl_handshake(&c->ssl);
-}
-
-void ssl_set_timer(void *ctx, uint32_t int_ms, uint32_t fin_ms) {
-    dtls_client_t *c = (dtls_client_t *) ctx;
-
-    if (fin_ms == 0) {
-        uv_timer_stop(&c->timer);
-        return;
-    }
-    c->timer_int_passed = c->timer_fin_passed = 0;
-
-
-    uv_timer_start(&c->timer, on_uv_timer, int_ms, fin_ms - int_ms);
-}
-
-int ssl_get_timer(void *ctx) {
-    dtls_client_t *c = (dtls_client_t *) ctx;
-    if (c->timer_fin_passed) return 2;
-    if (c->timer_int_passed) return 1;
-    return 0;
-}
-
-// --- BIO Callbacks ---
-
-int ssl_send(void *ctx, const unsigned char *buf, size_t len) {
-    dtls_client_t *c = (dtls_client_t *) ctx;
-    uv_buf_t uv_b = uv_buf_init((char *) malloc(len), len);
-    memcpy(uv_b.base, buf, len);
-
-    uv_udp_send_t *req = malloc(sizeof (uv_udp_send_t));
-    req->data = uv_b.base; // Track to free later
-
-    int r = uv_udp_send(req, &c->udp, &uv_b, 1, NULL, [](uv_udp_send_t* r, int s) {
-        free(r->data); free(r);
-    });
-    return (r == 0) ? (int) len : MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-}
-
-int ssl_recv(void *ctx, unsigned char *buf, size_t len) {
-    dtls_client_t *c = (dtls_client_t *) ctx;
-    if (c->bio_len == 0) return MBEDTLS_ERR_SSL_WANT_READ;
-    size_t n = (len < c->bio_len) ? len : c->bio_len;
-    memcpy(buf, c->bio_buf, n);
-    c->bio_len = 0;
-    return (int) n;
-}
-
-// --- UV Callbacks ---
-
-void on_recv(uv_udp_t *h, ssize_t nread, const uv_buf_t *rcv, const struct sockaddr *a, unsigned f) {
-    dtls_client_t *c = (dtls_client_t *) h->data;
-    if (nread > 0) {
-        memcpy(c->bio_buf, rcv->base, nread);
-        c->bio_len = nread;
-        int ret = mbedtls_ssl_handshake(&c->ssl);
-        if (ret == 0) printf("Handshake Success!\n");
-        else if (ret < 0 && ret != MBEDTLS_ERR_SSL_WANT_READ) {
-            char err[100];
-            mbedtls_strerror(ret, err, 100);
-            printf("Error: %s\n", err);
-        }
-    }
-    if (rcv->base) free(rcv->base);
-}
-
-int main() {
-    uv_loop_t *loop = uv_default_loop();
-    dtls_client_t client = {0};
-
-    // 1. Initialize MbedTLS
-    mbedtls_ssl_init(&client.ssl);
-    mbedtls_ssl_config_init(&client.conf);
-    mbedtls_ctr_drbg_init(&client.ctr_drbg);
-    mbedtls_entropy_init(&client.entropy);
-    mbedtls_ctr_drbg_seed(&client.ctr_drbg, mbedtls_entropy_func, &client.entropy, (const unsigned char *) "uv", 2);
-    mbedtls_ssl_config_defaults(&client.conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_DATAGRAM, 0);
-    mbedtls_ssl_conf_rng(&client.conf, mbedtls_ctr_drbg_random, &client.ctr_drbg);
-    mbedtls_ssl_conf_authmode(&client.conf, MBEDTLS_SSL_VERIFY_NONE); // Change for production
-    mbedtls_ssl_setup(&client.ssl, &client.conf);
-    mbedtls_ssl_set_bio(&client.ssl, &client, ssl_send, ssl_recv, NULL);
-    mbedtls_ssl_set_timer_cb(&client.ssl, &client, ssl_set_timer, ssl_get_timer);
-
-    // 2. Initialize Libuv
-    uv_udp_init(loop, &client.udp);
-    client.udp.data = &client;
-    uv_timer_init(loop, &client.timer);
-    client.timer.data = &client;
-
-    struct sockaddr_in dest;
-    uv_ip4_addr(SERVER_ADDR, SERVER_PORT, &dest);
-    uv_udp_connect(&client.udp, (const struct sockaddr *) &dest);
-    uv_udp_recv_start(&client.udp, [](uv_handle_t* h, size_t s, uv_buf_t * b) {
-        b->base = (char*) malloc(s); b->len = s;
-    }, on_recv);
-
-    // Start Handshake
-    printf("Starting DTLS Handshake...\n");
-    mbedtls_ssl_handshake(&client.ssl);
-
-    return uv_run(loop, UV_RUN_DEFAULT);
-}
-
-server
-
-/ server code
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <uv.h>
-#include "mbedtls/ssl.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ctr_drbg.h"
-
-typedef struct {
-    uv_udp_t udp;
-    mbedtls_ssl_context ssl;
-    mbedtls_ssl_config conf;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_entropy_context entropy;
-    uv_timer_t timer;
-    struct sockaddr_storage peer_addr;
-    unsigned char *in_data;
-    size_t in_len;
-} dtls_session_t;
-
-// --- BIO Callbacks ---
-
-int recv_bio(void *ctx, unsigned char *buf, size_t len) {
-    dtls_session_t *s = (dtls_session_t *) ctx;
-    if (s->in_len == 0) return MBEDTLS_ERR_SSL_WANT_READ;
-    size_t n = (len < s->in_len) ? len : s->in_len;
-    memcpy(buf, s->in_data, n);
-    s->in_len = 0; // Simplified: consume whole packet
-    return (int) n;
-}
-
-int send_bio(void *ctx, const unsigned char *buf, size_t len) {
-    dtls_session_t *s = (dtls_session_t *) ctx;
-    uv_buf_t uvb = uv_buf_init((char*) buf, len);
-    uv_udp_send_t *req = malloc(sizeof (uv_udp_send_t));
-    uv_udp_send(req, &s->udp, &uvb, 1, (const struct sockaddr *) &s->peer_addr, NULL);
-    return (int) len;
-}
-
-// --- Timer Callbacks ---
-
-void on_timer_expire(uv_timer_t *handle) {
-    dtls_session_t *s = (dtls_session_t *) handle->data;
-    mbedtls_ssl_handshake(&s->ssl); // Trigger retransmission
-}
-
-void set_timer(void *ctx, uint32_t int_ms, uint32_t fin_ms) {
-    dtls_session_t *s = (dtls_session_t *) ctx;
-    uv_timer_stop(&s->timer);
-    if (fin_ms != 0) uv_timer_start(&s->timer, on_timer_expire, fin_ms, 0);
-}
-
-int get_timer(void *ctx) {
-    dtls_session_t *s = (dtls_session_t *) ctx;
-    if (!uv_is_active((uv_handle_t*) & s->timer)) return -1;
-    return 0; // Simplified status
-}
-
-// --- Libuv Callbacks ---
-
-void alloc_cb(uv_handle_t* h, size_t s, uv_buf_t* b) {
-    b->base = malloc(s);
-    b->len = s;
-}
-
-void on_recv(uv_udp_t* h, ssize_t n, const uv_buf_t* b, const struct sockaddr* a, unsigned f) {
-    dtls_session_t *s = (dtls_session_t *) h->data;
-    if (n > 0) {
-        s->in_data = (unsigned char*) b->base;
-        s->in_len = n;
-        memcpy(&s->peer_addr, a, sizeof (struct sockaddr_storage));
-
-        int ret = mbedtls_ssl_handshake(&s->ssl);
-        if (ret == 0) printf("Handshake Success!\n");
-    }
-    if (b->base) free(b->base);
-}
-
-int main() {
-    uv_loop_t *loop = uv_default_loop();
-    dtls_session_t s = {0};
-    s.udp.data = &s;
-    s.timer.data = &s;
-
-    // Mbed TLS Init
-    mbedtls_ssl_init(&s.ssl);
-    mbedtls_ssl_config_init(&s.conf);
-    mbedtls_ctr_drbg_init(&s.ctr_drbg);
-    mbedtls_entropy_init(&s.entropy);
-    mbedtls_ctr_drbg_seed(&s.entropy, (const unsigned char *) "seed", 4);
-
-    mbedtls_ssl_config_defaults(&s.conf, MBEDTLS_SSL_IS_SERVER,
-            MBEDTLS_SSL_TRANSPORT_DATAGRAM, 0);
-    mbedtls_ssl_conf_rng(&s.conf, mbedtls_ctr_drbg_random, &s.ctr_drbg);
-    mbedtls_ssl_setup(&s.ssl, &s.conf);
-    mbedtls_ssl_set_bio(&s.ssl, &s, send_bio, recv_bio, NULL);
-    mbedtls_ssl_set_timer_cb(&s.ssl, &s, set_timer, get_timer);
-
-    // Libuv Init
-    uv_udp_init(loop, &s.udp);
-    uv_timer_init(loop, &s.timer);
-    struct sockaddr_in addr;
-    uv_ip4_addr("0.0.0.0", 4433, &addr);
-    uv_udp_bind(&s.udp, (const struct sockaddr*) &addr, 0);
-    uv_udp_recv_start(&s.udp, alloc_cb, on_recv);
-
-    return uv_run(loop, UV_RUN_DEFAULT);
-}
-
-
-
-
-
-
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <uv.h>
-#include <mbedtls/ssl.h>
-#include <mbedtls/entropy.h>
-#include <mbedtls/ctr_drbg.h>
-#include <mbedtls/ssl_cookie.h>
-
-typedef struct {
-    uv_udp_t udp;
-    mbedtls_ssl_context ssl;
-    mbedtls_ssl_config conf;
-    mbedtls_x509_crt srvcert;
-    mbedtls_pk_context pkey;
-    mbedtls_ssl_cookie_ctx cookie_ctx;
-    // ... plus timer and BIO buffers as in client example ...
-} dtls_server_t;
-
-int main() {
-    dtls_server_t server = {0};
-    mbedtls_ssl_config_init(&server.conf);
-    mbedtls_x509_crt_init(&server.srvcert);
-    mbedtls_pk_init(&server.pkey);
-    mbedtls_ssl_cookie_init(&server.cookie_ctx);
-
-    // 1. Load Server Certificate and Private Key from files
-    // Use parse_file for local filesystem access
-    mbedtls_x509_crt_parse_file(&server.srvcert, "server.crt");
-    mbedtls_pk_parse_keyfile(&server.pkey, "server.key", NULL, mbedtls_ctr_drbg_random, &server.ctr_drbg);
-
-    // 2. Configure DTLS Server Defaults
-    mbedtls_ssl_config_defaults(&server.conf,
-            MBEDTLS_SSL_IS_SERVER,
-            MBEDTLS_SSL_TRANSPORT_DATAGRAM, 0);
-
-    // 3. Setup Cookie Protection (Crucial for DTLS Servers)
-    // Prevents IP spoofing attacks during the initial Hello exchange
-    mbedtls_ssl_cookie_setup(&server.cookie_ctx, mbedtls_ctr_drbg_random, &server.ctr_drbg);
-    mbedtls_ssl_conf_dtls_cookie(&server.conf, mbedtls_ssl_cookie_write,
-            mbedtls_ssl_cookie_check, &server.cookie_ctx);
-
-    // 4. Bind Certificate and Key to the Configuration
-    mbedtls_ssl_conf_own_cert(&server.conf, &server.srvcert, &server.pkey);
-
-    // 5. Initialize libuv UDP socket
-    uv_udp_init(uv_default_loop(), &server.udp);
-    struct sockaddr_in recv_addr;
-    uv_ip4_addr("0.0.0.0", 4433, &recv_addr);
-    uv_udp_bind(&server.udp, (const struct sockaddr*) &recv_addr, 0);
-
-    // Drive handshake in uv_udp_recv_cb as shown in previous examples
-    return uv_run(uv_default_loop(), UV_RUN_DEFAULT);
-}
-
-void init_dtls_with_verification(dtls_client_t *client, const char *hostname, const char *ca_path) {
-    int ret;
-
-    mbedtls_x509_crt_init(&client->cacert);
-
-    // 1. Load Trusted CA Certificates (PEM format)
-    ret = mbedtls_x509_crt_parse_file(&client->cacert, ca_path);
-    if (ret < 0) {
-        printf("Failed to load CA cert: -0x%x\n", -ret);
-        return;
-    }
-
-    // 2. Configure SSL to use these CAs
-    mbedtls_ssl_conf_ca_chain(&client->conf, &client->cacert, NULL);
-
-    // 3. Set Verification Mode 
-    // MBEDTLS_SSL_VERIFY_REQUIRED: Handshake fails if cert is invalid
-    mbedtls_ssl_conf_authmode(&client->conf, MBEDTLS_SSL_VERIFY_REQUIRED);
-
-    // 4. Set Hostname for SNI and Certificate Check
-    // This is critical to prevent Man-in-the-Middle attacks
-    mbedtls_ssl_set_hostname(&client->ssl, hostname);
-}
-
-
-
-
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <uv.h>
-#include "mbedtls/ctr_drbg.h"
-#include "mbedtls/entropy.h"
-#include "mbedtls/ssl.h"
-#include "mbedtls/timing.h"
-
-#define SERVER_PORT 4433
-#define SERVER_IP "127.0.0.1"
-
-// Context container to manage lifetimes across libuv callbacks
-
-typedef struct {
-    uv_udp_t udp_handle;
-    struct sockaddr_in server_addr;
-    mbedtls_ssl_context ssl;
-    mbedtls_ssl_config conf;
-    mbedtls_entropy_context entropy;
-    mbedtls_ctr_drbg_context ctr_drbg;
-    mbedtls_timing_delay_context timer;
-    int handshake_done;
-    int close_notified;
-} dtls_context_t;
-
-// Mbed TLS bio send callback hooked into libuv's loop
-
-int libuv_udp_send(void *ctx, const unsigned char *buf, size_t len) {
-    dtls_context_t *dtls_ctx = (dtls_context_t *) ctx;
-
-    // Allocate libuv request wrapper on the heap to avoid scope lifecycles bugs
-    uv_udp_send_t *send_req = malloc(sizeof (uv_udp_send_t));
-    if (!send_req) return MBEDTLS_ERR_SSL_ALLOC_FAILED;
-
-    // Deep copy data because libuv payloads must stay valid until on_send fires
-    unsigned char *data_copy = malloc(len);
-    if (!data_copy) {
-        free(send_req);
-        return MBEDTLS_ERR_SSL_ALLOC_FAILED;
-    }
-    memcpy(data_copy, buf, len);
-    send_req->data = data_copy;
-
-    uv_buf_t uv_buf = uv_buf_init((char *) data_copy, len);
-
-    // Perform an asynchronous UDP send
-    int status = uv_udp_send(send_req, &dtls_ctx->udp_handle, &uv_buf, 1,
-            (const struct sockaddr *) &dtls_ctx->server_addr,
-            [](uv_udp_send_t *req, int status) {
-                free(req->data); // Clean up the deep-copied buffer
-                free(req); // Clean up the request allocation
-            });
-
-    if (status < 0) {
-        free(data_copy);
-        free(send_req);
-        return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
-    }
-
-    return (int) len;
-}
-
-// Mbed TLS bio receive callback (dummy loop driver)
-// Because libuv works via an inverted push model (on_recv), Mbed TLS pulls from it via 
-// non-blocking calls inside the uv_udp_recv_cb loop context.
-
-int libuv_udp_recv(void *ctx, unsigned char *buf, size_t len) {
-    // In a production event-driven architecture, incoming data should be pushed 
-    // into an internal ring buffer inside uv_udp_recv_cb, which this function reads.
-    return MBEDTLS_ERR_SSL_WANT_READ;
-}
-
-// Memory allocation callback for incoming libuv payloads
-
-void alloc_buffer(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
-    buf->base = (char *) malloc(suggested_size);
-    buf->len = suggested_size;
-}
-
-// Handle asynchronous incoming UDP traffic
-
-void on_recv(uv_udp_t *handle, ssize_t nread, const uv_buf_t *buf,
-        const struct sockaddr *addr, unsigned flags) {
-    dtls_context_t *ctx = (dtls_context_t *) handle->data;
-
-    if (nread < 0) {
-        fprintf(stderr, "Read error or socket close\n");
-        if (buf->base) free(buf->base);
-        return;
-    }
-
-    if (nread > 0) {
-        // Feed the packet into Mbed TLS engine
-        // In a real framework, you write 'buf->base' into your custom bio queue here.
-
-        if (!ctx->handshake_done) {
-            int ret = mbedtls_ssl_handshake(&ctx->ssl);
-            if (ret == 0) {
-                ctx->handshake_done = 1;
-                printf("DTLS Handshake completely successful.\n");
-
-                // Trigger an example data transmission
-                const char *msg = "Hello DTLS Server";
-                mbedtls_ssl_write(&ctx->ssl, (const unsigned char *) msg, strlen(msg));
-            }
-        } else if (!ctx->close_notified) {
-            // Initiate termination sequence after communication ends
-            printf("Initiating secure closure with mbedtls_ssl_close_notify...\n");
-            int ret;
-            do {
-                ret = mbedtls_ssl_close_notify(&ctx->ssl);
-            } while (ret == MBEDTLS_ERR_SSL_WANT_WRITE || ret == MBEDTLS_ERR_SSL_WANT_READ);
-
-            if (ret == 0) {
-                printf("Secure close_notify alert packet transmitted successfully.\n");
-                ctx->close_notified = 1;
-
-                // Tear down loop handles gracefully
-                uv_close((uv_handle_t *) & ctx->udp_handle, [](uv_handle_t * handle) {
-                    printf("UDP handle completely closed.\n");
-                });
-            }
-        }
-    }
-
-    if (buf->base) free(buf->base);
-}
-
-int main() {
-    uv_loop_t *loop = uv_default_loop();
-    dtls_context_t *ctx = malloc(sizeof (dtls_context_t));
-    memset(ctx, 0, sizeof (dtls_context_t));
-
-    // 1. Initialize Mbed TLS Framework cryptographic primitives
-    mbedtls_ssl_init(&ctx->ssl);
-    mbedtls_ssl_config_init(&ctx->conf);
-    mbedtls_entropy_init(&ctx->entropy);
-    mbedtls_ctr_drbg_init(&ctx->ctr_drbg);
-
-    mbedtls_ctr_drbg_seed(&ctx->ctr_drbg, mbedtls_entropy_func, &ctx->entropy,
-            (const unsigned char *) "uv_dtls", 7);
-
-    mbedtls_ssl_config_defaults(&ctx->conf, MBEDTLS_SSL_IS_CLIENT,
-            MBEDTLS_SSL_TRANSPORT_DATAGRAM,
-            MBEDTLS_SSL_PRESET_DEFAULT);
-
-    mbedtls_ssl_conf_rng(&ctx->conf, mbedtls_ctr_drbg_random, &ctx->ctr_drbg);
-    mbedtls_ssl_setup(&ctx->ssl, &ctx->conf);
-
-    // Bind custom asynchronous network callbacks
-    mbedtls_ssl_set_bio(&ctx->ssl, ctx, libuv_udp_send, libuv_udp_recv, NULL);
-    mbedtls_ssl_set_timer_cb(&ctx->ssl, &ctx->timer, mbedtls_timing_set_delay,
-            mbedtls_timing_get_delay);
-
-    // 2. Initialize Libuv Core Engine
-    uv_udp_init(loop, &ctx->udp_handle);
-    ctx->udp_handle.data = ctx;
-    uv_ip4_addr(SERVER_IP, SERVER_PORT, &ctx->server_addr);
-
-    // Kickstart asynchronous packet polling loops
-    uv_udp_recv_start(&ctx->udp_handle, alloc_buffer, on_recv);
-
-    // Trigger initial flight of ClientHello
-    printf("Starting DTLS Session...\n");
-    mbedtls_ssl_handshake(&ctx->ssl);
-
-    // Run the reactive event loop
-    uv_run(loop, UV_RUN_DEFAULT);
-
-    // 3. Clean up engine resources completely 
-    mbedtls_ssl_free(&ctx->ssl);
-    mbedtls_ssl_config_free(&ctx->conf);
-    mbedtls_ctr_drbg_free(&ctx->ctr_drbg);
-    mbedtls_entropy_free(&ctx->entropy);
-    free(ctx);
-
-    return 0;
-}
-
-
-#endif

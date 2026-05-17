@@ -328,7 +328,7 @@ IceTransport::State IceTransport::state() const { return mState; }
 void IceTransport::incoming(message_ptr message) {
    // recv(message); 
     
-    int x = 1;
+
 }
 
 

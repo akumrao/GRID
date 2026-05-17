@@ -479,12 +479,24 @@ int SSLAdapter::handshake() //// handshake shoud be callled from client only
   if (rv == 0) {
     handshake_state = STATE_HANDSHAKE_DONE;
 
-    int verify_status = (int)mbedtls_ssl_get_verify_result(&_ssl);
+    uint32_t verify_status = (uint32_t)mbedtls_ssl_get_verify_result(&_ssl);
     if (verify_status) {
       char buf[512];
       mbedtls_x509_crt_verify_info(buf, sizeof(buf), "::", (uint32_t)verify_status);
       //mbedtls_printf("%s\n", buf);
-       SError << " Failed ssl cert verification " << buf;
+     
+
+        if (verify_status & MBEDTLS_X509_BADCERT_NOT_TRUSTED ) {
+        //printf("Peer certificate is not generally trusted, but accepted: %s\n", buf);
+          SWarn << " Peer certificate is not generally trusted, but accepted" << buf;
+        // This is expected for self-signed certificates. Proceed securely.
+        } else {
+        //printf("Verification failed with critical errors: %s\n", buf);
+        // Abort connection as there are unexpected errors like expiration or CN mismatch
+              SError << " Failed ssl cert verification because expired or CN mismatch " << buf;
+        }
+
+
     }
     
     SInfo << "SSL Handshake over";

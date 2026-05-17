@@ -52,7 +52,7 @@ namespace rtc
                 /*with stun*/
                 WebRtcTransport(const std::string& id, int agentNo, const Configuration &config, rtc::Transport::Listener* listener, std::string IP, int port, Agent *agent);
                 /*with static*/
-		WebRtcTransport(const std::string& id, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort, std::string localip , std::string remoteip );
+		WebRtcTransport(const std::string& id, int agentNo, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort, std::string localip , std::string remoteip );
                 
 		~WebRtcTransport() override;
                 
@@ -116,7 +116,6 @@ namespace rtc
 
 		rtc::DtlsTransport::Role dtlsRole{ rtc::DtlsTransport::Role::AUTO };
                 
-                int agentNo{0};
                 
                 
             //    Listener* iceListener{ nullptr };

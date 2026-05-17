@@ -18,11 +18,11 @@ namespace rtc
 	class Router : public rtc::Transport::Listener
 	{
 	public:
-		explicit Router(const std::string& id);
+		explicit Router(const std::string& id, int agentNo);
 		virtual ~Router();
 
 
-		void HandleRequest( bool server , const Configuration &config,  int localPort, int remotePort, std::string, std::string , CertificateFingerprint &dtlsRemoteFingerprint );          
+		void HandleRequest(  bool server , const Configuration &config,  int localPort, int remotePort, std::string, std::string , CertificateFingerprint &dtlsRemoteFingerprint );          
                 
                 void OnDtlsTransportStatus(DtlsTransport::DtlsState state);                
                 void OnSctpState(SctpTransport::State state);
@@ -43,6 +43,8 @@ namespace rtc
            void Close();
 		// Passed by argument.
 	    const std::string id;
+            int agentNo{0};
+            int count{0};
 
 	private:
 		// Allocated by this.

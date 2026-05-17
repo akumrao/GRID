@@ -29,7 +29,7 @@ namespace rtc
 {
 	/* Instance methods. */
 
-	Router::Router(const std::string& id) : id(id)
+	Router::Router(const std::string& id, int agentNo) : id(id), agentNo(agentNo)
 	{
 	
 	}
@@ -46,7 +46,7 @@ namespace rtc
 	void Router::HandleRequest(bool server, const Configuration &config, int localPort, int remotePort , std::string localIP, std::string remoteIp , CertificateFingerprint &dtlsRemoteFingerprint )
 	{
 
-            auto* webRtcTransport = new rtc::WebRtcTransport(id , config, this, localPort,  remotePort ,  localIP, remoteIp);
+            auto* webRtcTransport = new rtc::WebRtcTransport(id ,agentNo, config, this, localPort,  remotePort ,  localIP, remoteIp);
             webRtcTransport->HandleRequest(server , dtlsRemoteFingerprint);
             
             mapTransports[id] = webRtcTransport;
@@ -57,14 +57,27 @@ namespace rtc
       
             if( state == DtlsTransport::DtlsState::CONNECTED)
             {
-               const uint8_t tmp[] ="arvind";
+                
+               const uint8_t tmp[256] ="arvind";
+               sprintf(tmp, "%darvind", count++ );
                mapTransports[id]->SendSctpData(tmp, 7);
+               
             }    
         }
         
         void Router::OnReceiveData(byte * data, size_t len)
         {
-            SInfo <<  (char*) data;  
+            SInfo << "AgentNo " << agentNo << " " << (char*) data;  
+            
+//             sleep(5);
+//             
+//            {
+//                  const uint8_t tmp[256] ="arvind";
+//               sprintf(tmp, "%darvind", count++ );
+//               mapTransports[id]->SendSctpData(tmp, 7);
+//            }   
+             
+            
         }
 
         void Router::OnSctpState(SctpTransport::State state)
