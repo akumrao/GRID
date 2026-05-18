@@ -2,7 +2,7 @@
 rm -rf build
 mkdir -p build
 
-cp index.html build/
+cp index.html private_key.pem  certificate.crt  build/
 
 cd build
 

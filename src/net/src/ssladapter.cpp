@@ -221,8 +221,8 @@ void SSLAdapter::initSSL()
     }
 
 
-    std::string CertFile = "/mnt/key/certificate.crt";
-  
+   // std::string CertFile = "/mnt/key/certificate.crt";
+   std::string CertFile = "./certificate.crt";
 
     
     int ret = 0;
@@ -242,7 +242,8 @@ void SSLAdapter::initSSL()
     
     if(server)
     {
-       const char * KeyFile = "/mnt/key/private_key.pem";
+       //const char * KeyFile = "/mnt/key/private_key.pem";
+       const char * KeyFile = "./private_key.pem";
        const char *pwd = "12345678";
 
         //ret =  mbedtls_pk_parse_keyfile( &pkey,  KeyFile ,pwd );// mbedtls
