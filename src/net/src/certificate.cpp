@@ -77,9 +77,8 @@ namespace rtc{
 #if USE_MBEDTLS
 string make_fingerprint(mbedtls_x509_crt *crt,
                         CertificateFingerprint::Algorithm fingerprintAlgorithm) {
-	const int size = CertificateFingerprint::AlgorithmSize(fingerprintAlgorithm);
+	const size_t size = CertificateFingerprint::AlgorithmSize(fingerprintAlgorithm);
 	std::vector<unsigned char> buffer(size);
-	std::stringstream fingerprint;
 
 	switch (fingerprintAlgorithm) {
 	case CertificateFingerprint::Algorithm::Sha1:
@@ -107,6 +106,7 @@ string make_fingerprint(mbedtls_x509_crt *crt,
 		throw std::invalid_argument("Unknown fingerprint algorithm");
 	}
 
+/*
 	for (auto i = 0; i < size; i++) {
 		fingerprint << std::setfill('0') << std::setw(2) << std::hex
 		            << static_cast<int>(buffer.at(i));
@@ -115,7 +115,18 @@ string make_fingerprint(mbedtls_x509_crt *crt,
 		}
 	}
 
-	return fingerprint.str();
+*/
+
+	std::ostringstream oss;
+	oss << std::hex << std::uppercase << std::setfill('0');
+	for (size_t i = 0; i < size; ++i) {
+		if (i)
+			oss << std::setw(1) << ':';
+		oss << std::setw(2) << unsigned(buffer.at(i));
+	}
+	return oss.str();
+
+
 }
 
 Certificate::Certificate(mbedtls_x509_crt *crt, mbedtls_pk_context* pk)

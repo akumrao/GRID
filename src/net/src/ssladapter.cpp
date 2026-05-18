@@ -606,11 +606,11 @@ void SSLAdapter::addIncomingData(const char *data, size_t len)  // onread
      
        
     if( handshake_state == STATE_HANDSHAKING ) //// handshake shoud be callled from client only
-    {   handshake();
-        return;
+    {   
+        if(handshake() != STATE_HANDSHAKE_DONE)
+            return;
     }    
  
-
 
     while (true)
     {
