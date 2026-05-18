@@ -506,7 +506,8 @@ int main(int argc, char **argv) {
      
     std::string tmp = client_prefs.dump();
             
-    server->prefs_json = tmp;
+    memcpy(server->prefs_json, tmp.c_str(), tmp.size() + 1);
+
    // json_object_put(client_prefs);
 
     if (server->command == NULL || strlen(server->command) == 0) {

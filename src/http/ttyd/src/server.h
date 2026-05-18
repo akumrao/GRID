@@ -77,7 +77,7 @@ typedef struct {
 
 struct server {
   int client_count;        // client count
-  std::string prefs_json;        // client preferences
+  char prefs_json[256]; // client preferences
   char *credential;        // encoded basic auth credential
   char *auth_header;       // header name used for auth proxy
   char *index;             // custom index.html
