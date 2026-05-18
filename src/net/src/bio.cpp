@@ -281,7 +281,13 @@ int TLS_BIO_write(BIO* bio, const char* buf, size_t size) {
 BIO* SSL_BIO_new(int type) {
     BIO* bio = (BIO*)malloc(sizeof(BIO));
     if (bio) {
+        
+        #ifdef _MSC_VER
+        memset((bio), '\0', sizeof(BIO));
+        #else
         bzero(bio, sizeof(BIO));
+        #endif
+
         bio->type = type;
         bio->mem = NULL;
         bio->prev = NULL;
