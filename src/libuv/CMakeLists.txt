@@ -1,5 +1,5 @@
 # TODO: determine CMAKE_SYSTEM_NAME on OS/390.  Currently assumes "OS/390".
-cmake_minimum_required(VERSION 3.4)
+cmake_minimum_required(VERSION 3.12.0)
 project(libuv LANGUAGES CXX)
 
 add_definitions(-DNDEBUG)
