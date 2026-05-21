@@ -8,7 +8,7 @@
 #include "sctptransport.hpp"
 #include "utils.hpp"
 
-#include "utils.h"
+//#include "utils.h"
 
 #include "datachannel.h"
 //#include "track.hpp"
@@ -25,8 +25,8 @@ using std::chrono::milliseconds;
 
 namespace rtc {
 
-using utils::to_uint16;
-using utils::to_uint32;
+//using utils::to_uint16;
+//using utils::to_uint32;
 
 // Messages for the DataChannel establishment protocol (RFC 8832)
 // See https://www.rfc-editor.org/rfc/rfc8832.html
@@ -268,10 +268,10 @@ void OutgoingDataChannel::open(shared_ptr<SctpTransport> transport) {
 	uint32_t reliabilityParameter;
 	if (mReliability->maxPacketLifeTime.count()) {
 		channelType = CHANNEL_PARTIAL_RELIABLE_TIMED;
-		reliabilityParameter = to_uint32(mReliability->maxPacketLifeTime.count());
+		reliabilityParameter = mReliability->maxPacketLifeTime.count();
 	} else if (mReliability->maxRetransmits) {
 		channelType = CHANNEL_PARTIAL_RELIABLE_REXMIT;
-		reliabilityParameter = to_uint32(mReliability->maxRetransmits);
+		reliabilityParameter = mReliability->maxRetransmits;
 	}
 	// else {
 	//	channelType = CHANNEL_RELIABLE;
@@ -308,8 +308,8 @@ void OutgoingDataChannel::open(shared_ptr<SctpTransport> transport) {
 	open.channelType = channelType;
 	open.priority = htons(0);
 	open.reliabilityParameter = htonl(reliabilityParameter);
-	open.labelLength = htons(to_uint16(mLabel.size()));
-	open.protocolLength = htons(to_uint16(mProtocol.size()));
+	open.labelLength = htons(mLabel.size());
+	open.protocolLength = htons(mProtocol.size());
 
 	auto end = reinterpret_cast<char *>(buffer.data() + sizeof(OpenMessage));
 	std::copy(mLabel.begin(), mLabel.end(), end);

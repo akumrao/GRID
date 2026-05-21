@@ -7,7 +7,7 @@
 
 #include "base/logger.h"
 
-#include "utils.h"
+//#include "utils.h"
 
 #include "Utils.h"
 
@@ -56,8 +56,6 @@ using namespace base;
 
 namespace rtc {
 
-using utils::to_uint16;
-using utils::to_uint32;
 
 
 
@@ -405,7 +403,7 @@ void SctpTransport::closeStream(unsigned int stream) {
 	// RFC 8831 6.7. Closing a Data Channel
 	// Closing of a data channel MUST be signaled by resetting the corresponding outgoing streams
 	// See https://www.rfc-editor.org/rfc/rfc8831.html#section-6.7
-	  mSendQueue.push(make_message(0, Message::Reset, to_uint16(stream)));
+	  mSendQueue.push(make_message(0, Message::Reset, stream));
     }
 	// This method must not call the buffered callback synchronously
 	flush();
@@ -665,11 +663,11 @@ bool SctpTransport::trySendMessage(message_ptr message) {
 	if (reliability.maxPacketLifeTime.count()) {
 		spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
 		spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_TTL;
-		spa.sendv_prinfo.pr_value = to_uint32(reliability.maxPacketLifeTime.count());
+		spa.sendv_prinfo.pr_value = reliability.maxPacketLifeTime.count();
 	} else if (reliability.maxRetransmits) {
 		spa.sendv_flags |= SCTP_SEND_PRINFO_VALID;
 		spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_RTX;
-		spa.sendv_prinfo.pr_value = to_uint32(reliability.maxRetransmits);
+		spa.sendv_prinfo.pr_value = reliability.maxRetransmits;
 	}
 	// else {
 	// 	spa.sendv_prinfo.pr_policy = SCTP_PR_SCTP_NONE;
