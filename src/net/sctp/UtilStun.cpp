@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-#include <zlib.h>  /* for crc */
+//#include <zlib.h>  /* for crc */
 #include <netinet/in.h>
 
 #include <Types.h>
@@ -32,6 +32,75 @@ namespace stun {
 
 #include <errno.h>
 #include <sys/random.h>
+    
+    
+#include <iostream>
+#include <vector>
+#include <string>
+#include <cstdint>
+#include <iomanip>
+
+class ZlibCRC32 {
+private:
+    uint32_t table[256];
+
+    void InitializeTable() {
+        const uint32_t polynomial = 0xEDB88320;
+        for (uint32_t i = 0; i < 256; i++) {
+            uint32_t remainder = i;
+            for (uint32_t j = 0; j < 8; j++) {
+                if (remainder & 1) {
+                    remainder = (remainder >> 1) ^ polynomial;
+                } else {
+                    remainder >>= 1;
+                }
+            }
+            table[i] = remainder;
+        }
+    }
+
+public:
+    ZlibCRC32() {
+        InitializeTable();
+    }
+
+    // Direct replacement for zlib's crc32() function
+    uint32_t Calculate(uint32_t crc, const uint8_t* buf, size_t len) const {
+        if (buf == nullptr) {
+            return 0; // Zlib returns 0 (the initial state) if buffer is null
+        }
+
+        // Zlib internal logic handles the inversion implicitly via the running crc variable
+        crc ^= 0xFFFFFFFF;
+        while (len--) {
+            crc = (crc >> 8) ^ table[(crc ^ *buf++) & 0xFF];
+        }
+        return crc ^ 0xFFFFFFFF;
+    }
+};
+ZlibCRC32 zlib;
+
+//int main() {
+//    ZlibCRC32 zlib;
+//
+//    // 1. Get initial CRC state (mimics zlib calling crc32(0, NULL, 0))
+//    uint32_t crc = zlib.Calculate(0, nullptr, 0); 
+//
+//    // 2. Feed data in chunks (Streaming support)
+//    std::string chunk1 = "The quick brown fox ";
+//    crc = zlib.Calculate(crc, reinterpret_cast<const uint8_t*>(chunk1.c_str()), chunk1.length());
+//
+//    std::string chunk2 = "jumps over the lazy dog";
+//    crc = zlib.Calculate(crc, reinterpret_cast<const uint8_t*>(chunk2.c_str()), chunk2.length());
+//
+//    // Print final result
+//    std::cout << "Zlib CRC-32: 0x" 
+//              << std::uppercase << std::hex << std::setw(8) << std::setfill('0') 
+//              << crc << " (Expected: 0x414FA339)\n";
+//
+//    return 0;
+//}
+    
 
  int random_bytes(void *buf, size_t size) {
 	ssize_t ret = getrandom(buf, size, 0);
@@ -478,7 +547,12 @@ bool compute_message_integrity(unsigned char *buf, size_t size, std::string key,
     buffer[2] = (offset >> 8) & 0xFF;
     buffer[3] = offset & 0xFF;
 
-    result = crc32(0L, &buffer[0], offset + 12) ^ STUN_FINGERPRINT_XOR;
+    
+    
+   // result = crc32(0L, &buffer[0], offset + 12) ^ STUN_FINGERPRINT_XOR;   // with zlib
+    
+    result = zlib.Calculate(0L, &buffer[0], offset + 12) ^ STUN_FINGERPRINT_XOR;
+    // zlib.Calculate(0, nullptr, 0); 
     
     /* and reset the size */
     buffer[2] = curr_size[0];
