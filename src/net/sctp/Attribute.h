@@ -5,7 +5,8 @@
 #include <string>
 #include <vector>
 #include <Types.h>
-#include <arpa/inet.h>
+#include <iterator>
+//#include <arpa/inet.h>
 #include "net/IP.h"
 using namespace base::net;
 

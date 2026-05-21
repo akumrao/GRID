@@ -2,6 +2,8 @@
 #ifndef RTC_C_API
 #define RTC_C_API
 
+#define RTC_STATIC 1
+
 #include "version.h"
 
 #ifdef __cplusplus

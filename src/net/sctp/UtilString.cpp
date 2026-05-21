@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <iterator>
 #include <thread>
+#include <chrono>
 
 namespace  rtc::utils  {
 
@@ -46,9 +47,11 @@ std::seed_seq random_seed() {
 	}
 
 	// Seed with high-resolution clock
-	using std::chrono::high_resolution_clock;
+	//using std::chrono::high_resolution_clock;
 	seed.push_back(
-	    static_cast<unsigned int>(high_resolution_clock::now().time_since_epoch().count()));
+            static_cast<unsigned int>(std::chrono::high_resolution_clock::now()
+                                          .time_since_epoch()
+                                          .count()));
 
 	// Seed with thread id
 	seed.push_back(

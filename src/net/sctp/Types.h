@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 #include <string>
-#include <sys/socket.h>
+//#include <sys/socket.h>
 
 typedef enum stun_address_family {
   STUN_ADDRESS_FAMILY_IPV4 = 0x01,

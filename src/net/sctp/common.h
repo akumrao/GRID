@@ -1,7 +1,7 @@
 
 #ifndef RTC_COMMON_H
 #define RTC_COMMON_H
-
+#define RTC_STATIC 1
 #ifdef RTC_STATIC
 #define RTC_CPP_EXPORT
 #else // dynamic library

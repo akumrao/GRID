@@ -31,7 +31,7 @@ namespace stun {
     
     int64_t current_timestamp() { // millisecond time
 #ifdef _WIN32
-	return (timestamp_t)GetTickCount();
+	return GetTickCount();
 #else // POSIX
 	struct timespec ts;
 	if (clock_gettime(CLOCK_MONOTONIC, &ts))

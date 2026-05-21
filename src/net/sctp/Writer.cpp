@@ -1,6 +1,6 @@
 #include <UtilStun.h>
 #include <Writer.h>
-#include <arpa/inet.h> /* for inet_aton, not supported on windows, on win, use http://msdn.microsoft.com/en-us/library/cc805844%28VS.85%29.aspx */
+//#include <arpa/inet.h> /* for inet_aton, not supported on windows, on win, use http://msdn.microsoft.com/en-us/library/cc805844%28VS.85%29.aspx */
 #include <stdio.h>
 #include <string>
 #include <sstream>

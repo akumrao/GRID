@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 //#include <zlib.h>  /* for crc */
-#include <netinet/in.h>
+//#include <netinet/in.h>
 
 #include <Types.h>
 #include <UtilStun.h>
@@ -27,80 +27,84 @@ using namespace base;
 
 namespace stun {
 
+
+
+
+#include <cstdint>
+#include <iomanip>
+#include <iostream>
+#include <string>
+#include <vector>
+
+class ZlibCRC32 {
+private:
+  uint32_t table[256];
+
+  void InitializeTable() {
+    const uint32_t polynomial = 0xEDB88320;
+    for (uint32_t i = 0; i < 256; i++) {
+      uint32_t remainder = i;
+      for (uint32_t j = 0; j < 8; j++) {
+        if (remainder & 1) {
+          remainder = (remainder >> 1) ^ polynomial;
+        } else {
+          remainder >>= 1;
+        }
+      }
+      table[i] = remainder;
+    }
+  }
+
+public:
+  ZlibCRC32() { InitializeTable(); }
+
+  // Direct replacement for zlib's crc32() function
+  uint32_t Calculate(uint32_t crc, const uint8_t *buf, size_t len) const {
+    if (buf == nullptr) {
+      return 0; // Zlib returns 0 (the initial state) if buffer is null
+    }
+
+    // Zlib internal logic handles the inversion implicitly via the running crc
+    // variable
+    crc ^= 0xFFFFFFFF;
+    while (len--) {
+      crc = (crc >> 8) ^ table[(crc ^ *buf++) & 0xFF];
+    }
+    return crc ^ 0xFFFFFFFF;
+  }
+};
+ZlibCRC32 zlib;
+
+// int main() {
+//     ZlibCRC32 zlib;
+//
+//     // 1. Get initial CRC state (mimics zlib calling crc32(0, NULL, 0))
+//     uint32_t crc = zlib.Calculate(0, nullptr, 0);
+//
+//     // 2. Feed data in chunks (Streaming support)
+//     std::string chunk1 = "The quick brown fox ";
+//     crc = zlib.Calculate(crc, reinterpret_cast<const
+//     uint8_t*>(chunk1.c_str()), chunk1.length());
+//
+//     std::string chunk2 = "jumps over the lazy dog";
+//     crc = zlib.Calculate(crc, reinterpret_cast<const
+//     uint8_t*>(chunk2.c_str()), chunk2.length());
+//
+//     // Print final result
+//     std::cout << "Zlib CRC-32: 0x"
+//               << std::uppercase << std::hex << std::setw(8) <<
+//               std::setfill('0')
+//               << crc << " (Expected: 0x414FA339)\n";
+//
+//     return 0;
+// }
+
+
 // getrandom() is not available in Android NDK API < 28 and needs glibc >= 2.25
 #if defined(__linux__) && !defined(__ANDROID__) && (!defined(__GLIBC__) || __GLIBC__ > 2 || __GLIBC_MINOR__ >= 25)
 
 #include <errno.h>
 #include <sys/random.h>
-    
-    
-#include <iostream>
-#include <vector>
-#include <string>
-#include <cstdint>
-#include <iomanip>
-
-class ZlibCRC32 {
-private:
-    uint32_t table[256];
-
-    void InitializeTable() {
-        const uint32_t polynomial = 0xEDB88320;
-        for (uint32_t i = 0; i < 256; i++) {
-            uint32_t remainder = i;
-            for (uint32_t j = 0; j < 8; j++) {
-                if (remainder & 1) {
-                    remainder = (remainder >> 1) ^ polynomial;
-                } else {
-                    remainder >>= 1;
-                }
-            }
-            table[i] = remainder;
-        }
-    }
-
-public:
-    ZlibCRC32() {
-        InitializeTable();
-    }
-
-    // Direct replacement for zlib's crc32() function
-    uint32_t Calculate(uint32_t crc, const uint8_t* buf, size_t len) const {
-        if (buf == nullptr) {
-            return 0; // Zlib returns 0 (the initial state) if buffer is null
-        }
-
-        // Zlib internal logic handles the inversion implicitly via the running crc variable
-        crc ^= 0xFFFFFFFF;
-        while (len--) {
-            crc = (crc >> 8) ^ table[(crc ^ *buf++) & 0xFF];
-        }
-        return crc ^ 0xFFFFFFFF;
-    }
-};
-ZlibCRC32 zlib;
-
-//int main() {
-//    ZlibCRC32 zlib;
-//
-//    // 1. Get initial CRC state (mimics zlib calling crc32(0, NULL, 0))
-//    uint32_t crc = zlib.Calculate(0, nullptr, 0); 
-//
-//    // 2. Feed data in chunks (Streaming support)
-//    std::string chunk1 = "The quick brown fox ";
-//    crc = zlib.Calculate(crc, reinterpret_cast<const uint8_t*>(chunk1.c_str()), chunk1.length());
-//
-//    std::string chunk2 = "jumps over the lazy dog";
-//    crc = zlib.Calculate(crc, reinterpret_cast<const uint8_t*>(chunk2.c_str()), chunk2.length());
-//
-//    // Print final result
-//    std::cout << "Zlib CRC-32: 0x" 
-//              << std::uppercase << std::hex << std::setw(8) << std::setfill('0') 
-//              << crc << " (Expected: 0x414FA339)\n";
-//
-//    return 0;
-//}
-    
 
  int random_bytes(void *buf, size_t size) {
 	ssize_t ret = getrandom(buf, size, 0);
@@ -122,20 +126,20 @@ ZlibCRC32 zlib;
 #endif
 
 #include <windows.h>
-//
 #include <bcrypt.h>
 
-static int random_bytes(void *buf, size_t size) {
+
+ int random_bytes(void *buf, size_t size) {
 	// Requires Windows 7 or later
 	NTSTATUS status = BCryptGenRandom(NULL, (PUCHAR)buf, (ULONG)size, BCRYPT_USE_SYSTEM_PREFERRED_RNG);
 	return !status ? 0 : -1;
 }
 
 #else
-static int random_bytes(void *buf, size_t size) {
-	(void)buf;
-	(void)size;
-	return -1;
+// static int random_bytes(void *buf, size_t size) {
+// 	(void)buf;
+// 	(void)size;
+// 	return -1;
 }
 #endif
 
@@ -329,13 +333,13 @@ int const_time_memcmp(unsigned char *a, unsigned char *b, size_t len) {
 bool compute_message_verify(unsigned char *buf, size_t size, std::string key, int keylen,  uint8_t *integSha )
 {
   
-    uint8_t output[keylen]; 
-    if  (!compute_message_integrity(buf, size, key, keylen, output ))
+    std::vector<uint8_t> output(keylen); 
+    if  (!compute_message_integrity(buf, size, key, keylen, output.data() ))
     {
         return false;
     }
    
-    if (const_time_memcmp( integSha , output, keylen) != 0) {
+    if (const_time_memcmp(integSha, output.data(), keylen) != 0) {
             SError << "STUN message integrity SHA1 check failed";
             return false;
     }

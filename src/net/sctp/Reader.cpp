@@ -1,9 +1,9 @@
 #include <string.h>
 #include <Reader.h>
 #include <UtilStun.h>
-#include <openssl/engine.h>
-#include <openssl/hmac.h>
-#include <openssl/evp.h>
+//#include <openssl/engine.h>
+//#include <openssl/hmac.h>
+//#include <openssl/evp.h>
 
 #include <base/logger.h>
 
@@ -725,17 +725,17 @@ bool Reader::computeMessageIntegrity(MessageStun* msg, std::string password) {
       return false;
     }
 
-    uint8_t output[keylen]; 
-            
+    //uint8_t output[keylen]; 
+    std::vector<uint8_t> output(keylen);         
 
-    if  (!compute_message_integrity(buffer.data(), buffer.size(), key, keylen, output ))
+    if  (!compute_message_integrity(buffer.data(), buffer.size(), key, keylen, output.data() ))
     {
         SError << "STUN message integrity SHA1 check failed";
         return false;
     }
     
    
-    if (const_time_memcmp( (keylen == 20 ? integ->sha.sha1: integ->sha.sha256) , output, keylen) != 0) {
+    if (const_time_memcmp( (keylen == 20 ? integ->sha.sha1: integ->sha.sha256) , output.data(), keylen) != 0) {
             SError << "STUN message integrity SHA1 check failed";
             return false;
     }
