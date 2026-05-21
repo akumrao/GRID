@@ -86,10 +86,18 @@ set(sctp_werror           OFF CACHE BOOL "Disable werror" FORCE)
 add_subdirectory(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/usrsctp buildusrstcp EXCLUDE_FROM_ALL)
 
 
+if (MSYS OR MINGW)
+	add_compile_definitions(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/usrsctp PUBLIC -DSCTP_STDINT_INCLUDE=<stdint.h>)
+endif()
+#add_library(Usrsctp::Usrsctp ALIAS usrsctp)
+
+
+link_libraries(usrsctp)
+
+
 
 if(WIN32)
-    #target_link_libraries(${PROJECT_NAME} PRIVATE ws2_32)
-    #target_compile_definitions(${PROJECT_NAME} PRIVATE _CRT_SECURE_NO_WARNINGS)
+	link_libraries(  ws2_32) # winsock2
 endif()
 
 

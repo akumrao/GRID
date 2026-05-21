@@ -5,11 +5,14 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 project(runSctp VERSION 1.7.7 LANGUAGES CXX)
 
 set(TTYD_VERSION "${PROJECT_VERSION}")
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# Don't use e.g. GNU extension (like -std=gnu++11) for portability
-set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_CXX_STANDARD 17)
+
+# Enforce the standard; if the compiler is too old, the build fails
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Options
 option(USE_MBEDTLS "Use Mbed TLS instead of OpenSSL" OFF)
@@ -46,10 +49,14 @@ if(WIN32)
 	if(MSVC)
 		add_definitions(-DNOMINMAX)
 		add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+		add_compile_options(/W2)
 	endif()
+
+else()
+add_definitions( -Wno-write-strings -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-value   -Wno-extra -Wno-switch -Wno-unused-but-set-variable)
 endif()
 
-add_definitions( -Wno-write-strings -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-value -Wno-deprecated-declarations  -Wno-extra -Wno-switch -Wno-unused-but-set-variable)
+
 
 
 
@@ -58,12 +65,46 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
 
+# Configure usrsctp options
+
+option(sctp_build_shared_lib OFF)
+option(sctp_build_programs OFF)
+option(sctp_inet OFF)
+option(sctp_inet6 OFF)
+option(sctp_werror OFF)
+#set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+
+set(sctp_build_shared_lib OFF CACHE BOOL "Build static" FORCE)
+set(sctp_build_programs   OFF CACHE BOOL "Disable tools" FORCE)
+set(sctp_werror           OFF CACHE BOOL "Disable werror" FORCE)
+
+# Subdirectory inclusion
+#add_subdirectory(usrsctp)
+#add_subdirectory(./usrsctp buildusrstcp EXCLUDE_FROM_ALL)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/usrsctp buildusrstcp EXCLUDE_FROM_ALL)
+
+
+if (MSYS OR MINGW)
+	add_compile_definitions(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/usrsctp PUBLIC -DSCTP_STDINT_INCLUDE=<stdint.h>)
+endif()
+#add_library(Usrsctp::Usrsctp ALIAS usrsctp)
+
+
+link_libraries(usrsctp)
+
+
+
+if(WIN32)
+	link_libraries(  ws2_32) # winsock2
+endif()
+
 
 set(SOURCE_FILES main.cpp helpers.cpp)
 
 
 file(GLOB SOURCES   
-    ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp ../../signal/src/*.cpp 
+    ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../base/src/*.cpp ../../signal/src/*.cpp 
   )
 
 
@@ -96,31 +137,6 @@ add_subdirectory(../../libuv build )
 if(USE_MBEDTLS) 
 include_directories(../net/incmbedtls/)
 endif()   
-
-
-
-
-option(sctp_build_shared_lib OFF)
-option(sctp_build_programs OFF)
-option(sctp_inet OFF)
-option(sctp_inet6 OFF)
-option(sctp_werror OFF)
-set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-add_subdirectory(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/usrsctp buildtmpusrsctp EXCLUDE_FROM_ALL)
-if (MSYS OR MINGW)
-	add_compile_definitions(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/usrsctp PUBLIC -DSCTP_STDINT_INCLUDE=<stdint.h>)
-endif()
-#add_library(Usrsctp::Usrsctp ALIAS usrsctp)
-
-
-link_libraries(usrsctp)
-
-
-
-if(WIN32)
-	link_libraries(  ws2_32) # winsock2
-endif()
-
 
 
 if(USE_MBEDTLS)
@@ -201,10 +217,10 @@ include_directories(
 
 
 
-add_executable(${PROJECT_NAME}_server_server ${SOURCE_FILES} ${SOURCES})
-target_include_directories(${PROJECT_NAME}_server_server PUBLIC ${INCLUDE_DIRS})
-#target_link_libraries(${PROJECT_NAME}_server_server  uv_a)
-target_compile_definitions(${PROJECT_NAME}_server_server PUBLIC
+add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${SOURCES})
+target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
+#target_link_libraries(${PROJECT_NAME}  uv_a)
+target_compile_definitions(${PROJECT_NAME} PUBLIC
     TTYD_VERSION="${TTYD_VERSION}"
     $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
 )
