@@ -32,7 +32,7 @@ using namespace base;
 using namespace base::net;
 
 
-#define SERVER_HOST "127.0.0.1"
+#define SERVER_HOST "192.168.0.19"
 #define SERVER_PORT 8000 //443
 
 #define OUTPUT '0'
@@ -100,7 +100,7 @@ int main(int argc, char** argv) {
 
       //bool ssl = false;
         std::ostringstream url;
-        bool ssl = false;
+        bool ssl = true;
         std::string host = SERVER_HOST;
         int port = SERVER_PORT;
 

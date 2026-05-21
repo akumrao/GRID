@@ -11,8 +11,8 @@ set(CMAKE_CXX_STANDARD 17)
 # Enforce the standard; if the compiler is too old, the build fails
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_STANDARD 17)
-set(CMAKE_C_STANDARD_REQUIRED ON)
+#set(CMAKE_C_STANDARD 17)
+#set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Options
 option(USE_MBEDTLS "Use Mbed TLS instead of OpenSSL" OFF)
