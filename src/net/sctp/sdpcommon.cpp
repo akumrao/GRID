@@ -1,4 +1,3 @@
-
 #include "sdpcommon.h"
 #include "base/logger.h"
 #include <Agent.h>
@@ -18,7 +17,7 @@ namespace rtc {
     
     
     
-     int ice_type_suffix(const Candidate *candidate,  char **type , char **suffix)
+     int ice_type_suffix(const Candidate *candidate, const char **type, char **suffix)
      {
 
 	switch (candidate->mType) {
@@ -47,7 +46,7 @@ namespace rtc {
     
    int ice_generate_candidate_sdp( Candidate *candidate, char *buffer, size_t size) {
 
-       char *type = NULL;
+	const char *type = NULL;
 	char *suffix = NULL;
        
        int ret = ice_type_suffix(candidate, &type, &suffix );
@@ -74,7 +73,7 @@ namespace rtc {
 	char *end = begin + size;
 
 	// Round 0: description
-	// Round i with i>0 and i<count+1: candidate i-1
+	// Round i with i>0 and i=count+1: candidate i-1
 	// Round count + 1: end-of-candidates and ice-options lines
 	for (int i = 0; i < description->candidates_count + 2; ++i) {
 		int ret;

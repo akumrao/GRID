@@ -93,13 +93,13 @@ In a video call, the "frozen" state might be used to prioritize checking direct 
 
 
 typedef struct ice_candidate_pair {
-	Candidate *local;
-	Candidate *remote;
-	uint64_t priority;
-	ice_candidate_pair_state_t state;
+	Candidate *local{nullptr};
+	Candidate *remote{nullptr};
+	uint64_t priority{0};
+	ice_candidate_pair_state_t state{ICE_CANDIDATE_PAIR_STATE_PENDING};
 	bool nominated{false};
 	bool nomination_requested{false};
-	int64_t consent_expiry;
+	int64_t consent_expiry{0};
         
         #if AGENT_DEBUG
         std::string dump();

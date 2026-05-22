@@ -9,7 +9,7 @@
 
 namespace rtc {
 
-struct Channel;
+//struct Channel;
 
 
 class  Channel  {

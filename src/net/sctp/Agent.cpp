@@ -1,5 +1,5 @@
 
-#include <stdio.h>
+#include <string>
 #include "common.hpp"
 #include <Agent.h>
 #include <uv.h>
@@ -466,20 +466,20 @@ namespace stun {
 		return -1;
 	}
 	
-        Candidate *candidate = new  Candidate;
+    Candidate *candidate = new  Candidate;  // this candidate will be deleted from databse grid
 	int ret = ice_parse_candidate_sdp(sdpCandidate, candidate);
 	if (ret < 0) 
         {
 		if (ret == ICE_PARSE_IGNORED)
                 {
-			SError << "Ignored SDP candidate:" <<  sdpCandidate;
+			SWarn << "Ignored SDP candidate:" <<  sdpCandidate;
 			
 			return -1;
 		}
 
 		//STrace << "Failed to parse remote SDP candidate: %s" <<  sdpCandidate;
 	
-		return -1;
+		return ret;
 	}
         
        
@@ -611,7 +611,7 @@ namespace stun {
                     return -1;
             }
 
-            memset(pair, 0, sizeof(*pair));
+            //memset(pair, 0, sizeof(*pair));
             pair->local = local;
             pair->remote = remote;
             pair->state = ICE_CANDIDATE_PAIR_STATE_FROZEN;
@@ -2793,7 +2793,7 @@ int Agent::parse_sdp_line(const char *line, ice_description_t *description)
 
 int  Agent::ice_parse_sdp(const char *sdp, ice_description_t *description)  
 {
-    memset(description, 0, sizeof(*description));
+    //memset(description, 0, sizeof(*description));
     description->ice_lite = false;
     description->candidates_count = 0;
     description->finished = false;
@@ -2834,19 +2834,19 @@ int  Agent::ice_parse_sdp(const char *sdp, ice_description_t *description)
     
     
  int  Agent::parse_sdp_candidate(const char *line, Candidate *candidate) {
-	memset(candidate, 0, sizeof(*candidate));
+	//memset(candidate, 0, sizeof(*candidate));
 
 	line = skip_prefix(line, "a=");
 	line = skip_prefix(line, "candidate:");
 
-	char transport[32 + 1];
-	char type[32 + 1];
+	char transport[32 + 1] ={0};
+	char type[32 + 1]={0};
         
         
-        char foundation[32 + 1]; // 1 to 32 characters
-	char hostname[256 + 1];
-	char service[32 + 1];
-        
+	char foundation[32 + 1] ={0}; // 1 to 32 characters
+	char hostname[256 + 1] ={0};
+	char service[32 + 1] ={0};
+    
 	if (sscanf(line, "%32s %d %32s %u %256s %32s typ %32s", foundation,
 	           &candidate->mComponent, transport, &candidate->mPriority, hostname,
 	           service, type) != 7) {
@@ -2854,9 +2854,9 @@ int  Agent::ice_parse_sdp(const char *sdp, ice_description_t *description)
 		return ICE_PARSE_ERROR;
 	}
 
-        candidate->mFoundation = foundation;
-        candidate->mNode = hostname;
-        candidate->mService = service;
+    	candidate->mFoundation.assign(foundation);
+    	candidate->mNode.assign(hostname);
+    	candidate->mService.assign(service);
 	for (int i = 0; transport[i]; ++i)
 		transport[i] = toupper((unsigned char)transport[i]);
 

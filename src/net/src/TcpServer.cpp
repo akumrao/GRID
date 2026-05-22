@@ -417,11 +417,12 @@ namespace base
 
                 SDebug << "OnUvConnection " << round_robin_counter;
                 
-                uv_tcp_t *client = (uv_tcp_t*) new uv_tcp_t();
-                uv_tcp_init(Application::uvGetLoop(), client);
-                if (uv_accept(reinterpret_cast<uv_stream_t*> (this->uvHandle), (uv_stream_t*) client) == 0) {
-                    uv_write_t *write_req = (uv_write_t*) new uv_write_t();
-                    dummy_buf = uv_buf_init("a", 1);
+		uv_tcp_t *client = (uv_tcp_t *)new uv_tcp_t();
+		uv_tcp_init(Application::uvGetLoop(), client);
+		if (uv_accept(reinterpret_cast<uv_stream_t *>(this->uvHandle),(uv_stream_t *)client) == 0) {
+		    uv_write_t *write_req = (uv_write_t *)new uv_write_t();
+		    char dummy_char = 'a';
+		    dummy_buf = uv_buf_init(&dummy_char, 1);
                     struct child_worker *worker = &workers[round_robin_counter];
                     
                     write_req->data = client;

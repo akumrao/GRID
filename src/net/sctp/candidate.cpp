@@ -173,18 +173,16 @@ string Candidate::candidate() const {
 	else
 		oss << mNode << sp << mService;
 
-        char *type = NULL;
-	char *suffix = NULL;
-        
-        int ret = ice_type_suffix(this, &type, &suffix );
-        
-        if(!ret)
-        { 
-            char tmp[100];
-            int ret = ice_type_suffix(this, &type, &suffix );
-            snprintf(tmp, 99, "%s%s%s",  type, suffix ? " " : "",   suffix ? suffix : "");
-            
-            oss << sp << "typ" << sp << tmp;
+	const char *type = nullptr;
+	char *suffix = nullptr;
+	int ret = ice_type_suffix(this, &type, &suffix);
+
+	if (!ret) {
+	  char tmp[100];
+	  // No need to redeclare 'type' and 'suffix' here, just reuse them
+	  snprintf(tmp, 99, "%s%s%s", type, suffix ? " " : "",
+		   suffix ? suffix : "");
+	  oss << sp << "typ" << sp << tmp;
         }
 
 	if (!mTail.empty())

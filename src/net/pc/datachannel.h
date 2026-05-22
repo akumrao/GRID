@@ -15,9 +15,10 @@
 
 namespace rtc {
 
-struct PeerConnection;
+class PeerConnection;
 
-struct DataChannel : Channel, std::enable_shared_from_this<DataChannel> {
+class DataChannel : public Channel, std::enable_shared_from_this<DataChannel> {
+public:
 	static bool IsOpenMessage(message_ptr message);
 
 
@@ -69,7 +70,8 @@ private:
 	Queue<message_ptr> mRecvQueue;
 };
 
-struct OutgoingDataChannel final : public DataChannel {
+class OutgoingDataChannel final : public DataChannel {
+public:
 	OutgoingDataChannel(weak_ptr<PeerConnection> pc, string label, string protocol,
 	                    Reliability reliability);
 	~OutgoingDataChannel();
@@ -78,7 +80,8 @@ struct OutgoingDataChannel final : public DataChannel {
 	void processOpenMessage(message_ptr message) override;
 };
 
-struct IncomingDataChannel final : public DataChannel {
+class IncomingDataChannel final : public DataChannel {
+public:
 	IncomingDataChannel(weak_ptr<PeerConnection> pc, weak_ptr<SctpTransport> transport);
 	~IncomingDataChannel();
 

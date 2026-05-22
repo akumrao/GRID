@@ -12,8 +12,6 @@
 using namespace base::net;
 //using namespace stun;
 
-using namespace std;
-
 namespace rtc {
 
 #define ICE_CANDIDATE_PREF_HOST 126
@@ -46,8 +44,8 @@ public:
 	Type type() const;
 	TransportType transportType() const;
 	uint32_t priority() const;
-	string candidate() const;
-	string mid() const;
+	std::string candidate() const;
+	std::string mid() const;
 	operator string() const;
 
 //	bool operator==(const Candidate &other) const;
@@ -55,19 +53,21 @@ public:
 
 	bool isResolved() const;
 	int family() const;
-	string address() ;
+	std::string address();
 	uint16_t port() const;
 public:
-	void parse(string candidate);
+        void parse(std::string candidate);
 
-	string mFoundation;
-	uint32_t mComponent, mPriority;
-	string mTypeString, mTransportString;
-	Type mType;
-	TransportType mTransportType;
-	string mNode, mService;
-	string mTail;
-        string mMid;
+	std::string mFoundation;
+	uint32_t mComponent{0};
+
+	uint32_t mPriority{0};
+	std::string mTypeString, mTransportString;
+	Type mType{Type::Unknown};
+	TransportType mTransportType{TransportType::Unknown};
+	std::string mNode, mService;
+	std::string mTail;
+	std::string mMid;
         
 
 	// Extracted on resolution

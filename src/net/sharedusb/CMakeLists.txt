@@ -156,7 +156,7 @@ if(USE_MBEDTLS)
 	add_compile_definitions(  USE_MBEDTLS=1 HTTPSSL=1)
 
 	include_directories(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/mbedtls/include)
-	link_libraries(   ${LINK_LIBS} uv_a mbedtls mbedx509 mbedcrypto -lz)
+	link_libraries(   ${LINK_LIBS} uv_a mbedtls mbedx509 mbedcrypto )
 	
 else()
 	if(APPLE)
@@ -178,7 +178,7 @@ else()
 	find_package(OpenSSL REQUIRED)
 	add_compile_definitions(  HTTPSSL=1)
 	#link_libraries(${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a)
-	link_libraries(  ${LINK_LIBS} uv_a ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a -lz)
+	link_libraries(  ${LINK_LIBS} uv_a ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a )
 endif()
 
 
