@@ -2,7 +2,7 @@
 #define MS_RTC_TRANSPORT_TUPLE_HPP
 
 #include "common.h"
-#include "Utils.h"
+#include "UtilStun.h"
 #include "net/netInterface.h"
 #include "net/IP.h"
 #include "net/TcpConnection.h"
