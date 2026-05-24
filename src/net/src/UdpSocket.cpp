@@ -190,6 +190,16 @@ namespace base {
                  SWarn << "uv_udp_try_send() failed trying uv_udp_send()"<< uv_strerror(sent) <<  "  "  << sent; // will cause recursion lock
                 //SWarn << "uv_udp_try_send() failed UV_EAGAIN: " << uv_strerror(sent);
                 //return -1; // arvind do not return
+
+ #if 1
+                 int family;
+                 std::string ip;
+                 uint16_t port;
+
+                 IP::GetAddressInfo(reinterpret_cast<struct sockaddr *>(&addr),
+                                    family, ip, port);
+                 SInfo << "ip " << ip << " port " << port;
+#endif
             }
 
             auto* sendData = new UvSendData(len);
@@ -205,6 +215,15 @@ namespace base {
 
             if (err != 0)
             {
+#if 1
+              int family;
+              std::string ip;
+              uint16_t port;
+
+              IP::GetAddressInfo(reinterpret_cast<struct sockaddr *>(&addr),
+                                 family, ip, port);
+              SInfo << "ip " << ip << " port " << port;
+#endif
                 // NOTE: uv_udp_send() returns error if a wrong INET family is given
                 // (IPv6 destination on a IPv4 binded socket), so be ready.
                LWarn("uv_udp_send() failed: ", uv_strerror(err));// will cause recursion lock

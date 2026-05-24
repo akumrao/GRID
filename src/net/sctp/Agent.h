@@ -4,6 +4,8 @@
 #ifndef STUN_Agent_H
 #define STUN_Agent_H
 
+#define PRINTDEBUG 1
+
 #include <Attribute.h>
 #include <Types.h>
 #include "candidate.hpp"
@@ -134,12 +136,13 @@ typedef enum agent_stun_entry_state {
 
 typedef struct agent_stun_entry {
 	agent_stun_entry_type_t type;
-	agent_stun_entry_state_t state{AGENT_STUN_ENTRY_STATE_PENDING};
-	agent_mode_t mode;
-	ice_candidate_pair_t *pair;
-	addr_record_t record;
-	addr_record_t relayed;
-	uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
+    agent_stun_entry_state_t state{AGENT_STUN_ENTRY_STATE_PENDING};
+
+	agent_mode_t mode{AGENT_MODE_UNKNOWN};
+    ice_candidate_pair_t *pair{nullptr};
+	addr_record_t record{0};
+	addr_record_t relayed{0};
+    uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE] = {0};
 	int64_t next_transmission{0};
 	int64_t retransmission_timeout{0};
 	int retransmissions{0};

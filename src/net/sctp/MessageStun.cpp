@@ -45,11 +45,12 @@ namespace stun {
   }
 
   MessageStun::~MessageStun() {
-    std::vector<Attribute*>::iterator it = attributes.begin();
-    while (it != attributes.end()) {
-      delete *it;
-      it = attributes.erase(it);
+    for (Attribute *attr : attributes) {
+      delete attr;
     }
+    attributes.clear();
+
+
   }
 
   void MessageStun::addAttribute(Attribute* attr) {
