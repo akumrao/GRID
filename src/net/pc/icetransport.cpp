@@ -102,7 +102,7 @@ IceTransport::~IceTransport() {
 }
 
 Description::Role IceTransport::role() const { return mRole; }
-
+/*
 Description IceTransport::getLocalDescription(Description::Type type)  {
 	char sdp[4096];
 	if (agent.get_local_description( sdp, 4096) < 0 )
@@ -116,6 +116,7 @@ Description IceTransport::getLocalDescription(Description::Type type)  {
 	desc.addIceOption("trickle");
 	return desc;
 }
+*/
 
 void IceTransport::setRemoteDescription(const Description &description) {
     

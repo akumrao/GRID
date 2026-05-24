@@ -480,21 +480,35 @@ void PeerConnection::setLocalDescription(Description::Type type) {
 	}
 
         
-        mIceTransport = initIceTransport();
+    mIceTransport = initIceTransport();
 
-	Description local = mIceTransport->getLocalDescription(type);
+
+   char sdp[4096];
+   if (mIceTransport->agent.get_local_description(sdp, 4096) < 0)
+		    throw std::runtime_error("Failed to generate local SDP");
+
+			// RFC 5763: The endpoint that is the offerer MUST use the setup
+			// attribute value of setup:actpass. See
+			// https://www.rfc-editor.org/rfc/rfc5763.html#section-5
+	Description local(string(sdp), type,
+							type == Description::Type::Offer
+								? Description::Role::ActPass
+                                              : mIceTransport->mRole);
+	local.addIceOption("trickle");
+
+		
+    //mIceTransport->getLocalDescription(type, local);
         
 	processLocalDescription(local);
 
 	changeSignalingState(newSignalingState);
 
-        if (mGatheringState == GatheringState::New) 
-        {
+    if (mGatheringState == GatheringState::New) 
+    {
 		mIceTransport->gatherLocalCandidates(localBundleMid());
-	}
+    }
         
-        
-        STrace << "AgentNo " << mIceTransport->agent.agentNo << " SetLocalDescription, type=" << Description::typeToString(type);
+     STrace << "AgentNo " << mIceTransport->agent.agentNo << " SetLocalDescription, type=" << Description::typeToString(type);
 }
 
 

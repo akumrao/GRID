@@ -59,7 +59,7 @@ public:
 
 	Description::Role role() const;
 	GatheringState gatheringState() const;
-	Description getLocalDescription(Description::Type type) ;
+	//void getLocalDescription( Description::Type type, Description &desc) ;
 	void setRemoteDescription(const Description &description);
 	bool addRemoteCandidate(const Candidate &candidate);
 	void gatherLocalCandidates(string mid, std::vector<IceServer_conf> additionalIceServers = {});
@@ -77,7 +77,7 @@ public:
         void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message );
         void OnReceiveData(byte * data, size_t len){};
         
-        Description::Role mRole;
+        Description::Role mRole{Description::Role::ActPass};
 
         std::atomic<State> mState = State::Disconnected;
         State state() const;

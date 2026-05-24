@@ -351,13 +351,13 @@ public:
 
 	static Type stringToType(const string &typeString);
 	static string typeToString(Type type);
-        Role mRole;
+        Role mRole{Role::ActPass};;
 private:
 	Candidate defaultCandidate() const;
 	shared_ptr<Entry> createEntry(string mline, string mid, Direction dir);
 	void removeApplication();
 
-	Type mType;
+	Type mType{Type::Unspec};
 
 	// Session-level attributes
 	
@@ -375,7 +375,7 @@ private:
 	bool mEnded = false;
         
 public:
-    	 ice_description_t desc;
+     ice_description_t desc;
 
 
 };

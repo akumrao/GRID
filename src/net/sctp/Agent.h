@@ -194,12 +194,12 @@ typedef struct agent_stun_entry {
     Agent( Configuration &config, IceListen *list , rtc::Transport::Listener *listener);
     ~Agent();
     bool getInterfaces( );
-    IceListen *iceList;
+    IceListen *iceList{nullptr};
     rtc::Transport::Listener *listener;       
   public:
-    uint16_t type;
-    uint16_t length;
-    uint32_t cookie;
+    uint16_t type{0};
+    uint16_t length{0};
+    uint32_t cookie{0};
     //uint32_t transaction[3];
     uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
     std::vector<Attribute*> attributes;
@@ -247,7 +247,7 @@ typedef struct agent_stun_entry {
     
     agent_mode_t m_mode{AGENT_MODE_UNKNOWN};
     
-    int m_entriesStun_count;
+    int m_entriesStun_count{0};
     agent_stun_entry_t m_entriesStun[MAX_STUN_ENTRIES_COUNT]; // Stun server entries (  two stun sever entries per stun resolve( ipv4 + ipv6) for example stun.1.google.com will have two stun entries
     
     
