@@ -7,7 +7,7 @@
 #include <Types.h>
 
 
-//#define PRINTDEBUG 1
+#define PRINTDEBUG 1
 
 #if PRINTDEBUG
 #define PrintDebug printf

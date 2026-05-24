@@ -159,7 +159,7 @@ bool IceTransport::addRemoteCandidate(const Candidate &candidate) {
 
 void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer_conf> additionalIceServers) {
     
-     SInfo << "Agent " << agent.agentNo  <<  "gatherLocalCandidates";
+     SInfo << "Agent " << agent.agentNo  <<  " gatherLocalCandidates";
 	mMid = std::move(mid);
         
         agent.localMid = mMid;

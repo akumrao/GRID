@@ -13,7 +13,7 @@ using namespace base;
 
 
 
-#define SInfo SDebug
+//#define SInfo SDebug
         
 #define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 

@@ -282,20 +282,24 @@ namespace base {
             int err;
             int len = 0;
             sockaddr_storage addr;
-
+            len = sizeof(addr);
             err =
                     uv_udp_getsockname(this->uvHandle, reinterpret_cast<struct sockaddr*> (&addr), &len);
 
             if (err != 0) {
                 LError("uv_udp_getsockname() failed: %s", uv_strerror(err));
-
                 return false;
             }
 
-//            int family;
-//
-//            IP::GetAddressInfo(
-//                    reinterpret_cast<struct sockaddr*> (&this->localAddr.addr), family, this->localIp, this->localPort);
+            #if DEBUG 
+            int family;
+            std::string ip;
+            uint16_t port;
+
+            IP::GetAddressInfo(reinterpret_cast<struct sockaddr *>(&addr), family, ip, port);
+            SInfo << "ip " << ip << " port " << port;
+            #endif
+
 
             return true;
         }
