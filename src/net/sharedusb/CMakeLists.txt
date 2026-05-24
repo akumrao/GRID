@@ -12,8 +12,8 @@ set(CMAKE_CXX_STANDARD 17)
 # Enforce the standard; if the compiler is too old, the build fails
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-set(CMAKE_C_STANDARD 17)
-set(CMAKE_C_STANDARD_REQUIRED ON)
+# set(CMAKE_C_STANDARD 17)
+# set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Options
 option(USE_MBEDTLS "Use Mbed TLS instead of OpenSSL" OFF)
@@ -54,10 +54,12 @@ if(WIN32)
 	endif()
 
 else()
-add_definitions( -Wno-write-strings -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-value   -Wno-extra -Wno-switch -Wno-unused-but-set-variable)
+add_definitions( -Wno-write-strings -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-value   -Wno-extra -Wno-switch)
 endif()
 
-
+if(CMAKE_COMPILER_IS_GNUCC)
+    add_compile_options(-Wno-unused-but-set-variable)
+endif()
 
 
 
@@ -103,15 +105,16 @@ endif()
 
 set(SOURCE_FILES main.cpp helpers.cpp)
 
-
+if(UNIX)
+file(GLOB SOURCES   
+    ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../base/src/*.cpp ../../signal/src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp
+  )
+else()
 file(GLOB SOURCES   
     ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../base/src/*.cpp ../../signal/src/*.cpp 
   )
-
-
-if(UNIX)
-list(APPEND LINK_LIBS dl Threads::Threads )
 endif()
+
 
 if(WIN32)
     list(APPEND LINK_LIBS shell32 ws2_32)
@@ -124,12 +127,18 @@ else()
     endif()
 endif()
 
-
+if(WIN32)
 add_subdirectory(../../libuv build )
+endif()
 
 
+if(WIN32)
+list(APPEND LINK_LIBS uv_a  )
+endif()
 
-
+if(UNIX)
+list(APPEND LINK_LIBS  dl Threads::Threads )
+endif()
 
 
 
@@ -156,7 +165,7 @@ if(USE_MBEDTLS)
 	add_compile_definitions(  USE_MBEDTLS=1 HTTPSSL=1)
 
 	include_directories(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/mbedtls/include)
-	link_libraries(   ${LINK_LIBS} uv_a mbedtls mbedx509 mbedcrypto )
+	link_libraries(   ${LINK_LIBS}  mbedtls mbedx509 mbedcrypto )
 	
 else()
 	if(APPLE)
@@ -178,7 +187,7 @@ else()
 	find_package(OpenSSL REQUIRED)
 	add_compile_definitions(  HTTPSSL=1)
 	#link_libraries(${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a)
-	link_libraries(  ${LINK_LIBS} uv_a ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a )
+	link_libraries(  ${LINK_LIBS} ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a )
 endif()
 
 
@@ -190,7 +199,7 @@ endif()
 
 
 if(UNIX)
-add_compile_options( -fpermissive -Wno-return-type -Wno-format-overflow -Wno-format -Wno-unused-but-set-variable -Wno-write-strings -no-pie)
+add_compile_options( -fpermissive -Wno-return-type -Wno-format-overflow -Wno-format -Wno-write-strings -no-pie)
 endif()
 
 if(WIN32)
