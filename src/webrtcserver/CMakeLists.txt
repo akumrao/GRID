@@ -136,7 +136,7 @@ set(LIBSTUN_SOURCES
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Attribute.cpp  
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Reader.cpp
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/TransportTuple.cpp
- ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/utils.cpp 
+ ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/UtilString.cpp 
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Writer.cpp
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/Settings.cpp
  ${CMAKE_CURRENT_SOURCE_DIR}/stun/src/RestAPI.cpp
