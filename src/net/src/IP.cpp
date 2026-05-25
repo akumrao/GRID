@@ -336,7 +336,26 @@ namespace base
             return true;
         }
 
-        
+        bool IP::addr_map_inet6_v4mapped(struct sockaddr_storage *ss, socklen_t *len)
+        {
+          if (ss->ss_family != AF_INET)
+            return false;
+
+          const struct sockaddr_in *sin = (const struct sockaddr_in *)ss;
+          struct sockaddr_in copy = *sin;
+          sin = &copy;
+
+          struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)ss;
+          memset(sin6, 0, sizeof(*sin6));
+          sin6->sin6_family = AF_INET6;
+          sin6->sin6_port = sin->sin_port;
+          uint8_t *b = (uint8_t *)&sin6->sin6_addr;
+          memset(b, 0, 10);
+          memset(b + 10, 0xFF, 2);
+          memcpy(b + 12, (const uint8_t *)&sin->sin_addr, 4);
+          *len = sizeof(*sin6);
+          return true;
+        }
 
 
     } // namespace net

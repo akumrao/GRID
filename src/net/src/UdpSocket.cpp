@@ -106,8 +106,10 @@ namespace base {
             if (!this->closed)
                Close();
             
-           // if (uvHandle)
-           //delete uvHandle;
+            // if (uvHandle)  // moved to onclose check header file for null
+            // delete uvHandle;
+
+
         }
 
         void UdpSocket::Close() {
@@ -316,7 +318,14 @@ namespace base {
                 }
             }
 
-            return send(data, len, reinterpret_cast<struct sockaddr*> (&addr));
+#ifndef __linux__
+            socklen_t lent;
+            IP::addr_map_inet6_v4mapped((struct sockaddr_storage *)&addr,
+                                        &lent);
+#endif
+
+
+            return send(data, len, (const struct sockaddr *)&addr );
         }
 
       
