@@ -124,12 +124,12 @@ int main(int argc, char** argv) {
  
         Application app;
 
-        testUdpServer1 socket1("0.0.0.0", 6001);
-        //testUdpServer1 socket1("::", 6001);
+        //testUdpServer1 socket1("0.0.0.0", 6001);
+        testUdpServer1 socket1("::", 6001);
         socket1.start();
 
-        testUdpServer2 socket2("0.0.0.0", 6002);
-        //testUdpServer2 socket1("::", 6002);
+        //testUdpServer2 socket2("0.0.0.0", 6002);
+        testUdpServer2 socket2("::", 6002);
         socket2.start();
 
         base::sleep(660);
