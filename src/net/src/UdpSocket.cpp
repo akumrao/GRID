@@ -138,7 +138,32 @@ namespace base {
             LInfo("</UdpSocket>");
         }
 
+        // For client only addr should be null. For sever to server with bind only remote addr should come
         int UdpSocket::send( const char* data, unsigned int len, const struct sockaddr* addr , UdpSocket::onSendCallback cb ) {
+
+
+#if 0
+          int family;
+          std::string ip;
+          uint16_t port;
+
+          IP::GetAddressInfo(addr, family,
+                             ip, port);
+          SInfo << "ip " << ip << " port " << port;
+
+
+         addr_record_t mapped;
+          IP::CopyAddress(addr, mapped);
+
+
+         char ipp[40];  uint16_t pport;
+         IP::AddressToString(mapped, ipp,40, pport) ;
+              
+       
+         IP::StringToAddress(ipp, pport, mapped);
+
+
+#endif
 
             if (this->closed)
             {
@@ -196,7 +221,7 @@ namespace base {
                  std::string ip;
                  uint16_t port;
 
-                 IP::GetAddressInfo(reinterpret_cast<struct sockaddr *>(&addr),
+                 IP::GetAddressInfo(addr,
                                     family, ip, port);
                  SInfo << "ip " << ip << " port " << port;
 #endif
@@ -220,7 +245,7 @@ namespace base {
               std::string ip;
               uint16_t port;
 
-              IP::GetAddressInfo(reinterpret_cast<struct sockaddr *>(&addr),
+              IP::GetAddressInfo( addr,
                                  family, ip, port);
               SInfo << "ip " << ip << " port " << port;
 #endif

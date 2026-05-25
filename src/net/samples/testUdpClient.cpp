@@ -14,7 +14,7 @@
 #include "net/UdpSocket.h"
 //#include "base/test.h"
 #include "base/time.h"
-
+#include "base/platform.h"
 
 using std::endl;
 using namespace base;
@@ -35,7 +35,12 @@ public:
     }
 
     void send(std::string txt) {
+        // for client connect is mandatory
         udpClient->send((char*) txt.c_str(), txt.length());
+
+        //  udpClient->send((char*) txt.c_str(), txt.length(), IP, port ); // FYI it is not possible
+        // only sever to server can send with ip and port
+ 
     }
 
     void shutdown() {
@@ -60,7 +65,7 @@ int main(int argc, char** argv) {
     Application app;
 
     //testUdpClient socket("127.0.0.1", 6000);
-    testUdpClient socket("192.168.0.10", 6000);
+    testUdpClient socket("192.168.0.19", 6000);
         
     socket.start();
     //while (true)
@@ -75,7 +80,7 @@ int main(int argc, char** argv) {
     app.run();
 
 
-    sleep(660);
+    base::sleep(660);
 
     return 0;
 }
