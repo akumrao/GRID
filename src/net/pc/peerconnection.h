@@ -126,8 +126,8 @@ public:
 
 	void setLocalDescription(Description::Type type = Description::Type::Unspec);
 
-	void setRemoteDescription(Description description);
-	void addRemoteCandidate(Candidate candidate);
+	void setRemoteDescription(Description &description);
+	void addRemoteCandidate(Candidate &candidate);
 	void gatherLocalCandidates(std::vector<IceServer_conf> additionalIceServers = {});
 
 //	void setMediaHandler(shared_ptr<MediaHandler> handler);
@@ -142,7 +142,7 @@ public:
         void processLocalDescription(Description &description);
         
         
-        void processRemoteCandidate(Candidate candidate);
+        void processRemoteCandidate(Candidate &candidate);
         
         
         bool changeSignalingState(SignalingState newState);
@@ -154,8 +154,8 @@ public:
         
         void processRemoteDescription(Description description);
         
-	void onLocalDescription(std::function<void(Description description)> callback);
-	void onLocalCandidate(std::function<void(Candidate candidate)> callback);
+	void onLocalDescription(std::function<void(Description &description)> callback);
+	void onLocalCandidate(std::function<void(Candidate &candidate)> callback);
 	void onStateChange(std::function<void(State state)> callback);
 	void onIceStateChange(std::function<void(IceState state)> callback);
 	void onGatheringStateChange(std::function<void(GatheringState state)> callback);
@@ -198,11 +198,10 @@ public:
 
 
 	//std::function<void<std::shared_ptr<DataChannel>> mDataChannelCallback;
-	std::function<void(Description)> mLocalDescriptionCallback;
-	std::function<void(Candidate)> mLocalCandidateCallback;
+	std::function<void(Description&)> mLocalDescriptionCallback;
+	std::function<void(Candidate& )> mLocalCandidateCallback;
 	std::function<void(State)> mStateChangeCallback;
-        
-        std::function<void(IceState)> mKIceStateChangeCallback;
+	std::function<void(IceState)> mKIceStateChangeCallback;
         
 	std::function<void(GatheringState )> mGatheringStateChangeCallback;
 	std::function<void(SignalingState)> mSignalingStateChangeCallback;

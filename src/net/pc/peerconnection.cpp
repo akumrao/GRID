@@ -525,7 +525,7 @@ bool PeerConnection::changeSignalingState(SignalingState newState) {
 	return true;
 }
 
-void PeerConnection::setRemoteDescription(Description description) {
+void PeerConnection::setRemoteDescription(Description &description) {
     
           std::unique_lock signalingLock(signalingMutex);
 ////	SDebug << "Setting remote description: " << string(description);
@@ -710,7 +710,7 @@ void PeerConnection::setRemoteDescription(Description description) {
 	changeSignalingState(newSignalingState);
 	signalingLock.unlock();
 
-	for (const auto &candidate : remoteCandidates)
+	for ( auto &candidate : remoteCandidates)
 		addRemoteCandidate(candidate);
 
 	if (!config.disableAutoNegotiation) {
@@ -739,7 +739,7 @@ void PeerConnection::setRemoteDescription(Description description) {
         
 }
 
-void PeerConnection::addRemoteCandidate(Candidate candidate) {
+void PeerConnection::addRemoteCandidate(Candidate& candidate) {
     
         std::unique_lock signalingLock(signalingMutex);
 	
@@ -748,7 +748,7 @@ void PeerConnection::addRemoteCandidate(Candidate candidate) {
 
 
 
-void PeerConnection::processRemoteCandidate(Candidate candidate) {
+void PeerConnection::processRemoteCandidate(Candidate& candidate) {
 
     Candidate *cand = nullptr;
 
@@ -1146,11 +1146,11 @@ void PeerConnection::onDataChannel(
 
 #endif 
 
-void PeerConnection::onLocalDescription(std::function<void(Description description)> callback) {
+void PeerConnection::onLocalDescription(std::function<void(Description &description)> callback) {
 	mLocalDescriptionCallback = callback;
 }
 
-void PeerConnection::onLocalCandidate(std::function<void(Candidate candidate)> callback) {
+void PeerConnection::onLocalCandidate(std::function<void(Candidate &candidate)> callback) {
 	mLocalCandidateCallback = callback;
 }
 

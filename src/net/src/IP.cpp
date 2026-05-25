@@ -203,7 +203,7 @@ namespace base
 	}
         
     // dunplicate funtion need to be remvoed
-        void IP::GetAddressInfo(struct sockaddr* addr, int& family, std::string& ip, uint16_t& port) {
+        void IP::GetAddressInfo(const struct sockaddr* addr, int& family, std::string& ip, uint16_t& port) {
 
 
             char ipBuffer[INET6_ADDRSTRLEN + 1];

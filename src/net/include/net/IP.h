@@ -41,7 +41,7 @@ namespace base
         class IP
         {
         public:
-            static void GetAddressInfo(struct sockaddr* addr, int& family, std::string& ip, uint16_t& port);
+            static void GetAddressInfo(const struct sockaddr* addr, int& family, std::string& ip, uint16_t& port);
             static int GetFamily(const std::string& ip);
 	    static void NormalizeIp(std::string& ip);
 	    static bool CompareAddresses(const struct sockaddr* addr1, const struct sockaddr* addr2);
