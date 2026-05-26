@@ -49,15 +49,59 @@ public:
     void OnUdpSocketPacketReceived(UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr) {
 
         int family;
-        
+
         std::string peerIp;
         uint16_t peerPort;
 
-        IP::GetAddressInfo(
-                    remoteAddr, family, peerIp, peerPort);
+        
+          IP::GetAddressInfo(remoteAddr, family, peerIp, peerPort);
+        std::cout << " OnUdpSocketPacketReceived "
+               << peerIp << ":" << peerPort;
+
+        addr_record_t remotesrc;
+        IP::CopyAddress(remoteAddr, remotesrc);
+
+#if 1
+           
+            {
+                 std::string ret{"addr_record_is_equal "};
+                 char ip[40];
+                 uint16_t port;
+                 IP::AddressToString(remotesrc, ip, 40, port);
+                 ret +=  ip + std::string(":") + std::to_string(port);
+
+                 ret +=" < > ";
+
+
+             }
+
+#endif
+             
+ #ifdef __linux__
+        IP::addr_unmap_inet6_v4mapped((struct sockaddr *)&remotesrc.addr,
+                                      &remotesrc.len);
+ #endif              
+
+        #if 1
+       
+        {
+          std::string ret{"addr_record_is_equal "};
+          char ip[40];
+          uint16_t port;
+          IP::AddressToString(remotesrc, ip, 40, port);
+          ret += ip + std::string(":") + std::to_string(port);
+
+          ret += " < > ";
+        }
+
+         #endif
+
+
+
+
             
         std::cout << "testUdpServer1::OnRecv " << data << " ip " << peerIp << ":" << peerPort  << std::endl << std::flush;
-        udpServer->send(data, len, remoteAddr);
+        udpServer->send(data, len, (struct sockaddr *)&remotesrc.addr);
     }
 
     UdpServer *udpServer;
@@ -96,18 +140,55 @@ public:
 
 
     void OnUdpSocketPacketReceived(UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr) {
+      int family;
 
-        int family;
-        
-        std::string peerIp;
-        uint16_t peerPort;
+      std::string peerIp;
+      uint16_t peerPort;
 
-        IP::GetAddressInfo(
-                    remoteAddr, family, peerIp, peerPort);
-            
-          std::cout << "testUdpServer2::OnRecv " << data << " ip " << peerIp << ":"       << peerPort << std::endl        << std::flush;
+      IP::GetAddressInfo(remoteAddr, family, peerIp, peerPort);
+      std::cout << " OnUdpSocketPacketReceived " << peerIp << ":" << peerPort;
 
-        udpServer->send(data, len, remoteAddr);
+      addr_record_t remotesrc;
+      IP::CopyAddress(remoteAddr, remotesrc);
+
+#if 1
+
+      {
+        std::string ret{"addr_record_is_equal "};
+        char ip[40];
+        uint16_t port;
+        IP::AddressToString(remotesrc, ip, 40, port);
+        ret += ip + std::string(":") + std::to_string(port);
+
+        ret += " < > ";
+      }
+
+#endif
+
+ #ifdef __linux__
+      IP::addr_unmap_inet6_v4mapped((struct sockaddr *)&remotesrc.addr,
+                                    &remotesrc.len);
+#endif    
+
+#if 1
+
+      {
+        std::string ret{"addr_record_is_equal "};
+        char ip[40];
+        uint16_t port;
+        IP::AddressToString(remotesrc, ip, 40, port);
+        ret += ip + std::string(":") + std::to_string(port);
+
+        ret += " < > ";
+      }
+
+#endif
+
+      std::cout << "testUdpServer2::OnRecv " << data << " ip " << peerIp << ":"
+                << peerPort << std::endl
+                << std::flush;
+      udpServer->send(data, len, (struct sockaddr *)&remotesrc.addr);
+
         
     }
 
