@@ -206,6 +206,14 @@ namespace rtc
             tuple = new TransportTuple(
             m_udpServer, reinterpret_cast<struct sockaddr*>(&remotemapped.addr)  );
 
+#if 1
+            char remoteIp[40];  uint16_t remotePort;
+            base::net::
+            IP::AddressToString(remotemapped, remoteIp, 40, remotePort);
+
+            SInfo << "Remote IP: " << remoteIp << ":" << remotePort;
+
+#endif
             tuple = iceServer->AddTuple(tuple);
 
             iceServer->SetSelectedTuple(tuple) ;
@@ -468,7 +476,7 @@ namespace rtc
 		// Ensure it comes from a valid tuple.
 		if (!this->iceServer->IsValidTuple(tuple))
 		{
-			LWarn( "ignoring DTLS data coming from an invalid tuple");
+			LError( "ignoring DTLS data coming from an invalid tuple");
 
 			return;
 		}
@@ -530,11 +538,17 @@ namespace rtc
 
             IP::GetAddressInfo(
                         remoteAddr, family, peerIp, peerPort);
-            SDebug  << "AgentNo " << agentNo <<  " OnUdpSocketPacketReceived " << peerIp << ":" << peerPort ;
+            SInfo  << "AgentNo " << agentNo <<  " OnUdpSocketPacketReceived " << peerIp << ":" << peerPort ;
             addr_record_t remotesrc;
             IP::CopyAddress(remoteAddr, remotesrc );
 
-            #if 0
+     
+
+
+            IP::addr_unmap_inet6_v4mapped((struct sockaddr *)&remotesrc.addr , &remotesrc.len);
+
+
+#if 1
             std::string ret{"addr_record_is_equal "};
             {
 
@@ -543,15 +557,12 @@ namespace rtc
                  IP::AddressToString(remotesrc, ip, 40, port);
                  ret +=  ip + std::string(":") + std::to_string(port);
 
-                 ret +=" < > ";
+                 SInfo << "AgentNo " << agentNo << " addr_unmap_inet6_v4mapped "  << ret;
 
 
-             }    
+             }
 
-             #endif
-
-
-            IP::addr_unmap_inet6_v4mapped((struct sockaddr *)&remotesrc.addr , &remotesrc.len);
+#endif
                 
                 
             bool isStun = IsStun((const uint8_t*) data,  len);

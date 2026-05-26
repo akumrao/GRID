@@ -184,7 +184,7 @@ namespace base {
           //  if(!addr)
             // addr = GetLocalAddress();
 
-            // First try uv_udp_try_send(). In case it can not directly send the datagram
+            // First try uv_udp_try_send() syncronous call then make uv_udp_send asyncronoush call . In case it can not directly send the datagram
             // then build a uv_req_t and use uv_udp_send().
 
             uv_buf_t buffer = uv_buf_init((char*)data , len);
