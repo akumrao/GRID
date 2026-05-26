@@ -1573,7 +1573,25 @@ error:
         // receipt of a close alert does not work (the flag is set after this callback).
     }
 
+    inline void DtlsTransport::OnTimer(Timer* /*timer*/) {
 
+        // Workaround for https://github.com/openssl/openssl/issues/7998.
+        if (this->handshakeDone) {
+            LDebug("handshake is done so return");
+
+            return;
+        }
+
+        DTLSv1_handle_timeout(this->ssl);
+
+        // If required, send DTLS data.
+        SendPendingOutgoingDtlsData();
+
+        // Set the DTLS timer again.
+        SetTimeout();
+    }
+
+    
 
     inline bool DtlsTransport::CheckRemoteFingerprint() {
 
@@ -1742,24 +1760,6 @@ error:
         this->listener->OnDtlsTransportFailed(this);
 
         return false;
-    }
-
-    inline void DtlsTransport::OnTimer(Timer * /*timer*/) {
-
-      // Workaround for https://github.com/openssl/openssl/issues/7998.
-      if (this->handshakeDone) {
-        LDebug("handshake is done so return");
-
-        return;
-      }
-
-      // DTLSv1_handle_timeout(this->ssl);
-
-      // If required, send DTLS data.
-      SendPendingOutgoingDtlsData();
-
-      // Set the DTLS timer again.
-      SetTimeout();
     }
 
 #endif     
