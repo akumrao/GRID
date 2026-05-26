@@ -743,8 +743,12 @@ namespace rtc
 	}
         
         
-        int WebRtcTransport::agent_direct_send( uint8_t* data, uint32_t nbytes, addr_record_t &record )
+        int WebRtcTransport::agent_direct_send( uint8_t* data, uint32_t nbytes, addr_record_t record )
         {
+#ifndef __linux__
+          socklen_t lent;
+          IP::addr_map_inet6_v4mapped((struct sockaddr_storage *)&record.addr, &record.len);
+#endif   
             return m_udpServer->send( (char*) data, nbytes , (const struct sockaddr*)&record.addr);
         }
       

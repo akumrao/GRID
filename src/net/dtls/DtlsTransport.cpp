@@ -138,6 +138,22 @@ namespace rtc {
 
 #if USE_MBEDTLS
 
+    inline void DtlsTransport::OnTimer(Timer * /*timer*/) {
+
+      if (!timer_int_passed)
+        timer_int_passed = 1;
+      else {
+        timer_fin_passed = 1;
+        //uv_timer_stop(handle);
+        this->timer->Stop();
+      }
+
+      SInfo << "mbedtls_ssl_handshake ";
+      // mbedtls_ssl_handshake(&c->mSsl);
+      handshake();
+
+    }
+    /*
     void on_uv_timer(uv_timer_t *handle) {
         DtlsTransport *c = (DtlsTransport *) handle->data;
 
@@ -152,18 +168,20 @@ namespace rtc {
         // mbedtls_ssl_handshake(&c->mSsl);
         c->handshake();
     }
+    */
 
     void ssl_set_timer(void *ctx, uint32_t int_ms, uint32_t fin_ms) {
         DtlsTransport *c = (DtlsTransport *) ctx;
 
         if (fin_ms == 0) {
-            uv_timer_stop(&c->timer1);
+            //uv_timer_stop(&c->timer1);
+            c->timer->Stop();
             return;
         }
         c->timer_int_passed = c->timer_fin_passed = 0;
 
-
-        uv_timer_start(&c->timer1, on_uv_timer, int_ms, fin_ms - int_ms);
+         c->timer->Start(int_ms, fin_ms - int_ms);
+         //uv_timer_start(&c->timer1, on_uv_timer, int_ms, fin_ms - int_ms);
     }
 
     int ssl_get_timer(void *ctx) {
@@ -200,6 +218,8 @@ namespace rtc {
         mbedtls_ctr_drbg_set_prediction_resistance(&mDrbg, MBEDTLS_CTR_DRBG_PR_ON);
         mbedtls_ssl_conf_authmode(&mConf, MBEDTLS_SSL_VERIFY_OPTIONAL);
 
+         this->timer = new Timer(this);
+
     }
 
     DtlsTransport::~DtlsTransport() {
@@ -213,6 +233,8 @@ namespace rtc {
         mbedtls_ssl_free(&mSsl);
         mbedtls_ssl_config_free(&mConf);
 
+        delete this->timer;
+        this->timer = nullptr;
 
     }
 
@@ -387,8 +409,8 @@ namespace rtc {
 
             mbedtls_ssl_set_timer_cb(&mSsl, this, ssl_set_timer, ssl_get_timer);
 
-            uv_timer_init(Application::uvGetLoop(), &timer1);
-            timer1.data = this;
+            //uv_timer_init(Application::uvGetLoop(), &timer1);
+            //timer1.data = this;
 
 
         } catch (...) {
@@ -535,23 +557,7 @@ namespace rtc {
 
     }
 
-    inline void DtlsTransport::OnTimer(Timer* /*timer*/) {
 
-        // Workaround for https://github.com/openssl/openssl/issues/7998.
-        if (this->handshakeDone) {
-            LDebug("handshake is done so return");
-
-            return;
-        }
-
-        //DTLSv1_handle_timeout(this->ssl);
-
-        // If required, send DTLS data.
-        SendPendingOutgoingDtlsData();
-
-        // Set the DTLS timer again.
-        SetTimeout();
-    }
 
     inline void DtlsTransport::SendPendingOutgoingDtlsData() {
 //        int x = 1;
@@ -1752,6 +1758,24 @@ error:
         this->listener->OnDtlsTransportFailed(this);
 
         return false;
+    }
+
+    inline void DtlsTransport::OnTimer(Timer * /*timer*/) {
+
+      // Workaround for https://github.com/openssl/openssl/issues/7998.
+      if (this->handshakeDone) {
+        LDebug("handshake is done so return");
+
+        return;
+      }
+
+      // DTLSv1_handle_timeout(this->ssl);
+
+      // If required, send DTLS data.
+      SendPendingOutgoingDtlsData();
+
+      // Set the DTLS timer again.
+      SetTimeout();
     }
 
 #endif     

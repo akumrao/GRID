@@ -626,7 +626,7 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
 
 
 
-        pc1->onLocalDescription([ id, pc1, pc2](rtc::Description description) {
+        pc1->onLocalDescription([ id, pc1, pc2](rtc::Description &description) {
     //		json message = {{"id", id},
     //		                {"type", description.typeString()},
     //		                {"description", std::string(description)}};
@@ -641,12 +641,12 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
             
            // SInfo << "setRemoteDescription " << type ;
             
-           // auto description = Description(sdp, type);
-            pc2->setRemoteDescription(description);
+           auto description1 = Description(std::string(description), Description::Type::Offer);
+            pc2->setRemoteDescription(description1);
             
         });
 
-        pc1->onLocalCandidate([ id, pc2](rtc::Candidate candidate) {
+        pc1->onLocalCandidate([ id, pc2](rtc::Candidate &candidate) {
     //            json message = {{"id", id},
     //                            {"type", "candidate"},
     //                            {"candidate", std::string(candidate)},

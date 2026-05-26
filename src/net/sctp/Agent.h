@@ -4,7 +4,7 @@
 #ifndef STUN_Agent_H
 #define STUN_Agent_H
 
-#define PRINTDEBUG 1
+//#define PRINTDEBUG 1
 
 #include <Attribute.h>
 #include <Types.h>
