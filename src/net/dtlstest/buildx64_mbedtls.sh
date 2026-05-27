@@ -2,6 +2,7 @@
 rm -rf buildmbed
 mkdir -p buildmbed
 
+cp config.js git add certificate.crt  private_key.pem buildmbed/
 
 cd buildmbed
 

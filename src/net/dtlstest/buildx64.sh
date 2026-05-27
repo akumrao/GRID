@@ -2,6 +2,7 @@
 rm -rf build
 mkdir -p build
 
+cp config.js git add certificate.crt  private_key.pem build/
 
 cd build
 
