@@ -172,15 +172,16 @@ namespace net
 		
 #ifndef __linux__
           if (this->protocol == Protocol::UDP)
-            this->udpSocket->send((const char *)data, len, ( const struct sockaddr*)&this->record_win.addr,
+             this->udpSocket->send((const char *)data, len, (const struct sockaddr *)&this->record_win.addr, cb);
 
 #else
           if (this->protocol == Protocol::UDP)
             this->udpSocket->send((const char *)data, len, this->udpRemoteAddr, cb);
+ 
 	
 #endif
-         else
-            this->tcpConnection->Write((const char *)data, len, cb);  	
+          else
+            this->tcpConnection->Write((const char *)data, len, cb);  
 	
 	}
 
