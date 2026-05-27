@@ -160,7 +160,7 @@ namespace rtc {
         int timer_fin_passed;
          mbedtls_ssl_context mSsl;
          
-         //uv_timer_t timer1;
+         uv_timer_t timer1;
          
         void shutdown();
 
@@ -222,7 +222,7 @@ namespace rtc {
 
 #endif
 
-        
+        Timer* timer{ nullptr};
         // Others.
         DtlsState state{ DtlsState::NEW};
         Role localRole{ Role::NONE};
@@ -232,9 +232,6 @@ namespace rtc {
         std::string remoteCert;
 
     public:
-        
-        Timer *timer{nullptr};
-
         CertificateFingerprint remoteFingerprint;
 
         bool checkFingerprint(const std::string &fingerprint);

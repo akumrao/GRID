@@ -68,13 +68,13 @@ namespace rtc
         {
             SInfo << "AgentNo " << agentNo << " " << (char*) data;  
             
-//             sleep(5);
-//             
-//            {
-//                  const uint8_t tmp[256] ="arvind";
-//               sprintf(tmp, "%darvind", count++ );
-//               mapTransports[id]->SendSctpData(tmp, 7);
-//            }   
+            sleep(5);
+            
+           {
+                 const uint8_t tmp[256] ="arvind";
+              sprintf(tmp, "%darvind", count++ );
+              mapTransports[id]->SendSctpData(tmp, 7);
+           }   
              
             
         }
