@@ -19,7 +19,7 @@ There are 4 peers, so 4x6 = 24 consumers in total.
 #include "Router.h"
 #include "base/logger.h"
 #include "base/error.h"
-#include "Utils.h"
+//#include "Utils.h"
 
 #include "WebRtcTransport.h"
 
@@ -55,12 +55,11 @@ namespace rtc
         void Router::OnDtlsTransportStatus(DtlsTransport::DtlsState state) 
         {
       
-            if( state == DtlsTransport::DtlsState::CONNECTED)
+            if (state == DtlsTransport::DtlsState::CONNECTED)
             {
-                
-               const uint8_t tmp[256] ="arvind";
+               char tmp[256];
                sprintf(tmp, "%darvind", count++ );
-               mapTransports[id]->SendSctpData(tmp, 7);
+               mapTransports[id]->SendSctpData((const uint8_t *)tmp, 7);
                
             }    
         }

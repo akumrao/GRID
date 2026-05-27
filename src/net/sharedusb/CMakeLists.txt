@@ -50,6 +50,7 @@ if(WIN32)
 	if(MSVC)
 		add_definitions(-DNOMINMAX)
 		add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+		add_compile_definitions(_WIN32_WINNT=0x0A00)
 		add_compile_options(/W2)
 	endif()
 

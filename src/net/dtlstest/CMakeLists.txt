@@ -4,12 +4,16 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
 project(runDtls VERSION 1.7.7 LANGUAGES CXX)
 
-set(TTYD_VERSION "${PROJECT_VERSION}")
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# Don't use e.g. GNU extension (like -std=gnu++11) for portability
-set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(TTYD_VERSION "${PROJECT_VERSION}")
+
+set(CMAKE_CXX_STANDARD 17)
+
+# Enforce the standard; if the compiler is too old, the build fails
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# set(CMAKE_C_STANDARD 17)
+# set(CMAKE_C_STANDARD_REQUIRED ON)
 
 # Options
 option(USE_MBEDTLS "Use Mbed TLS instead of OpenSSL" OFF)
@@ -46,10 +50,17 @@ if(WIN32)
 	if(MSVC)
 		add_definitions(-DNOMINMAX)
 		add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+		add_compile_definitions(_WIN32_WINNT=0x0A00)
+		add_compile_options(/W2)
 	endif()
+
+else()
+add_definitions( -Wno-write-strings -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-value   -Wno-extra -Wno-switch)
 endif()
 
-add_definitions( -Wno-write-strings -Wno-missing-field-initializers -Wno-unused-parameter -Wno-unused-value -Wno-deprecated-declarations  -Wno-extra -Wno-switch -Wno-unused-but-set-variable)
+if(CMAKE_COMPILER_IS_GNUCC)
+    add_compile_options(-Wno-unused-but-set-variable)
+endif()
 
 
 
@@ -58,56 +69,26 @@ set(THREADS_PREFER_PTHREAD_FLAG TRUE)
 find_package(Threads REQUIRED)
 
 
-
-set(SOURCE_FILES testDtlsServerToServer.cpp Router.cpp)
-set(SOURCE_FILES_client testDtlsClient.cpp Router.cpp)
-set(SOURCE_FILES_server testDtlsServer.cpp Router.cpp)
-
-file(GLOB SOURCES   
-    ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp ../../base/src/*.cpp
-  )
-
-
-if(UNIX)
-list(APPEND LINK_LIBS dl Threads::Threads )
-endif()
-
-if(WIN32)
-    list(APPEND LINK_LIBS shell32 ws2_32)
-    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/app.rc.in ${CMAKE_CURRENT_BINARY_DIR}/app.rc @ONLY)
-    list(APPEND SOURCE_FILES ${CMAKE_CURRENT_BINARY_DIR}/app.rc)
-else()
-    find_library(LIBUTIL NAMES util)
-    if(LIBUTIL)
-        list(APPEND LINK_LIBS util)
-    endif()
-endif()
-
-
-add_subdirectory(../../libuv build )
-
-
-
-
-
-
-
-
-
-if(USE_MBEDTLS) 
-include_directories(../net/incmbedtls/)
-endif()   
-
-
-
+# Configure usrsctp options
 
 option(sctp_build_shared_lib OFF)
 option(sctp_build_programs OFF)
 option(sctp_inet OFF)
 option(sctp_inet6 OFF)
 option(sctp_werror OFF)
-set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
-add_subdirectory(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/usrsctp buildtmpusrsctp EXCLUDE_FROM_ALL)
+#set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
+
+
+set(sctp_build_shared_lib OFF CACHE BOOL "Build static" FORCE)
+set(sctp_build_programs   OFF CACHE BOOL "Disable tools" FORCE)
+set(sctp_werror           OFF CACHE BOOL "Disable werror" FORCE)
+
+# Subdirectory inclusion
+#add_subdirectory(usrsctp)
+#add_subdirectory(./usrsctp buildusrstcp EXCLUDE_FROM_ALL)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/usrsctp buildusrstcp EXCLUDE_FROM_ALL)
+
+
 if (MSYS OR MINGW)
 	add_compile_definitions(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/usrsctp PUBLIC -DSCTP_STDINT_INCLUDE=<stdint.h>)
 endif()
@@ -122,6 +103,54 @@ if(WIN32)
 	link_libraries(  ws2_32) # winsock2
 endif()
 
+
+
+set(SOURCE_FILES testDtlsServerToServer.cpp Router.cpp)
+set(SOURCE_FILES_client testDtlsClient.cpp Router.cpp)
+set(SOURCE_FILES_server testDtlsServer.cpp Router.cpp)
+
+if(UNIX)
+file(GLOB SOURCES   
+    ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../base/src/*.cpp  ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp
+  )
+else()
+file(GLOB SOURCES   
+    ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../base/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp
+  )
+endif()
+
+
+if(WIN32)
+    list(APPEND LINK_LIBS shell32 ws2_32)
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/app.rc.in ${CMAKE_CURRENT_BINARY_DIR}/app.rc @ONLY)
+    list(APPEND SOURCE_FILES ${CMAKE_CURRENT_BINARY_DIR}/app.rc)
+else()
+    find_library(LIBUTIL NAMES util)
+    if(LIBUTIL)
+        list(APPEND LINK_LIBS util)
+    endif()
+endif()
+
+if(WIN32)
+add_subdirectory(../../libuv build )
+endif()
+
+
+if(WIN32)
+list(APPEND LINK_LIBS uv_a  )
+endif()
+
+if(UNIX)
+list(APPEND LINK_LIBS  dl Threads::Threads )
+endif()
+
+
+
+
+
+if(USE_MBEDTLS) 
+include_directories(../net/incmbedtls/)
+endif()   
 
 
 if(USE_MBEDTLS)
@@ -140,7 +169,7 @@ if(USE_MBEDTLS)
 	add_compile_definitions(  USE_MBEDTLS=1 HTTPSSL=1)
 
 	include_directories(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/mbedtls/include)
-	link_libraries(   ${LINK_LIBS} uv_a mbedtls mbedx509 mbedcrypto -lz)
+	link_libraries(   ${LINK_LIBS}  mbedtls mbedx509 mbedcrypto )
 	
 else()
 	if(APPLE)
@@ -162,7 +191,7 @@ else()
 	find_package(OpenSSL REQUIRED)
 	add_compile_definitions(  HTTPSSL=1)
 	#link_libraries(${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a)
-	link_libraries(  ${LINK_LIBS} uv_a ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a -lz)
+	link_libraries(  ${LINK_LIBS} ${SSL_LIB}/libssl.a ${SSL_LIB}/libcrypto.a )
 endif()
 
 
@@ -174,7 +203,7 @@ endif()
 
 
 if(UNIX)
-add_compile_options( -fpermissive -Wno-return-type -Wno-format-overflow -Wno-format -Wno-unused-but-set-variable -Wno-write-strings -no-pie)
+add_compile_options( -fpermissive -Wno-return-type -Wno-format-overflow -Wno-format -Wno-write-strings -no-pie)
 endif()
 
 if(WIN32)
@@ -198,7 +227,7 @@ endif()
 
 
 include_directories(
-           ../sctp/ ../pc/ ../dtls/ ../../http/include/ ../../http_parser/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../json/include/ ../../http_parser/ ../../../src/openssl/buildx64/include ../../webrtcserver/deps/usrsctp/usrsctplib/   ${SSL_ROOT}/include)
+           ../sctp/ ../pc/ ../dtls/ ../../http/include/ ../../http_parser/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../json/include/ ../../http_parser/  ../../../src/openssl/buildx64/include ../../webrtcserver/deps/usrsctp/usrsctplib/   ${SSL_ROOT}/include)
 
 
 
@@ -214,16 +243,29 @@ target_compile_definitions(${PROJECT_NAME}_server_server PUBLIC
 add_executable(${PROJECT_NAME}_client ${SOURCE_FILES_client} ${SOURCES})
 target_include_directories(${PROJECT_NAME}_client PUBLIC ${INCLUDE_DIRS})
 #target_link_libraries(${PROJECT_NAME}_client  uv_a)
-add_compile_definitions(${PROJECT_NAME}_client PUBLIC
+target_compile_definitions(${PROJECT_NAME}_client PUBLIC
     TTYD_VERSION="${TTYD_VERSION}"
     $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
 )
 
+
+
 add_executable(${PROJECT_NAME}_server ${SOURCE_FILES_server} ${SOURCES})
 target_include_directories(${PROJECT_NAME}_server PUBLIC ${INCLUDE_DIRS})
 #target_link_libraries(${PROJECT_NAME}_server  uv_a)
-add_compile_definitions(${PROJECT_NAME}_server PUBLIC
+target_compile_definitions(${PROJECT_NAME}_server PUBLIC
     TTYD_VERSION="${TTYD_VERSION}"
     $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
 )
+
+
+
+
+
+
+
+
+
+
+
 
