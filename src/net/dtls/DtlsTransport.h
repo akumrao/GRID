@@ -160,7 +160,7 @@ namespace rtc {
         int timer_fin_passed;
          mbedtls_ssl_context mSsl;
          
-         uv_timer_t timer1;
+         uv_timer_t timer1{0};
          
         void shutdown();
 

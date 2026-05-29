@@ -382,13 +382,15 @@ namespace rtc {
 
             mbedtls_ssl_set_bio(&mSsl, ssl_bio_, TLS_BIO_net_send, TLS_BIO_net_recv, NULL);
 
-
+            timer1.data = nullptr;
             // mbedtls_ssl_set_timer_cb(&mSsl, this, SetTimerCallback, GetTimerCallback);
 
-            mbedtls_ssl_set_timer_cb(&mSsl, this, ssl_set_timer, ssl_get_timer);
+             mbedtls_ssl_set_timer_cb(&mSsl, this, ssl_set_timer, ssl_get_timer);
 
             uv_timer_init(Application::uvGetLoop(), &timer1);
             timer1.data = this;
+
+           
 
 
         } catch (...) {
