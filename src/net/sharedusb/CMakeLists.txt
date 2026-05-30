@@ -231,8 +231,7 @@ include_directories(
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 #target_link_libraries(${PROJECT_NAME}  uv_a)
-target_compile_definitions(${PROJECT_NAME} PUBLIC
-    TTYD_VERSION="${TTYD_VERSION}"
+target_compile_definitions(${PROJECT_NAME} PUBLIC DUALSTACK  TTYD_VERSION="${TTYD_VERSION}"
     $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
 )
 

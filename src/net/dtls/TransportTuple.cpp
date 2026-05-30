@@ -122,13 +122,11 @@ namespace net
 		// pointer point to it.
 		this->udpRemoteAddrStorage = base::net::IP::CopyAddress(this->udpRemoteAddr);
 		
-
-  #ifndef __linux__
-
+  #if !defined(__linux__) && defined(DUALSTACK)
                 base::net::IP::CopyAddress(this->udpRemoteAddr, record_win);
 
                socklen_t lent;
-                IP::addr_map_inet6_v4mapped(
+                IP::addr_map_inet6_v4mapped(   // convert ipv4 to ipv6 if needed for windows
                     (struct sockaddr_storage *)&record_win.addr,
                     &record_win.len);
   #endif
@@ -170,16 +168,16 @@ namespace net
 	{
 
 		
-//#ifndef __linux__
-//          if (this->protocol == Protocol::UDP)
-//             this->udpSocket->send((const char *)data, len, (const struct sockaddr *)&this->record_win.addr, cb);
-//
-//#else
+  #if !defined(__linux__) && defined(DUALSTACK)
+          if (this->protocol == Protocol::UDP)
+             this->udpSocket->send((const char *)data, len, (const struct sockaddr *)&this->record_win.addr, cb);
+
+#else
           if (this->protocol == Protocol::UDP)
             this->udpSocket->send((const char *)data, len, this->udpRemoteAddr, cb);
  
 	
-//#endif
+#endif
           else
             this->tcpConnection->Write((const char *)data, len, cb);  
 	

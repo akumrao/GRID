@@ -50,6 +50,16 @@ namespace base
         void OnUvTimer(int timerID);
         int timerID{-1}; //
         std::function<void(void) > cb_timeout;
+
+        uv_loop_t *GetUVloop()
+        { 
+            return uvHandle->loop;
+        }
+
+        uint64_t UVNow()
+        {
+            return uv_now(GetUVloop());
+        }
     private:
         // Passed by argument.
         Listener* listener{ nullptr};

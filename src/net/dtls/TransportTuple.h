@@ -59,7 +59,9 @@ namespace net
 		std::string localAnnouncedIp;
 		// Others.
 		struct sockaddr_storage udpRemoteAddrStorage;
+#if !defined(__linux__) && defined(DUALSTACK)
 		addr_record_t record_win{0};
+#endif
 		Protocol protocol;
 	};
 

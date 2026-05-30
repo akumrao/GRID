@@ -19,6 +19,7 @@ There are 4 peers, so 4x6 = 24 consumers in total.
 #include "Router.h"
 #include "base/logger.h"
 #include "base/error.h"
+#include "base/platform.h"
 //#include "Utils.h"
 
 #include "WebRtcTransport.h"
@@ -68,13 +69,13 @@ namespace rtc
         {
             SInfo << "AgentNo " << agentNo << " " << (char*) data;  
             
-          /*  sleep(5);
+            sleep(5);
             
            {
-                 const uint8_t tmp[256] ="arvind";
-              sprintf(tmp, "%darvind", count++ );
+              const uint8_t tmp[256] ="arvind";
+              sprintf((char*)tmp, "%darvind", count++ );
               mapTransports[id]->SendSctpData(tmp, 7);
-           }   */
+           }   
              
             
         }
