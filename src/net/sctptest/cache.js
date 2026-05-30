@@ -1,6 +1,6 @@
 {
-    "certFile": "/var/tmp/key/certificate.crt",
-    "keyFile": "/var/tmp/key/private_key.pem",
+    "certFile": "./certificate.crt",
+    "keyFile": "./private_key.pem",
     "logLevel": "info",
     "passwd": "BsX4g0brln0+kXB/SxXSfI",
     "remoteip": [
