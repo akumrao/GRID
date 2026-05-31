@@ -131,8 +131,8 @@ private:
                                  const unsigned char client_random[32],
                                  const unsigned char server_random[32],
                                  mbedtls_tls_prf_types tls_prf_type);
-  static void SetTimerCallback(void *ctx, uint32_t int_ms, uint32_t fin_ms);
-  static int GetTimerCallback(void *ctx);
+//  static void SetTimerCallback(void *ctx, uint32_t int_ms, uint32_t fin_ms);
+//  static int GetTimerCallback(void *ctx);
 
   int swrap_error_handler(const int code);
   void stay_uptodate();

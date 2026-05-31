@@ -27,7 +27,7 @@
 #include "sctptransport.hpp"
 #include "DtlsTransport.h"
 
-#define localtesting 1
+//#define localtesting 1
 //#define remotetesting 1
 //#define VIDEOMEDIA 1
 #include "peerconnection.h"
@@ -286,7 +286,9 @@ void wsOnMessage(json const &m ) {
             
             SInfo << sdp;
             
-            pc->addRemoteCandidate(rtc::Candidate(sdp, mid));
+            
+            Candidate tmp = rtc::Candidate(sdp, mid);
+            pc->addRemoteCandidate(tmp);
         }
         
            

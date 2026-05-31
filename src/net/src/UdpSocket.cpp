@@ -433,6 +433,10 @@ namespace base {
               //  bind_flags = UV_UDP_IPV6ONLY;
                 ASSERT(0 == uv_ip6_addr(localIp.c_str(), localPort, &addr6));
                 r = uv_udp_bind(uvHandle, (const struct sockaddr*) &addr6, bind_flags);
+                if(r)
+                {
+                    SError << "Port is already occupied " << localIp << ":"  << localPort;
+                }
                 ASSERT(r == 0);
                 memcpy(reinterpret_cast<char *>(&localAddr.addr),  reinterpret_cast<char *>(&addr6), sizeof(addr6));
                 localAddr.len =  sizeof(addr6);
@@ -441,6 +445,10 @@ namespace base {
             } else {
                 ASSERT(0 == uv_ip4_addr(localIp.c_str(), localPort, &addr));
                 r = uv_udp_bind(uvHandle, (const struct sockaddr*) &addr, bind_flags);
+                if(r)
+                {
+                    SError << "Port is already occupied " << localIp << ":"  << localPort;
+                }
                 ASSERT(r == 0);
                 
                 memcpy(reinterpret_cast<char *>(&localAddr.addr),  reinterpret_cast<char *>(&addr), sizeof(addr));
