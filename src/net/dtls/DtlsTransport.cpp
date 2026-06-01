@@ -26,58 +26,34 @@ namespace rtc {
 
     inline void DtlsTransport::OnTimer(Timer * /*timer*/) { // dtls
 
-        status = 2;
-        SInfo << "mbedtls_ssl_handshake ";
+        SInfo << "OnTimer ";
+        
+        if (is_cancelled || handshakeDone) {
+            return;
+        }
+        
         handshake();
     }
 
-    void on_uv_timer(uv_timer_t *handle) {
-        //        DtlsTransport *c = (DtlsTransport *) handle->data;
-        //
-        //        if (!c->timer_int_passed)
-        //            c->timer_int_passed = 1;
-        //        else {
-        //            c->timer_fin_passed = 1;
-        //            uv_timer_stop(handle);
-        //        }
-        //
-        //        SInfo << "mbedtls_ssl_handshake ";
-        //        // mbedtls_ssl_handshake(&c->mSsl);
-        //        c->handshake();
-
-        DtlsTransport *t_ctx = (DtlsTransport *) handle->data;
-        t_ctx->status = 2;
-
-        SInfo << "mbedtls_ssl_handshake ";
-        t_ctx->handshake();
-    }
-
+  
     void ssl_set_timer(void *ctx, uint32_t int_ms, uint32_t fin_ms) {
-        //        DtlsTransport *c = (DtlsTransport *) ctx;
-        //
-        //        if (fin_ms == 0) {
-        //            uv_timer_stop(&c->timer1);
-        //            return;
-        //        }
-        //        c->timer_int_passed = c->timer_fin_passed = 0;
-        //
-        //
-        //        uv_timer_start(&c->timer1, on_uv_timer, int_ms, fin_ms - int_ms);
-
+   
         DtlsTransport *t_ctx = (DtlsTransport *) ctx;
-        t_ctx->intermediate_ms = int_ms;
-        t_ctx->final_ms = fin_ms;
 
         if (fin_ms == 0) {
             // uv_timer_stop(&t_ctx->timer1);
             t_ctx->timer->Stop();
             std::cout << "uv_timer_stop" << std::endl << std::flush;
-            t_ctx->status = -1;
+            t_ctx->is_cancelled = 1;
             return;
         }
 
+        t_ctx->intermediate_ms = int_ms;
+        t_ctx->final_ms = fin_ms;
+
+
         t_ctx->start_time = uv_now(t_ctx->timer->GetUVloop());
-        t_ctx->status = 0;
+        t_ctx->is_cancelled = 0;
 
         // uv_timer_start(&t_ctx->timer1, on_uv_timer, fin_ms, 0);
 
@@ -87,13 +63,9 @@ namespace rtc {
     }
 
     int ssl_get_timer(void *ctx) {
-        //        DtlsTransport *c = (DtlsTransport *) ctx;
-        //        if (c->timer_fin_passed) return 2;
-        //        if (c->timer_int_passed) return 1;
-        //        return 0;
 
         DtlsTransport *t_ctx = (DtlsTransport *) ctx;
-        if (t_ctx->status == -1)
+        if (t_ctx->is_cancelled)
             return -1;
 
         uint64_t elapsed = uv_now(t_ctx->timer->GetUVloop()) - t_ctx->start_time;
@@ -453,7 +425,6 @@ namespace rtc {
             mbedtls_ssl_set_bio(&mSsl, ssl_bio_, TLS_BIO_net_send, TLS_BIO_net_recv,
                     NULL);
 
-            // mbedtls_ssl_set_timer_cb(&mSsl, this, SetTimerCallback,
             // GetTimerCallback);
 
             // uv_timer_init(Application::uvGetLoop(), &timer1);
@@ -537,7 +508,10 @@ namespace rtc {
                             << " Failed ssl cert verification because expired or CN mismatch "
                             << buf;
                 }
+                
             }
+            
+            ssl_set_timer(this, 0, 0);
 
             this->state = DtlsState::CONNECTED;
             this->listener->OnDtlsTransportConnected(this);

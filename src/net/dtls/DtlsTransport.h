@@ -148,7 +148,7 @@ public:
   uint32_t intermediate_ms{0};
   uint32_t final_ms{0};
   uint64_t start_time{0};
-  int status{0};
+  int is_cancelled{1};
 
   mbedtls_ssl_context mSsl;
 
