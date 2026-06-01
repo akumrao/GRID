@@ -18,6 +18,7 @@ extern ConfCert config;
 using namespace base;
 
 
+//#define USE_MBEDTLS 1
 
 #if USE_MBEDTLS
 
@@ -112,15 +113,44 @@ namespace rtc {
         return;
     }
 
+    
+    
+    void mbedtls_debug_callback(void *ctx, int level,
+                                       const char *file, int line,
+                                       const char *str)
+    {
+        // Print the debug string or stream it to stderr/stdout
+        ((void) ctx); // Unused context parameter
+        std::cout << "MbedTLS [Level " << level << "] (" << file << ":" << line << ") " << str;
+    }
+    
     DtlsTransport::DtlsTransport(Listener *listener) : listener(listener) {
         if (!config.mCertificate)
             throw std::invalid_argument("DTLS certificate is null");
 
+/* 
+for MBEDTLS_SSL_VERSION_TLS1_3)
+        if (psa_crypto_init() != PSA_SUCCESS) {
+        std::cerr << "Failed to initialize PSA Crypto API." << std::endl;
+        return ;
+    }
+*/
+        
         mbedtls_entropy_init(&mEntropy);
         mbedtls_ctr_drbg_init(&mDrbg);
         mbedtls_ssl_init(&mSsl);
         mbedtls_ssl_config_init(&mConf);
         mbedtls_ctr_drbg_set_prediction_resistance(&mDrbg, MBEDTLS_CTR_DRBG_PR_ON);
+        
+      //  mbedtls_ssl_conf_min_tls_version(&mConf, MBEDTLS_SSL_VERSION_TLS1_3);
+       // mbedtls_ssl_conf_max_tls_version(&mConf, MBEDTLS_SSL_VERSION_TLS1_3);
+        
+         mbedtls_debug_set_threshold(2);
+
+    // 3. Register the callback with the SSL configuration
+    // The last argument (nullptr) is passed as the 'void *ctx' to your callback
+        mbedtls_ssl_conf_dbg(&mConf, mbedtls_debug_callback, nullptr);
+    
         mbedtls_ssl_conf_authmode(&mConf, MBEDTLS_SSL_VERIFY_OPTIONAL);
     }
 
@@ -278,6 +308,8 @@ namespace rtc {
             mbedtls_ssl_conf_dtls_cookies(&mConf, NULL, NULL, NULL);
             mbedtls_ssl_conf_dtls_srtp_protection_profiles(
                     &mConf, srtpSupportedProtectionProfiles);
+            
+           // mbedtls_ssl_set_mtu(&mSsl, 1200);
 
             mbedtls::check(mbedtls_ssl_setup(&mSsl, &mConf));
 
@@ -347,6 +379,9 @@ namespace rtc {
         {
             this->state = DtlsState::CONNECTING;
             this->listener->OnDtlsTransportConnecting(this);
+            
+            // mbedtls_ssl_set_mtu(&mSsl, 1200);
+            
         }
 
         int rv = 0;
@@ -392,6 +427,10 @@ namespace rtc {
         } else if (code == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
             return code;
         }
+        else if(  code ==MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE)
+       {
+            SError << "This browser or client need more MbedDtls extensions enabled  ";
+       }
 
         return code;
     }
@@ -432,6 +471,8 @@ namespace rtc {
             int /*depth*/, uint32_t * /*flags*/) {
         auto t = static_cast<DtlsTransport *> (ctx);
 
+        SInfo <<  "CertificateCallback";
+        
         string fingerprint =
                 rtc::make_fingerprint(crt, t->remoteFingerprint.algorithm);
         //        std::transform(fingerprint.begin(), fingerprint.end(),
@@ -991,6 +1032,8 @@ error:
 
     void DtlsTransport::ProcessDtlsData(const uint8_t *data, size_t len) {
 
+        SInfo << "ProcessDtlsData " << len;
+            
         int written;
         int read;
 
@@ -1158,6 +1201,8 @@ error:
         if (this->handshakeDoneNow) {
             this->handshakeDoneNow = false;
             this->handshakeDone = true;
+            
+            SInfo << "handshake done";
 
             // Stop the timer.
             this->timer->Stop();

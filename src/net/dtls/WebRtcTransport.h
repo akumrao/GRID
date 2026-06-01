@@ -68,6 +68,8 @@ namespace rtc
 		void OnPacketReceived(base::net::TransportTuple* tuple, const char* data, size_t len);
 		void OnStunDataReceived(base::net::TransportTuple* tuple, const char* data, size_t len);
 		void OnDtlsDataReceived(const base::net::TransportTuple* tuple, const char* data, size_t len);
+                
+                 std::queue<std::vector<unsigned char>> binaryPacketQueue;
 
 
 		/* Pure virtual methods inherited from rtc::UdpSocket::Listener. */

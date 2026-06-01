@@ -476,8 +476,10 @@ namespace rtc
 		// Ensure it comes from a valid tuple.
 		if (!this->iceServer->IsValidTuple(tuple))
 		{
-			LError( "ignoring DTLS data coming from an invalid tuple");
-
+			LWarn( "ignoring DTLS data coming from an invalid tuple");
+                        
+                        binaryPacketQueue.emplace(data, data + len);
+                        
 			return;
 		}
 
@@ -499,6 +501,20 @@ namespace rtc
               this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CONNECTED)
             {
                     //MS_DEBUG_DEV("DTLS data received, passing it to the DTLS transport");
+                
+                    while (!binaryPacketQueue.empty()) {
+                        // Access the front element by reference to avoid copying
+                        const std::vector<unsigned char>& packet = binaryPacketQueue.front();
+
+                        // Access raw pointer and size safely
+                        const unsigned char* rawDataPtr = packet.data();
+                        size_t packetSize = packet.size();
+
+                        this->dtlsTransport->ProcessDtlsData((const uint8_t*)rawDataPtr, packetSize);
+
+                        // Remove the processed packet from the queue
+                        binaryPacketQueue.pop();
+                    }
 
                     this->dtlsTransport->ProcessDtlsData((const uint8_t*)data, len);
             }

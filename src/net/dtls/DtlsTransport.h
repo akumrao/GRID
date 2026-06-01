@@ -7,6 +7,7 @@
 #include "base/Timer.h"
 
 #if USE_MBEDTLS
+extern "C" {
 #include "mbedtls/ctr_drbg.h"
 #include "mbedtls/ecdsa.h"
 #include "mbedtls/entropy.h"
@@ -16,6 +17,8 @@
 #include "mbedtls/sha256.h"
 #include "mbedtls/ssl.h"
 #include "mbedtls/x509_crt.h"
+#include "mbedtls/debug.h"
+}
 
 #include "net/bio.h"
 
