@@ -42,23 +42,24 @@ using namespace base::net;
 
 using json = nlohmann::json;
 
-
-
-
-template <class T> weak_ptr<T> make_weak_ptr(shared_ptr<T> ptr) { return ptr; }
+template <class T> weak_ptr<T> make_weak_ptr(shared_ptr<T> ptr) {
+    return ptr;
+}
 
 /// all connected clients
-unordered_map<string, shared_ptr<Client>> clients{};
+unordered_map<string, shared_ptr<Client>> clients
+{
+};
 
 /// Creates peer connection and client representation
 /// @param config Configuration
 /// @param wws Websocket for signaling
 /// @param id Client ID
 /// @returns Client
-shared_ptr<Client> createPeerConnection( Configuration &config, string id, bool isClient);
-shared_ptr<Client> createPeerConnection_lc( Configuration &config, string id);
+shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool isClient);
+shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id);
 
-shared_ptr<Client> createPeerConnection_rm( Configuration &config, string id, Async &async, bool isClient);
+shared_ptr<Client> createPeerConnection_rm(Configuration &config, string id, Async &async, bool isClient);
 
 /// Creates stream
 /// @param h264Samples Directory with H264 samples
@@ -98,10 +99,10 @@ std::string room;
 Configuration settingconfig;
 
 std::string id;
-  
+
 #if 1
-void sendCandidate( const std::string &mid, int mlineindex, const std::string &sdp )
-{
+
+void sendCandidate(const std::string &mid, int mlineindex, const std::string &sdp) {
     json desc;
     desc["sdpMid"] = mid;
     desc["sdpMLineIndex"] = mlineindex;
@@ -110,21 +111,19 @@ void sendCandidate( const std::string &mid, int mlineindex, const std::string &s
     json m;
     m["type"] = "candidate";
     m["candidate"] = desc;
-    
-    if(!from.empty())
-    {
+
+    if (!from.empty()) {
         m["from"] = from;
         m["to"] = from;
     }
-    
+
     m["room"] = room;
-    SInfo << "send:"  <<  sdp << "candidate to: "<< from<< std::endl;
-    
+    SInfo << "send:" << sdp << "candidate to: " << from << std::endl;
+
     mysocket->emit("message", m);
 }
 
-void sendSdp( const std::string &sdp, const std::string &type   )
-{
+void sendSdp(const std::string &sdp, const std::string &type) {
 
     json desc = {
 
@@ -134,24 +133,23 @@ void sendSdp( const std::string &sdp, const std::string &type   )
 
     json m;
     m["type"] = type;
-    
+
     m["desc"] = desc;
-    
-    
-    if(!from.empty())
-    {
+
+
+    if (!from.empty()) {
         m["from"] = from;
         m["to"] = from;
     }
-     
+
     m["room"] = room;
-    
+
     // smpl::Message m({ type, {
 
-    SInfo << "send:"  << type << " to: "<< from<< std::endl;
-    
+    SInfo << "send:" << type << " to: " << from << std::endl;
+
     mysocket->emit("message", m);
-                
+
 }
 
 #endif
@@ -159,165 +157,152 @@ void sendSdp( const std::string &sdp, const std::string &type   )
 
 #if !defined( localtesting) && !defined(remotetesting)
 
-void wsOnMessage(json const &m ) {
-    
-    
+void wsOnMessage(json const &m) {
+
+
     std::string type;
-   
+
     std::string to;
     std::string user;
-  
-     if (m.find("room") != m.end())
-    {
+
+    if (m.find("room") != m.end()) {
         room = m["room"].get<std::string>();
-    }
-    else
-    {
+    } else {
         SError << " On Peer message is missing room id ";
         return;
     }
 
 
-    
-    if (m.find("type") != m.end())
-    {
-      type = m["type"].get<string>();
+
+    if (m.find("type") != m.end()) {
+        type = m["type"].get<string>();
 
     }
-     
- 
-    
-    if (m.find("to") != m.end()) { to = m["to"].get<std::string>(); }
 
-    if (m.find("from") != m.end())
-    {
+
+
+    if (m.find("to") != m.end()) {
+        to = m["to"].get<std::string>();
+    }
+
+    if (m.find("from") != m.end()) {
         from = m["from"].get<std::string>();
-        if(id.empty())
-        id =from;
-    }
-    else
-    {
+        if (id.empty())
+            id = from;
+    } else {
         SError << " On Peer message is missing participant id ";
         return;
     }
 
-    if (m.find("type") != m.end()) { type = m["type"].get<std::string>(); }
-    else
-    {
+    if (m.find("type") != m.end()) {
+        type = m["type"].get<std::string>();
+    } else {
         SError << " On Peer message is missing SDP type";
     }
 
-   
 
-    
-    if (m.find("cam") != m.end())
-    {
+
+
+    if (m.find("cam") != m.end()) {
         id = m["cam"].get<std::string>();
 
     }
 
 
-    if (m.find("starttime") != m.end())
-    {
-      //  camT.start = m["starttime"].get<std::string>();
+    if (m.find("starttime") != m.end()) {
+        //  camT.start = m["starttime"].get<std::string>();
 
     }
 
-//
-//    if (m.find("camAudio") != m.end()) { camT.camAudio = m["camAudio"].get<bool>(); }
-//
-//    if (m.find("appAudio") != m.end()) { camT.appAudio = m["appAudio"].get<bool>(); }
-    
-    
-     
+    //
+    //    if (m.find("camAudio") != m.end()) { camT.camAudio = m["camAudio"].get<bool>(); }
+    //
+    //    if (m.find("appAudio") != m.end()) { camT.appAudio = m["appAudio"].get<bool>(); }
 
-     
-    
+
+
+
+
+
 
     if (type == "offer") {
-        
-         if( clients.find(id) != clients.end())
-           clients.erase(id);
 
-         clients.emplace(id, createPeerConnection(settingconfig,  id, false));
-         
-         //clients.emplace(id, createPeerConnection(config,  id));
+        if (clients.find(id) != clients.end())
+            clients.erase(id);
+
+        clients.emplace(id, createPeerConnection(settingconfig, id, false));
+
+        //clients.emplace(id, createPeerConnection(config,  id));
         if (auto jt = clients.find(id); jt != clients.end()) {
             auto pc = jt->second->peerConnection;
-           
+
             auto sdp = m["desc"]["sdp"].get<string>();
-            
-            SInfo << "setRemoteDescription " << type ;
-            
+
+            SInfo << "setRemoteDescription " << type;
+
             auto description = Description(sdp, type);
             pc->setRemoteDescription(description);
-            pc->setLocalDescription( );
+            pc->setLocalDescription();
         }
-         
-         
+
+
     } else if (type == "answer") {
-        
-       //clients.emplace(id, createPeerConnection(config,  id));
+
+        //clients.emplace(id, createPeerConnection(config,  id));
         if (auto jt = clients.find(id); jt != clients.end()) {
             auto pc = jt->second->peerConnection;
-           
+
             auto sdp = m["desc"]["sdp"].get<string>();
-            
-            SInfo << "setRemoteDescription " << type ;
-            
+
+            SInfo << "setRemoteDescription " << type;
+
             auto description = Description(sdp, type);
             pc->setRemoteDescription(description);
-           // pc->setLocalDescription( Description::Type::Answer);
+            // pc->setLocalDescription( Description::Type::Answer);
         }
-    }
-    else if (type == "candidate")
-    {
-        
-         json cand =  m["candidate"];
-         
-         auto sdp = cand["candidate"].get<std::string>();
-         auto mid = cand["sdpMid"].get<std::string>();
-            
-         if (auto jt = clients.find(id); jt != clients.end()) {
+    } else if (type == "candidate") {
+
+        json cand = m["candidate"];
+
+        auto sdp = cand["candidate"].get<std::string>();
+        auto mid = cand["sdpMid"].get<std::string>();
+
+        if (auto jt = clients.find(id); jt != clients.end()) {
             auto pc = jt->second->peerConnection;
             //auto sdp = m["desc"].get<string>();
             //auto description = Description(sdp, type);
-           // pc->setRemoteDescription(description);
-            
+            // pc->setRemoteDescription(description);
+
             SInfo << sdp;
-            
-            
+
+
             Candidate tmp = rtc::Candidate(sdp, mid);
             pc->addRemoteCandidate(tmp);
         }
-        
-           
-           
+
+
+
     }
-    
+
 }
 
-
-void initiate(std::string rm)
-{
+void initiate(std::string rm) {
 
     room = rm;
     id = "client"; /// hard coded the id for client(second participant), since it will have only one instance. Second instance should only have one instance, otherwise throw error. TBD 
 
-    if( clients.find(id) != clients.end())
-    clients.erase(id);
+    if (clients.find(id) != clients.end())
+        clients.erase(id);
 
-        
-    clients.emplace(id, createPeerConnection(settingconfig,  id, true));
+
+    clients.emplace(id, createPeerConnection(settingconfig, id, true));
 }
 
 #endif
 
+int main(int argc, char **argv) {
 
-int main(int argc, char **argv) 
-{
-
-/////////////////////////////////////////////////
+    /////////////////////////////////////////////////
     base::cnfg::Configuration cache;
 
     cache.load("./cache.js");
@@ -325,230 +310,221 @@ int main(int argc, char **argv)
     ConfSettings::SetConfiguration(cache.root);
 
 
-            
-        rtc::SctpTransport::Init();
-        rtc::SctpSettings mCurrentSctpSettings = {};
-	    rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
-        
-  
-        
+
+    rtc::SctpTransport::Init();
+    rtc::SctpSettings mCurrentSctpSettings = {};
+    rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
+
+
+
 
     bool printHelp = false;
     //int c = 0;
 
-    Application app; 
-     
+    Application app;
+
     Async async;
-    
+
 
     if (printHelp) {
         cout << "usage: stream-h264 [-a opus_samples_folder] [-b h264_samples_folder] [-d ip_address] [-p port] [-v] [-h]" << endl
-        << "Arguments:" << endl
-        << "\t -a " << "Directory with opus samples (default: " << defaultOpusSamplesDirectory << ")." << endl
-        << "\t -b " << "Directory with H264 samples (default: " << defaultH264SamplesDirectory << ")." << endl
-        << "\t -d " << "Signaling server IP address (default: " << defaultIPAddress << ")." << endl
-        << "\t -p " << "Signaling server port (default: " << defaultPort << ")." << endl
-        << "\t -v " << "Enable debug logs." << endl
-        << "\t -h " << "Print this help and exit." << endl;
+                << "Arguments:" << endl
+                << "\t -a " << "Directory with opus samples (default: " << defaultOpusSamplesDirectory << ")." << endl
+                << "\t -b " << "Directory with H264 samples (default: " << defaultH264SamplesDirectory << ")." << endl
+                << "\t -d " << "Signaling server IP address (default: " << defaultIPAddress << ")." << endl
+                << "\t -p " << "Signaling server port (default: " << defaultPort << ")." << endl
+                << "\t -v " << "Enable debug logs." << endl
+                << "\t -h " << "Print this help and exit." << endl;
         return 0;
     }
-  
 
-   
+
+
     string stunServer = "stun:stun.l.google.com:19302";
     cout << "STUN server is " << stunServer << endl;
     settingconfig.iceServers.emplace_back(stunServer);
     settingconfig.disableAutoNegotiation = true;
     // read cert from file
 #if CERTFROMFILE == 1
-    settingconfig.gconfig->keyPemFile =  ConfSettings::configuration.keyFile;
-    settingconfig.gconfig->certificatePemFile = ConfSettings::configuration.certFile;  
+    settingconfig.gconfig->keyPemFile = ConfSettings::configuration.keyFile;
+    settingconfig.gconfig->certificatePemFile = ConfSettings::configuration.certFile;
     settingconfig.gconfig->keyPemPass = "12345678";
-    
+
 #elif CERTFROMFILE == 2
 
     /* convert pem to single line
      * # awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' certificate.crt  
-    */
+     */
 
     settingconfig.keyPemFile = "";
-    settingconfig.certificatePemFile = "";  
-   // settingconfig.keyPemPass = "12345678";
-    
+    settingconfig.certificatePemFile = "";
+    // settingconfig.keyPemPass = "12345678";
+
 #else
-    
+
 #endif
 
     string localId = "server";
     cout << "The local ID is: " << localId << endl;
 
     rtc::DtlsTransport::ClassInit();
-   
+
 #if localtesting 
     settingconfig.console = true;
-    std::string id ="server";
-    clients.emplace(id, createPeerConnection_lc(settingconfig,  id));
+    std::string id = "server";
+    clients.emplace(id, createPeerConnection_lc(settingconfig, id));
 #elif remotetesting
-    
-    
 
-    
+
+
+
     settingconfig.allocRestApi(async, "test");
     settingconfig.api->List();
 
-    
+
     settingconfig.console = true;
-    if(cache.loaded())
-    {
-       
+    if (cache.loaded()) {
+
         id = "client"; /// hard coded the id for client(second participant), since it will have only one instance. Second instance should only have one instance, otherwise throw error. TBD 
 
-        clients.emplace(id, createPeerConnection_rm(settingconfig,  id, async, true));
-    
-       
+        clients.emplace(id, createPeerConnection_rm(settingconfig, id, async, true));
+
+
     }
-  
+
 #else   
     std::string room = "65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0";
     std::string host = ip_address;
     int port = 8443;
-    
+
     sockio::SocketioClient *client;
 
-    
-    client  = new sockio::SocketioClient(host, port, true);
+
+    client = new sockio::SocketioClient(host, port, true);
     client->connect();
 
     mysocket = client->io();
 
     mysocket->on(
-        "connection",
+            "connection",
+            sockio::Socket::event_listener_aux(
+            [ = ](string const &name, json const &data, bool isAck, json & ack_resp){
+        mysocket->on(
+        "created",
         sockio::Socket::event_listener_aux(
-            [=](string const &name, json const &data, bool isAck, json &ack_resp)
-            {
-                mysocket->on(
-                    "created",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-                        {
-                            SInfo << cnfg::stringify(data);
-                            SInfo << "ws: Created room " << data[0] << "- my client ID is " << data[1];
-                            //isInitiator = true;
-                            // grabWebCamVideo();
-                        }));
+        [&](string const &name, json const &data, bool isAck, json & ack_resp) {
+            SInfo << cnfg::stringify(data);
+            SInfo << "ws: Created room " << data[0] << "- my client ID is " << data[1];
+            //isInitiator = true;
+            // grabWebCamVideo();
+        }));
 
 
-                mysocket->on(
-                    "join",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-                        {
-                            SInfo << "ws join " << cnfg::stringify(data);
-                             SInfo << "ws: Created room " << data[0] << "- my client ID is " << data[1] << " noClientInRoom: " << data[2];
-                           
-                            std::string room1 = data[0];
-                            
-                            int noClientInRoom = data[2].get<int>();
-                            
-                            if(noClientInRoom > 1)
-                             initiate(room1 );
+        mysocket->on(
+        "join",
+        sockio::Socket::event_listener_aux(
+        [&](string const &name, json const &data, bool isAck, json & ack_resp) {
+            SInfo << "ws join " << cnfg::stringify(data);
+            SInfo << "ws: Created room " << data[0] << "- my client ID is " << data[1] << " noClientInRoom: " << data[2];
 
-                             
-                            // LTrace("Another peer made a request to join room " + room)
-                            // LTrace("This peer is the initiator of room " + room + "!")
-                            //isChannelReady = true;
-                        }));
+            std::string room1 = data[0];
 
-                
-                mysocket->on(
-                    "joined",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &m, bool isAck, json &ack_resp)
-                        {
-                            SInfo << "ws joined "  <<  cnfg::stringify(m);
-                            // LTrace("Another peer made a request to join room " + room)
-                            // LTrace("This peer is the initiator of room " + room + "!")
-                            //isChannelReady = true;
-                              //wsOnMessage(m);
-                        }));
-                        
-                        
-                /// for webrtc messages
-                mysocket->on(
-                    "message",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &m, bool isAck, json &ack_resp)
-                        {
-                            //LTrace(cnfg::stringify(m));
-                             STrace << "SocketioClient received message:" <<  cnfg::stringify(m);
+            int noClientInRoom = data[2].get<int>();
 
-                            //onPeerMessage((string &) name, m); //arvind
-                            // signalingMessageCallback(message);
-                            
-                             wsOnMessage(m);
-                        }));
+            if (noClientInRoom > 1)
+                    initiate(room1);
 
 
-                // Leaving rooms and disconnecting from peers.
-                mysocket->on(
-                    "disconnectClient",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-                        {
-                            std::string from = data.get<std::string>();
-                             SInfo << "disconnectClient " <<  from;
-                             LInfo(cnfg::stringify(data));
-                           // onPeerDiconnected(from);  //arvind
-                        }));
-
-
-                mysocket->on(
-                    "bye",
-                    sockio::Socket::event_listener_aux(
-                        [&](string const &name, json const &data, bool isAck, json &ack_resp)
-                        {
-                            SInfo << cnfg::stringify(data);
-                            // LTrace("Peer leaving room", room);
-                        }));
- 
-                mysocket->emit("createorjoin" , room);
+                    // LTrace("Another peer made a request to join room " + room)
+                    // LTrace("This peer is the initiator of room " + room + "!")
+                    //isChannelReady = true;
             }));
+
+
+        mysocket->on(
+        "joined",
+        sockio::Socket::event_listener_aux(
+        [&](string const &name, json const &m, bool isAck, json & ack_resp) {
+            SInfo << "ws joined " << cnfg::stringify(m);
+            // LTrace("Another peer made a request to join room " + room)
+            // LTrace("This peer is the initiator of room " + room + "!")
+            //isChannelReady = true;
+            //wsOnMessage(m);
+        }));
+
+
+        /// for webrtc messages
+        mysocket->on(
+        "message",
+        sockio::Socket::event_listener_aux(
+        [&](string const &name, json const &m, bool isAck, json & ack_resp) {
+            //LTrace(cnfg::stringify(m));
+            STrace << "SocketioClient received message:" << cnfg::stringify(m);
+
+            //onPeerMessage((string &) name, m); //arvind
+            // signalingMessageCallback(message);
+
+            wsOnMessage(m);
+        }));
+
+
+        // Leaving rooms and disconnecting from peers.
+        mysocket->on(
+        "disconnectClient",
+        sockio::Socket::event_listener_aux(
+        [&](string const &name, json const &data, bool isAck, json & ack_resp) {
+            std::string from = data.get<std::string>();
+            SInfo << "disconnectClient " << from;
+            LInfo(cnfg::stringify(data));
+            // onPeerDiconnected(from);  //arvind
+        }));
+
+
+        mysocket->on(
+        "bye",
+        sockio::Socket::event_listener_aux(
+        [&](string const &name, json const &data, bool isAck, json & ack_resp) {
+            SInfo << cnfg::stringify(data);
+            // LTrace("Peer leaving room", room);
+        }));
+
+        mysocket->emit("createorjoin", room);
+    }));
 
 #endif
 
-//    while (true) {
-//        string id;
-//        cout << "Enter to exit" << endl;
-//        cin >> id;
-//        cin.ignore();
-//        cout << "exiting" << endl;
-//        break;
-//    }
+    //    while (true) {
+    //        string id;
+    //        cout << "Enter to exit" << endl;
+    //        cin >> id;
+    //        cin.ignore();
+    //        cout << "exiting" << endl;
+    //        break;
+    //    }
 
-   app.waitForShutdown([&](void*)
-   {
+    app.waitForShutdown([&](void*) {
 
-    SInfo << "app.run() is over";
-//    Settings::exit();         
-//    rtc::CleanupSSL();
-    Logger::destroy();
-    
-//    if(ctx->txt)
-//    delete ctx->txt;
-//    ctx->txt = nullptr;
-    
-//    restApi->stop();
-        
-//    restApi->shutdown();
-    
-   });
+        SInfo << "app.run() is over";
+        //    Settings::exit();         
+        //    rtc::CleanupSSL();
+        Logger::destroy();
 
-   
-   
+        //    if(ctx->txt)
+        //    delete ctx->txt;
+        //    ctx->txt = nullptr;
+
+        //    restApi->stop();
+
+        //    restApi->shutdown();
+
+    });
+
+
+
     SInfo << "Cleaning up..." << endl;
     return 0;
 
-} 
+}
 
 //catch (const std::exception &e) {
 //    SError << "Error: " << e.what() << std::endl;
@@ -601,26 +577,26 @@ int main(int argc, char **argv)
 
 #if localtesting 
 // Create and setup a PeerConnection
-shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
-{
+
+shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
     auto pc1 = make_shared<PeerConnection>(config);
-    config.portdefault = config.portdefault+1;
-    auto pc2 = make_shared<PeerConnection>(config); 
+    config.portdefault = config.portdefault + 1;
+    auto pc2 = make_shared<PeerConnection>(config);
     {
-       
+
         auto client = make_shared<Client>(pc1);
 
         pc1->onStateChange([id](PeerConnection::State state) {
             SInfo << "pc1 State: " << state << endl;
             if (state == PeerConnection::State::Disconnected ||
-                state == PeerConnection::State::Failed ||
-                state == PeerConnection::State::Closed) {
+                    state == PeerConnection::State::Failed ||
+                    state == PeerConnection::State::Closed) {
                 // remove disconnected client
                 //MainThread.dispatch([id]() 
                 {
                     clients.erase(id);
 
-                    int x = 1; //arvind
+                            int x = 1; //arvind
                 }
                 //);
             }
@@ -628,66 +604,63 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
 
 
 
-        pc1->onLocalDescription([ id, pc1, pc2](rtc::Description &description) {
-    //		json message = {{"id", id},
-    //		                {"type", description.typeString()},
-    //		                {"description", std::string(description)}};
+        pc1->onLocalDescription([ id, pc1, pc2](rtc::Description & description) {
+            //		json message = {{"id", id},
+            //		                {"type", description.typeString()},
+            //		                {"description", std::string(description)}};
 
-            SInfo << "pc1 send sdp:"  << description.typeString() <<  " des "<<  std::string(description);
+            SInfo << "pc1 send sdp:" << description.typeString() << " des " << std::string(description);
 
-         //  pc1->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
+            //  pc1->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
             //sendSdp( std::string(description), description.typeString());
             // Make the answer
-    //		if (auto ws = wws.lock())
-    //			ws->send(message.dump());
-            
-           // SInfo << "setRemoteDescription " << type ;
-            
-           auto description1 = Description(std::string(description), Description::Type::Offer);
+            //		if (auto ws = wws.lock())
+            //			ws->send(message.dump());
+
+            // SInfo << "setRemoteDescription " << type ;
+
+            auto description1 = Description(std::string(description), Description::Type::Offer);
             pc2->setRemoteDescription(description1);
-            
+
         });
 
-        pc1->onLocalCandidate([ id, pc2](rtc::Candidate &candidate) {
-    //            json message = {{"id", id},
-    //                            {"type", "candidate"},
-    //                            {"candidate", std::string(candidate)},
-    //                            {"mid", candidate.mid()}};
+        pc1->onLocalCandidate([ id, pc2](rtc::Candidate & candidate) {
+            //            json message = {{"id", id},
+            //                            {"type", "candidate"},
+            //                            {"candidate", std::string(candidate)},
+            //                            {"mid", candidate.mid()}};
 
             //sendCandidate( candidate.mid(), 1,  std::string(candidate)  );
-    //            if (auto ws = wws.lock())
-    //                    ws->send(message.dump());
-            
-            SInfo << "pc1 send candidated:"  << candidate.mid() <<  " des "<<  std::string(candidate);
-            
+            //            if (auto ws = wws.lock())
+            //                    ws->send(message.dump());
+
+            SInfo << "pc1 send candidated:" << candidate.mid() << " des " << std::string(candidate);
+
             pc2->addRemoteCandidate(candidate);
-            
+
         });
 
         pc1->onGatheringStateChange(
-            [](PeerConnection::GatheringState state) {
-           
-            if (state == PeerConnection::GatheringState::Complete)
-            {
-                 SInfo << "pc1 Gathering State: Complete"  ;
-              //  if(auto pc1 = wpc1.lock())
-                {
-    //                json desc;
-    //                desc["type"] =  description->typeString();
-    //                desc[sdp] = sdp;
-    //    
+                [](PeerConnection::GatheringState state) {
 
-                }
-            }
-            else if (state == PeerConnection::GatheringState::InProgress)
-            {
-                 SInfo << "pc1 Gathering State: InProgress"  ;
-            }
-        });
-    #if VIDEOMEDIA
+                    if (state == PeerConnection::GatheringState::Complete) {
+                        SInfo << "pc1 Gathering State: Complete";
+                        //  if(auto pc1 = wpc1.lock())
+                        {
+                            //                json desc;
+                            //                desc["type"] =  description->typeString();
+                            //                desc[sdp] = sdp;
+                            //    
 
-        client->video = addVideo(pc1, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
-           // MainThread.dispatch([wc]() 
+                        }
+                    } else if (state == PeerConnection::GatheringState::InProgress) {
+                        SInfo << "pc1 Gathering State: InProgress";
+                    }
+                });
+#if VIDEOMEDIA
+
+        client->video = addVideo(pc1, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+            // MainThread.dispatch([wc]() 
 
             SInfo << "addToStream";
 
@@ -701,7 +674,7 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
             SInfo << "Video from " << id << " opened" << endl;
         });
 
-        client->audio = addAudio(pc1, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
+        client->audio = addAudio(pc1, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
 
 
             //MainThread.dispatch([wc]() 
@@ -715,17 +688,17 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
             SInfo << "Audio from " << id << " opened" << endl;
         });
 
-    #endif
+#endif
 
         auto dc = pc1->createDataChannel("ping-pong-pc1");
-        dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
+        dc->onOpen([id, wdc = make_weak_ptr(dc)](){
             if (auto dc = wdc.lock()) {
-                 SInfo << "ping-pong-pc1 onOpen";
-                dc->send("ping-pong-pc1 send on open Ping");
+                SInfo << "ping-pong-pc1 onOpen";
+                        dc->send("ping-pong-pc1 send on open Ping");
             }
         });
 
-        dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg) {
+        dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg){
             SInfo << "Pc1 Message from " << id << " received: " << msg << endl;
             if (auto dc = wdc.lock()) {
                 dc->send("ping-pong-pc1 send on message Ping");
@@ -736,58 +709,58 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
 
 
         pc1->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
-    		SInfo << "pc1 onDataChannel from " << id << " received with label \"" << dc->label() << "\""
-    		          << std::endl;
-    
-    		dc->onOpen([wdc = make_weak_ptr(dc)]() {
-    			if (auto dc = wdc.lock())
-                        {       SInfo << "pc1 open ";
-    				dc->send("Hello from  pc1");
-                        }
-    		});
-    
-    		dc->onClosed([id]() {
-                    SInfo << "pc1 DataChannel from " << id << " closed" << std::endl; }
-                
-                );
-    
-    		dc->onMessage([id,dc](auto data) {
-    			// data holds either std::string or rtc::binary
-    			if (std::holds_alternative<std::string>(data))
-    				SInfo << "pc1 Message from " << id << " received: " << std::get<std::string>(data)
-    				          << std::endl;
-    			else
-    				SInfo << "pc1  Binary message from " << id
-    				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
-                        
-                        
-                        sleep(5);
-                        dc->send("PC1 to PC2");
-                        
-    		});
-    
-    		 client->dataChannel11 = dc;
-    	});
+            SInfo << "pc1 onDataChannel from " << id << " received with label \"" << dc->label() << "\""
+                    << std::endl;
+
+            dc->onOpen([wdc = make_weak_ptr(dc)](){
+                if (auto dc = wdc.lock()) {
+                    SInfo << "pc1 open ";
+                            dc->send("Hello from  pc1");
+                }
+            });
+
+            dc->onClosed([id]() {
+                SInfo << "pc1 DataChannel from " << id << " closed" << std::endl; }
+
+            );
+
+            dc->onMessage([id, dc](auto data) {
+                // data holds either std::string or rtc::binary
+                if (std::holds_alternative<std::string>(data))
+                    SInfo << "pc1 Message from " << id << " received: " << std::get<std::string>(data)
+                    << std::endl;
+                else
+                    SInfo << "pc1  Binary message from " << id
+                        << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+
+
+                sleep(5);
+                dc->send("PC1 to PC2");
+
+            });
+
+            client->dataChannel11 = dc;
+        });
 
         pc1->setLocalDescription();
-     //   return client;
+        //   return client;
     }
-    
+
     {
-       
+
         auto client = make_shared<Client>(pc2);
 
         pc2->onStateChange([id](PeerConnection::State state) {
             SInfo << "pc2 State: " << state << endl;
             if (state == PeerConnection::State::Disconnected ||
-                state == PeerConnection::State::Failed ||
-                state == PeerConnection::State::Closed) {
+                    state == PeerConnection::State::Failed ||
+                    state == PeerConnection::State::Closed) {
                 // remove disconnected client
                 //MainThread.dispatch([id]() 
                 {
                     clients.erase(id);
 
-                    int x = 1; //arvind
+                            int x = 1; //arvind
                 }
                 //);
             }
@@ -796,53 +769,52 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
 
 
         pc2->onLocalDescription([ id, pc1](rtc::Description description) {
-    //		json message = {{"id", id},
-    //		                {"type", description.typeString()},
-    //		                {"description", std::string(description)}};
+            //		json message = {{"id", id},
+            //		                {"type", description.typeString()},
+            //		                {"description", std::string(description)}};
 
-            SInfo << "pc2 send sdp:"  << description.typeString() <<  " des "<<  std::string(description);
+            SInfo << "pc2 send sdp:" << description.typeString() << " des " << std::string(description);
 
-         //  pc2->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
+            //  pc2->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
             //sendSdp( std::string(description), description.typeString());
             // Make the answer
-    //		if (auto ws = wws.lock())
-    //			ws->send(message.dump());
-            
-             pc1->setRemoteDescription(description);
+            //		if (auto ws = wws.lock())
+            //			ws->send(message.dump());
+
+            pc1->setRemoteDescription(description);
         });
 
         pc2->onLocalCandidate([ id, pc1](rtc::Candidate candidate) {
-    //            json message = {{"id", id},
-    //                            {"type", "candidate"},
-    //                            {"candidate", std::string(candidate)},
-    //                            {"mid", candidate.mid()}};
-          SInfo << "pc2 send candidated:"  << candidate.mid() <<  " des "<<  std::string(candidate);
+            //            json message = {{"id", id},
+            //                            {"type", "candidate"},
+            //                            {"candidate", std::string(candidate)},
+            //                            {"mid", candidate.mid()}};
+            SInfo << "pc2 send candidated:" << candidate.mid() << " des " << std::string(candidate);
             //sendCandidate( candidate.mid(), 1,  std::string(candidate)  );
-    //            if (auto ws = wws.lock())
-    //                    ws->send(message.dump());
+            //            if (auto ws = wws.lock())
+            //                    ws->send(message.dump());
             pc1->addRemoteCandidate(candidate);
         });
 
         pc2->onGatheringStateChange(
-            [](PeerConnection::GatheringState state) {
-            
-            if (state == PeerConnection::GatheringState::Complete)
-            {
-                SInfo << "Pc2 Gathering State: Complete" ;
-              //  if(auto pc2 = wpc2.lock())
-                {
-    //                json desc;
-    //                desc["type"] =  description->typeString();
-    //                desc[sdp] = sdp;
-    //    
+                [](PeerConnection::GatheringState state) {
 
-                }
-            }
-        });
-    #if VIDEOMEDIA
+                    if (state == PeerConnection::GatheringState::Complete) {
+                        SInfo << "Pc2 Gathering State: Complete";
+                        //  if(auto pc2 = wpc2.lock())
+                        {
+                            //                json desc;
+                            //                desc["type"] =  description->typeString();
+                            //                desc[sdp] = sdp;
+                            //    
 
-        client->video = addVideo(pc2, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
-           // MainThread.dispatch([wc]() 
+                        }
+                    }
+                });
+#if VIDEOMEDIA
+
+        client->video = addVideo(pc2, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+            // MainThread.dispatch([wc]() 
 
             SInfo << "addToStream";
 
@@ -856,7 +828,7 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
             SInfo << "Video from " << id << " opened" << endl;
         });
 
-        client->audio = addAudio(pc2, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
+        client->audio = addAudio(pc2, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
 
 
             //MainThread.dispatch([wc]() 
@@ -870,17 +842,17 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
             SInfo << "Audio from " << id << " opened" << endl;
         });
 
-    #endif
+#endif
 
         auto dc = pc2->createDataChannel("ping-pong-pc2");
-        dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
+        dc->onOpen([id, wdc = make_weak_ptr(dc)](){
             if (auto dc = wdc.lock()) {
                 SInfo << "pc2 onOpen";
-                dc->send("ping-pong pc2 on open send");
+                        dc->send("ping-pong pc2 on open send");
             }
         });
 
-        dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg) {
+        dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg){
             SInfo << "Message from " << id << "pc2  received: " << msg << endl;
             if (auto dc = wdc.lock()) {
                 dc->send("ping-pong pc2 on message send");
@@ -891,38 +863,38 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
 
 
         pc2->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
-    		SInfo << "PC2 onDataChannel from " << id << " received with label \"" << dc->label() ;
-    		     
-    
-    		dc->onOpen([wdc = make_weak_ptr(dc)]() {
-    			if (auto dc = wdc.lock())
-    				dc->send("PC2 Hello from  arvind");
-    		});
-    
-    		dc->onClosed([id]() {
-                    SInfo << "DataChannel from " << id << " closed" << std::endl;
-                }
-                
-                );
-    
-    		dc->onMessage([id,dc](auto data) {
-    			// data holds either std::string or rtc::binary
-    			if (std::holds_alternative<std::string>(data))
-    				SInfo << "onDataChannel:onMessage  PC2 Message from " << id << " received: " << std::get<std::string>(data)
-    				          << std::endl;
-    			else
-    				SInfo << "onDataChannel:onMessage PC2 Binary message from " << id
-    				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
-                        
-                        sleep(5);
-                        dc->send("PC2 tp PC1");
-                        
-    		});
-    
-    		 client->dataChannel22 = dc;
-    	});
+            SInfo << "PC2 onDataChannel from " << id << " received with label \"" << dc->label();
 
-        pc2->setLocalDescription();  // this will create offfer
+
+            dc->onOpen([wdc = make_weak_ptr(dc)](){
+                if (auto dc = wdc.lock())
+                        dc->send("PC2 Hello from  arvind");
+                });
+
+            dc->onClosed([id]() {
+                SInfo << "DataChannel from " << id << " closed" << std::endl;
+            }
+
+            );
+
+            dc->onMessage([id, dc](auto data) {
+                // data holds either std::string or rtc::binary
+                if (std::holds_alternative<std::string>(data))
+                    SInfo << "onDataChannel:onMessage  PC2 Message from " << id << " received: " << std::get<std::string>(data)
+                    << std::endl;
+                else
+                    SInfo << "onDataChannel:onMessage PC2 Binary message from " << id
+                        << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+
+                sleep(5);
+                dc->send("PC2 tp PC1");
+
+            });
+
+            client->dataChannel22 = dc;
+        });
+
+        pc2->setLocalDescription(); // this will create offfer
         return client;
     }
 };
@@ -931,51 +903,51 @@ shared_ptr<Client> createPeerConnection_lc( Configuration &config,  string id)
 
 
 // Create and setup a PeerConnection
-shared_ptr<Client> createPeerConnection_rm( Configuration &config,  string id, Async &async, bool isClient)
-{
-    SInfo << "createPeerConnection" ;
-    
-    
+
+shared_ptr<Client> createPeerConnection_rm(Configuration &config, string id, Async &async, bool isClient) {
+    SInfo << "createPeerConnection";
+
+
     auto pc = make_shared<PeerConnection>(config);
     auto client = make_shared<Client>(pc);
 
     pc->onStateChange([id](PeerConnection::State state) {
         SInfo << "State: " << state << endl;
         if (state == PeerConnection::State::Disconnected ||
-            state == PeerConnection::State::Failed ||
-            state == PeerConnection::State::Closed) {
+                state == PeerConnection::State::Failed ||
+                state == PeerConnection::State::Closed) {
             // remove disconnected client
             //MainThread.dispatch([id]() 
             {
                 clients.erase(id);
-                
-                int x = 1; //arvind
+
+                        int x = 1; //arvind
             }
             //);
         }
     });
-    
-    
-    
+
+
+
     pc->onLocalDescription([ id, pc, &async](rtc::Description description) {
-//		json message = {{"id", id},
-//		                {"type", description.typeString()},
-//		                {"description", std::string(description)}};
-        
+        //		json message = {{"id", id},
+        //		                {"type", description.typeString()},
+        //		                {"description", std::string(description)}};
 
-       
-        SInfo << "pc1 send sdp:"  << description.typeString() <<  " des "<<  std::string(description);
 
-          
+
+        SInfo << "pc1 send sdp:" << description.typeString() << " des " << std::string(description);
+
+
         //  test(async);
-        
+
         auto work_fn = [pc, description]() {
             // This runs in a worker thread
-                
+
             auto descAns = Description(std::string(description), Description::Type::Answer);
-            descAns.mRole  = Description::Role::Active;
-            SInfo << "remote desc Ansp:"  << descAns;
-   
+            descAns.mRole = Description::Role::Active;
+            SInfo << "remote desc Ansp:" << descAns;
+
             pc->setRemoteDescription(descAns);
         };
 
@@ -985,8 +957,8 @@ shared_ptr<Client> createPeerConnection_rm( Configuration &config,  string id, A
         };
 
         async.queueWork(work_fn, after_work_fn);
-        
-    
+
+
 
 
     });
@@ -999,21 +971,21 @@ shared_ptr<Client> createPeerConnection_rm( Configuration &config,  string id, A
 
         rtc::Candidate tmp = candidate;
         tmp.mService = std::to_string(config.portdefault);
-        tmp.mNode = "192.168.0.20";//Settings::RemoteIP(); // always change it
+        tmp.mNode = "192.168.0.20"; //Settings::RemoteIP(); // always change it
 
-        
+
         auto work_fn = [pc, tmp]() {
-                
+
             Application app;
 
             tmp.resolved = {0};
-            
+
             SInfo << "addRemoteCandidate: " << std::string(tmp);
-         
-            pc->addRemoteCandidate(tmp); 
-       
+
+            pc->addRemoteCandidate(tmp);
+
             app.run();
-          
+
         };
 
         auto after_work_fn = [](int status) {
@@ -1022,47 +994,46 @@ shared_ptr<Client> createPeerConnection_rm( Configuration &config,  string id, A
         };
 
         async.queueWork(work_fn, after_work_fn);
-        
-        
+
+
     });
 
     pc->onGatheringStateChange(
-        [](PeerConnection::GatheringState state) {
-        SInfo << "Gathering State: " << "state" ;
-        if (state == PeerConnection::GatheringState::Complete)
-        {
-          //  if(auto pc = wpc.lock())
-            {
-//                json desc;
-//                desc["type"] =  description->typeString();
-//                desc[sdp] = sdp;
-//    
-             
-            }
-        }
-    });
+            [](PeerConnection::GatheringState state) {
+                SInfo << "Gathering State: " << "state";
+                if (state == PeerConnection::GatheringState::Complete) {
+                    //  if(auto pc = wpc.lock())
+                    {
+                        //                json desc;
+                        //                desc["type"] =  description->typeString();
+                        //                desc[sdp] = sdp;
+                        //    
+
+                    }
+                }
+            });
 #if VIDEOMEDIA
 
-    client->video = addVideo(pc, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
-       // MainThread.dispatch([wc]() 
-        
+    client->video = addVideo(pc, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+        // MainThread.dispatch([wc]() 
+
         SInfo << "addToStream";
-        
+
         {
             if (auto c = wc.lock()) {
                 addToStream(c, true);
             }
         }
-        
+
         //);
         SInfo << "Video from " << id << " opened" << endl;
     });
 
-    client->audio = addAudio(pc, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
-        
-        
+    client->audio = addAudio(pc, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+
+
         //MainThread.dispatch([wc]() 
-        
+
         {
             if (auto c = wc.lock()) {
                 addToStream(c, false);
@@ -1074,60 +1045,61 @@ shared_ptr<Client> createPeerConnection_rm( Configuration &config,  string id, A
 
 #endif
 
- std::string dcchat = "192.168.0.20"; //  Settings::getdatachannel();
-            
-auto dc = pc->createDataChannel(dcchat);
-    dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
+    std::string dcchat = "192.168.0.20"; //  Settings::getdatachannel();
+
+    auto dc = pc->createDataChannel(dcchat);
+    dc->onOpen([id, wdc = make_weak_ptr(dc)](){
         if (auto dc = wdc.lock()) {
-            SInfo << "onOpen: "  ;
-            dc->send("Ping");
+            SInfo << "onOpen: ";
+                    dc->send("Ping");
         }
     });
 
-    dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg) {
+    dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg){
         SInfo << "Message from " << id << " received: " << msg << endl;
         if (auto dc = wdc.lock()) {
-            
-            SInfo << "onOpen: " << msg  ;
-            dc->send("Ping");
+
+            SInfo << "onOpen: " << msg;
+                    dc->send("Ping");
         }
     });
     client->dataChannel1 = dc;
-    
-    
-    
-pc->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
-		SInfo << "DataChannel from " << id << " received with label \"" << dc->label() ;
 
-                
-                dc->onOpen([wdc = make_weak_ptr(dc)]() {
-			if (auto dc = wdc.lock()) {
-				SInfo << "DataChannel 2: Open" << endl;
-				dc->send("Hello from 2");
-			}
-		});
-                
 
-		dc->onClosed([id]() { std::cout << "DataChannel from " << id << " closed" << std::endl; });
 
-		dc->onMessage([id, dc](auto data) {
-			// data holds either std::string or rtc::binary
-			if (std::holds_alternative<std::string>(data))
-				SInfo << "Message from " << id << " received: " << std::get<std::string>(data)
-				          << std::endl;
-			else
-				SInfo << "Binary message from " << id
-				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
-                        
-                        sleep(5);
-                        dc->send("Send to web");
-		});
+    pc->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
+        SInfo << "DataChannel from " << id << " received with label \"" << dc->label();
 
-		 client->dataChannel2 = dc;
-	});
-        
-    if(isClient)    
-    pc->setLocalDescription();
+
+        dc->onOpen([wdc = make_weak_ptr(dc)](){
+            if (auto dc = wdc.lock()) {
+                SInfo << "DataChannel 2: Open" << endl;
+                        dc->send("Hello from 2");
+            }
+        });
+
+
+        dc->onClosed([id]() {
+            std::cout << "DataChannel from " << id << " closed" << std::endl; });
+
+        dc->onMessage([id, dc](auto data) {
+            // data holds either std::string or rtc::binary
+            if (std::holds_alternative<std::string>(data))
+                SInfo << "Message from " << id << " received: " << std::get<std::string>(data)
+                << std::endl;
+            else
+                SInfo << "Binary message from " << id
+                    << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+
+            sleep(5);
+            dc->send("Send to web");
+        });
+
+        client->dataChannel2 = dc;
+    });
+
+    if (isClient)
+        pc->setLocalDescription();
     return client;
 };
 
@@ -1137,95 +1109,94 @@ pc->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
 
 
 // Create and setup a PeerConnection
-shared_ptr<Client> createPeerConnection( Configuration &config,  string id, bool isClient)
-{
-    SInfo << "createPeerConnection" ;
-    
-    
+
+shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool isClient) {
+    SInfo << "createPeerConnection";
+
+
     auto pc = make_shared<PeerConnection>(config);
     auto client = make_shared<Client>(pc);
 
     pc->onStateChange([id](PeerConnection::State state) {
         SInfo << "State: " << state << endl;
         if (state == PeerConnection::State::Disconnected ||
-            state == PeerConnection::State::Failed ||
-            state == PeerConnection::State::Closed) {
+                state == PeerConnection::State::Failed ||
+                state == PeerConnection::State::Closed) {
             // remove disconnected client
             //MainThread.dispatch([id]() 
             {
                 clients.erase(id);
-                
-                int x = 1; //arvind
+
+                        int x = 1; //arvind
             }
             //);
         }
     });
-    
-    
-    
+
+
+
     pc->onLocalDescription([ id, pc](rtc::Description description) {
-//		json message = {{"id", id},
-//		                {"type", description.typeString()},
-//		                {"description", std::string(description)}};
-        
-        SInfo << "send:"  << description.typeString() <<  " des "<<  std::string(description);
-          
-     //  pc->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
-        sendSdp( std::string(description), description.typeString());
+        //		json message = {{"id", id},
+        //		                {"type", description.typeString()},
+        //		                {"description", std::string(description)}};
+
+        SInfo << "send:" << description.typeString() << " des " << std::string(description);
+
+        //  pc->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
+        sendSdp(std::string(description), description.typeString());
         // Make the answer
-//		if (auto ws = wws.lock())
-//			ws->send(message.dump());
+        //		if (auto ws = wws.lock())
+        //			ws->send(message.dump());
     });
 
     pc->onLocalCandidate([ id](rtc::Candidate candidate) {
-//            json message = {{"id", id},
-//                            {"type", "candidate"},
-//                            {"candidate", std::string(candidate)},
-//                            {"mid", candidate.mid()}};
+        //            json message = {{"id", id},
+        //                            {"type", "candidate"},
+        //                            {"candidate", std::string(candidate)},
+        //                            {"mid", candidate.mid()}};
 
         SInfo << std::string(candidate);
-        sendCandidate( candidate.mid(), 1,  std::string(candidate)  );
-//            if (auto ws = wws.lock())
-//                    ws->send(message.dump());
+        sendCandidate(candidate.mid(), 1, std::string(candidate));
+        //            if (auto ws = wws.lock())
+        //                    ws->send(message.dump());
     });
 
     pc->onGatheringStateChange(
-        [](PeerConnection::GatheringState state) {
-        SInfo << "Gathering State" ;
-        if (state == PeerConnection::GatheringState::Complete)
-        {
-          //  if(auto pc = wpc.lock())
-            {
-//                json desc;
-//                desc["type"] =  description->typeString();
-//                desc[sdp] = sdp;
-//    
-             
-            }
-        }
-    });
+            [](PeerConnection::GatheringState state) {
+                SInfo << "Gathering State";
+                if (state == PeerConnection::GatheringState::Complete) {
+                    //  if(auto pc = wpc.lock())
+                    {
+                        //                json desc;
+                        //                desc["type"] =  description->typeString();
+                        //                desc[sdp] = sdp;
+                        //    
+
+                    }
+                }
+            });
 #if VIDEOMEDIA
 
-    client->video = addVideo(pc, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
-       // MainThread.dispatch([wc]() 
-        
+    client->video = addVideo(pc, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+        // MainThread.dispatch([wc]() 
+
         SInfo << "addToStream";
-        
+
         {
             if (auto c = wc.lock()) {
                 addToStream(c, true);
             }
         }
-        
+
         //);
         SInfo << "Video from " << id << " opened" << endl;
     });
 
-    client->audio = addAudio(pc, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)]() {
-        
-        
+    client->audio = addAudio(pc, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+
+
         //MainThread.dispatch([wc]() 
-        
+
         {
             if (auto c = wc.lock()) {
                 addToStream(c, false);
@@ -1236,59 +1207,60 @@ shared_ptr<Client> createPeerConnection( Configuration &config,  string id, bool
     });
 
 #endif
-     std::string dcchat =   "Settings::getdatachannel()";
+    std::string dcchat = "Settings::getdatachannel()";
     auto dc = pc->createDataChannel(dcchat);
-    dc->onOpen([id, wdc = make_weak_ptr(dc)]() {
+    dc->onOpen([id, wdc = make_weak_ptr(dc)](){
         if (auto dc = wdc.lock()) {
-            SInfo << "onOpen: "  ;
-            dc->send("Ping");
+            SInfo << "onOpen: ";
+                    dc->send("Ping");
         }
     });
 
-    dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg) {
+    dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg){
         SInfo << "Message from " << id << " received: " << msg << endl;
         if (auto dc = wdc.lock()) {
-            
-            SInfo << "onOpen: " << msg  ;
-            dc->send("Ping");
+
+            SInfo << "onOpen: " << msg;
+                    dc->send("Ping");
         }
     });
     client->dataChannel1 = dc;
-    
-    
-    
+
+
+
     pc->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
-		SInfo << "DataChannel from " << id << " received with label \"" << dc->label() ;
+        SInfo << "DataChannel from " << id << " received with label \"" << dc->label();
 
-                
-                dc->onOpen([wdc = make_weak_ptr(dc)]() {
-			if (auto dc = wdc.lock()) {
-				SInfo << "DataChannel 2: Open" << endl;
-				dc->send("Hello from 2");
-			}
-		});
-                
 
-		dc->onClosed([id]() { std::cout << "DataChannel from " << id << " closed" << std::endl; });
+        dc->onOpen([wdc = make_weak_ptr(dc)](){
+            if (auto dc = wdc.lock()) {
+                SInfo << "DataChannel 2: Open" << endl;
+                        dc->send("Hello from 2");
+            }
+        });
 
-		dc->onMessage([id, dc](auto data) {
-			// data holds either std::string or rtc::binary
-			if (std::holds_alternative<std::string>(data))
-				SInfo << "Message from " << id << " received: " << std::get<std::string>(data)
-				          << std::endl;
-			else
-				SInfo << "Binary message from " << id
-				          << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
-                        
-                        sleep(500);
-                        dc->send("Send to web");
-		});
 
-		 client->dataChannel2 = dc;
-	});
-        
-    if(isClient)    
-    pc->setLocalDescription();
+        dc->onClosed([id]() {
+            std::cout << "DataChannel from " << id << " closed" << std::endl; });
+
+        dc->onMessage([id, dc](auto data) {
+            // data holds either std::string or rtc::binary
+            if (std::holds_alternative<std::string>(data))
+                SInfo << "Message from " << id << " received: " << std::get<std::string>(data)
+                << std::endl;
+            else
+                SInfo << "Binary message from " << id
+                    << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+
+            sleep(500);
+            dc->send("Send to web");
+        });
+
+        client->dataChannel2 = dc;
+    });
+
+    if (isClient)
+        pc->setLocalDescription();
     return client;
 };
 #endif
@@ -1360,7 +1332,7 @@ shared_ptr<Stream> createStream(const string h264Samples, const unsigned fps, co
     });
     return stream;
 }
-*/
+ */
 /// Start stream
 //void startStream() {
 //    shared_ptr<Stream> stream;
@@ -1419,3 +1391,547 @@ shared_ptr<Stream> createStream(const string h264Samples, const unsigned fps, co
 //        startStream();
 //    }
 //}
+
+#if 0
+//Defragmentation Logic for dtls: Implement a custom defragmentation layer in your code before passing the packet to MbedTLS. Catch the ClientHello fragments manually, concatenate them to reconstruct the full message in memory, and then feed the complete packet into mbedtls_ssl_read
+// ClientHello fragmentation is not supported for connection-oriented TLS. The library requires that the complete ClientHello message fits into a single record
+#include <stdint.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <uv.h>
+
+// Mbed TLS 3.6+ Core Headers
+#include "mbedtls/ssl.h"
+#include "mbedtls/error.h"
+#include "mbedtls/entropy.h"
+#include "mbedtls/ctr_drbg.h"
+#include "mbedtls/x509_crt.h"
+#include "mbedtls/pk.h"
+#include "mbedtls/ssl_cookie.h"
+
+#define DTLS_RECORD_HEADER_LEN      13
+#define DTLS_HANDSHAKE_HEADER_LEN   12
+#define MAX_DTLS_RECV_BUFFER        16384
+
+/* --- Data Structures --- */
+
+typedef struct {
+    uint16_t message_seq;
+    uint32_t total_length;
+    uint32_t assembled_length;
+    uint8_t *reassembly_buf;
+    uint8_t *bitmap;
+} dtls_msg_reassembler_t;
+
+// Custom Asynchronous Timer Context mapping to Libuv
+
+typedef struct {
+    uv_timer_t uv_timer;
+    uint64_t intermediate_ms;
+    uint64_t final_ms;
+    uint64_t start_timestamp;
+    int is_cancelled;
+    void *bio_ctx_ptr; // Void back-pointer to avoid circular compilation paths
+} custom_dtls_timer_t;
+
+typedef struct {
+    uv_udp_t udp_handle;
+    mbedtls_ssl_context ssl;
+    mbedtls_ssl_config ssl_conf;
+    dtls_msg_reassembler_t reassembler;
+
+    // Custom Async Retransmission Timer Context
+    custom_dtls_timer_t handshake_timer;
+
+    // Hardened Cryptographic Engine Contexts
+    mbedtls_entropy_context entropy;
+    mbedtls_ctr_drbg_context ctr_drbg;
+    mbedtls_x509_crt server_cert;
+    mbedtls_x509_crt ca_chain;
+    mbedtls_pk_context private_key;
+    mbedtls_ssl_cookie_ctx cookie_ctx;
+
+    // Active Remote Peer Routing
+    struct sockaddr_storage peer_addr;
+
+    // Non-blocking Virtual Pipeline IO 
+    uint8_t bio_in_buf[MAX_DTLS_RECV_BUFFER];
+    size_t bio_in_len;
+    size_t bio_in_offset;
+
+    int handshake_completed;
+} custom_uv_context_t;
+
+typedef struct {
+    uv_udp_send_t req;
+    uint8_t buffer[MAX_DTLS_RECV_BUFFER];
+} custom_send_req_t;
+
+/* --- Forward Declarations --- */
+static void handle_dtls_handshake_step(custom_uv_context_t *bio_ctx);
+
+/* --- Mbed TLS Asynchronous Timer Callbacks --- */
+
+// Called when the libuv timer reaches the absolute timeout window
+
+static void on_handshake_timer_expiry(uv_timer_t *handle) {
+    custom_dtls_timer_t *timer_ctx = (custom_dtls_timer_t *) handle->data;
+    custom_uv_context_t *bio_ctx = (custom_uv_context_t *) timer_ctx->bio_ctx_ptr;
+
+    if (timer_ctx->is_cancelled || bio_ctx->handshake_completed) {
+        return;
+    }
+
+    printf("[Timer] Retransmission timer expired. Stepping engine to resend lost flight...\n");
+
+    // Drive the state machine. Mbed TLS detects the internal timeout and retransmits the last flight.
+    handle_dtls_handshake_step(bio_ctx);
+}
+
+static void custom_timer_set_delay(void *ctx, uint32_t int_ms, uint32_t fin_ms) {
+    custom_dtls_timer_t *timer_ctx = (custom_dtls_timer_t *) ctx;
+
+    // A final delay of 0 cancels the active timer
+    if (fin_ms == 0) {
+        timer_ctx->is_cancelled = 1;
+        uv_timer_stop(&timer_ctx->uv_timer);
+        return;
+    }
+
+    timer_ctx->intermediate_ms = int_ms;
+    timer_ctx->final_ms = fin_ms;
+    timer_ctx->start_timestamp = uv_now(timer_ctx->uv_timer.loop);
+    timer_ctx->is_cancelled = 0;
+
+    // Fire the libuv timer at the final timeout milestone.
+    // If you need dual-interval alerts, change this to fire at int_ms and step iteratively.
+    uv_timer_start(&timer_ctx->uv_timer, on_handshake_timer_expiry, fin_ms, 0);
+}
+
+static int custom_timer_get_delay(void *ctx) {
+    custom_dtls_timer_t *timer_ctx = (custom_dtls_timer_t *) ctx;
+
+    if (timer_ctx->is_cancelled) {
+        return -1; // Timer is cancelled or disabled
+    }
+
+    uint64_t elapsed = uv_now(timer_ctx->uv_timer.loop) - timer_ctx->start_timestamp;
+
+    if (elapsed >= timer_ctx->final_ms) {
+        return 2; // Final timeout expired
+    }
+    if (elapsed >= timer_ctx->intermediate_ms) {
+        return 1; // Intermediate delay passed
+    }
+
+    return 0; // No delays have passed
+}
+
+/* --- Out-of-Order Bitmap Utilities --- */
+
+static void mark_bitmap(uint8_t *bitmap, uint32_t offset, uint32_t len) {
+    for (uint32_t i = offset; i < offset + len; i++) {
+        bitmap[i / 8] |= (1 << (i % 8));
+    }
+}
+
+static int is_bitmap_complete(const uint8_t *bitmap, uint32_t total_len) {
+    for (uint32_t i = 0; i < total_len; i++) {
+        if (!(bitmap[i / 8] & (1 << (i % 8)))) return 0;
+    }
+    return 1;
+}
+
+static int process_incoming_packet_v3(dtls_msg_reassembler_t *reassembler,
+        const uint8_t *packet, size_t packet_len,
+        uint8_t *out_buf, size_t *out_len) {
+    if (packet_len < DTLS_RECORD_HEADER_LEN) return -1;
+
+    uint8_t content_type = packet[0];
+    uint16_t epoch = (packet[3] << 8) | packet[4];
+
+    // Intercept Handshake (22) in Epoch 0 (Plaintext Handshake Records)
+    if (content_type == 22 && epoch == 0) {
+        size_t hs_offset = DTLS_RECORD_HEADER_LEN;
+        if (hs_offset + DTLS_HANDSHAKE_HEADER_LEN > packet_len) return -1;
+
+        uint8_t msg_type = packet[hs_offset];
+        uint32_t length = (packet[hs_offset + 1] << 16) | (packet[hs_offset + 2] << 8) | packet[hs_offset + 3];
+        uint16_t msg_seq = (packet[hs_offset + 4] << 8) | packet[hs_offset + 5];
+        uint32_t frag_offset = (packet[hs_offset + 6] << 16) | (packet[hs_offset + 7] << 8) | packet[hs_offset + 8];
+        uint32_t frag_length = (packet[hs_offset + 9] << 16) | (packet[hs_offset + 10] << 8) | packet[hs_offset + 11];
+
+        // Isolate Handshake Messages that are actually fragmented (typically ClientHello [1])
+        if (length > frag_length) {
+            if (length > MAX_DTLS_RECV_BUFFER - (DTLS_RECORD_HEADER_LEN + DTLS_HANDSHAKE_HEADER_LEN)) return -1;
+
+            // Allocate buffering structures on the very first fragment discovery
+            if (reassembler->reassembly_buf == NULL) {
+                reassembler->total_length = length;
+                reassembler->message_seq = msg_seq;
+                reassembler->reassembly_buf = (uint8_t *) calloc(1, length);
+                reassembler->bitmap = (uint8_t *) calloc(1, (length + 7) / 8);
+                if (!reassembler->reassembly_buf || !reassembler->bitmap) return -1;
+            }
+
+            // Boundary validation guards against malformed fragments
+            if (frag_offset + frag_length > length ||
+                    hs_offset + DTLS_HANDSHAKE_HEADER_LEN + frag_length > packet_len) {
+                return -1;
+            }
+
+            // Safely write incoming payload chunk straight to its relative target block position
+            const uint8_t *frag_payload = packet + hs_offset + DTLS_HANDSHAKE_HEADER_LEN;
+            memcpy(reassembler->reassembly_buf + frag_offset, frag_payload, frag_length);
+            mark_bitmap(reassembler->bitmap, frag_offset, frag_length);
+
+            // Re-evaluate if all holes are filled
+            if (is_bitmap_complete(reassembler->bitmap, reassembler->total_length)) {
+                size_t total_hs_msg_len = DTLS_HANDSHAKE_HEADER_LEN + reassembler->total_length;
+                size_t total_record_len = DTLS_RECORD_HEADER_LEN + total_hs_msg_len;
+
+                if (*out_len < total_record_len) return -1;
+
+                // Synthesize a fresh, completely unfragmented DTLS Record Header Base
+                memcpy(out_buf, packet, DTLS_RECORD_HEADER_LEN);
+                out_buf[11] = (total_hs_msg_len >> 8) & 0xFF;
+                out_buf[12] = total_hs_msg_len & 0xFF;
+
+                // Synthesize Complete Handshake Header Frame
+                uint8_t *out_hs = out_buf + DTLS_RECORD_HEADER_LEN;
+                out_hs[0] = msg_type;
+                out_hs[1] = (length >> 16) & 0xFF;
+                out_hs[2] = (length >> 8) & 0xFF;
+                out_hs[3] = length & 0xFF;
+                out_hs[4] = (msg_seq >> 8) & 0xFF;
+                out_hs[5] = msg_seq & 0xFF;
+                out_hs[6] = 0;
+                out_hs[7] = 0;
+                out_hs[8] = 0; // fragment_offset = 0
+                out_hs[9] = out_hs[1];
+                out_hs[10] = out_hs[2];
+                out_hs[11] = out_hs[3]; // fragment_length = total_length
+
+                // Flush collected linear handshake payload sequence right behind the header
+                memcpy(out_hs + DTLS_HANDSHAKE_HEADER_LEN, reassembler->reassembly_buf, reassembler->total_length);
+                *out_len = total_record_len;
+
+                // Release local allocation memory structures for this message stream
+                free(reassembler->reassembly_buf);
+                reassembler->reassembly_buf = NULL;
+                free(reassembler->bitmap);
+                reassembler->bitmap = NULL;
+                return 1; // Completed full message reconstruction
+            }
+            return 0; // Intercepted and cached successfully, awaiting more fragments
+        }
+    }
+
+    // Pass-through processing lane for unfragmented packets or encrypted epochs
+    if (*out_len < packet_len) return -1;
+    memcpy(out_buf, packet, packet_len);
+    *out_len = packet_len;
+    return 2;
+}
+/* --- Defragmentation Parsing Engine --- */
+/* bad
+static int process_incoming_packet_v3(dtls_msg_reassembler_t *reassembler,
+        const uint8_t *packet, size_t packet_len,
+        uint8_t *out_buf, size_t *out_len) {
+    if (packet_len < DTLS_RECORD_HEADER_LEN) return -1;
+
+    uint8_t content_type = packet[0];
+    uint16_t epoch = (uint16_t)((packet[3] << 8) | packet[4]);
+
+    if (content_type == 22 && epoch == 0) {
+        size_t hs_offset = DTLS_RECORD_HEADER_LEN;
+        if (hs_offset + DTLS_HANDSHAKE_HEADER_LEN > packet_len) return -1;
+
+        uint8_t msg_type = packet[hs_offset];
+        uint32_t length = (packet[hs_offset + 1] << 16) | (packet[hs_offset + 2] << 8) | packet[hs_offset + 3];
+        uint16_t msg_seq = (packet[hs_offset + 4] << 8) | packet[hs_offset + 5];
+        uint32_t frag_offset = (packet[hs_offset + 6] << 16) | (packet[hs_offset + 7] << 8) | packet[hs_offset + 8];
+        uint32_t frag_length = (packet[hs_offset + 9] << 16) | (packet[hs_offset + 10] << 8) | packet[hs_offset + 11];
+
+        if (length > frag_length) {
+            if (length > MAX_DTLS_RECV_BUFFER - (DTLS_RECORD_HEADER_LEN + DTLS_HANDSHAKE_HEADER_LEN)) return -1;
+
+            if (reassembler->reassembly_buf == NULL) {
+                reassembler->total_length = length;
+                reassembler->message_seq = msg_seq;
+                reassembler->reassembly_buf = (uint8_t *) calloc(1, length);
+                reassembler->bitmap = (uint8_t *) calloc(1, (length + 7) / 8);
+                if (!reassembler->reassembly_buf || !reassembler->bitmap) return -1;
+            }
+
+            if (frag_offset + frag_length > length ||
+                    hs_offset + DTLS_HANDSHAKE_HEADER_LEN + frag_length > packet_len) {
+                return -1;
+            }
+
+            const uint8_t *frag_payload = packet + hs_offset + DTLS_HANDSHAKE_HEADER_LEN;
+            memcpy(reassembler->reassembly_buf + frag_offset, frag_payload, frag_length);
+            mark_bitmap(reassembler->bitmap, frag_offset, frag_length);
+
+            if (is_bitmap_complete(reassembler->bitmap, reassembler->total_length)) {
+                size_t total_hs_msg_len = DTLS_HANDSHAKE_HEADER_LEN + reassembler->total_length;
+                size_t total_record_len = DTLS_RECORD_HEADER_LEN + total_hs_msg_len;
+
+                if (*out_len < total_record_len) return -1;
+
+                memcpy(out_buf, packet, DTLS_RECORD_HEADER_LEN);
+                out_buf = (total_hs_msg_len >> 8) & 0xFF;
+                out_buf = total_hs_msg_len & 0xFF;
+
+                uint8_t *out_hs = out_buf + DTLS_RECORD_HEADER_LEN;
+                out_hs = msg_type;
+                out_hs = (length >> 16) & 0xFF;
+                out_hs = (length >> 8) & 0xFF;
+                out_hs = length & 0xFF;
+                out_hs = (msg_seq >> 8) & 0xFF;
+                out_hs = msg_seq & 0xFF;
+                out_hs = 0;
+                out_hs = 0;
+                out_hs = 0;
+                out_hs = out_hs;
+                out_hs = out_hs;
+                out_hs = out_hs;
+
+                memcpy(out_hs + DTLS_HANDSHAKE_HEADER_LEN, reassembler->reassembly_buf, reassembler->total_length);
+ *out_len = total_record_len;
+
+                free(reassembler->reassembly_buf);
+                reassembler->reassembly_buf = NULL;
+                free(reassembler->bitmap);
+                reassembler->bitmap = NULL;
+                return 1;
+            }
+            return 0;
+        }
+    }
+
+    if (*out_len < packet_len) return -1;
+    memcpy(out_buf, packet, packet_len);
+ *out_len = packet_len;
+    return 2;
+}
+
+ */
+
+/* --- Mbed TLS Virtual BIO Callbacks --- */
+
+static int custom_dtls_bio_recv(void *ctx, unsigned char *buf, size_t len) {
+    custom_uv_context_t *bio_ctx = (custom_uv_context_t *) ctx;
+    size_t available = bio_ctx->bio_in_len - bio_ctx->bio_in_offset;
+    if (available == 0) return MBEDTLS_ERR_SSL_WANT_READ;
+
+    size_t to_copy = (len < available) ? len : available;
+    memcpy(buf, bio_ctx->bio_in_buf + bio_ctx->bio_in_offset, to_copy);
+    bio_ctx->bio_in_offset += to_copy;
+
+    if (bio_ctx->bio_in_offset >= bio_ctx->bio_in_len) {
+        bio_ctx->bio_in_len = 0;
+        bio_ctx->bio_in_offset = 0;
+    }
+    return (int) to_copy;
+}
+
+static void on_udp_send_complete(uv_udp_send_t *req, int status) {
+    custom_send_req_t *send_req = (custom_send_req_t *) req;
+    if (status < 0) fprintf(stderr, "Asynchronous write failed: %s\n", uv_strerror(status));
+    free(send_req);
+}
+
+static int custom_dtls_bio_send(void *ctx, const unsigned char *buf, size_t len) {
+    custom_uv_context_t *bio_ctx = (custom_uv_context_t *) ctx;
+    if (len > MAX_DTLS_RECV_BUFFER) return MBEDTLS_ERR_SSL_BAD_INPUT_DATA;
+
+    custom_send_req_t *send_req = (custom_send_req_t *) malloc(sizeof (custom_send_req_t));
+    if (!send_req) return MBEDTLS_ERR_SSL_ALLOC_FAILED;
+
+    memcpy(send_req->buffer, buf, len);
+    uv_buf_t uv_buf = uv_buf_init((char *) send_req->buffer, len);
+
+    int ret = uv_udp_send(&send_req->req, &bio_ctx->udp_handle, &uv_buf, 1,
+            (const struct sockaddr *) &bio_ctx->peer_addr, on_udp_send_complete);
+    if (ret < 0) {
+        free(send_req);
+        return MBEDTLS_ERR_SSL_INTERNAL_ERROR;
+    }
+    return (int) len;
+}
+
+static size_t custom_bio_ctrl_pending(const custom_uv_context_t *bio_ctx) {
+    if (bio_ctx == NULL) return 0;
+    return bio_ctx->bio_in_len - bio_ctx->bio_in_offset;
+}
+
+/* --- Handshake State Machine Step --- */
+
+static void handle_dtls_handshake_step(custom_uv_context_t *bio_ctx) {
+    int ret = mbedtls_ssl_handshake(&bio_ctx->ssl);
+
+    if (ret == 0) {
+        printf("DTLS Handshake successfully established!\n");
+
+
+        bio_ctx->handshake_completed = 1; // Stop and cancel the retransmission timer upon handshake completion
+        custom_timer_set_delay(&bio_ctx->handshake_timer, 0, 0);
+    } else if (ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+        return;
+    } else if (ret == MBEDTLS_ERR_SSL_HELLO_VERIFY_REQUIRED) {
+        printf("HelloVerifyRequest issued. Resetting session context.\n");
+        mbedtls_ssl_session_reset(&bio_ctx->ssl);
+    } else {
+        char err_string[256];
+        mbedtls_strerror(ret, err_string, sizeof (err_string));
+        fprintf(stderr, "Fatal error executing DTLS Handshake: -0x%04X (%s)\n", -ret, err_string);
+        custom_timer_set_delay(&bio_ctx->handshake_timer, 0, 0);
+    }
+}
+
+/* --- Libuv Runtime Engine Drivers --- */
+static void on_alloc(uv_handle_t *handle, size_t suggested_size, uv_buf_t *buf) {
+    buf->base = (char *) malloc(suggested_size);
+    buf->len = suggested_size;
+}
+
+static void on_udp_recv(uv_udp_t *handle, ssize_t nread, const uv_buf_t *buf, const struct sockaddr *addr, unsigned flags) {
+    custom_uv_context_t *bio_ctx = (custom_uv_context_t *) handle->data;
+    if (nread < 0 || addr == NULL) {
+        if (buf->base) free(buf->base);
+        return;
+    }
+    if (addr->sa_family == AF_INET) {
+        struct sockaddr_in *client_addr4 = (struct sockaddr_in *) addr;
+        memcpy(&bio_ctx->peer_addr, addr, sizeof (struct sockaddr_in));
+        mbedtls_ssl_set_client_transport_id(&bio_ctx->ssl, (const unsigned char *) &client_addr4->sin_addr.s_addr, sizeof (client_addr4->sin_addr.s_addr));
+    } else if (addr->sa_family == AF_INET6) {
+        struct sockaddr_in6 *client_addr6 = (struct sockaddr_in6 *) addr;
+        memcpy(&bio_ctx->peer_addr, addr, sizeof (struct sockaddr_in6));
+        mbedtls_ssl_set_client_transport_id(&bio_ctx->ssl, (const unsigned char *) &client_addr6->sin6_addr, sizeof (client_addr6->sin6_addr));
+    }
+    size_t out_len = sizeof (bio_ctx->bio_in_buf);
+    int status = process_incoming_packet_v3(&bio_ctx->reassembler, (const uint8_t *) buf->base, nread, bio_ctx->bio_in_buf, &out_len);
+    if (status > 0) {
+        bio_ctx->bio_in_len = out_len;
+        bio_ctx->bio_in_offset = 0;
+        if (!bio_ctx->handshake_completed) {
+            handle_dtls_handshake_step(bio_ctx);
+        } else {
+            uint8_t app_buffer[1024];
+            int read_ret;
+            do {
+                read_ret = mbedtls_ssl_read(&bio_ctx->ssl, app_buffer, sizeof (app_buffer));
+                if (read_ret > 0) {
+                    printf("Decrypted Application Payload processed.\n");
+                }
+            } while (read_ret == MBEDTLS_ERR_SSL_WANT_READ || custom_bio_ctrl_pending(bio_ctx) > 0 || mbedtls_ssl_check_pending(&bio_ctx->ssl) > 0);
+        }
+    }
+    if (buf->base) free(buf->base);
+}
+
+/* --- Context Lifecycle Configurations --- */
+custom_uv_context_t *custom_uv_context_init_secure(uv_loop_t *loop, const char *listen_ip, int port, const char *cert_file, const char *key_file, const char *ca_file) {
+    int ret;
+    custom_uv_context_t *bio_ctx = (custom_uv_context_t *) calloc(1, sizeof (custom_uv_context_t));
+    if (!bio_ctx) return NULL;
+    bio_ctx->handshake_completed = 0; // Hook the custom asynchronous timer configurations
+    uv_timer_init(loop, &bio_ctx->handshake_timer.uv_timer);
+    bio_ctx->handshake_timer.uv_timer.data = &bio_ctx->handshake_timer;
+    bio_ctx->handshake_timer.bio_ctx_ptr = bio_ctx;
+    bio_ctx->handshake_timer.is_cancelled = 1;
+    mbedtls_ssl_init(&bio_ctx->ssl);
+    mbedtls_ssl_config_init(&bio_ctx->ssl_conf);
+    mbedtls_entropy_init(&bio_ctx->entropy);
+    mbedtls_ctr_drbg_init(&bio_ctx->ctr_drbg);
+    mbedtls_x509_crt_init(&bio_ctx->server_cert);
+    mbedtls_x509_crt_init(&bio_ctx->ca_chain);
+    mbedtls_pk_init(&bio_ctx->private_key);
+    mbedtls_ssl_cookie_init(&bio_ctx->cookie_ctx);
+    ret = mbedtls_ctr_drbg_seed(&bio_ctx->ctr_drbg, mbedtls_entropy_func, &bio_ctx->entropy, (const unsigned char *) "dtls_handshake_srv", 18);
+    if (ret != 0) goto cleanup_fail;
+    ret = mbedtls_x509_crt_parse_file(&bio_ctx->server_cert, cert_file);
+    if (ret != 0) goto cleanup_fail;
+    ret = mbedtls_pk_parse_keyfile(&bio_ctx->private_key, key_file, NULL, mbedtls_ctr_drbg_random, &bio_ctx->ctr_drbg);
+    if (ret != 0) goto cleanup_fail;
+    if (ca_file != NULL) {
+        //ret = mbedtls_x509_crt_parse_file(&bio_chain, ca_file); // Fix typo mapping reference context target
+        ret = mbedtls_x509_crt_parse_file(&bio_ctx->ca_chain, ca_file);
+        if (ret != 0) goto cleanup_fail;
+    }
+    ret = mbedtls_ssl_config_defaults(&bio_ctx->ssl_conf, MBEDTLS_SSL_IS_SERVER, MBEDTLS_SSL_TRANSPORT_DATAGRAM, MBEDTLS_SSL_PRESET_DEFAULT);
+    if (ret != 0) goto cleanup_fail;
+    mbedtls_ssl_conf_rng(&bio_ctx->ssl_conf, mbedtls_ctr_drbg_random, &bio_ctx->ctr_drbg);
+    ret = mbedtls_ssl_conf_own_cert(&bio_ctx->ssl_conf, &bio_ctx->server_cert, &bio_ctx->private_key);
+    if (ret != 0) goto cleanup_fail;
+    if (ca_file != NULL) {
+        mbedtls_ssl_conf_ca_chain(&bio_ctx->ssl_conf, &bio_ctx->ca_chain, NULL);
+        mbedtls_ssl_conf_authmode(&bio_ctx->ssl_conf, MBEDTLS_SSL_VERIFY_REQUIRED);
+    }
+    ret = mbedtls_ssl_cookie_setup(&bio_ctx->cookie_ctx, mbedtls_ctr_drbg_random, &bio_ctx->ctr_drbg);
+    if (ret != 0) goto cleanup_fail;
+    mbedtls_ssl_conf_dtls_cookies(&bio_ctx->ssl_conf, mbedtls_ssl_cookie_write, mbedtls_ssl_cookie_check, &bio_ctx->cookie_ctx); // Optional: Tune the minimum and maximum handshake retransmission thresholds (e.g., 1000ms to 60000ms)
+    mbedtls_ssl_conf_handshake_timeout(&bio_ctx->ssl_conf, 1000, 60000);
+    ret = mbedtls_ssl_setup(&bio_ctx->ssl, &bio_ctx->ssl_conf);
+    if (ret != 0) goto cleanup_fail;
+    mbedtls_ssl_set_bio(&bio_ctx->ssl, bio_ctx, custom_dtls_bio_send, custom_dtls_bio_recv, NULL); // Bind Asynchronous Timer Strategy to the Mbed TLS Engine
+    mbedtls_ssl_set_timer_cb(&bio_ctx->ssl, &bio_ctx->handshake_timer, custom_timer_set_delay, custom_timer_get_delay);
+    uv_udp_init(loop, &bio_ctx->udp_handle);
+    bio_ctx->udp_handle.data = bio_ctx;
+    struct sockaddr_in bind_addr;
+    uv_ip4_addr(listen_ip, port, &bind_addr);
+    uv_udp_bind(&bio_ctx->udp_handle, (const struct sockaddr *) &bind_addr, UV_UDP_REUSEADDR);
+    uv_udp_recv_start(&bio_ctx->udp_handle, on_alloc, on_udp_recv);
+    return bio_ctx;
+cleanup_fail:
+    mbedtls_ssl_free(&bio_ctx->ssl);
+    mbedtls_ssl_config_free(&bio_ctx->ssl_conf);
+    mbedtls_x509_crt_free(&bio_ctx->server_cert);
+    mbedtls_x509_crt_free(&bio_ctx->ca_chain);
+    mbedtls_pk_free(&bio_ctx->private_key);
+    mbedtls_ssl_cookie_free(&bio_ctx->cookie_ctx);
+    mbedtls_ctr_drbg_free(&bio_ctx->ctr_drbg);
+    mbedtls_entropy_free(&bio_ctx->entropy);
+    free(bio_ctx);
+    return NULL;
+}
+
+void custom_uv_context_free(custom_uv_context_t *bio_ctx) {
+    if (bio_ctx) {
+        uv_udp_recv_stop(&bio_ctx->udp_handle);
+        uv_close((uv_handle_t *) & bio_ctx->udp_handle, NULL); // Safely halt and close the libuv timer handle
+        uv_timer_stop(&bio_ctx->handshake_timer.uv_timer);
+        uv_close((uv_handle_t *) & bio_ctx->handshake_timer.uv_timer, NULL);
+        if (bio_ctx->reassembler.reassembly_buf) free(bio_ctx->reassembler.reassembly_buf);
+        if (bio_ctx->reassembler.bitmap) free(bio_ctx->reassembler.bitmap);
+        mbedtls_ssl_free(&bio_ctx->ssl);
+        mbedtls_ssl_config_free(&bio_ctx->ssl_conf);
+        mbedtls_x509_crt_free(&bio_ctx->server_cert);
+        mbedtls_x509_crt_free(&bio_ctx->ca_chain);
+        mbedtls_pk_free(&bio_ctx->private_key);
+        mbedtls_ssl_cookie_free(&bio_ctx->cookie_ctx);
+        mbedtls_ctr_drbg_free(&bio_ctx->ctr_drbg);
+        mbedtls_entropy_free(&bio_ctx->entropy);
+        free(bio_ctx);
+    }
+}
+
+int main(int argc, char **argv) {
+    uv_loop_t *loop = uv_default_loop();
+    printf("Starting Defragmenting, Handshaking DTLS Node with Retransmission Timers...\n");
+    custom_uv_context_t *server_context = custom_uv_context_init_secure(loop, "0.0.0.0", 8000, "./certificate.crt", "./private_key.pem", nullptr);
+    if (!server_context) {
+        fprintf(stderr, "Failed to initialize server loop environments safely.\n");
+        return -1;
+    }
+    int ret = uv_run(loop, UV_RUN_DEFAULT);
+    custom_uv_context_free(server_context);
+    return ret;
+}
+
+
+
+#endif

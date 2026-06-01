@@ -18,7 +18,7 @@ extern ConfCert config;
 using namespace base;
 
 
-//#define USE_MBEDTLS 1
+#define USE_MBEDTLS 1
 
 #if USE_MBEDTLS
 
@@ -80,8 +80,8 @@ namespace rtc {
         t_ctx->status = 0;
 
         // uv_timer_start(&t_ctx->timer1, on_uv_timer, fin_ms, 0);
-        
-       /// if(t_ctx->GetLocalRole() == DtlsTransport::Role::CLIENT )
+
+        /// if(t_ctx->GetLocalRole() == DtlsTransport::Role::CLIENT )
         t_ctx->timer->Start(fin_ms, 0);
         // std::cout << "dtls_set_timer" << std::endl << std::flush;
     }
@@ -109,48 +109,171 @@ namespace rtc {
         MBEDTLS_TLS_SRTP_UNSET,
     };
 
+    static void mark_bitmap(uint8_t *bitmap, uint32_t offset, uint32_t len) {
+        for (uint32_t i = offset; i < offset + len; i++) {
+            bitmap[i / 8] |= (1 << (i % 8));
+        }
+    }
+
+    static int is_bitmap_complete(const uint8_t *bitmap, uint32_t total_len) {
+        for (uint32_t i = 0; i < total_len; i++) {
+            if (!(bitmap[i / 8] & (1 << (i % 8)))) return 0;
+        }
+        return 1;
+    }
+
+
+
+#define DTLS_RECORD_HEADER_LEN      13
+#define DTLS_HANDSHAKE_HEADER_LEN   12
+#define MAX_DTLS_RECV_BUFFER        16384
+
+    /* --- Data Structures --- */
+
+    typedef struct {
+        uint16_t message_seq{0};
+        uint32_t total_length{0};
+        ;
+        uint32_t assembled_length{0};
+        ;
+        uint8_t *reassembly_buf{nullptr};
+        uint8_t *bitmap{nullptr};
+    } dtls_msg_reassembler_t;
+
+    dtls_msg_reassembler_t reassembler;
+    uint8_t bio_in_buf[MAX_DTLS_RECV_BUFFER];
+
+    static int process_incoming_packet_v3(dtls_msg_reassembler_t *reassembler,
+            const uint8_t *packet, size_t packet_len,
+            uint8_t *out_buf, size_t *out_len) {
+        if (packet_len < DTLS_RECORD_HEADER_LEN) return -1;
+
+        uint8_t content_type = packet[0];
+        uint16_t epoch = (packet[3] << 8) | packet[4];
+
+        // Intercept Handshake (22) in Epoch 0 (Plaintext Handshake Records)
+        if (content_type == 22 && epoch == 0) {
+            size_t hs_offset = DTLS_RECORD_HEADER_LEN;
+            if (hs_offset + DTLS_HANDSHAKE_HEADER_LEN > packet_len) return -1;
+
+            uint8_t msg_type = packet[hs_offset];
+            uint32_t length = (packet[hs_offset + 1] << 16) | (packet[hs_offset + 2] << 8) | packet[hs_offset + 3];
+            uint16_t msg_seq = (packet[hs_offset + 4] << 8) | packet[hs_offset + 5];
+            uint32_t frag_offset = (packet[hs_offset + 6] << 16) | (packet[hs_offset + 7] << 8) | packet[hs_offset + 8];
+            uint32_t frag_length = (packet[hs_offset + 9] << 16) | (packet[hs_offset + 10] << 8) | packet[hs_offset + 11];
+
+            // Isolate Handshake Messages that are actually fragmented (typically ClientHello [1])
+            if (length > frag_length) {
+                if (length > MAX_DTLS_RECV_BUFFER - (DTLS_RECORD_HEADER_LEN + DTLS_HANDSHAKE_HEADER_LEN)) return -1;
+
+                // Allocate buffering structures on the very first fragment discovery
+                if (reassembler->reassembly_buf == NULL) {
+                    reassembler->total_length = length;
+                    reassembler->message_seq = msg_seq;
+                    reassembler->reassembly_buf = (uint8_t *) calloc(1, length);
+                    reassembler->bitmap = (uint8_t *) calloc(1, (length + 7) / 8);
+                    if (!reassembler->reassembly_buf || !reassembler->bitmap) return -1;
+                }
+
+                // Boundary validation guards against malformed fragments
+                if (frag_offset + frag_length > length ||
+                        hs_offset + DTLS_HANDSHAKE_HEADER_LEN + frag_length > packet_len) {
+                    return -1;
+                }
+
+                // Safely write incoming payload chunk straight to its relative target block position
+                const uint8_t *frag_payload = packet + hs_offset + DTLS_HANDSHAKE_HEADER_LEN;
+                memcpy(reassembler->reassembly_buf + frag_offset, frag_payload, frag_length);
+                mark_bitmap(reassembler->bitmap, frag_offset, frag_length);
+
+                // Re-evaluate if all holes are filled
+                if (is_bitmap_complete(reassembler->bitmap, reassembler->total_length)) {
+                    size_t total_hs_msg_len = DTLS_HANDSHAKE_HEADER_LEN + reassembler->total_length;
+                    size_t total_record_len = DTLS_RECORD_HEADER_LEN + total_hs_msg_len;
+
+                    if (*out_len < total_record_len) return -1;
+
+                    // Synthesize a fresh, completely unfragmented DTLS Record Header Base
+                    memcpy(out_buf, packet, DTLS_RECORD_HEADER_LEN);
+                    out_buf[11] = (total_hs_msg_len >> 8) & 0xFF;
+                    out_buf[12] = total_hs_msg_len & 0xFF;
+
+                    // Synthesize Complete Handshake Header Frame
+                    uint8_t *out_hs = out_buf + DTLS_RECORD_HEADER_LEN;
+                    out_hs[0] = msg_type;
+                    out_hs[1] = (length >> 16) & 0xFF;
+                    out_hs[2] = (length >> 8) & 0xFF;
+                    out_hs[3] = length & 0xFF;
+                    out_hs[4] = (msg_seq >> 8) & 0xFF;
+                    out_hs[5] = msg_seq & 0xFF;
+                    out_hs[6] = 0;
+                    out_hs[7] = 0;
+                    out_hs[8] = 0; // fragment_offset = 0
+                    out_hs[9] = out_hs[1];
+                    out_hs[10] = out_hs[2];
+                    out_hs[11] = out_hs[3]; // fragment_length = total_length
+
+                    // Flush collected linear handshake payload sequence right behind the header
+                    memcpy(out_hs + DTLS_HANDSHAKE_HEADER_LEN, reassembler->reassembly_buf, reassembler->total_length);
+                    *out_len = total_record_len;
+
+                    // Release local allocation memory structures for this message stream
+                    free(reassembler->reassembly_buf);
+                    reassembler->reassembly_buf = NULL;
+                    free(reassembler->bitmap);
+                    reassembler->bitmap = NULL;
+                    return 1; // Completed full message reconstruction
+                }
+                return 0; // Intercepted and cached successfully, awaiting more fragments
+            }
+        }
+
+        // Pass-through processing lane for unfragmented packets or encrypted epochs
+        if (*out_len < packet_len) return -1;
+        memcpy(out_buf, packet, packet_len);
+        *out_len = packet_len;
+        return 2;
+    }
+
     void DtlsTransport::CreateSslCtx() {
         return;
     }
 
-    
-    
     void mbedtls_debug_callback(void *ctx, int level,
-                                       const char *file, int line,
-                                       const char *str)
-    {
+            const char *file, int line,
+            const char *str) {
         // Print the debug string or stream it to stderr/stdout
         ((void) ctx); // Unused context parameter
         std::cout << "MbedTLS [Level " << level << "] (" << file << ":" << line << ") " << str;
     }
-    
+
     DtlsTransport::DtlsTransport(Listener *listener) : listener(listener) {
         if (!config.mCertificate)
             throw std::invalid_argument("DTLS certificate is null");
 
-/* 
-for MBEDTLS_SSL_VERSION_TLS1_3)
-        if (psa_crypto_init() != PSA_SUCCESS) {
-        std::cerr << "Failed to initialize PSA Crypto API." << std::endl;
-        return ;
-    }
-*/
-        
+        /* 
+        for MBEDTLS_SSL_VERSION_TLS1_3)
+                if (psa_crypto_init() != PSA_SUCCESS) {
+                std::cerr << "Failed to initialize PSA Crypto API." << std::endl;
+                return ;
+            }
+         */
+
         mbedtls_entropy_init(&mEntropy);
         mbedtls_ctr_drbg_init(&mDrbg);
         mbedtls_ssl_init(&mSsl);
         mbedtls_ssl_config_init(&mConf);
         mbedtls_ctr_drbg_set_prediction_resistance(&mDrbg, MBEDTLS_CTR_DRBG_PR_ON);
-        
-      //  mbedtls_ssl_conf_min_tls_version(&mConf, MBEDTLS_SSL_VERSION_TLS1_3);
-       // mbedtls_ssl_conf_max_tls_version(&mConf, MBEDTLS_SSL_VERSION_TLS1_3);
-        
-         mbedtls_debug_set_threshold(2);
 
-    // 3. Register the callback with the SSL configuration
-    // The last argument (nullptr) is passed as the 'void *ctx' to your callback
-        mbedtls_ssl_conf_dbg(&mConf, mbedtls_debug_callback, nullptr);
-    
+        //  mbedtls_ssl_conf_min_tls_version(&mConf, MBEDTLS_SSL_VERSION_TLS1_3);
+        // mbedtls_ssl_conf_max_tls_version(&mConf, MBEDTLS_SSL_VERSION_TLS1_3);
+
+        // mbedtls_debug_set_threshold(2);
+
+        // 3. Register the callback with the SSL configuration
+        // The last argument (nullptr) is passed as the 'void *ctx' to your callback
+        //mbedtls_ssl_conf_dbg(&mConf, mbedtls_debug_callback, nullptr);
+
         mbedtls_ssl_conf_authmode(&mConf, MBEDTLS_SSL_VERIFY_OPTIONAL);
     }
 
@@ -242,43 +365,48 @@ for MBEDTLS_SSL_VERSION_TLS1_3)
     void DtlsTransport::ProcessDtlsData(const uint8_t *data, size_t len) {
         SInfo << "ProcessDtlsData " << len;
 
-        TLS_BIO_write(app_bio_, (const char *) data, len);
+        size_t out_len = sizeof (bio_in_buf);
+        int status = process_incoming_packet_v3(&reassembler, data, len, bio_in_buf, &out_len);
+        if (status > 0) {
 
-        if (!this->handshakeDone) //// handshake shoud be callled from client only
-        {
-            if (!handshake())
-                return;
-        }
+            TLS_BIO_write(app_bio_, (const char *) bio_in_buf, out_len);
 
-        while (true) {
+            if (!this->handshakeDone) //// handshake shoud be callled from client only
+            {
+                if (!handshake())
+                    return;
+            }
 
-            memset((void *) data, 0, len);
+            while (true) {
 
-            int rv = -1;
-            rv = mbedtls_ssl_read(&mSsl, (unsigned char *) data, len);
-            rv = swrap_error_handler(rv);
+                memset((void *) data, 0, len);
 
-            if (rv > 0) {
+                int rv = -1;
+                rv = mbedtls_ssl_read(&mSsl, (unsigned char *) data, len);
+                rv = swrap_error_handler(rv);
 
-                // _socket->on_read(data,  rv) ;
+                if (rv > 0) {
 
-                this->listener->OnDtlsTransportApplicationDataReceived(
-                        this, (uint8_t *) data, static_cast<size_t> (rv));
+                    // _socket->on_read(data,  rv) ;
 
-            } else if (rv == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
-                // jerry_value_t fn = iotjs_jval_get_property(jthis, "onclose");
-                SInfo << "MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY";
+                    this->listener->OnDtlsTransportApplicationDataReceived(
+                            this, (uint8_t *) data, static_cast<size_t> (rv));
 
-                this->state = DtlsState::CLOSED;
-                this->listener->OnDtlsTransportClosed(this);
+                } else if (rv == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
+                    // jerry_value_t fn = iotjs_jval_get_property(jthis, "onclose");
+                    SInfo << "MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY";
 
-                break;
-            } else if (rv == MBEDTLS_ERR_SSL_WANT_READ ||
-                    rv == MBEDTLS_ERR_SSL_WANT_WRITE) {
-                break;
-            } else {
-                // SError << getTLSError(rv);
-                break;
+                    this->state = DtlsState::CLOSED;
+                    this->listener->OnDtlsTransportClosed(this);
+
+                    break;
+                } else if (rv == MBEDTLS_ERR_SSL_WANT_READ ||
+                        rv == MBEDTLS_ERR_SSL_WANT_WRITE) {
+                    break;
+                } else {
+                    // SError << getTLSError(rv);
+                    break;
+                }
             }
         }
     }
@@ -308,8 +436,8 @@ for MBEDTLS_SSL_VERSION_TLS1_3)
             mbedtls_ssl_conf_dtls_cookies(&mConf, NULL, NULL, NULL);
             mbedtls_ssl_conf_dtls_srtp_protection_profiles(
                     &mConf, srtpSupportedProtectionProfiles);
-            
-           // mbedtls_ssl_set_mtu(&mSsl, 1200);
+
+            // mbedtls_ssl_set_mtu(&mSsl, 1200);
 
             mbedtls::check(mbedtls_ssl_setup(&mSsl, &mConf));
 
@@ -361,8 +489,8 @@ for MBEDTLS_SSL_VERSION_TLS1_3)
 
         // Update local role.
         this->localRole = localRole;
-        
-        SInfo <<   ((localRole == Role::CLIENT)? "running [role:client]":"running [role:server]"); 
+
+        SInfo << ((localRole == Role::CLIENT) ? "running [role:client]" : "running [role:server]");
 
         handshake();
     }
@@ -375,13 +503,12 @@ for MBEDTLS_SSL_VERSION_TLS1_3)
         if (handshakeDone)
             return true;
 
-        if( this->state != DtlsState::CONNECTING)
-        {
+        if (this->state != DtlsState::CONNECTING) {
             this->state = DtlsState::CONNECTING;
             this->listener->OnDtlsTransportConnecting(this);
-            
+
             // mbedtls_ssl_set_mtu(&mSsl, 1200);
-            
+
         }
 
         int rv = 0;
@@ -389,7 +516,7 @@ for MBEDTLS_SSL_VERSION_TLS1_3)
         rv = swrap_error_handler(rv);
         if (rv == 0) {
             handshakeDone = true;
-             SInfo << "SSL Handshake over";
+            SInfo << "SSL Handshake over";
             int verify_status = (int) mbedtls_ssl_get_verify_result(&mSsl);
             if (verify_status) {
                 char buf[512];
@@ -426,11 +553,9 @@ for MBEDTLS_SSL_VERSION_TLS1_3)
             stay_uptodate();
         } else if (code == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
             return code;
-        }
-        else if(  code ==MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE)
-       {
+        } else if (code == MBEDTLS_ERR_SSL_FEATURE_UNAVAILABLE) {
             SError << "This browser or client need more MbedDtls extensions enabled  ";
-       }
+        }
 
         return code;
     }
@@ -471,8 +596,8 @@ for MBEDTLS_SSL_VERSION_TLS1_3)
             int /*depth*/, uint32_t * /*flags*/) {
         auto t = static_cast<DtlsTransport *> (ctx);
 
-        SInfo <<  "CertificateCallback";
-        
+        SInfo << "CertificateCallback";
+
         string fingerprint =
                 rtc::make_fingerprint(crt, t->remoteFingerprint.algorithm);
         //        std::transform(fingerprint.begin(), fingerprint.end(),
@@ -1033,7 +1158,7 @@ error:
     void DtlsTransport::ProcessDtlsData(const uint8_t *data, size_t len) {
 
         SInfo << "ProcessDtlsData " << len;
-            
+
         int written;
         int read;
 
@@ -1201,7 +1326,7 @@ error:
         if (this->handshakeDoneNow) {
             this->handshakeDoneNow = false;
             this->handshakeDone = true;
-            
+
             SInfo << "handshake done";
 
             // Stop the timer.
