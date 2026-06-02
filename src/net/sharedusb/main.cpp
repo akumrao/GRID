@@ -32,6 +32,8 @@
 //#define VIDEOMEDIA 1
 #include "peerconnection.h"
 
+#include "http/HttpsClient.h"
+
 #define CERTFROMFILE 1
 
 using namespace rtc;
@@ -397,6 +399,7 @@ int main(int argc, char **argv) {
     std::string host = ip_address;
     int port = 8443;
 
+    #if 0
     sockio::SocketioClient *client;
 
 
@@ -490,6 +493,103 @@ int main(int argc, char **argv) {
 
         mysocket->emit("createorjoin", room);
     }));
+    #else 
+    std::ostringstream url;
+    bool ssl = true;
+    //std::string host = SERVER_HOST;
+    //int port = SERVER_PORT;
+
+    url << "/";
+
+    ClientConnecton *m_client = nullptr;
+
+    if (!ssl) {
+      m_client = new HttpClient("ws", host, port, url.str());
+    } else {
+      m_client = new HttpsClient("wss", host, port, url.str());
+    }
+
+    // conn->Complete += sdelegate(&context,
+    // &CallbackContext::onClientConnectionComplete);
+    m_client->fnComplete = [&](const Response &response) {
+      std::string reason = response.getReason();
+      StatusCode statuscode = response.getStatus();
+      std::string body =
+          m_client->readStream() ? m_client->readStream()->str() : "";
+      STrace << "SocketIO handshake response:" << "Reason: " << reason
+             << " Response: " << body;
+    };
+
+    m_client->fnConnect = [&](HttpBase *con) {
+      STrace << "client->fnConnect ";
+      //  m_con_state = con_opened;
+      // m_reconn_timer.Stop();
+
+      char tmp[3] = "{}";
+
+      con->send(tmp, 2);
+    };
+
+    m_client->fnPayload = [&](HttpBase *con, const char *data, size_t sz) {
+      STrace << "client->fnPayload " << std::string(data, sz);
+      try {
+        // Parse the incoming JSON message
+        json received_json = json::parse(data);
+        std::string type = received_json["type"];
+
+        if (type == "offer") {
+          // 1. Peer receives an OFFER -> set as remote description
+          // std::string sdp = received_json["sdp"];
+          // peer_connection->SetRemoteDescription(sdp, "offer");
+
+          // 2. Create answer
+          // std::string answer = peer_connection->CreateAnswer();
+
+          // 3. Send answer back
+          json answer_msg;
+          answer_msg["type"] = "answer";
+          answer_msg["sdp"] =
+              "LOCAL_GENERATED_ANSWER_SDP"; // Replace with actual answer SDP
+         // send_signaling_message(answer_msg);
+
+        } else if (type == "answer") {
+          // Peer receives the ANSWER to their offer
+          // std::string sdp = received_json["sdp"];
+          // peer_connection->SetRemoteDescription(sdp, "answer");
+
+        } else if (type == "candidate") {
+          // Peer receives ICE candidate
+          // std::string sdp_mid = received_json["sdpMid"];
+          // int sdp_mline_index = received_json["sdpMLineIndex"];
+          // std::string candidate = received_json["candidate"];
+          // peer_connection->AddIceCandidate(sdp_mid, sdp_mline_index,
+          // candidate);
+        }
+      } catch (const std::exception &e) {
+        std::cerr << "Error processing signaling message: " << e.what()
+                  << std::endl;
+      }
+   
+    };
+
+    m_client->fnClose = [&](HttpBase *con, std::string str) {
+      STrace << "client->fnClose " << str;
+      // close(0,"exit");
+      // on_close();
+
+      m_client->Close();
+      delete m_client;
+      //m_client = nullptr;
+
+      //            m_con_state = con_closed;
+    };
+
+    //  conn->_request.setKeepAlive(false);
+    m_client->setReadStream(new std::stringstream);
+    m_client->send();
+    LTrace("sendHandshakeRequest over")
+
+    #endif
 
 #endif
 
