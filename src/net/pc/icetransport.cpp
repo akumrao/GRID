@@ -307,7 +307,7 @@ void IceTransport::changeGatheringState(GatheringState state) {
 
 void IceTransport::processGatheringDone() { changeGatheringState(GatheringState::Complete); }
 
-void IceTransport::OnDtlsTransportStatus(DtlsTransport::DtlsState state) 
+void IceTransport::OnDtlsTransportStatus(std::string id, DtlsTransport::DtlsState state) 
 {
      mDtlsstatecallback(state);
     
@@ -315,7 +315,7 @@ void IceTransport::OnDtlsTransportStatus(DtlsTransport::DtlsState state)
     //changeState(State::Connecting); // arvind
 }
 
-void IceTransport::OnSctpState(SctpTransport::State state)
+void IceTransport::OnSctpState(std::string id, SctpTransport::State state)
 {
       mSctpstatecallback(state);
 }
@@ -333,7 +333,7 @@ void IceTransport::incoming(message_ptr message) {
 }
 
 
- void IceTransport::OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message )
+ void IceTransport::OnSctpTransportMessageReceived(std::string id, SctpTransport* sctpAssociation ,message_ptr message )
  {
      mSctpforwardmessagecallback(message);
  }

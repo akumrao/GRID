@@ -30,87 +30,82 @@ using namespace net;
 
 extern ConfCert config;
 
-
-
-
 int main(int argc, char** argv) {
-    
-        Logger::instance().add(new ConsoleChannel("debug", Level::Trace));
+
+    Logger::instance().add(new ConsoleChannel("debug", Level::Trace));
 
 
- 
-     //  net::SSLManager::initNoVerifyServer();
 
-        Application app;
-        //SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true);
-        
+    //  net::SSLManager::initNoVerifyServer();
 
-        rtc::Router router2("1", 1);
-        
-        
-        base::cnfg::Configuration cnfgSet;
-        cnfgSet.load("./config.js");
+    Application app;
+    //SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true);
 
 
-        try {
-            ConfSettings::SetConfiguration(cnfgSet.root);
-        } catch (const std::exception& error) {
-
-         //  Settings::exit();
-            std::_Exit(-1);
-        } 
-    
+    rtc::Router router2;
 
 
-        
-        
-                
-        #if HTTPSSL
-        
-        config.certificatePemFile = ConfSettings::configuration.certFile;
-        config.keyPemFile =ConfSettings::configuration.keyFile  ;
+    base::cnfg::Configuration cnfgSet;
+    cnfgSet.load("./config.js");
 
-        #else
-        SInfo << "http://localhost:8000";
-        #endif
-        
-       // rtc::SctpTransport::Init();
-        //rtc::SctpSettings mCurrentSctpSettings = {};
-        //rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
-        
-   
-        rtc::DtlsTransport::ClassInit();
-      
-        rtc::Configuration transportconfig;
-        
-       rtc::CertificateFingerprint fingerPrint =  config.mCertificate->fingerprint();
-        
-        //router1.HandleRequest(true, transportconfig, 8000, 9000, "127.0.0.1", "127.0.0.1",  fingerPrint);
-        router2.HandleRequest(false,transportconfig, 9000, 8000, "127.0.0.1", "127.0.0.1", fingerPrint);
-        
-        
-        //sleep(500);
-        
-        
 
-//        uv_signal_t sig;
-//        uv_signal_init(app.uvGetLoop(), &sig);
-//        uv_signal_start(&sig, signal_cb, SIGINT);
-        
-  //      app.run();
-//
-      app.waitForShutdown([&](void*) 
-        {
+    try {
+        ConfSettings::SetConfiguration(cnfgSet.root);
+    } catch (const std::exception& error) {
 
-            router2.Close();
-        
-            rtc::DtlsTransport::ClassDestroy();
-            
-            // rtc::DtlsTransport::ClassDestroy();
+        //  Settings::exit();
+        std::_Exit(-1);
+    }
 
-        }
-        
-       );
+
+
+
+
+
+#if HTTPSSL
+
+    config.certificatePemFile = ConfSettings::configuration.certFile;
+    config.keyPemFile = ConfSettings::configuration.keyFile;
+
+#else
+    SInfo << "http://localhost:8000";
+#endif
+
+    // rtc::SctpTransport::Init();
+    //rtc::SctpSettings mCurrentSctpSettings = {};
+    //rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
+
+
+    rtc::DtlsTransport::ClassInit();
+
+    rtc::Configuration transportconfig;
+
+    rtc::CertificateFingerprint fingerPrint = config.mCertificate->fingerprint();
+
+    // router2.HandleRequest("1", 1, false,transportconfig, 9000, 8000, "127.0.0.1", "127.0.0.1", fingerPrint);
+    router2.HandleRequest("2", 2, false, transportconfig, 9001, 8001, "127.0.0.1", "127.0.0.1", fingerPrint);
+
+    //sleep(500);
+
+
+
+    //        uv_signal_t sig;
+    //        uv_signal_init(app.uvGetLoop(), &sig);
+    //        uv_signal_start(&sig, signal_cb, SIGINT);
+
+    //      app.run();
+    //
+    app.waitForShutdown([&](void*) {
+
+        router2.Close();
+
+        rtc::DtlsTransport::ClassDestroy();
+
+        // rtc::DtlsTransport::ClassDestroy();
+
+    }
+
+    );
 
 
 

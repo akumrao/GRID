@@ -44,8 +44,8 @@ int main(int argc, char** argv) {
         Application app;
         //SecTcpServer *tcpServer = new SecTcpServer(nullptr, "0.0.0.0", 5001, false, true);
         
-        rtc::Router router1("1", 1);
-        rtc::Router router2("2", 2);
+        rtc::Router router1;
+        rtc::Router router2;
         
         
         base::cnfg::Configuration cnfgSet;
@@ -85,8 +85,8 @@ int main(int argc, char** argv) {
         
        rtc::CertificateFingerprint fingerPrint =  config.mCertificate->fingerprint();
         
-        router1.HandleRequest(true, transportconfig, 8000, 9000, "127.0.0.1", "127.0.0.1",  fingerPrint);
-        router2.HandleRequest(false,transportconfig, 9000, 8000, "127.0.0.1", "127.0.0.1", fingerPrint);
+        router1.HandleRequest("1", 1, true, transportconfig, 8000, 9000, "127.0.0.1", "127.0.0.1",  fingerPrint);
+        router2.HandleRequest("2", 2, false,transportconfig, 9000, 8000, "127.0.0.1", "127.0.0.1", fingerPrint);
 
         app.waitForShutdown([&](void*) {
 

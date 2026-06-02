@@ -72,11 +72,11 @@ public:
 
 	bool getSelectedCandidatePair(Candidate *local, Candidate *remote);
         
-        void OnDtlsTransportStatus(DtlsTransport::DtlsState state);
-        void OnSctpState(SctpTransport::State state);
-        void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message );
-        void OnReceiveData(byte * data, size_t len){};
-        void OnClose(){};
+        void OnDtlsTransportStatus(std::string id, DtlsTransport::DtlsState state);
+        void OnSctpState(std::string id, SctpTransport::State state);
+        void OnSctpTransportMessageReceived(std::string id, SctpTransport* sctpAssociation ,message_ptr message );
+        void OnReceiveData(std::string id, byte * data, size_t len){};
+        void OnClose(std::string id){};
         
         Description::Role mRole{Description::Role::ActPass};
 

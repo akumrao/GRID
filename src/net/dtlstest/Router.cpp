@@ -27,30 +27,19 @@ using namespace base;
 
 namespace rtc {
 
-    /* Instance methods. */
-
-    inline void Router::OnTimer(Timer * /*timer*/) { // dtls
-
-        SInfo << "OnTimer ";
-        char tmp[256];
-        sprintf(tmp, "%darvind", count++);
-        mapTransports[id]->SendSctpData((const uint8_t *) tmp, 7);
-
-    }
-
-    Router::Router(const std::string& id, int agentNo) : id(id), agentNo(agentNo) {
 
 
+    Router::Router()
+    {
     }
 
     Router::~Router() {
 
 
-        SInfo << "AgentNo " << agentNo << " " << "~Router()";
 
     }
 
-    void Router::HandleRequest(bool server, const Configuration &config, int localPort, int remotePort, std::string localIP, std::string remoteIp, CertificateFingerprint &dtlsRemoteFingerprint) {
+    void Router::HandleRequest( std::string id, int agentNo, bool server, const Configuration &config, int localPort, int remotePort, std::string localIP, std::string remoteIp, CertificateFingerprint &dtlsRemoteFingerprint) {
 
         auto* webRtcTransport = new rtc::WebRtcTransport(id, agentNo, config, this, localPort, remotePort, localIP, remoteIp);
         webRtcTransport->HandleRequest(server, dtlsRemoteFingerprint);
@@ -58,46 +47,41 @@ namespace rtc {
         mapTransports[id] = webRtcTransport;
     }
 
-    void Router::OnDtlsTransportStatus(DtlsTransport::DtlsState state) {
+    void Router::OnDtlsTransportStatus(std::string id, DtlsTransport::DtlsState state) {
 
         if (state == DtlsTransport::DtlsState::CONNECTED) {
 
-            if (!timer) {
-                timer = new Timer(this);
-                timer->Start(500, 500);
-            }
-
             char tmp[256];
-            sprintf(tmp, "%darvind", count++);
-            mapTransports[id]->SendSctpData((const uint8_t *) tmp, 7);
+            sprintf(tmp, "%sarvind%d", id.c_str(), count++);
+            mapTransports[id]->SendSctpData((const uint8_t *) tmp, 255);
 
         }
     }
 
-    void Router::OnReceiveData(byte * data, size_t len) {
-        SInfo << "AgentNo " << agentNo << " " << (char*) data;
+    void Router::OnReceiveData(std::string id, byte * data, size_t len) {
+        SInfo << "ID " << id << " " << (char*) data;
 
         sleep(5);
 
         {
-            const uint8_t tmp[256] = "arvind";
-            sprintf((char*) tmp, "%darvind", count++);
-            mapTransports[id]->SendSctpData(tmp, 7);
+            //const uint8_t tmp[256] = "arvind";
+          //  sprintf((char*) data, "arvind%d", id,count++);
+            mapTransports[id]->SendSctpData( (uint8_t*)data, len);
         }
 
 
     }
 
-    void Router::OnSctpState(SctpTransport::State state) {
+    void Router::OnSctpState(std::string id, SctpTransport::State state) {
 
     }
 
-    void Router::OnClose() {
+    void Router::OnClose(std::string id) {
 
-        Close();
+       // Close();
     }
 
-    void Router::OnSctpTransportMessageReceived(SctpTransport* sctpAssociation, message_ptr message) {
+    void Router::OnSctpTransportMessageReceived(std::string id, SctpTransport* sctpAssociation, message_ptr message) {
 
     }
 
@@ -114,8 +98,7 @@ namespace rtc {
         // Close all RtpObservers.
 
         this->mapDataProducers.clear();
-        timer->Stop();
-        delete timer;
+
     }
 
 

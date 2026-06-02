@@ -39,11 +39,11 @@ namespace rtc
 		{
 		public:
 		
-                    virtual void OnDtlsTransportStatus(DtlsTransport::DtlsState state) = 0 ;
-                    virtual void OnSctpState(SctpTransport::State state)= 0 ;
-                    virtual void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message )= 0 ;
-                    virtual void OnReceiveData(byte * data, size_t len) = 0 ;
-                    virtual void OnClose() = 0;
+                    virtual void OnDtlsTransportStatus(std::string id, DtlsTransport::DtlsState state) = 0 ;
+                    virtual void OnSctpState(std::string id, SctpTransport::State state)= 0 ;
+                    virtual void OnSctpTransportMessageReceived(std::string id, SctpTransport* sctpAssociation ,message_ptr message )= 0 ;
+                    virtual void OnReceiveData(std::string id, byte * data, size_t len) = 0 ;
+                    virtual void OnClose(std::string id) = 0;
                     //virtual void OnTransportDataProducerSctpMessageReceived(  rtc::Transport* transport,  rtc::DataProducer* dataProducer,	  uint32_t ppid,  const uint8_t* msg,   size_t len) = 0;
 		};
 
