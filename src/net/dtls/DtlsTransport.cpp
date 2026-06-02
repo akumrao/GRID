@@ -18,7 +18,7 @@ extern ConfCert config;
 using namespace base;
 
 
-#define USE_MBEDTLS 1
+//#define USE_MBEDTLS 1
 
 #if USE_MBEDTLS
 
@@ -259,6 +259,7 @@ namespace rtc {
         mbedtls_ctr_drbg_free(&mDrbg);
         mbedtls_ssl_free(&mSsl);
         mbedtls_ssl_config_free(&mConf);
+        delete this->timer;
     }
 
     inline bool DtlsTransport::CheckRemoteFingerprint() {

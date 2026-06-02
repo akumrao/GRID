@@ -76,6 +76,7 @@ public:
         void OnSctpState(SctpTransport::State state);
         void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message );
         void OnReceiveData(byte * data, size_t len){};
+        void OnClose(){};
         
         Description::Role mRole{Description::Role::ActPass};
 

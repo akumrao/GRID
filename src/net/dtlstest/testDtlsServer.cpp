@@ -85,7 +85,7 @@ int main(int argc, char** argv) {
         
        rtc::CertificateFingerprint fingerPrint =  config.mCertificate->fingerprint();
         
-        router1.HandleRequest(true, transportconfig, 8000, 9000, "192.168.0.19", "192.168.0.20",  fingerPrint);
+        router1.HandleRequest(true, transportconfig, 8000, 9000, "127.0.0.1", "127.0.0.1",  fingerPrint);
        // router2.HandleRequest(false,transportconfig, 9000, 8000, "127.0.0.1", "127.0.0.1", fingerPrint);
 
         app.waitForShutdown([&](void*) {

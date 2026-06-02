@@ -43,7 +43,8 @@ namespace rtc
                     virtual void OnSctpState(SctpTransport::State state)= 0 ;
                     virtual void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message )= 0 ;
                     virtual void OnReceiveData(byte * data, size_t len) = 0 ;
-			//virtual void OnTransportDataProducerSctpMessageReceived(  rtc::Transport* transport,  rtc::DataProducer* dataProducer,	  uint32_t ppid,  const uint8_t* msg,   size_t len) = 0;
+                    virtual void OnClose() = 0;
+                    //virtual void OnTransportDataProducerSctpMessageReceived(  rtc::Transport* transport,  rtc::DataProducer* dataProducer,	  uint32_t ppid,  const uint8_t* msg,   size_t len) = 0;
 		};
 
 	private:

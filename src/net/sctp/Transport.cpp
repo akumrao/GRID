@@ -206,6 +206,16 @@ namespace rtc
 	void Transport::Disconnected()
 	{
 		 SInfo << "~Disconnected "  << sctptransport ; 
+                 
+                 
+               if(sctptransport)
+               {
+                   //sctptransport->incoming(make_message(data, data + len));
+                   // TBD
+               }
+               else
+                 iceListener->OnClose();
+                 
 //				// Tell all DataConsumers.
 //		for (auto& kv : this->mapDataConsumers)
 //		{
@@ -272,7 +282,7 @@ namespace rtc
               //iceListener->OnDtlsTransportStatus(sctpAssociation);
             //iceListener->OnSctpTransportClosed()
 		// Notify the Node Transport.
-		json data = json::object();
+		//json data = json::object();
 //
 //		data["sctpState"] = "connecting";
 //

@@ -20,92 +20,104 @@ There are 4 peers, so 4x6 = 24 consumers in total.
 #include "base/logger.h"
 #include "base/error.h"
 #include "base/platform.h"
-//#include "Utils.h"
 
 #include "WebRtcTransport.h"
 
 using namespace base;
 
-namespace rtc
-{
-	/* Instance methods. */
+namespace rtc {
 
-	Router::Router(const std::string& id, int agentNo) : id(id), agentNo(agentNo)
-	{
-	
-	}
+    /* Instance methods. */
 
-	Router::~Router()
-	{
+    inline void Router::OnTimer(Timer * /*timer*/) { // dtls
 
+        SInfo << "OnTimer ";
+        char tmp[256];
+        sprintf(tmp, "%darvind", count++);
+        mapTransports[id]->SendSctpData((const uint8_t *) tmp, 7);
 
-		// Close all Transports.
-	
-	}
+    }
+
+    Router::Router(const std::string& id, int agentNo) : id(id), agentNo(agentNo) {
 
 
-	void Router::HandleRequest(bool server, const Configuration &config, int localPort, int remotePort , std::string localIP, std::string remoteIp , CertificateFingerprint &dtlsRemoteFingerprint )
-	{
+    }
 
-            auto* webRtcTransport = new rtc::WebRtcTransport(id ,agentNo, config, this, localPort,  remotePort ,  localIP, remoteIp);
-            webRtcTransport->HandleRequest(server , dtlsRemoteFingerprint);
-            
-            mapTransports[id] = webRtcTransport;
+    Router::~Router() {
+
+
+        SInfo << "AgentNo " << agentNo << " " << "~Router()";
+
+    }
+
+    void Router::HandleRequest(bool server, const Configuration &config, int localPort, int remotePort, std::string localIP, std::string remoteIp, CertificateFingerprint &dtlsRemoteFingerprint) {
+
+        auto* webRtcTransport = new rtc::WebRtcTransport(id, agentNo, config, this, localPort, remotePort, localIP, remoteIp);
+        webRtcTransport->HandleRequest(server, dtlsRemoteFingerprint);
+
+        mapTransports[id] = webRtcTransport;
+    }
+
+    void Router::OnDtlsTransportStatus(DtlsTransport::DtlsState state) {
+
+        if (state == DtlsTransport::DtlsState::CONNECTED) {
+
+            if (!timer) {
+                timer = new Timer(this);
+                timer->Start(500, 500);
+            }
+
+            char tmp[256];
+            sprintf(tmp, "%darvind", count++);
+            mapTransports[id]->SendSctpData((const uint8_t *) tmp, 7);
+
         }
-        
-        void Router::OnDtlsTransportStatus(DtlsTransport::DtlsState state) 
+    }
+
+    void Router::OnReceiveData(byte * data, size_t len) {
+        SInfo << "AgentNo " << agentNo << " " << (char*) data;
+
+        sleep(5);
+
         {
-      
-            if (state == DtlsTransport::DtlsState::CONNECTED)
-            {
-               char tmp[256];
-               sprintf(tmp, "%darvind", count++ );
-               mapTransports[id]->SendSctpData((const uint8_t *)tmp, 7);
-               
-            }    
-        }
-        
-        void Router::OnReceiveData(byte * data, size_t len)
-        {
-            SInfo << "AgentNo " << agentNo << " " << (char*) data;  
-            
-            sleep(5);
-            
-           {
-              const uint8_t tmp[256] ="arvind";
-              sprintf((char*)tmp, "%darvind", count++ );
-              mapTransports[id]->SendSctpData(tmp, 7);
-           }   
-             
-            
+            const uint8_t tmp[256] = "arvind";
+            sprintf((char*) tmp, "%darvind", count++);
+            mapTransports[id]->SendSctpData(tmp, 7);
         }
 
-        void Router::OnSctpState(SctpTransport::State state)
-        {
-            
-        }
-        
-        void Router::OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message )
-        {
-            
-        }
-        
-        void Router::Close( )
-        {
-    
-            
-           	for (auto& kv : this->mapTransports)
-		{
-			auto* transport = kv.second;
 
-			delete transport;
-		}
-		this->mapTransports.clear();
+    }
 
-		// Close all RtpObservers.
-	
-		this->mapDataProducers.clear();
+    void Router::OnSctpState(SctpTransport::State state) {
+
+    }
+
+    void Router::OnClose() {
+
+        Close();
+    }
+
+    void Router::OnSctpTransportMessageReceived(SctpTransport* sctpAssociation, message_ptr message) {
+
+    }
+
+    void Router::Close() {
+        SInfo << "OnSctpState " << "Close()";
+
+        for (auto& kv : this->mapTransports) {
+            auto* transport = kv.second;
+
+            delete transport;
         }
+        this->mapTransports.clear();
+
+        // Close all RtpObservers.
+
+        this->mapDataProducers.clear();
+        timer->Stop();
+        delete timer;
+    }
+
 
 
 
