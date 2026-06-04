@@ -1204,6 +1204,20 @@
  * This is useful if your platform does not support
  * standards like the /dev/urandom or Windows CryptoAPI.
  *
+ * If you enable this macro, you will probably need to enable
+ * #MBEDTLS_ENTROPY_HARDWARE_ALT and provide a function
+ * mbedtls_hardware_poll().
+ *
+ * \note The default platform entropy function supports the following
+ *       sources:
+ *       - getrandom() on Linux (if syscall() is available at compile time);
+ *       - getrandom() on FreeBSD and DragonFlyBSD (if available at compile
+ *         time);
+ *       - `sysctl(KERN_ARND)` on FreeBSD and NetBSD;
+ *       - #MBEDTLS_PLATFORM_DEV_RANDOM on Unix-like platforms
+ *         (unless one of the above is used);
+ *       - BCryptGenRandom() on Windows.
+ *
  * Uncomment this macro to disable the built-in platform entropy functions.
  */
 //#define MBEDTLS_NO_PLATFORM_ENTROPY
@@ -2150,7 +2164,19 @@
 /**
  * \def MBEDTLS_THREADING_ALT
  *
- * Provide your own alternate threading implementation.
+ * Provide your own alternate implementation of threading primitives
+ * for mutexes. If you enable this option:
+ *
+ * - Provide a header file `"threading_alt.h"`, defining the
+ *   type `mbedtls_threading_mutex_t` of mutex objects.
+ *
+ * - Call the function mbedtls_threading_set_alt() in your application
+ *   before calling any other library function (in particular before
+ *   calling psa_crypto_init(), performing an asymmetric cryptography
+ *   operation, or starting a TLS connection).
+ *
+ * See mbedtls/threading.h for more details, especially the documentation
+ * of mbedtls_threading_set_alt().
  *
  * Requires: MBEDTLS_THREADING_C
  *
@@ -4128,6 +4154,37 @@
 //#define MBEDTLS_PLATFORM_MS_TIME_TYPE_MACRO   int64_t //#define MBEDTLS_PLATFORM_MS_TIME_TYPE_MACRO   int64_t /**< Default milliseconds time macro to use, can be undefined. MBEDTLS_HAVE_TIME must be enabled. It must be signed, and at least 64 bits. If it is changed from the default, MBEDTLS_PRINTF_MS_TIME must be updated to match.*/
 //#define MBEDTLS_PRINTF_MS_TIME    PRId64 /**< Default fmt for printf. That's avoid compiler warning if mbedtls_ms_time_t is redefined */
 
+/** \def MBEDTLS_PLATFORM_DEV_RANDOM
+ *
+ * Path to a special file that returns cryptographic-quality random bytes
+ * when read. This is used by the default platform entropy source on
+ * non-Windows platforms unless a dedicated system call is available
+ * (see #MBEDTLS_NO_PLATFORM_ENTROPY).
+ *
+ * The default value is `/dev/random`, which is suitable on most platforms
+ * other than Linux. On Linux, either `/dev/random` or `/dev/urandom`
+ * may be the right choice, depending on the circumstances:
+ *
+ * - If possible, the library will use the getrandom() system call,
+ *   which is preferable, and #MBEDTLS_PLATFORM_DEV_RANDOM is not used.
+ * - If there is a dedicated hardware entropy source (e.g. RDRAND on x86
+ *   processors), then both `/dev/random` and `/dev/urandom` are fine.
+ * - `/dev/random` is always secure. However, with kernels older than 5.6,
+ *   `/dev/random` often blocks unnecessarily if there is no dedicated
+ *   hardware entropy source.
+ * - `/dev/urandom` never blocks. However, it may return predictable data
+ *   if it is used early after the kernel boots, especially on embedded
+ *   devices without an interactive user.
+ *
+ * Thus you should change the value to `/dev/urandom` if your application
+ * definitely won't be used on a device running Linux without a dedicated
+ * entropy source early during or after boot.
+ *
+ * This is the default value of ::mbedtls_platform_dev_random, which
+ * can be changed at run time.
+ */
+//#define MBEDTLS_PLATFORM_DEV_RANDOM "/dev/random"
+
 /** \def MBEDTLS_CHECK_RETURN
  *
  * This macro is used at the beginning of the declaration of a function
@@ -4232,7 +4289,7 @@
  *
  * Uncomment to set the maximum plaintext size of the incoming I/O buffer.
  */
-//#define MBEDTLS_SSL_IN_CONTENT_LEN              16384
+#define MBEDTLS_SSL_IN_CONTENT_LEN 16384  
 
 /** \def MBEDTLS_SSL_CID_IN_LEN_MAX
  *
@@ -4282,7 +4339,7 @@
  *
  * Uncomment to set the maximum plaintext size of the outgoing I/O buffer.
  */
-//#define MBEDTLS_SSL_OUT_CONTENT_LEN             16384
+#define MBEDTLS_SSL_OUT_CONTENT_LEN             16384
 
 /** \def MBEDTLS_SSL_DTLS_MAX_BUFFERING
  *
