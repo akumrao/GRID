@@ -104,55 +104,120 @@ std::string id;
 
 #if 1
 
-void sendCandidate(const std::string &mid, int mlineindex, const std::string &sdp) {
-    json desc;
-    desc["sdpMid"] = mid;
-    desc["sdpMLineIndex"] = mlineindex;
-    desc["candidate"] = sdp;
+ ClientConnecton *m_client = nullptr;
 
-    json m;
-    m["type"] = "candidate";
-    m["candidate"] = desc;
+  // Helper function to emit data over native websocket matching the server
+// protocol wrapper
+void emitWebSocketEvent(const std::string &eventName, const json &payload) {
+  json outerPacket;
+  outerPacket["event"] = eventName;
+  outerPacket["payload"] = payload;
 
-    if (!from.empty()) {
-        m["from"] = from;
-        m["to"] = from;
-    }
+  // Convert to string and send as text frame
+  m_client->send(outerPacket.dump());
+}
 
-    m["room"] = room;
-    SInfo << "send:" << sdp << "candidate to: " << from << std::endl;
 
-    mysocket->emit("message", m);
+void sendCandidate(const std::string &mid, int mlineindex,
+                   const std::string &sdp) {
+  json desc;
+  desc["sdpMid"] = mid;
+  desc["sdpMLineIndex"] = mlineindex;
+  desc["candidate"] = sdp;
+
+  json m;
+  m["type"] = "candidate";
+  m["candidate"] = desc;
+
+  if (!from.empty()) {
+    m["from"] = from;
+    m["to"] = from;
+  }
+
+  m["room"] = room;
+  SInfo << "send:" << sdp << "candidate to: " << from << std::endl;
+
+  // Converted to native protocol wrapper routing
+#if socketio
+  mysocket->emit("message", m);
+#else
+  emitWebSocketEvent("message", m);
+#endif
 }
 
 void sendSdp(const std::string &sdp, const std::string &type) {
+  json desc = {{"type", type}, {"sdp", sdp}};
 
-    json desc = {
+  json m;
+  m["type"] = type;
+  m["desc"] = desc;
 
-        {"type", type},
-        {"sdp", sdp}
-    };
+  if (!from.empty()) {
+    m["from"] = from;
+    m["to"] = from;
+  }
 
-    json m;
-    m["type"] = type;
+  m["room"] = room;
 
-    m["desc"] = desc;
+  SInfo << "send:" << type << " to: " << from << std::endl;
 
-
-    if (!from.empty()) {
-        m["from"] = from;
-        m["to"] = from;
-    }
-
-    m["room"] = room;
-
-    // smpl::Message m({ type, {
-
-    SInfo << "send:" << type << " to: " << from << std::endl;
-
-    mysocket->emit("message", m);
-
+  // Converted to native protocol wrapper routing
+#if socketio
+  mysocket->emit("message", m);
+#else
+  emitWebSocketEvent("message", m);
+#endif
 }
+
+//void sendCandidate(const std::string &mid, int mlineindex, const std::string &sdp) {
+//    json desc;
+//    desc["sdpMid"] = mid;
+//    desc["sdpMLineIndex"] = mlineindex;
+//    desc["candidate"] = sdp;
+//
+//    json m;
+//    m["type"] = "candidate";
+//    m["candidate"] = desc;
+//
+//    if (!from.empty()) {
+//        m["from"] = from;
+//        m["to"] = from;
+//    }
+//
+//    m["room"] = room;
+//    SInfo << "send:" << sdp << "candidate to: " << from << std::endl;
+//
+//   
+//}
+
+//void sendSdp(const std::string &sdp, const std::string &type) {
+//
+//    json desc = {
+//
+//        {"type", type},
+//        {"sdp", sdp}
+//    };
+//
+//    json m;
+//    m["type"] = type;
+//
+//    m["desc"] = desc;
+//
+//
+//    if (!from.empty()) {
+//        m["from"] = from;
+//        m["to"] = from;
+//    }
+//
+//    m["room"] = room;
+//
+//    // smpl::Message m({ type, {
+//
+//    SInfo << "send:" << type << " to: " << from << std::endl;
+//
+//    mysocket->emit("message", m);
+//
+//}
 
 #endif
 
@@ -399,7 +464,7 @@ int main(int argc, char **argv) {
     std::string host = ip_address;
     int port = 8443;
 
-    #if 1
+    #if socketio
     sockio::SocketioClient *client;
 
 
@@ -501,7 +566,7 @@ int main(int argc, char **argv) {
 
     url << "/";
 
-    ClientConnecton *m_client = nullptr;
+   
 
     if (!ssl) {
       m_client = new HttpClient("ws", host, port, url.str());
@@ -525,49 +590,62 @@ int main(int argc, char **argv) {
       //  m_con_state = con_opened;
       // m_reconn_timer.Stop();
 
-      char tmp[3] = "{}";
+      SInfo << "Connected securely to native WebSocket server." << std::endl;
 
-      con->send(tmp, 2);
+      // Map the primary handshake logic registration event sequence
+      json joinPayload;
+      joinPayload["roomId"] = room;
+      joinPayload["client"] =
+          false; // Mirrors client state property tracking requirements
+
+      emitWebSocketEvent("createorjoin", joinPayload);
+
+
+     // char tmp[3] = "{}";
+
+     // con->send(tmp, 2);
     };
 
     m_client->fnPayload = [&](HttpBase *con, const char *data, size_t sz) {
       STrace << "client->fnPayload " << std::string(data, sz);
       try {
-        // Parse the incoming JSON message
-        json received_json = json::parse(data);
-        std::string type = received_json["type"];
+        // Parse the outer payload protocol layer out of the text string frame
+        // execution
+        json packet = json::parse(std::string(data, sz));
+        std::string eventName = packet["event"].get<std::string>();
+        json data = packet["payload"];
 
-        if (type == "offer") {
-          // 1. Peer receives an OFFER -> set as remote description
-          // std::string sdp = received_json["sdp"];
-          // peer_connection->SetRemoteDescription(sdp, "offer");
+        if (eventName == "created") {
+          SInfo << data.dump() << std::endl;
+          SInfo << "ws: Created room " << data[0] << "- my client ID is "
+                << data[1] << std::endl;
+        } else if (eventName == "join") {
+          SInfo << "ws join " << data.dump() << std::endl;
+          SInfo << "ws: Created room " << data[0] << "- my client ID is "
+                << data[1] << " noClientInRoom: " << data[2] << std::endl;
 
-          // 2. Create answer
-          // std::string answer = peer_connection->CreateAnswer();
+          std::string room1 = data[0].get<std::string>();
+          int noClientInRoom = data[2].get<int>();
 
-          // 3. Send answer back
-          json answer_msg;
-          answer_msg["type"] = "answer";
-          answer_msg["sdp"] =
-              "LOCAL_GENERATED_ANSWER_SDP"; // Replace with actual answer SDP
-         // send_signaling_message(answer_msg);
-
-        } else if (type == "answer") {
-          // Peer receives the ANSWER to their offer
-          // std::string sdp = received_json["sdp"];
-          // peer_connection->SetRemoteDescription(sdp, "answer");
-
-        } else if (type == "candidate") {
-          // Peer receives ICE candidate
-          // std::string sdp_mid = received_json["sdpMid"];
-          // int sdp_mline_index = received_json["sdpMLineIndex"];
-          // std::string candidate = received_json["candidate"];
-          // peer_connection->AddIceCandidate(sdp_mid, sdp_mline_index,
-          // candidate);
+          if (noClientInRoom > 1) {
+            initiate(room1);
+          }
+        } else if (eventName == "joined") {
+          SInfo << "ws joined " << data.dump() << std::endl;
+        } else if (eventName == "message") {
+          STrace << "SocketioClient received message: " << data.dump()
+                 << std::endl;
+          wsOnMessage(data);
+        } else if (eventName == "disconnectClient") {
+          std::string clientFrom = data.get<std::string>();
+          SInfo << "disconnectClient " << clientFrom << std::endl;
+          LInfo(data.dump());
+        } else if (eventName == "bye") {
+          SInfo << data.dump() << std::endl;
         }
       } catch (const std::exception &e) {
-        std::cerr << "Error processing signaling message: " << e.what()
-                  << std::endl;
+        std::cerr << "JSON Parsing runtime error handling text frames: "
+                  << e.what() << std::endl;
       }
    
     };
@@ -576,7 +654,7 @@ int main(int argc, char **argv) {
       STrace << "client->fnClose " << str;
       // close(0,"exit");
       // on_close();
-
+      SInfo << "WebSocket connection closed by endpoint structure.";
       m_client->Close();
       delete m_client;
       //m_client = nullptr;
