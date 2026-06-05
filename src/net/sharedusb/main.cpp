@@ -399,7 +399,7 @@ int main(int argc, char **argv) {
     std::string host = ip_address;
     int port = 8443;
 
-    #if 0
+    #if 1
     sockio::SocketioClient *client;
 
 
