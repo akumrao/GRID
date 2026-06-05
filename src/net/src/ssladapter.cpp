@@ -40,7 +40,8 @@ ConfCert config;
 
 #define FROMFILE 1
 #define UNSAFE 1
-#define DEBUG_LEVEL 1
+#define DEBUG_LEVEL 1 
+//4 is verbose
 
 namespace base
 {

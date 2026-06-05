@@ -116,7 +116,7 @@ namespace rtc {
         //  mbedtls_ssl_conf_min_tls_version(&mConf, MBEDTLS_SSL_VERSION_TLS1_3);
         // mbedtls_ssl_conf_max_tls_version(&mConf, MBEDTLS_SSL_VERSION_TLS1_3);
 
-        // mbedtls_debug_set_threshold(2);
+        // mbedtls_debug_set_threshold(3);  4 is verbose 
 
         // 3. Register the callback with the SSL configuration
         // The last argument (nullptr) is passed as the 'void *ctx' to your callback
@@ -129,6 +129,9 @@ namespace rtc {
         // stop();
 
         shutdown();
+                
+        if( localRole == Role::SERVER)
+            mbedtls_ssl_session_reset( &mSsl );
 
         SDebug << "Destroying DTLS transport";
         mbedtls_entropy_free(&mEntropy);
