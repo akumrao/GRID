@@ -729,7 +729,7 @@ namespace rtc {
         return m_udpServer->send((char*) data, nbytes, (const struct sockaddr*) &record.addr);
     }
     
-    
+    #if SRTP
     
     void WebRtcTransport::SendRtpPacket(rtc::RtpPacket* packet, rtc::Transport::onSendCallback cb) {
 
@@ -919,6 +919,7 @@ namespace rtc {
       //  rtc::Transport::ReceiveRtcpPacket(packet);  TBD
     }
 
+#endif
 
 
 } // namespace rtc

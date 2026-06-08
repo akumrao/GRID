@@ -1,6 +1,6 @@
 #ifndef MS_RTC_TRANSPORT_HPP
 #define MS_RTC_TRANSPORT_HPP
-#define ENABLE_RTC_SENDER_BANDWIDTH_ESTIMATOR
+//#define ENABLE_RTC_SENDER_BANDWIDTH_ESTIMATOR
 
 #include "common.h"
 #include "base/application.h"
@@ -30,6 +30,8 @@
 #include "base/Timer.h"
 #include <string>
 #include <unordered_map>
+
+#define SRTP 1
 
 using namespace base;
 
@@ -83,8 +85,7 @@ namespace rtc
 		void Disconnected();
 		void DataReceived(size_t len);
 		void DataSent(size_t len);
-		void ReceiveRtpPacket(rtc::RtpPacket* packet);
-		void ReceiveRtcpPacket(rtc::RTCP::Packet* packet);
+
 		void ReceiveSctpData(byte* data, size_t len);
 
 	private:
@@ -92,18 +93,13 @@ namespace rtc
 //		rtc::Producer* GetProducerFromRequest(Channel::Request* request) const;
 //		void SetNewConsumerIdFromRequest(Channel::Request* request, std::string& consumerId) const;
 //		rtc::Consumer* GetConsumerFromRequest(Channel::Request* request) const;
-//		rtc::Consumer* GetConsumerByMediaSsrc(uint32_t ssrc) const;
-//		rtc::Consumer* GetConsumerByRtxSsrc(uint32_t ssrc) const;
+
 //		void SetNewDataProducerIdFromRequest(Channel::Request* request, std::string& dataProducerId) const;
 //		rtc::DataProducer* GetDataProducerFromRequest(Channel::Request* request) const;
 //		void SetNewDataConsumerIdFromRequest(Channel::Request* request, std::string& dataConsumerId) const;
 //		rtc::DataConsumer* GetDataConsumerFromRequest(Channel::Request* request) const;
 //		virtual bool IsConnected() const                                                 = 0;
-		virtual void SendRtpPacket(rtc::RtpPacket* packet, onSendCallback cb = nullptr) = 0;
-//		void HandleRtcpPacket(rtc::RTCP::Packet* packet);
-//		void SendRtcp(uint64_t nowMs);
-		virtual void SendRtcpPacket(rtc::RTCP::Packet* packet)                 = 0;
-		virtual void SendRtcpCompoundPacket(rtc::RTCP::CompoundPacket* packet) = 0;
+
 //		void DistributeAvailableOutgoingBitrate();
 //		void ComputeOutgoingDesiredBitrate(bool forceBitrate = false);
 //		void EmitTraceEventProbationType(rtc::RtpPacket* packet) const;
@@ -164,15 +160,7 @@ namespace rtc
 
 		/* Pure virtual methods inherited from rtc::TransportCongestionControlClient::Listener. */
 	public:
-//		void OnTransportCongestionControlClientBitrates(
-//		  rtc::TransportCongestionControlClient* tccClient,
-//		  rtc::TransportCongestionControlClient::Bitrates& bitrates) override;
-//		void OnTransportCongestionControlClientSendRtpPacket(
-//		  rtc::TransportCongestionControlClient* tccClient,
-//		  rtc::RtpPacket* packet,
-//		  const webrtc::PacedPacketInfo& pacingInfo) override;
-
-		/* Pure virtual methods inherited from rtc::TransportCongestionControlServer::Listener. */
+//	
 	public:
 //		void OnTransportCongestionControlServerSendRtcpPacket(
 //		  rtc::TransportCongestionControlServer* tccServer, rtc::RTCP::Packet* packet) override;
@@ -199,6 +187,9 @@ namespace rtc
                 rtc::SctpTransport* sctptransport{ nullptr };
 
 	private:
+            
+            
+            
 		// Passed by argument.
 		// Allocated by this.
 		std::unordered_map<std::string, rtc::Producer*> mapProducers;
@@ -230,6 +221,26 @@ namespace rtc
 		uint32_t initialAvailableOutgoingBitrate{ 600000u };
 		uint32_t maxIncomingBitrate{ 0u };
 		struct TraceEventTypes traceEventTypes;
+                
+                
+                #if SRTP
+                void ReceiveRtpPacket(rtc::RtpPacket* packet);
+		void ReceiveRtcpPacket(rtc::RTCP::Packet* packet);
+                		virtual void SendRtpPacket(rtc::RtpPacket* packet, onSendCallback cb = nullptr) = 0;
+		void HandleRtcpPacket(rtc::RTCP::Packet* packet);
+		void SendRtcp(uint64_t nowMs);
+		virtual void SendRtcpPacket(rtc::RTCP::Packet* packet)                 = 0;
+		virtual void SendRtcpCompoundPacket(rtc::RTCP::CompoundPacket* packet) = 0;
+                
+                rtc::Consumer* GetConsumerByMediaSsrc(uint32_t ssrc) const;
+		rtc::Consumer* GetConsumerByRtxSsrc(uint32_t ssrc) const;
+                
+                
+                
+                
+                
+                #endif
+                
 	};
 
 	/* Inline instance methods. */
