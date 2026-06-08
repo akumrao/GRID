@@ -44,6 +44,7 @@
 #include <string_view>
 #include <variant>
 #include <vector>
+#include <netinet/in.h>
 
 namespace rtc {
 
