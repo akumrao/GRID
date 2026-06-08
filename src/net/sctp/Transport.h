@@ -9,12 +9,22 @@
 #include "DataConsumer.h"
 #include "DataProducer.h"
 
-//#include "RTC/SctpTransport.h"
+#include "RTC/Consumer.h"
+#include "RTC/DataConsumer.h"
+#include "RTC/DataProducer.h"
+#include "RTC/Producer.h"
+#include "RTC/RTCP/CompoundPacket.h"
+#include "RTC/RTCP/Packet.h"
+#include "RTC/RTCP/ReceiverReport.h"
+#include "RTC/RateCalculator.h"
+#include "RTC/RtpHeaderExtensionIds.h"
+#include "RTC/RtpListener.h"
+#include "RTC/RtpPacket.h"
+//#include "RTC/SctpAssociation.h"
 //#include "RTC/SctpListener.h"
-//
-//#ifdef ENABLE_RTC_SENDER_BANDWIDTH_ESTIMATOR
-//#include "RTC/SenderBandwidthEstimator.h"
-//#endif
+#ifdef ENABLE_RTC_SENDER_BANDWIDTH_ESTIMATOR
+#include "RTC/SenderBandwidthEstimator.h"
+#endif
 //#include "RTC/TransportCongestionControlClient.h"
 //#include "RTC/TransportCongestionControlServer.h"
 #include "base/Timer.h"
@@ -73,9 +83,9 @@ namespace rtc
 		void Disconnected();
 		void DataReceived(size_t len);
 		void DataSent(size_t len);
-		//void ReceiveRtpPacket(rtc::RtpPacket* packet);
-		//void ReceiveRtcpPacket(rtc::RTCP::Packet* packet);
-		void ReceiveSctpData(byte * data, size_t len);
+		void ReceiveRtpPacket(RTC::RtpPacket* packet);
+		void ReceiveRtcpPacket(RTC::RTCP::Packet* packet);
+		void ReceiveSctpData(byte* data, size_t len);
 
 	private:
 //		void SetNewProducerIdFromRequest(Channel::Request* request, std::string& producerId) const;
@@ -89,11 +99,11 @@ namespace rtc
 //		void SetNewDataConsumerIdFromRequest(Channel::Request* request, std::string& dataConsumerId) const;
 //		rtc::DataConsumer* GetDataConsumerFromRequest(Channel::Request* request) const;
 //		virtual bool IsConnected() const                                                 = 0;
-//		virtual void SendRtpPacket(rtc::RtpPacket* packet, onSendCallback cb = nullptr) = 0;
+		virtual void SendRtpPacket(RTC::RtpPacket* packet, onSendCallback cb = nullptr) = 0;
 //		void HandleRtcpPacket(rtc::RTCP::Packet* packet);
 //		void SendRtcp(uint64_t nowMs);
-//		virtual void SendRtcpPacket(rtc::RTCP::Packet* packet)                 = 0;
-//		virtual void SendRtcpCompoundPacket(rtc::RTCP::CompoundPacket* packet) = 0;
+		virtual void SendRtcpPacket(RTC::RTCP::Packet* packet)                 = 0;
+		virtual void SendRtcpCompoundPacket(RTC::RTCP::CompoundPacket* packet) = 0;
 //		void DistributeAvailableOutgoingBitrate();
 //		void ComputeOutgoingDesiredBitrate(bool forceBitrate = false);
 //		void EmitTraceEventProbationType(rtc::RtpPacket* packet) const;
@@ -152,29 +162,29 @@ namespace rtc
                 
              void OnSctpTransportMessageReceived(SctpTransport* sctpAssociation ,message_ptr message );
 
-		/* Pure virtual methods inherited from rtc::TransportCongestionControlClient::Listener. */
-//	public:
+		/* Pure virtual methods inherited from RTC::TransportCongestionControlClient::Listener. */
+	public:
 //		void OnTransportCongestionControlClientBitrates(
-//		  rtc::TransportCongestionControlClient* tccClient,
-//		  rtc::TransportCongestionControlClient::Bitrates& bitrates) override;
+//		  RTC::TransportCongestionControlClient* tccClient,
+//		  RTC::TransportCongestionControlClient::Bitrates& bitrates) override;
 //		void OnTransportCongestionControlClientSendRtpPacket(
-//		  rtc::TransportCongestionControlClient* tccClient,
-//		  rtc::RtpPacket* packet,
+//		  RTC::TransportCongestionControlClient* tccClient,
+//		  RTC::RtpPacket* packet,
 //		  const webrtc::PacedPacketInfo& pacingInfo) override;
-//
-//		/* Pure virtual methods inherited from rtc::TransportCongestionControlServer::Listener. */
-//	public:
+
+		/* Pure virtual methods inherited from RTC::TransportCongestionControlServer::Listener. */
+	public:
 //		void OnTransportCongestionControlServerSendRtcpPacket(
-//		  rtc::TransportCongestionControlServer* tccServer, rtc::RTCP::Packet* packet) override;
-//
-//#ifdef ENABLE_RTC_SENDER_BANDWIDTH_ESTIMATOR
-//		/* Pure virtual methods inherited from rtc::SenderBandwidthEstimator::Listener. */
-//	public:
+//		  RTC::TransportCongestionControlServer* tccServer, RTC::RTCP::Packet* packet) override;
+
+#ifdef ENABLE_RTC_SENDER_BANDWIDTH_ESTIMATOR
+		/* Pure virtual methods inherited from RTC::SenderBandwidthEstimator::Listener. */
+	public:
 //		void OnSenderBandwidthEstimatorAvailableBitrate(
-//		  rtc::SenderBandwidthEstimator* senderBwe,
+//		  RTC::SenderBandwidthEstimator* senderBwe,
 //		  uint32_t availableBitrate,
 //		  uint32_t previousAvailableBitrate) override;
-//#endif
+#endif
 
 		/* Pure virtual methods inherited from Timer::Listener. */
 	public:
@@ -191,35 +201,35 @@ namespace rtc
 	private:
 		// Passed by argument.
 		// Allocated by this.
-//		std::unordered_map<std::string, rtc::Producer*> mapProducers;
-//		std::unordered_map<std::string, rtc::Consumer*> mapConsumers;
-//		std::unordered_map<std::string, rtc::DataProducer*> mapDataProducers;
-//		std::unordered_map<std::string, rtc::DataConsumer*> mapDataConsumers;
-//		std::unordered_map<uint32_t, rtc::Consumer*> mapSsrcConsumer;
-//		std::unordered_map<uint32_t, rtc::Consumer*> mapRtxSsrcConsumer;
-		
-//		Timer* rtcpTimer{ nullptr };
-//		rtc::TransportCongestionControlClient* tccClient{ nullptr };
-//		rtc::TransportCongestionControlServer* tccServer{ nullptr };
-//#ifdef ENABLE_RTC_SENDER_BANDWIDTH_ESTIMATOR
-//		rtc::SenderBandwidthEstimator* senderBwe{ nullptr };
-//#endif
+		std::unordered_map<std::string, RTC::Producer*> mapProducers;
+		std::unordered_map<std::string, RTC::Consumer*> mapConsumers;
+//		std::unordered_map<std::string, RTC::DataProducer*> mapDataProducers;
+//		std::unordered_map<std::string, RTC::DataConsumer*> mapDataConsumers;
+		std::unordered_map<uint32_t, RTC::Consumer*> mapSsrcConsumer;
+		std::unordered_map<uint32_t, RTC::Consumer*> mapRtxSsrcConsumer;
+//		RTC::SctpAssociation* sctpAssociation{ nullptr };
+		Timer* rtcpTimer{ nullptr };
+//		RTC::TransportCongestionControlClient* tccClient{ nullptr };
+//		RTC::TransportCongestionControlServer* tccServer{ nullptr };
+#ifdef ENABLE_RTC_SENDER_BANDWIDTH_ESTIMATOR
+		RTC::SenderBandwidthEstimator* senderBwe{ nullptr };
+#endif
 		// Others.
-//		bool destroying{ false };
-//		struct rtc::RtpHeaderExtensionIds recvRtpHeaderExtensionIds;
-//		rtc::RtpListener rtpListener;
-//		rtc::SctpListener sctpListener;
-//		rtc::RateCalculator recvTransmission;
-//		rtc::RateCalculator sendTransmission;
-//		rtc::RtpDataCounter recvRtpTransmission;
-//		rtc::RtpDataCounter sendRtpTransmission;
-//		rtc::RtpDataCounter recvRtxTransmission;
-//		rtc::RtpDataCounter sendRtxTransmission;
-//		rtc::RtpDataCounter sendProbationTransmission;
-//		uint16_t transportWideCcSeq{ 0u };
-//		uint32_t initialAvailableOutgoingBitrate{ 600000u };
-//		uint32_t maxIncomingBitrate{ 0u };
-//		struct TraceEventTypes traceEventTypes;
+		bool destroying{ false };
+		struct RTC::RtpHeaderExtensionIds recvRtpHeaderExtensionIds;
+		RTC::RtpListener rtpListener;
+//		RTC::SctpListener sctpListener;
+		RTC::RateCalculator recvTransmission;
+		RTC::RateCalculator sendTransmission;
+		RTC::RtpDataCounter recvRtpTransmission;
+		RTC::RtpDataCounter sendRtpTransmission;
+		RTC::RtpDataCounter recvRtxTransmission;
+		RTC::RtpDataCounter sendRtxTransmission;
+		RTC::RtpDataCounter sendProbationTransmission;
+		uint16_t transportWideCcSeq{ 0u };
+		uint32_t initialAvailableOutgoingBitrate{ 600000u };
+		uint32_t maxIncomingBitrate{ 0u };
+		struct TraceEventTypes traceEventTypes;
 	};
 
 	/* Inline instance methods. */

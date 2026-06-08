@@ -8,6 +8,7 @@
 #include "net/netInterface.h"
 #include "net/TcpConnection.h"
 #include "net/TcpServer.h"
+#include "RTC/SrtpSession.h"
 #include "Transport.h"
 #include "TransportTuple.h"
 #include "net/UdpSocket.h"
@@ -118,7 +119,20 @@ namespace rtc
 
 		rtc::DtlsTransport::Role dtlsRole{ rtc::DtlsTransport::Role::AUTO };
                 
+        public:
+            
+            void SendRtpPacket(RTC::RtpPacket* packet, rtc::Transport::onSendCallback cb = nullptr) override;
+		void SendRtcpPacket(RTC::RTCP::Packet* packet) override;
+		void SendRtcpCompoundPacket(RTC::RTCP::CompoundPacket* packet) override;
+//		void SendSctpData(const uint8_t* data, size_t len) override;
+//		void OnPacketReceived(rtc::TransportTuple* tuple, const uint8_t* data, size_t len);
+//		void OnStunDataReceived(rtc::TransportTuple* tuple, const uint8_t* data, size_t len);
+//		void OnDtlsDataReceived(const rtc::TransportTuple* tuple, const uint8_t* data, size_t len);
+		void OnRtpDataReceived(TransportTuple* tuple, const uint8_t* data, size_t len);
+		void OnRtcpDataReceived(TransportTuple* tuple, const uint8_t* data, size_t len);
                 
+                RTC::SrtpSession* srtpRecvSession{ nullptr };
+		RTC::SrtpSession* srtpSendSession{ nullptr };
                 
             //    Listener* iceListener{ nullptr };
 	};
