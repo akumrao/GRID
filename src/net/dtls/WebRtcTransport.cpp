@@ -403,9 +403,27 @@ namespace rtc {
 
         // Increase receive transmission.
         //		rtc::Transport::DataReceived(len);
-
+   #if SRTP
+        if (rtc::RTCP::Packet::IsRtcp(data, len))
+        {
+                OnRtcpDataReceived(tuple, data, len);
+        }
+        // Check if it's RTP.
+        else if (rtc::RtpPacket::IsRtp(data, len))
+        {
+                OnRtpDataReceived(tuple, data, len);
+        }
 
         // Check if it's DTLS.
+        else if (rtc::DtlsTransport::IsDtls((const uint8_t*) data, len)) {
+            OnDtlsDataReceived(tuple, data, len);
+        } else {
+            SInfo << "AgentNo " << agentNo << " OnPacketReceived len: " << len << " data " << data;
+
+            LWarn("ignoring received packet of unknown type");
+        }
+#else
+        
         if (rtc::DtlsTransport::IsDtls((const uint8_t*) data, len)) {
             OnDtlsDataReceived(tuple, data, len);
         } else {
@@ -413,6 +431,8 @@ namespace rtc {
 
             LWarn("ignoring received packet of unknown type");
         }
+        
+#endif
     }
 
     //	inline void WebRtcTransport::OnStunDataReceived(
@@ -705,7 +725,7 @@ namespace rtc {
         this->iceServer->GetSelectedTuple()->Send(data, len);
 
         // Increase send transmission.
-        //  rtc::Transport::DataSent(len);
+         rtc::Transport::DataSent(len);
     }
 
     inline void WebRtcTransport::OnDtlsTransportApplicationDataReceived(
@@ -769,7 +789,7 @@ namespace rtc {
         this->iceServer->GetSelectedTuple()->Send(data, len, cb);
 
         // Increase send transmission.
-        //rtc::Transport::DataSent(len);   TBD
+        rtc::Transport::DataSent(len); 
     }
 
     void WebRtcTransport::SendRtcpPacket(rtc::RTCP::Packet* packet) {
@@ -793,7 +813,7 @@ namespace rtc {
         this->iceServer->GetSelectedTuple()->Send(data, len);
 
         // Increase send transmission.
-       // rtc::Transport::DataSent(len); TBD
+        rtc::Transport::DataSent(len);
     }
 
     void WebRtcTransport::SendRtcpCompoundPacket(rtc::RTCP::CompoundPacket* packet) {
@@ -817,7 +837,7 @@ namespace rtc {
         this->iceServer->GetSelectedTuple()->Send(data, len);
 
         // Increase send transmission.
-        //rtc::Transport::DataSent(len); TBD
+        rtc::Transport::DataSent(len); 
     }
     
    inline void WebRtcTransport::OnRtpDataReceived(
@@ -874,7 +894,7 @@ namespace rtc {
         this->iceServer->ForceSelectedTuple(tuple);
 
         // Pass the packet to the parent transport.
-       // rtc::Transport::ReceiveRtpPacket(packet);   TBD
+        rtc::Transport::ReceiveRtpPacket(packet);   
     }
 
     inline void WebRtcTransport::OnRtcpDataReceived(
@@ -916,7 +936,7 @@ namespace rtc {
         }
 
         // Pass the packet to the parent transport.
-      //  rtc::Transport::ReceiveRtcpPacket(packet);  TBD
+        rtc::Transport::ReceiveRtcpPacket(packet);  
     }
 
 #endif

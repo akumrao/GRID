@@ -224,6 +224,8 @@ namespace rtc
                 
                 
                 #if SRTP
+
+                public:
                 void ReceiveRtpPacket(rtc::RtpPacket* packet);
 		void ReceiveRtcpPacket(rtc::RTCP::Packet* packet);
                 		virtual void SendRtpPacket(rtc::RtpPacket* packet, onSendCallback cb = nullptr) = 0;
