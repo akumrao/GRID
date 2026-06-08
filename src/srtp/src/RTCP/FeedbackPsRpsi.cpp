@@ -1,11 +1,11 @@
-#define MS_CLASS "RTC::RTCP::FeedbackPsRpsi"
+#define MS_CLASS "rtc::RTCP::FeedbackPsRpsi"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/FeedbackPsRpsi.h"
 #include "LoggerTag.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -83,4 +83,4 @@ namespace RTC
 			MS_DUMP("</FeedbackPsRpsiItem>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

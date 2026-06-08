@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RtpCodecParameters"
+#define MS_CLASS "rtc::RtpCodecParameters"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "LoggerTag.h"
@@ -6,7 +6,7 @@
 #include "Utils.h"
 #include "RTC/RtpDictionaries.h"
 
-namespace RTC
+namespace rtc
 {
 	/* Instance methods. */
 
@@ -80,7 +80,7 @@ namespace RTC
 
 			for (auto& entry : *jsonRtcpFeedbackIt)
 			{
-				// This may throw due the constructor of RTC::RtcpFeedback.
+				// This may throw due the constructor of rtc::RtcpFeedback.
 				this->rtcpFeedback.emplace_back(entry);
 			}
 		}
@@ -133,7 +133,7 @@ namespace RTC
 		// Check per MIME parameters and set default values.
 		switch (this->mimeType.subtype)
 		{
-			case RTC::RtpCodecMimeType::Subtype::RTX:
+			case rtc::RtpCodecMimeType::Subtype::RTX:
 			{
 				// A RTX codec must have 'apt' parameter.
 				if (!this->parameters.HasPositiveInteger(aptString))
@@ -145,4 +145,4 @@ namespace RTC
 			default:;
 		}
 	}
-} // namespace RTC
+} // namespace rtc

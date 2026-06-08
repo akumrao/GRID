@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RtpStreamSend"
+#define MS_CLASS "rtc::RtpStreamSend"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RtpStreamSend.h"
@@ -6,13 +6,13 @@
 #include "Utils.h"
 #include "RTC/SeqManager.h"
 
-namespace RTC
+namespace rtc
 {
 	/* Static. */
 
 	// 17: 16 bit mask + the initial sequence number.
 	static constexpr size_t MaxRequestedPackets{ 17 };
-	static std::vector<RTC::RtpStreamSend::StorageItem*> RetransmissionContainer(MaxRequestedPackets + 1);
+	static std::vector<rtc::RtpStreamSend::StorageItem*> RetransmissionContainer(MaxRequestedPackets + 1);
 	// Don't retransmit packets older than this (ms).
 	static constexpr uint32_t MaxRetransmissionDelay{ 2000 };
 	static constexpr uint32_t DefaultRtt{ 100 };
@@ -20,8 +20,8 @@ namespace RTC
 	/* Instance methods. */
 
 	RtpStreamSend::RtpStreamSend(
-	  RTC::RtpStreamSend::Listener* listener, RTC::RtpStream::Params& params, size_t bufferSize)
-	  : RTC::RtpStream::RtpStream(listener, params, 10), buffer(bufferSize > 0 ? 65536 : 0, nullptr),
+	  rtc::RtpStreamSend::Listener* listener, rtc::RtpStream::Params& params, size_t bufferSize)
+	  : rtc::RtpStream::RtpStream(listener, params, 10), buffer(bufferSize > 0 ? 65536 : 0, nullptr),
 	    storage(bufferSize)
 	{
 		
@@ -41,7 +41,7 @@ namespace RTC
 
 		uint64_t nowMs = base::Application::GetTimeMs();
 
-		RTC::RtpStream::FillJsonStats(jsonObject);
+		rtc::RtpStream::FillJsonStats(jsonObject);
 
 		jsonObject["type"]        = "outbound-rtp";
 		jsonObject["packetCount"] = this->transmissionCounter.GetPacketCount();
@@ -53,12 +53,12 @@ namespace RTC
 	{
 		
 
-		RTC::RtpStream::SetRtx(payloadType, ssrc);
+		rtc::RtpStream::SetRtx(payloadType, ssrc);
 
 		this->rtxSeq = Utils::Crypto::GetRandomUInt(0u, 0xFFFF);
 	}
 
-	bool RtpStreamSend::ReceivePacket(RTC::RtpPacket* packet)
+	bool RtpStreamSend::ReceivePacket(rtc::RtpPacket* packet)
 	{
 		
 
@@ -76,7 +76,7 @@ namespace RTC
 		return true;
 	}
 
-	void RtpStreamSend::ReceiveNack(RTC::RTCP::FeedbackRtpNackPacket* nackPacket)
+	void RtpStreamSend::ReceiveNack(rtc::RTCP::FeedbackRtpNackPacket* nackPacket)
 	{
 		
 
@@ -84,7 +84,7 @@ namespace RTC
 
 		for (auto it = nackPacket->Begin(); it != nackPacket->End(); ++it)
 		{
-			RTC::RTCP::FeedbackRtpNackItem* item = *it;
+			rtc::RTCP::FeedbackRtpNackItem* item = *it;
 
 			this->nackPacketCount += item->CountRequestedPackets();
 
@@ -100,30 +100,30 @@ namespace RTC
 				auto* packet = storageItem->packet;
 
 				// Retransmit the packet.
-				static_cast<RTC::RtpStreamSend::Listener*>(this->listener)
+				static_cast<rtc::RtpStreamSend::Listener*>(this->listener)
 				  ->OnRtpStreamRetransmitRtpPacket(this, packet);
 
 				// Mark the packet as retransmitted.
-				RTC::RtpStream::PacketRetransmitted(packet);
+				rtc::RtpStream::PacketRetransmitted(packet);
 
 				// Mark the packet as repaired (only if this is the first retransmission).
 				if (storageItem->sentTimes == 1)
-					RTC::RtpStream::PacketRepaired(packet);
+					rtc::RtpStream::PacketRepaired(packet);
 			}
 		}
 	}
 
-	void RtpStreamSend::ReceiveKeyFrameRequest(RTC::RTCP::FeedbackPs::MessageType messageType)
+	void RtpStreamSend::ReceiveKeyFrameRequest(rtc::RTCP::FeedbackPs::MessageType messageType)
 	{
 		
 
 		switch (messageType)
 		{
-			case RTC::RTCP::FeedbackPs::MessageType::PLI:
+			case rtc::RTCP::FeedbackPs::MessageType::PLI:
 				this->pliCount++;
 				break;
 
-			case RTC::RTCP::FeedbackPs::MessageType::FIR:
+			case rtc::RTCP::FeedbackPs::MessageType::FIR:
 				this->firCount++;
 				break;
 
@@ -131,7 +131,7 @@ namespace RTC
 		}
 	}
 
-	void RtpStreamSend::ReceiveRtcpReceiverReport(RTC::RTCP::ReceiverReport* report)
+	void RtpStreamSend::ReceiveRtcpReceiverReport(rtc::RTCP::ReceiverReport* report)
 	{
 		
 
@@ -175,7 +175,7 @@ namespace RTC
 		UpdateScore(report);
 	}
 
-	RTC::RTCP::SenderReport* RtpStreamSend::GetRtcpSenderReport(uint64_t nowMs)
+	rtc::RTCP::SenderReport* RtpStreamSend::GetRtcpSenderReport(uint64_t nowMs)
 	{
 		
 
@@ -183,7 +183,7 @@ namespace RTC
 			return nullptr;
 
 		auto ntp    = Utils::Time::TimeMs2Ntp(nowMs);
-		auto report = new RTC::RTCP::SenderReport();
+		auto report = new rtc::RTCP::SenderReport();
 
 		// Calculate TS difference between now and maxPacketMs.
 		auto diffMs = nowMs - this->maxPacketMs;
@@ -203,14 +203,14 @@ namespace RTC
 		return report;
 	}
 
-	RTC::RTCP::SdesChunk* RtpStreamSend::GetRtcpSdesChunk()
+	rtc::RTCP::SdesChunk* RtpStreamSend::GetRtcpSdesChunk()
 	{
 		
 
 		auto& cname     = GetCname();
-		auto* sdesChunk = new RTC::RTCP::SdesChunk(GetSsrc());
+		auto* sdesChunk = new rtc::RTCP::SdesChunk(GetSsrc());
 		auto* sdesItem =
-		  new RTC::RTCP::SdesItem(RTC::RTCP::SdesItem::Type::CNAME, cname.size(), cname.c_str());
+		  new rtc::RTCP::SdesItem(rtc::RTCP::SdesItem::Type::CNAME, cname.size(), cname.c_str());
 
 		sdesChunk->AddItem(sdesItem);
 
@@ -252,11 +252,11 @@ namespace RTC
 		MS_ABORT("invalid method call");
 	}
 
-	void RtpStreamSend::StorePacket(RTC::RtpPacket* packet)
+	void RtpStreamSend::StorePacket(rtc::RtpPacket* packet)
 	{
 		
 
-		if (packet->GetSize() > RTC::MtuSize)
+		if (packet->GetSize() > rtc::MtuSize)
 		{
 			MS_WARN_TAG(
 			  "packet too big [ssrc:%" PRIu32 ", seq:%" PRIu16 ", size:%zu]",
@@ -438,7 +438,7 @@ namespace RTC
 			if (requested)
 			{
 				auto* storageItem = this->buffer[currentSeq];
-				RTC::RtpPacket* packet{ nullptr };
+				rtc::RtpPacket* packet{ nullptr };
 				uint32_t diffMs;
 
 				// Calculate the elapsed time between the max timestampt seen and the
@@ -563,7 +563,7 @@ namespace RTC
 		RetransmissionContainer[containerIdx] = nullptr;
 	}
 
-	void RtpStreamSend::UpdateScore(RTC::RTCP::ReceiverReport* report)
+	void RtpStreamSend::UpdateScore(rtc::RTCP::ReceiverReport* report)
 	{
 		
 
@@ -599,7 +599,7 @@ namespace RTC
 		// We didn't send any packet.
 		if (sent == 0)
 		{
-			RTC::RtpStream::UpdateScore(10);
+			rtc::RtpStream::UpdateScore(10);
 
 			return;
 		}
@@ -664,4 +664,4 @@ namespace RTC
 
 		RtpStream::UpdateScore(score);
 	}
-} // namespace RTC
+} // namespace rtc

@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::SrtpSession"
+#define MS_CLASS "rtc::SrtpSession"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/SrtpSession.h"
@@ -7,7 +7,7 @@
 #include "base/error.h"
 #include <cstring> // std::memset(), std::memcpy()
 
-namespace RTC
+namespace rtc
 {
 	/* Static. */
 
@@ -241,4 +241,4 @@ namespace RTC
 
 		return true;
 	}
-} // namespace RTC
+} // namespace rtc

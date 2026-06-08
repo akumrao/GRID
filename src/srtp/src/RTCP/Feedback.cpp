@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RTCP::Feedback"
+#define MS_CLASS "rtc::RTCP::Feedback"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/Feedback.h"
@@ -20,7 +20,7 @@
 #include "RTC/RTCP/FeedbackRtpTransport.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -272,4 +272,4 @@ namespace RTC
 		template class FeedbackPacket<FeedbackPs>;
 		template class FeedbackPacket<FeedbackRtp>;
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

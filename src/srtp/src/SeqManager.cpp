@@ -1,10 +1,10 @@
-#define MS_CLASS "RTC::SeqManager"
+#define MS_CLASS "rtc::SeqManager"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/SeqManager.h"
 #include "LoggerTag.h"
 
-namespace RTC
+namespace rtc
 {
 	template<typename T>
 	bool SeqManager<T>::SeqLowerThan::operator()(const T lhs, const T rhs) const
@@ -129,4 +129,4 @@ namespace RTC
 	template class SeqManager<uint16_t>;
 	template class SeqManager<uint32_t>;
 
-} // namespace RTC
+} // namespace rtc

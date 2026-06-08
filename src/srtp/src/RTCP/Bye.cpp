@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RTCP::Bye"
+#define MS_CLASS "rtc::RTCP::Bye"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/Bye.h"
@@ -6,7 +6,7 @@
 #include "Utils.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -99,4 +99,4 @@ namespace RTC
 			MS_DUMP("</ByePacket>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

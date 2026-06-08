@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RtpEncodingParameters"
+#define MS_CLASS "rtc::RtpEncodingParameters"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "LoggerTag.h"
@@ -8,7 +8,7 @@
 #include <exception>
 #include <regex>
 
-namespace RTC
+namespace rtc
 {
 	/* Instance methods. */
 
@@ -156,4 +156,4 @@ namespace RTC
 			jsonObject["ksvc"]            = this->ksvc;
 		}
 	}
-} // namespace RTC
+} // namespace rtc

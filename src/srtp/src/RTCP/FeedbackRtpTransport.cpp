@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RTCP::FeedbackRtpTransport"
+#define MS_CLASS "rtc::RTCP::FeedbackRtpTransport"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/FeedbackRtpTransport.h"
@@ -48,7 +48,7 @@ inline static int32_t parseReferenceTime(uint8_t* buffer)
 	return referenceTime;
 }
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -338,7 +338,7 @@ namespace RTC
 			// ignore it.
 			// NOTE: Not very spec compliant but libwebrtc does it.
 			// Also ignore if the sequence number matches the latest seen.
-			if (!RTC::SeqManager<uint16_t>::IsSeqHigherThan(sequenceNumber, this->latestSequenceNumber))
+			if (!rtc::SeqManager<uint16_t>::IsSeqHigherThan(sequenceNumber, this->latestSequenceNumber))
 			{
 				return AddPacketResult::SUCCESS;
 			}
@@ -1056,4 +1056,4 @@ namespace RTC
 			return 2u;
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

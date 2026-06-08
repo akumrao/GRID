@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RTCP::FeedbackPsFir"
+#define MS_CLASS "rtc::RTCP::FeedbackPsFir"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/FeedbackPsFir.h"
@@ -6,7 +6,7 @@
 #include <cstring>
 #include <cstring> // std::memset()
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -47,4 +47,4 @@ namespace RTC
 			MS_DUMP("</FeedbackPsFirItem>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

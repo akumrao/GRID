@@ -1,11 +1,11 @@
-#define MS_CLASS "RTC::RTCP::FeedbackRtpEcn"
+#define MS_CLASS "rtc::RTCP::FeedbackRtpEcn"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/FeedbackRtpEcn.h"
 #include "LoggerTag.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -34,4 +34,4 @@ namespace RTC
 			MS_DUMP("</FeedbackRtpEcnItem>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

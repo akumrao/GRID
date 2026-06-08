@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RTCP::Sdes"
+#define MS_CLASS "rtc::RTCP::Sdes"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/Sdes.h"
@@ -6,7 +6,7 @@
 #include "Utils.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -237,4 +237,4 @@ namespace RTC
 			MS_DUMP("</SdesPacket>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

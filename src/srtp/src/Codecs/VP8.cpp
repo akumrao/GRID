@@ -1,11 +1,11 @@
-#define MS_CLASS "RTC::Codecs::VP8"
+#define MS_CLASS "rtc::Codecs::VP8"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/Codecs/VP8.h"
 #include "LoggerTag.h"
 #include <cstring> // std::memcpy()
 
-namespace RTC
+namespace rtc
 {
 	namespace Codecs
 	{
@@ -14,7 +14,7 @@ namespace RTC
 		VP8::PayloadDescriptor* VP8::Parse(
 		  const uint8_t* data,
 		  size_t len,
-		  RTC::RtpPacket::FrameMarking* /*frameMarking*/,
+		  rtc::RtpPacket::FrameMarking* /*frameMarking*/,
 		  uint8_t /*frameMarkingLen*/)
 		{
 			
@@ -111,7 +111,7 @@ namespace RTC
 			return payloadDescriptor.release();
 		}
 
-		void VP8::ProcessRtpPacket(RTC::RtpPacket* packet)
+		void VP8::ProcessRtpPacket(rtc::RtpPacket* packet)
 		{
 			
 
@@ -223,11 +223,11 @@ namespace RTC
 		}
 
 		bool VP8::PayloadDescriptorHandler::Process(
-		  RTC::Codecs::EncodingContext* encodingContext, uint8_t* data, bool& /*marker*/)
+		  rtc::Codecs::EncodingContext* encodingContext, uint8_t* data, bool& /*marker*/)
 		{
 			
 
-			auto* context = static_cast<RTC::Codecs::VP8::EncodingContext*>(encodingContext);
+			auto* context = static_cast<rtc::Codecs::VP8::EncodingContext*>(encodingContext);
 
 			assertm(context->GetTargetTemporalLayer() >= 0, "target temporal layer cannot be -1");
 
@@ -258,7 +258,7 @@ namespace RTC
 				this->payloadDescriptor->hasPictureId &&
 				this->payloadDescriptor->hasTlIndex &&
 				this->payloadDescriptor->hasTl0PictureIndex &&
-				!RTC::SeqManager<uint16_t>::IsSeqLowerThan(
+				!rtc::SeqManager<uint16_t>::IsSeqLowerThan(
 					this->payloadDescriptor->pictureId,
 					context->pictureIdManager.GetMaxInput())
 			)
@@ -359,4 +359,4 @@ namespace RTC
 			}
 		}
 	} // namespace Codecs
-} // namespace RTC
+} // namespace rtc

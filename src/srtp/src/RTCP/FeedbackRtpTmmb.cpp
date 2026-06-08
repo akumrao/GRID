@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RTCP::FeedbackRtpTmmb"
+#define MS_CLASS "rtc::RTCP::FeedbackRtpTmmb"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/FeedbackRtpTmmb.h"
@@ -6,7 +6,7 @@
 #include "Utils.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -91,4 +91,4 @@ namespace RTC
 		template class FeedbackRtpTmmbItem<FeedbackRtpTmmbr>;
 		template class FeedbackRtpTmmbItem<FeedbackRtpTmmbn>;
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

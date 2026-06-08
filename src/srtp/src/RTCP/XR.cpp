@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RTCP::XR"
+#define MS_CLASS "rtc::RTCP::XR"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "LoggerTag.h"
@@ -6,7 +6,7 @@
 #include "RTC/RTCP/XrDelaySinceLastRr.h"
 #include "RTC/RTCP/XrReceiverReferenceTime.h"
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -29,12 +29,12 @@ namespace RTC
 
 			switch (ExtendedReportBlock::Type(header->blockType))
 			{
-				case RTC::RTCP::ExtendedReportBlock::Type::RRT:
+				case rtc::RTCP::ExtendedReportBlock::Type::RRT:
 				{
 					return ReceiverReferenceTime::Parse(data, len);
 				}
 
-				case RTC::RTCP::ExtendedReportBlock::Type::DLRR:
+				case rtc::RTCP::ExtendedReportBlock::Type::DLRR:
 				{
 					return DelaySinceLastRr::Parse(data, len);
 				}
@@ -130,4 +130,4 @@ namespace RTC
 			MS_DUMP("</ExtendedReportPacket>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RTCP::FeedbackPsAfb"
+#define MS_CLASS "rtc::RTCP::FeedbackPsAfb"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/FeedbackPsAfb.h"
@@ -7,7 +7,7 @@
 #include "RTC/RTCP/FeedbackPsRemb.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -68,4 +68,4 @@ namespace RTC
 			MS_DUMP("</FeedbackPsAfbPacket>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

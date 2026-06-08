@@ -1,11 +1,11 @@
-#define MS_CLASS "RTC::RTCP::SenderReport"
+#define MS_CLASS "rtc::RTCP::SenderReport"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/SenderReport.h"
 #include "LoggerTag.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -106,4 +106,4 @@ namespace RTC
 			MS_DUMP("</SenderReportPacket>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

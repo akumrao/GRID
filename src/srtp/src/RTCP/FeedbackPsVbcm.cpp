@@ -1,11 +1,11 @@
-#define MS_CLASS "RTC::RTCP::FeedbackPsVbcm"
+#define MS_CLASS "rtc::RTCP::FeedbackPsVbcm"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/FeedbackPsVbcm.h"
 #include "LoggerTag.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -58,4 +58,4 @@ namespace RTC
 			MS_DUMP("</FeedbackPsVbcmItem>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

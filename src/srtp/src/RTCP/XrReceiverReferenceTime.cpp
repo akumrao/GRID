@@ -1,11 +1,11 @@
-#define MS_CLASS "RTC::RTCP::XrReceiverReferenceTime"
+#define MS_CLASS "rtc::RTCP::XrReceiverReferenceTime"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/XrReceiverReferenceTime.h"
 #include "LoggerTag.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -64,4 +64,4 @@ namespace RTC
 			return offset;
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

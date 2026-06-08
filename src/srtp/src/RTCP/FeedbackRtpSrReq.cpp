@@ -1,10 +1,10 @@
-#define MS_CLASS "RTC::RTCP::FeedbackRtpSrReq"
+#define MS_CLASS "rtc::RTCP::FeedbackRtpSrReq"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/FeedbackRtpSrReq.h"
 #include "LoggerTag.h"
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -35,4 +35,4 @@ namespace RTC
 			MS_DUMP("</FeedbackRtpSrReqPacket>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

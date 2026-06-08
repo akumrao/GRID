@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::NackGenerator"
+#define MS_CLASS "rtc::NackGenerator"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/NackGenerator.h"
@@ -8,7 +8,7 @@
 #include <sstream>  // std::ostringstream
 #include <utility>  // std::make_pair()
 
-namespace RTC
+namespace rtc
 {
 	/* Static. */
 
@@ -37,7 +37,7 @@ namespace RTC
 	}
 
 	// Returns true if this is a found nacked packet. False otherwise.
-	bool NackGenerator::ReceivePacket(RTC::RtpPacket* packet, bool isRecovered)
+	bool NackGenerator::ReceivePacket(rtc::RtpPacket* packet, bool isRecovered)
 	{
 		MS_TRACE();
 
@@ -333,4 +333,4 @@ namespace RTC
 
 		MayRunTimer();
 	}
-} // namespace RTC
+} // namespace rtc

@@ -1,11 +1,11 @@
-#define MS_CLASS "RTC::RTCP::FeedbackPsPsLei"
+#define MS_CLASS "rtc::RTCP::FeedbackPsPsLei"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/FeedbackPsLei.h"
 #include "LoggerTag.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -38,4 +38,4 @@ namespace RTC
 			MS_DUMP("</FeedbackPsLeiItem>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

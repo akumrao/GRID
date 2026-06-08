@@ -1,10 +1,10 @@
-#define MS_CLASS "RTC::Parameters"
+#define MS_CLASS "rtc::Parameters"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/Parameters.h"
 #include "LoggerTag.h"
 
-namespace RTC
+namespace rtc
 {
 	/* Instance methods. */
 
@@ -277,4 +277,4 @@ namespace RTC
 
 		return value.arrayOfIntegers;
 	}
-} // namespace RTC
+} // namespace rtc

@@ -1,11 +1,11 @@
-#define MS_CLASS "RTC::RTCP::FeedbackPsTst"
+#define MS_CLASS "rtc::RTCP::FeedbackPsTst"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/FeedbackPsTst.h"
 #include "LoggerTag.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -63,4 +63,4 @@ namespace RTC
 		template class FeedbackPsTstItem<Tstr>;
 		template class FeedbackPsTstItem<Tstn>;
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

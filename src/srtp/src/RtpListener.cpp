@@ -5,7 +5,7 @@
 #include "base/error.h"
 #include "RTC/Producer.h"
 
-namespace RTC
+namespace rtc
 {
 	/* Instance methods. */
 
@@ -49,7 +49,7 @@ namespace RTC
 		}
 	}
 
-	void RtpListener::AddProducer(RTC::Producer* producer)
+	void RtpListener::AddProducer(rtc::Producer* producer)
 	{
 		
 
@@ -134,7 +134,7 @@ namespace RTC
 		}
 	}
 
-	void RtpListener::RemoveProducer(RTC::Producer* producer)
+	void RtpListener::RemoveProducer(rtc::Producer* producer)
 	{
 		
 
@@ -165,7 +165,7 @@ namespace RTC
 		}
 	}
 
-	RTC::Producer* RtpListener::GetProducer(const RTC::RtpPacket* packet)
+	rtc::Producer* RtpListener::GetProducer(const rtc::RtpPacket* packet)
 	{
 		
 
@@ -226,7 +226,7 @@ namespace RTC
 		return nullptr;
 	}
 
-	RTC::Producer* RtpListener::GetProducer(uint32_t ssrc) const
+	rtc::Producer* RtpListener::GetProducer(uint32_t ssrc) const
 	{
 		
 
@@ -242,4 +242,4 @@ namespace RTC
 
 		return nullptr;
 	}
-} // namespace RTC
+} // namespace rtc

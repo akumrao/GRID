@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RTCP::ReceiverReport"
+#define MS_CLASS "rtc::RTCP::ReceiverReport"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/ReceiverReport.h"
@@ -6,7 +6,7 @@
 #include "Utils.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -144,4 +144,4 @@ namespace RTC
 			MS_DUMP("</ReceiverReportPacket>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

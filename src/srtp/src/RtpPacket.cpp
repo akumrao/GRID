@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RtpPacket"
+#define MS_CLASS "rtc::RtpPacket"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RtpPacket.h"
@@ -7,7 +7,7 @@
 #include <iterator> // std::ostream_iterator
 #include <sstream>  // std::ostringstream
 
-namespace RTC
+namespace rtc
 {
 	/* Class methods. */
 
@@ -677,7 +677,7 @@ namespace RTC
 		return true;
 	}
 
-	bool RtpPacket::ProcessPayload(RTC::Codecs::EncodingContext* context)
+	bool RtpPacket::ProcessPayload(rtc::Codecs::EncodingContext* context)
 	{
 		
 
@@ -845,4 +845,4 @@ namespace RTC
 			}
 		}
 	}
-} // namespace RTC
+} // namespace rtc

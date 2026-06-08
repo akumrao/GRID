@@ -1,11 +1,11 @@
-#define MS_CLASS "RTC::RTCP::XrDelaySinceLastRr"
+#define MS_CLASS "rtc::RTCP::XrDelaySinceLastRr"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/XrDelaySinceLastRr.h"
 #include "LoggerTag.h"
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -131,4 +131,4 @@ namespace RTC
 			MS_DUMP("</DelaySinceLastRr>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

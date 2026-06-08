@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RTCP::Packet"
+#define MS_CLASS "rtc::RTCP::Packet"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/Packet.h"
@@ -10,7 +10,7 @@
 #include "RTC/RTCP/SenderReport.h"
 #include "RTC/RTCP/XR.h"
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -213,4 +213,4 @@ namespace RTC
 			return sizeof(CommonHeader);
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

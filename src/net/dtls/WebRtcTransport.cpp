@@ -731,7 +731,7 @@ namespace rtc {
     
     
     
-    void WebRtcTransport::SendRtpPacket(RTC::RtpPacket* packet, rtc::Transport::onSendCallback cb) {
+    void WebRtcTransport::SendRtpPacket(rtc::RtpPacket* packet, rtc::Transport::onSendCallback cb) {
 
         if (!IsConnected()) {
             if (cb) {
@@ -769,10 +769,10 @@ namespace rtc {
         this->iceServer->GetSelectedTuple()->Send(data, len, cb);
 
         // Increase send transmission.
-        //RTC::Transport::DataSent(len);   TBD
+        //rtc::Transport::DataSent(len);   TBD
     }
 
-    void WebRtcTransport::SendRtcpPacket(RTC::RTCP::Packet* packet) {
+    void WebRtcTransport::SendRtcpPacket(rtc::RTCP::Packet* packet) {
 
         if (!IsConnected())
             return;
@@ -793,10 +793,10 @@ namespace rtc {
         this->iceServer->GetSelectedTuple()->Send(data, len);
 
         // Increase send transmission.
-       // RTC::Transport::DataSent(len); TBD
+       // rtc::Transport::DataSent(len); TBD
     }
 
-    void WebRtcTransport::SendRtcpCompoundPacket(RTC::RTCP::CompoundPacket* packet) {
+    void WebRtcTransport::SendRtcpCompoundPacket(rtc::RTCP::CompoundPacket* packet) {
 
         if (!IsConnected())
             return;
@@ -817,7 +817,7 @@ namespace rtc {
         this->iceServer->GetSelectedTuple()->Send(data, len);
 
         // Increase send transmission.
-        //RTC::Transport::DataSent(len); TBD
+        //rtc::Transport::DataSent(len); TBD
     }
     
    inline void WebRtcTransport::OnRtpDataReceived(
@@ -849,7 +849,7 @@ namespace rtc {
 
         // Decrypt the SRTP packet.
         if (!this->srtpRecvSession->DecryptSrtp(const_cast<uint8_t*> (data), &len)) {
-            RTC::RtpPacket* packet = RTC::RtpPacket::Parse(data, len);
+            rtc::RtpPacket* packet = rtc::RtpPacket::Parse(data, len);
 
             if (!packet) {
                 LWarn( "DecryptSrtp() failed due to an invalid RTP packet");
@@ -862,7 +862,7 @@ namespace rtc {
             return;
         }
 
-        RTC::RtpPacket* packet = RTC::RtpPacket::Parse(data, len);
+        rtc::RtpPacket* packet = rtc::RtpPacket::Parse(data, len);
 
         if (!packet) {
             LWarn( "received data is not a valid RTP packet");
@@ -874,7 +874,7 @@ namespace rtc {
         this->iceServer->ForceSelectedTuple(tuple);
 
         // Pass the packet to the parent transport.
-       // RTC::Transport::ReceiveRtpPacket(packet);   TBD
+       // rtc::Transport::ReceiveRtpPacket(packet);   TBD
     }
 
     inline void WebRtcTransport::OnRtcpDataReceived(
@@ -907,7 +907,7 @@ namespace rtc {
         if (!this->srtpRecvSession->DecryptSrtcp(const_cast<uint8_t*> (data), &len))
             return;
 
-        RTC::RTCP::Packet* packet = RTC::RTCP::Packet::Parse(data, len);
+        rtc::RTCP::Packet* packet = rtc::RTCP::Packet::Parse(data, len);
 
         if (!packet) {
             LWarn( "received data is not a valid RTCP compound or single packet");
@@ -916,7 +916,7 @@ namespace rtc {
         }
 
         // Pass the packet to the parent transport.
-      //  RTC::Transport::ReceiveRtcpPacket(packet);  TBD
+      //  rtc::Transport::ReceiveRtcpPacket(packet);  TBD
     }
 
 

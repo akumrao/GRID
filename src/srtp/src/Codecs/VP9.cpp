@@ -1,10 +1,10 @@
-#define MS_CLASS "RTC::Codecs::VP9"
+#define MS_CLASS "rtc::Codecs::VP9"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/Codecs/VP9.h"
 #include "LoggerTag.h"
 
-namespace RTC
+namespace rtc
 {
 	namespace Codecs
 	{
@@ -13,7 +13,7 @@ namespace RTC
 		VP9::PayloadDescriptor* VP9::Parse(
 		  const uint8_t* data,
 		  size_t len,
-		  RTC::RtpPacket::FrameMarking* /*frameMarking*/,
+		  rtc::RtpPacket::FrameMarking* /*frameMarking*/,
 		  uint8_t /*frameMarkingLen*/)
 		{
 			
@@ -98,7 +98,7 @@ namespace RTC
 			return payloadDescriptor.release();
 		}
 
-		void VP9::ProcessRtpPacket(RTC::RtpPacket* packet)
+		void VP9::ProcessRtpPacket(rtc::RtpPacket* packet)
 		{
 			
 
@@ -168,11 +168,11 @@ namespace RTC
 		}
 
 		bool VP9::PayloadDescriptorHandler::Process(
-		  RTC::Codecs::EncodingContext* encodingContext, uint8_t* /*data*/, bool& marker)
+		  rtc::Codecs::EncodingContext* encodingContext, uint8_t* /*data*/, bool& marker)
 		{
 			
 
-			auto* context = static_cast<RTC::Codecs::VP9::EncodingContext*>(encodingContext);
+			auto* context = static_cast<rtc::Codecs::VP9::EncodingContext*>(encodingContext);
 
 			assertm(context->GetTargetSpatialLayer() >= 0, "target spatial layer cannot be -1");
 			assertm(context->GetTargetTemporalLayer() >= 0, "target temporal layer cannot be -1");
@@ -213,7 +213,7 @@ namespace RTC
 			
 			bool isOldPacket = (
 				this->payloadDescriptor->hasPictureId &&
-				RTC::SeqManager<uint16_t>::IsSeqLowerThan(
+				rtc::SeqManager<uint16_t>::IsSeqLowerThan(
 					this->payloadDescriptor->pictureId,
 					context->pictureIdManager.GetMaxInput())
 			);
@@ -368,4 +368,4 @@ namespace RTC
 			
 		}
 	} // namespace Codecs
-} // namespace RTC
+} // namespace rtc

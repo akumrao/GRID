@@ -1,11 +1,11 @@
-#define MS_CLASS "RTC::RtpStream"
+#define MS_CLASS "rtc::RtpStream"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RtpStream.h"
 #include "LoggerTag.h"
 #include "RTC/SeqManager.h"
 
-namespace RTC
+namespace rtc
 {
 	/* Static. */
 
@@ -17,7 +17,7 @@ namespace RTC
 	/* Instance methods. */
 
 	RtpStream::RtpStream(
-	  RTC::RtpStream::Listener* listener, RTC::RtpStream::Params& params, uint8_t initialScore)
+	  rtc::RtpStream::Listener* listener, rtc::RtpStream::Params& params, uint8_t initialScore)
 	  : listener(listener), params(params), score(initialScore), activeSinceMs(base::Application::GetTimeMs())
 	{
 		
@@ -90,12 +90,12 @@ namespace RTC
 		}
 
 		// Set RTX stream params.
-		RTC::RtxStream::Params params;
+		rtc::RtxStream::Params params;
 
 		params.ssrc             = ssrc;
 		params.payloadType      = payloadType;
 		params.mimeType.type    = GetMimeType().type;
-		params.mimeType.subtype = RTC::RtpCodecMimeType::Subtype::RTX;
+		params.mimeType.subtype = rtc::RtpCodecMimeType::Subtype::RTX;
 		params.clockRate        = GetClockRate();
 		params.rrid             = GetRid();
 		params.cname            = GetCname();
@@ -103,10 +103,10 @@ namespace RTC
 		// Tell the RtpCodecMimeType to update its string based on current type and subtype.
 		params.mimeType.UpdateMimeType();
 
-		this->rtxStream = new RTC::RtxStream(params);
+		this->rtxStream = new rtc::RtxStream(params);
 	}
 
-	bool RtpStream::ReceivePacket(RTC::RtpPacket* packet)
+	bool RtpStream::ReceivePacket(rtc::RtpPacket* packet)
 	{
 		
 
@@ -142,7 +142,7 @@ namespace RTC
 		}
 
 		// Update highest seen RTP timestamp.
-		if (RTC::SeqManager<uint32_t>::IsSeqHigherThan(packet->GetTimestamp(), this->maxPacketTs))
+		if (rtc::SeqManager<uint32_t>::IsSeqHigherThan(packet->GetTimestamp(), this->maxPacketTs))
 		{
 			this->maxPacketTs = packet->GetTimestamp();
 			this->maxPacketMs = base::Application::GetTimeMs();
@@ -173,7 +173,7 @@ namespace RTC
 		}
 	}
 
-	bool RtpStream::UpdateSeq(RTC::RtpPacket* packet)
+	bool RtpStream::UpdateSeq(rtc::RtpPacket* packet)
 	{
 		
 
@@ -311,14 +311,14 @@ namespace RTC
 		}
 	}
 
-	void RtpStream::PacketRetransmitted(RTC::RtpPacket* /*packet*/)
+	void RtpStream::PacketRetransmitted(rtc::RtpPacket* /*packet*/)
 	{
 		
 
 		this->packetsRetransmitted++;
 	}
 
-	void RtpStream::PacketRepaired(RTC::RtpPacket* /*packet*/)
+	void RtpStream::PacketRepaired(rtc::RtpPacket* /*packet*/)
 	{
 		
 
@@ -363,4 +363,4 @@ namespace RTC
 		jsonObject["spatialLayers"]  = this->spatialLayers;
 		jsonObject["temporalLayers"] = this->temporalLayers;
 	}
-} // namespace RTC
+} // namespace rtc

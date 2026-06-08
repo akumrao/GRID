@@ -3,7 +3,7 @@
 #include "RTC/RtpObserver.h"
 #include "LoggerTag.h"
 
-namespace RTC
+namespace rtc
 {
 	/* Instance methods. */
 
@@ -40,4 +40,4 @@ namespace RTC
 
 		Resumed();
 	}
-} // namespace RTC
+} // namespace rtc

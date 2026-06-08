@@ -1,10 +1,10 @@
-#define MS_CLASS "RTC::RTCP::CompoundPacket"
+#define MS_CLASS "rtc::RTCP::CompoundPacket"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/CompoundPacket.h"
 #include "LoggerTag.h"
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -123,4 +123,4 @@ namespace RTC
 			this->senderReportPacket.AddReport(report);
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

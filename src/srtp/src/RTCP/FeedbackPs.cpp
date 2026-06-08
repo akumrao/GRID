@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RTCP::FeedbackPs"
+#define MS_CLASS "rtc::RTCP::FeedbackPs"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/FeedbackPs.h"
@@ -11,7 +11,7 @@
 #include "RTC/RTCP/FeedbackPsTst.h"
 #include "RTC/RTCP/FeedbackPsVbcm.h"
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -101,4 +101,4 @@ namespace RTC
 		template class FeedbackPsItemsPacket<FeedbackPsVbcmItem>;
 		template class FeedbackPsItemsPacket<FeedbackPsLeiItem>;
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

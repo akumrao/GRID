@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RtpParameters"
+#define MS_CLASS "rtc::RtpParameters"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "LoggerTag.h"
@@ -6,7 +6,7 @@
 #include "RTC/RtpDictionaries.h"
 #include <unordered_set>
 
-namespace RTC
+namespace rtc
 {
 	/* Class variables. */
 
@@ -115,7 +115,7 @@ namespace RTC
 
 		for (auto& entry : *jsonCodecsIt)
 		{
-			// This may throw due the constructor of RTC::RtpCodecParameters.
+			// This may throw due the constructor of rtc::RtpCodecParameters.
 			this->codecs.emplace_back(entry);
 		}
 
@@ -130,7 +130,7 @@ namespace RTC
 
 		for (auto& entry : *jsonEncodingsIt)
 		{
-			// This may throw due the constructor of RTC::RtpEncodingParameters.
+			// This may throw due the constructor of rtc::RtpEncodingParameters.
 			this->encodings.emplace_back(entry);
 		}
 
@@ -144,7 +144,7 @@ namespace RTC
 
 			for (auto& entry : *jsonHeaderExtensionsIt)
 			{
-				// This may throw due the constructor of RTC::RtpHeaderExtensionParameters.
+				// This may throw due the constructor of rtc::RtpHeaderExtensionParameters.
 				this->headerExtensions.emplace_back(entry);
 			}
 		}
@@ -153,7 +153,7 @@ namespace RTC
 		if (jsonRtcpIt != data.end() && jsonRtcpIt->is_object())
 		{
 			// This may throw.
-			this->rtcp    = RTC::RtcpParameters(*jsonRtcpIt);
+			this->rtcp    = rtc::RtcpParameters(*jsonRtcpIt);
 			this->hasRtcp = true;
 		}
 
@@ -219,7 +219,7 @@ namespace RTC
 			jsonObject["rtcp"] = json::object();
 	}
 
-	const RTC::RtpCodecParameters* RtpParameters::GetCodecForEncoding(RtpEncodingParameters& encoding) const
+	const rtc::RtpCodecParameters* RtpParameters::GetCodecForEncoding(RtpEncodingParameters& encoding) const
 	{
 		
 
@@ -241,7 +241,7 @@ namespace RTC
 		return nullptr;
 	}
 
-	const RTC::RtpCodecParameters* RtpParameters::GetRtxCodecForEncoding(RtpEncodingParameters& encoding) const
+	const rtc::RtpCodecParameters* RtpParameters::GetRtxCodecForEncoding(RtpEncodingParameters& encoding) const
 	{
 		
 
@@ -278,7 +278,7 @@ namespace RTC
 			switch (codec.mimeType.subtype)
 			{
 				// A RTX codec must have 'apt' parameter pointing to a non RTX codec.
-				case RTC::RtpCodecMimeType::Subtype::RTX:
+				case rtc::RtpCodecMimeType::Subtype::RTX:
 				{
 					// NOTE: RtpCodecParameters already asserted that there is apt parameter.
 					int32_t apt = codec.parameters.GetInteger(AptString);
@@ -290,11 +290,11 @@ namespace RTC
 
 						if (static_cast<int32_t>(codec.payloadType) == apt)
 						{
-							if (codec.mimeType.subtype == RTC::RtpCodecMimeType::Subtype::RTX)
+							if (codec.mimeType.subtype == rtc::RtpCodecMimeType::Subtype::RTX)
 								base::uv::throwError("apt in RTX codec points to a RTX codec");
-							else if (codec.mimeType.subtype == RTC::RtpCodecMimeType::Subtype::ULPFEC)
+							else if (codec.mimeType.subtype == rtc::RtpCodecMimeType::Subtype::ULPFEC)
 								base::uv::throwError("apt in RTX codec points to a ULPFEC codec");
-							else if (codec.mimeType.subtype == RTC::RtpCodecMimeType::Subtype::FLEXFEC)
+							else if (codec.mimeType.subtype == rtc::RtpCodecMimeType::Subtype::FLEXFEC)
 								base::uv::throwError("apt in RTX codec points to a FLEXFEC codec");
 							else
 								break;
@@ -377,4 +377,4 @@ namespace RTC
 			}
 		}
 	}
-} // namespace RTC
+} // namespace rtc

@@ -1,18 +1,18 @@
-#define MS_CLASS "RTC::Codecs::H264"
+#define MS_CLASS "rtc::Codecs::H264"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/Codecs/H264.h"
 #include "LoggerTag.h"
 #include "Utils.h"
 
-namespace RTC
+namespace rtc
 {
 	namespace Codecs
 	{
 		/* Class methods. */
 
 		H264::PayloadDescriptor* H264::Parse(
-		  const uint8_t* data, size_t len, RTC::RtpPacket::FrameMarking* frameMarking, uint8_t frameMarkingLen)
+		  const uint8_t* data, size_t len, rtc::RtpPacket::FrameMarking* frameMarking, uint8_t frameMarkingLen)
 		{
 			
 
@@ -123,7 +123,7 @@ namespace RTC
 			return payloadDescriptor.release();
 		}
 
-		void H264::ProcessRtpPacket(RTC::RtpPacket* packet)
+		void H264::ProcessRtpPacket(rtc::RtpPacket* packet)
 		{
 			
 
@@ -177,11 +177,11 @@ namespace RTC
 		}
 
 		bool H264::PayloadDescriptorHandler::Process(
-		  RTC::Codecs::EncodingContext* encodingContext, uint8_t* /*data*/, bool& /*marker*/)
+		  rtc::Codecs::EncodingContext* encodingContext, uint8_t* /*data*/, bool& /*marker*/)
 		{
 			
 
-			auto* context = static_cast<RTC::Codecs::H264::EncodingContext*>(encodingContext);
+			auto* context = static_cast<rtc::Codecs::H264::EncodingContext*>(encodingContext);
 
 			assertm(context->GetTargetTemporalLayer() >= 0, "target temporal layer cannot be -1");
 
@@ -240,4 +240,4 @@ namespace RTC
 			
 		}
 	} // namespace Codecs
-} // namespace RTC
+} // namespace rtc

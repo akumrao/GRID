@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RtpCodecMimeType"
+#define MS_CLASS "rtc::RtpCodecMimeType"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "LoggerTag.h"
@@ -6,7 +6,7 @@
 #include "Utils.h"
 #include "RTC/RtpDictionaries.h"
 
-namespace RTC
+namespace rtc
 {
 	/* Class variables. */
 
@@ -134,4 +134,4 @@ namespace RTC
 		this->mimeType = RtpCodecMimeType::type2String[this->type] + "/" +
 		                 RtpCodecMimeType::subtype2String[this->subtype];
 	}
-} // namespace RTC
+} // namespace rtc

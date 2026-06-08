@@ -121,9 +121,9 @@ namespace rtc
                 
         public:
             
-            void SendRtpPacket(RTC::RtpPacket* packet, rtc::Transport::onSendCallback cb = nullptr) override;
-		void SendRtcpPacket(RTC::RTCP::Packet* packet) override;
-		void SendRtcpCompoundPacket(RTC::RTCP::CompoundPacket* packet) override;
+            void SendRtpPacket(rtc::RtpPacket* packet, rtc::Transport::onSendCallback cb = nullptr) override;
+		void SendRtcpPacket(rtc::RTCP::Packet* packet) override;
+		void SendRtcpCompoundPacket(rtc::RTCP::CompoundPacket* packet) override;
 //		void SendSctpData(const uint8_t* data, size_t len) override;
 //		void OnPacketReceived(rtc::TransportTuple* tuple, const uint8_t* data, size_t len);
 //		void OnStunDataReceived(rtc::TransportTuple* tuple, const uint8_t* data, size_t len);
@@ -131,8 +131,8 @@ namespace rtc
 		void OnRtpDataReceived(TransportTuple* tuple, const uint8_t* data, size_t len);
 		void OnRtcpDataReceived(TransportTuple* tuple, const uint8_t* data, size_t len);
                 
-                RTC::SrtpSession* srtpRecvSession{ nullptr };
-		RTC::SrtpSession* srtpSendSession{ nullptr };
+                rtc::SrtpSession* srtpRecvSession{ nullptr };
+		rtc::SrtpSession* srtpSendSession{ nullptr };
                 
             //    Listener* iceListener{ nullptr };
 	};

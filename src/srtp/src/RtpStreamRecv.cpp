@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RtpStreamRecv"
+#define MS_CLASS "rtc::RtpStreamRecv"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RtpStreamRecv.h"
@@ -6,7 +6,7 @@
 #include "Utils.h"
 #include "RTC/Codecs/Codecs.h"
 
-namespace RTC
+namespace rtc
 {
 	/* Static. */
 
@@ -19,16 +19,16 @@ namespace RTC
 		
 
 		// Reserve vectors capacity.
-		this->spatialLayerCounters = std::vector<std::vector<RTC::RtpDataCounter>>(spatialLayers);
+		this->spatialLayerCounters = std::vector<std::vector<rtc::RtpDataCounter>>(spatialLayers);
 		;
 
 		for (auto& spatialLayerCounter : this->spatialLayerCounters)
 		{
-			spatialLayerCounter = std::vector<RTC::RtpDataCounter>(temporalLayers);
+			spatialLayerCounter = std::vector<rtc::RtpDataCounter>(temporalLayers);
 		}
 	}
 
-	void RtpStreamRecv::TransmissionCounter::Update(RTC::RtpPacket* packet)
+	void RtpStreamRecv::TransmissionCounter::Update(rtc::RtpPacket* packet)
 	{
 		
 
@@ -178,15 +178,15 @@ namespace RTC
 
 	/* Instance methods. */
 
-	RtpStreamRecv::RtpStreamRecv(RTC::RtpStreamRecv::Listener* listener, RTC::RtpStream::Params& params)
-	  : RTC::RtpStream::RtpStream(listener, params, 10),
+	RtpStreamRecv::RtpStreamRecv(rtc::RtpStreamRecv::Listener* listener, rtc::RtpStream::Params& params)
+	  : rtc::RtpStream::RtpStream(listener, params, 10),
 	    transmissionCounter(params.spatialLayers, params.temporalLayers)
 
 	{
 		
 
 		if (this->params.useNack)
-			this->nackGenerator.reset(new RTC::NackGenerator(this));
+			this->nackGenerator.reset(new rtc::NackGenerator(this));
 
 		// Run the RTP inactivity periodic timer (unless DTX is enabled).
 		if (!this->params.useDtx)
@@ -212,7 +212,7 @@ namespace RTC
 
 		uint64_t nowMs = base::Application::GetTimeMs();
 
-		RTC::RtpStream::FillJsonStats(jsonObject);
+		rtc::RtpStream::FillJsonStats(jsonObject);
 
 		jsonObject["type"]        = "inbound-rtp";
 		jsonObject["jitter"]      = this->jitter;
@@ -236,12 +236,12 @@ namespace RTC
 		}
 	}
 
-	bool RtpStreamRecv::ReceivePacket(RTC::RtpPacket* packet)
+	bool RtpStreamRecv::ReceivePacket(rtc::RtpPacket* packet)
 	{
 		
 
 		// Call the parent method.
-		if (!RTC::RtpStream::ReceivePacket(packet))
+		if (!rtc::RtpStream::ReceivePacket(packet))
 		{
 			MS_WARN_TAG( "packet discarded");
 
@@ -250,7 +250,7 @@ namespace RTC
 
 		// Process the packet at codec level.
 		if (packet->GetPayloadType() == GetPayloadType())
-			RTC::Codecs::ProcessRtpPacket(packet, GetMimeType());
+			rtc::Codecs::ProcessRtpPacket(packet, GetMimeType());
 
 		// Pass the packet to the NackGenerator.
 		if (this->params.useNack)
@@ -265,8 +265,8 @@ namespace RTC
 			else if (this->nackGenerator->ReceivePacket(packet, /*isRecovered*/ false))
 			{
 				// Mark the packet as retransmitted and repaired.
-				RTC::RtpStream::PacketRetransmitted(packet);
-				RTC::RtpStream::PacketRepaired(packet);
+				rtc::RtpStream::PacketRetransmitted(packet);
+				rtc::RtpStream::PacketRepaired(packet);
 			}
 		}
 
@@ -294,7 +294,7 @@ namespace RTC
 		return true;
 	}
 
-	bool RtpStreamRecv::ReceiveRtxPacket(RTC::RtpPacket* packet)
+	bool RtpStreamRecv::ReceiveRtxPacket(rtc::RtpPacket* packet)
 	{
 		
 
@@ -358,7 +358,7 @@ namespace RTC
 		#endif
 
 		// If not a valid packet ignore it.
-		if (!RTC::RtpStream::UpdateSeq(packet))
+		if (!rtc::RtpStream::UpdateSeq(packet))
 		{
 			MS_WARN_TAG(
 			  "invalid RTX packet [ssrc:%" PRIu32 ", seq:%" PRIu16 "]",
@@ -370,17 +370,17 @@ namespace RTC
 
 		// Process the packet at codec level.
 		if (packet->GetPayloadType() == GetPayloadType())
-			RTC::Codecs::ProcessRtpPacket(packet, GetMimeType());
+			rtc::Codecs::ProcessRtpPacket(packet, GetMimeType());
 
 		// Mark the packet as retransmitted.
-		RTC::RtpStream::PacketRetransmitted(packet);
+		rtc::RtpStream::PacketRetransmitted(packet);
 
 		// Pass the packet to the NackGenerator and return true just if this was a
 		// NACKed packet.
 		if (this->nackGenerator->ReceivePacket(packet, /*isRecovered*/ true))
 		{
 			// Mark the packet as repaired.
-			RTC::RtpStream::PacketRepaired(packet);
+			rtc::RtpStream::PacketRepaired(packet);
 
 			// Increase transmission counter.
 			this->transmissionCounter.Update(packet);
@@ -403,7 +403,7 @@ namespace RTC
 		return false;
 	}
 
-	RTC::RTCP::ReceiverReport* RtpStreamRecv::GetRtcpReceiverReport()
+	rtc::RTCP::ReceiverReport* RtpStreamRecv::GetRtcpReceiverReport()
 	{
 		
 
@@ -412,14 +412,14 @@ namespace RTC
 		if (this->params.useInBandFec)
 		{
 			// Notify the listener so we'll get the worst remote fraction lost.
-			static_cast<RTC::RtpStreamRecv::Listener*>(this->listener)
+			static_cast<rtc::RtpStreamRecv::Listener*>(this->listener)
 			  ->OnRtpStreamNeedWorstRemoteFractionLost(this, worstRemoteFractionLost);
 
 			if (worstRemoteFractionLost > 0)
 				MS_DEBUG_TAG(rtcp, "using worst remote fraction lost:%" PRIu8, worstRemoteFractionLost);
 		}
 
-		auto* report = new RTC::RTCP::ReceiverReport();
+		auto* report = new rtc::RTCP::ReceiverReport();
 
 		report->SetSsrc(GetSsrc());
 
@@ -494,7 +494,7 @@ namespace RTC
 		return report;
 	}
 
-	RTC::RTCP::ReceiverReport* RtpStreamRecv::GetRtxRtcpReceiverReport()
+	rtc::RTCP::ReceiverReport* RtpStreamRecv::GetRtxRtcpReceiverReport()
 	{
 		
 
@@ -504,7 +504,7 @@ namespace RTC
 		return nullptr;
 	}
 
-	void RtpStreamRecv::ReceiveRtcpSenderReport(RTC::RTCP::SenderReport* report)
+	void RtpStreamRecv::ReceiveRtcpSenderReport(rtc::RTCP::SenderReport* report)
 	{
 		
 
@@ -525,7 +525,7 @@ namespace RTC
 		UpdateScore();
 	}
 
-	void RtpStreamRecv::ReceiveRtxRtcpSenderReport(RTC::RTCP::SenderReport* report)
+	void RtpStreamRecv::ReceiveRtxRtcpSenderReport(rtc::RTCP::SenderReport* report)
 	{
 		
 
@@ -533,7 +533,7 @@ namespace RTC
 			this->rtxStream->ReceiveRtcpSenderReport(report);
 	}
 
-	void RtpStreamRecv::ReceiveRtcpXrDelaySinceLastRr(RTC::RTCP::DelaySinceLastRr::SsrcInfo* ssrcInfo)
+	void RtpStreamRecv::ReceiveRtcpXrDelaySinceLastRr(rtc::RTCP::DelaySinceLastRr::SsrcInfo* ssrcInfo)
 	{
 		
 
@@ -585,14 +585,14 @@ namespace RTC
 
 			// Sender SSRC should be 0 since there is no media sender involved, but
 			// some implementations like gstreamer will fail to process it otherwise.
-			RTC::RTCP::FeedbackPsPliPacket packet(GetSsrc(), GetSsrc());
+			rtc::RTCP::FeedbackPsPliPacket packet(GetSsrc(), GetSsrc());
 
-			packet.Serialize(RTC::RTCP::Buffer);
+			packet.Serialize(rtc::RTCP::Buffer);
 
 			this->pliCount++;
 
 			// Notify the listener.
-			static_cast<RTC::RtpStreamRecv::Listener*>(this->listener)->OnRtpStreamSendRtcpPacket(this, &packet);
+			static_cast<rtc::RtpStreamRecv::Listener*>(this->listener)->OnRtpStreamSendRtcpPacket(this, &packet);
 		}
 		else if (this->params.useFir)
 		{
@@ -600,16 +600,16 @@ namespace RTC
 
 			// Sender SSRC should be 0 since there is no media sender involved, but
 			// some implementations like gstreamer will fail to process it otherwise.
-			RTC::RTCP::FeedbackPsFirPacket packet(GetSsrc(), GetSsrc());
-			auto* item = new RTC::RTCP::FeedbackPsFirItem(GetSsrc(), ++this->firSeqNumber);
+			rtc::RTCP::FeedbackPsFirPacket packet(GetSsrc(), GetSsrc());
+			auto* item = new rtc::RTCP::FeedbackPsFirItem(GetSsrc(), ++this->firSeqNumber);
 
 			packet.AddItem(item);
-			packet.Serialize(RTC::RTCP::Buffer);
+			packet.Serialize(rtc::RTCP::Buffer);
 
 			this->firCount++;
 
 			// Notify the listener.
-			static_cast<RTC::RtpStreamRecv::Listener*>(this->listener)->OnRtpStreamSendRtcpPacket(this, &packet);
+			static_cast<rtc::RtpStreamRecv::Listener*>(this->listener)->OnRtpStreamSendRtcpPacket(this, &packet);
 		}
 	}
 
@@ -693,7 +693,7 @@ namespace RTC
 		// We didn't expect more packets to come.
 		if (expected == 0)
 		{
-			RTC::RtpStream::UpdateScore(10);
+			rtc::RtpStream::UpdateScore(10);
 
 			return;
 		}
@@ -792,7 +792,7 @@ namespace RTC
 		  seqNumbers[0],
 		  seqNumbers.size());
 
-		RTC::RTCP::FeedbackRtpNackPacket packet(0, GetSsrc());
+		rtc::RTCP::FeedbackRtpNackPacket packet(0, GetSsrc());
 
 		auto it        = seqNumbers.begin();
 		const auto end = seqNumbers.end();
@@ -817,7 +817,7 @@ namespace RTC
 				++it;
 			}
 
-			auto* nackItem = new RTC::RTCP::FeedbackRtpNackItem(seq, bitmask);
+			auto* nackItem = new rtc::RTCP::FeedbackRtpNackItem(seq, bitmask);
 
 			packet.AddItem(nackItem);
 
@@ -825,7 +825,7 @@ namespace RTC
 		}
 
 		// Ensure that the RTCP packet fits into the RTCP buffer.
-		if (packet.GetSize() > RTC::RTCP::BufferSize)
+		if (packet.GetSize() > rtc::RTCP::BufferSize)
 		{
 			MS_WARN_TAG( "cannot send RTCP NACK packet, size too big (%zu bytes)", packet.GetSize());
 
@@ -835,10 +835,10 @@ namespace RTC
 		this->nackCount++;
 		this->nackPacketCount += numPacketsRequested;
 
-		packet.Serialize(RTC::RTCP::Buffer);
+		packet.Serialize(rtc::RTCP::Buffer);
 
 		// Notify the listener.
-		static_cast<RTC::RtpStreamRecv::Listener*>(this->listener)->OnRtpStreamSendRtcpPacket(this, &packet);
+		static_cast<rtc::RtpStreamRecv::Listener*>(this->listener)->OnRtpStreamSendRtcpPacket(this, &packet);
 	}
 
 	inline void RtpStreamRecv::OnNackGeneratorKeyFrameRequired()
@@ -849,4 +849,4 @@ namespace RTC
 
 		RequestKeyFrame();
 	}
-} // namespace RTC
+} // namespace rtc

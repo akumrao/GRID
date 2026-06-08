@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RtpProbationGenerator"
+#define MS_CLASS "rtc::RtpProbationGenerator"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RtpProbationGenerator.h"
@@ -9,7 +9,7 @@
 #include <cstring> // std::memcpy()
 #include <vector>
 
-namespace RTC
+namespace rtc
 {
 	/* Static. */
 
@@ -42,10 +42,10 @@ namespace RTC
 
 		// Create the probation RTP packet.
 		this->probationPacket =
-		  RTC::RtpPacket::Parse(this->probationPacketBuffer, MaxProbationPacketSize);
+		  rtc::RtpPacket::Parse(this->probationPacketBuffer, MaxProbationPacketSize);
 
 		// Set fixed SSRC.
-		this->probationPacket->SetSsrc(RTC::RtpProbationSsrc);
+		this->probationPacket->SetSsrc(rtc::RtpProbationSsrc);
 
 		// Set random initial RTP seq number and timestamp.
 		this->probationPacket->SetSequenceNumber(
@@ -55,7 +55,7 @@ namespace RTC
 		// Add BWE related RTP header extensions.
 		static uint8_t buffer[4096];
 
-		std::vector<RTC::RtpPacket::GenericExtension> extensions;
+		std::vector<rtc::RtpPacket::GenericExtension> extensions;
 		uint8_t extenLen;
 		uint8_t* bufferPtr{ buffer };
 
@@ -65,7 +65,7 @@ namespace RTC
 			extenLen = 3u;
 
 			extensions.emplace_back(
-			  static_cast<uint8_t>(RTC::RtpHeaderExtensionUri::Type::ABS_SEND_TIME), extenLen, bufferPtr);
+			  static_cast<uint8_t>(rtc::RtpHeaderExtensionUri::Type::ABS_SEND_TIME), extenLen, bufferPtr);
 
 			bufferPtr += extenLen;
 		}
@@ -76,7 +76,7 @@ namespace RTC
 			extenLen = 2u;
 
 			extensions.emplace_back(
-			  static_cast<uint8_t>(RTC::RtpHeaderExtensionUri::Type::TRANSPORT_WIDE_CC_01),
+			  static_cast<uint8_t>(rtc::RtpHeaderExtensionUri::Type::TRANSPORT_WIDE_CC_01),
 			  extenLen,
 			  bufferPtr);
 
@@ -89,11 +89,11 @@ namespace RTC
 
 		// Set our abs-send-time extension id.
 		this->probationPacket->SetAbsSendTimeExtensionId(
-		  static_cast<uint8_t>(RTC::RtpHeaderExtensionUri::Type::ABS_SEND_TIME));
+		  static_cast<uint8_t>(rtc::RtpHeaderExtensionUri::Type::ABS_SEND_TIME));
 
 		// Set our transport-wide-cc-01 extension id.
 		this->probationPacket->SetTransportWideCc01ExtensionId(
-		  static_cast<uint8_t>(RTC::RtpHeaderExtensionUri::Type::TRANSPORT_WIDE_CC_01));
+		  static_cast<uint8_t>(rtc::RtpHeaderExtensionUri::Type::TRANSPORT_WIDE_CC_01));
 	}
 
 	RtpProbationGenerator::~RtpProbationGenerator()
@@ -107,7 +107,7 @@ namespace RTC
 		delete this->probationPacket;
 	}
 
-	RTC::RtpPacket* RtpProbationGenerator::GetNextPacket(size_t size)
+	rtc::RtpPacket* RtpProbationGenerator::GetNextPacket(size_t size)
 	{
 		
 
@@ -133,4 +133,4 @@ namespace RTC
 
 		return this->probationPacket;
 	}
-} // namespace RTC
+} // namespace rtc

@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RtpRtxParameters"
+#define MS_CLASS "rtc::RtpRtxParameters"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "LoggerTag.h"
@@ -6,7 +6,7 @@
 #include "Utils.h"
 #include "RTC/RtpDictionaries.h"
 
-namespace RTC
+namespace rtc
 {
 	/* Instance methods. */
 
@@ -42,4 +42,4 @@ namespace RTC
 		if (this->ssrc != 0u)
 			jsonObject["ssrc"] = this->ssrc;
 	}
-} // namespace RTC
+} // namespace rtc

@@ -1,11 +1,11 @@
-#define MS_CLASS "RTC::RtcpFeedback"
+#define MS_CLASS "rtc::RtcpFeedback"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "LoggerTag.h"
 #include "base/error.h"
 #include "RTC/RtpDictionaries.h"
 
-namespace RTC
+namespace rtc
 {
 	/* Instance methods. */
 
@@ -41,4 +41,4 @@ namespace RTC
 		if (this->parameter.length() > 0)
 			jsonObject["parameter"] = this->parameter;
 	}
-} // namespace RTC
+} // namespace rtc

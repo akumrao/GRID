@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::Media"
+#define MS_CLASS "rtc::Media"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "LoggerTag.h"
@@ -6,7 +6,7 @@
 #include "Utils.h"
 #include "RTC/RtpDictionaries.h"
 
-namespace RTC
+namespace rtc
 {
 	/* Class variables. */
 
@@ -63,4 +63,4 @@ namespace RTC
 
 		return Media::kind2String.at(kind);
 	}
-} // namespace RTC
+} // namespace rtc

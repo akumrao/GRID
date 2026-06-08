@@ -1,11 +1,11 @@
-#define MS_CLASS "RTC::RtxStream"
+#define MS_CLASS "rtc::RtxStream"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RtxStream.h"
 #include "LoggerTag.h"
 #include "RTC/SeqManager.h"
 
-namespace RTC
+namespace rtc
 {
 	/* Static. */
 
@@ -15,12 +15,12 @@ namespace RTC
 
 	/* Instance methods. */
 
-	RtxStream::RtxStream(RTC::RtxStream::Params& params) : params(params)
+	RtxStream::RtxStream(rtc::RtxStream::Params& params) : params(params)
 	{
 		
 
 		assertm(
-		  params.mimeType.subtype == RTC::RtpCodecMimeType::Subtype::RTX, "mimeType.subtype is not RTX");
+		  params.mimeType.subtype == rtc::RtpCodecMimeType::Subtype::RTX, "mimeType.subtype is not RTX");
 	}
 
 	RtxStream::~RtxStream()
@@ -36,7 +36,7 @@ namespace RTC
 		this->params.FillJson(jsonObject["params"]);
 	}
 
-	bool RtxStream::ReceivePacket(RTC::RtpPacket* packet)
+	bool RtxStream::ReceivePacket(rtc::RtpPacket* packet)
 	{
 		
 
@@ -65,7 +65,7 @@ namespace RTC
 		}
 
 		// Update highest seen RTP timestamp.
-		if (RTC::SeqManager<uint32_t>::IsSeqHigherThan(packet->GetTimestamp(), this->maxPacketTs))
+		if (rtc::SeqManager<uint32_t>::IsSeqHigherThan(packet->GetTimestamp(), this->maxPacketTs))
 		{
 			this->maxPacketTs = packet->GetTimestamp();
 			this->maxPacketMs = base::Application::GetTimeMs();
@@ -77,11 +77,11 @@ namespace RTC
 		return true;
 	}
 
-	RTC::RTCP::ReceiverReport* RtxStream::GetRtcpReceiverReport()
+	rtc::RTCP::ReceiverReport* RtxStream::GetRtcpReceiverReport()
 	{
 		
 
-		auto* report = new RTC::RTCP::ReceiverReport();
+		auto* report = new rtc::RTCP::ReceiverReport();
 
 		report->SetSsrc(GetSsrc());
 
@@ -143,7 +143,7 @@ namespace RTC
 		return report;
 	}
 
-	void RtxStream::ReceiveRtcpSenderReport(RTC::RTCP::SenderReport* report)
+	void RtxStream::ReceiveRtcpSenderReport(rtc::RTCP::SenderReport* report)
 	{
 		
 
@@ -152,7 +152,7 @@ namespace RTC
 		this->lastSrTimestamp += report->GetNtpFrac() >> 16;
 	}
 
-	bool RtxStream::UpdateSeq(RTC::RtpPacket* packet)
+	bool RtxStream::UpdateSeq(rtc::RtpPacket* packet)
 	{
 		
 
@@ -242,4 +242,4 @@ namespace RTC
 
 		jsonObject["cname"] = this->cname;
 	}
-} // namespace RTC
+} // namespace rtc

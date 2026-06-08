@@ -4,7 +4,7 @@
 #include "LoggerTag.h"
 #include <cmath> // std::trunc()
 
-namespace RTC
+namespace rtc
 {
 	void RateCalculator::Update(size_t size, uint64_t nowMs)
 	{
@@ -97,11 +97,11 @@ namespace RTC
 		this->oldestTime = newOldestTime;
 	}
 
-	void RtpDataCounter::Update(RTC::RtpPacket* packet)
+	void RtpDataCounter::Update(rtc::RtpPacket* packet)
 	{
 		uint64_t nowMs = base::Application::GetTimeMs();
 
 		this->packets++;
 		this->rate.Update(packet->GetSize(), nowMs);
 	}
-} // namespace RTC
+} // namespace rtc

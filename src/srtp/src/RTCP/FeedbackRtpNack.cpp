@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RTCP::FeedbackRtpNack"
+#define MS_CLASS "rtc::RTCP::FeedbackRtpNack"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "RTC/RTCP/FeedbackRtpNack.h"
@@ -6,7 +6,7 @@
 #include <bitset> // std::bitset()
 #include <cstring>
 
-namespace RTC
+namespace rtc
 {
 	namespace RTCP
 	{
@@ -42,4 +42,4 @@ namespace RTC
 			MS_DUMP("</FeedbackRtpNackItem>");
 		}
 	} // namespace RTCP
-} // namespace RTC
+} // namespace rtc

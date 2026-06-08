@@ -1,4 +1,4 @@
-#define MS_CLASS "RTC::RtpHeaderExtensionParameters"
+#define MS_CLASS "rtc::RtpHeaderExtensionParameters"
 // #define MS_LOG_DEV_LEVEL 3
 
 #include "LoggerTag.h"
@@ -6,7 +6,7 @@
 #include "Utils.h"
 #include "RTC/RtpDictionaries.h"
 
-namespace RTC
+namespace rtc
 {
 	/* Instance methods. */
 
@@ -32,7 +32,7 @@ namespace RTC
 			base::uv::throwError("empty uri");
 
 		// Get the type.
-		this->type = RTC::RtpHeaderExtensionUri::GetType(this->uri);
+		this->type = rtc::RtpHeaderExtensionUri::GetType(this->uri);
 
 		// id is mandatory.
 		if (jsonIdIt == data.end() || !Utils::Json::IsPositiveInteger(*jsonIdIt))
@@ -69,4 +69,4 @@ namespace RTC
 		// Add parameters.
 		this->parameters.FillJson(jsonObject["parameters"]);
 	}
-} // namespace RTC
+} // namespace rtc
