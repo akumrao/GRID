@@ -192,6 +192,7 @@ else()
 endif()
 
 add_subdirectory(${CMAKE_SOURCE_DIR}/../webrtcserver/deps/libsrtp buildsrtp EXCLUDE_FROM_ALL )
+add_subdirectory(deps/libwebrtc)
 
 
 if(CAPI_STDCALL)
@@ -224,13 +225,13 @@ endif()
 
 
 include_directories(
-           ./include ../net/sctp/ ../net/pc/ ../net/dtls/ ../http/include/ ../http_parser/ ../base/include/ ../net/include/ ../libuv/include ../libuv/src ../json/include/ ../json/include/json ../http_parser/ ../signal/include/ ../../src/openssl/buildx64/include ../webrtcserver/deps/usrsctp/usrsctplib/ ../webrtcserver/deps/libsrtp/include  ${SSL_ROOT}/include)
+           ./include ../net/sctp/ ../net/pc/ ../net/dtls/ ../http/include/ ../http_parser/ ../base/include/ ../net/include/ ../libuv/include ../libuv/src ../json/include/ ../json/include/json ../http_parser/ ../signal/include/ ../../src/openssl/buildx64/include ../webrtcserver/deps/usrsctp/usrsctplib/ ../webrtcserver/deps/libsrtp/include  ./deps/libwebrtc  ./deps/libwebrtc/libwebrtc ./deps/libwebrtc/abseil-cpp ${SSL_ROOT}/include)
 
 
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${SOURCES})
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE srtp2)
+target_link_libraries(${PROJECT_NAME} PRIVATE webrtc srtp2)
 target_compile_definitions(${PROJECT_NAME} PUBLIC DUALSTACK SRTP MS_LITTLE_ENDIAN TTYD_VERSION="${TTYD_VERSION}"
     $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
 )
