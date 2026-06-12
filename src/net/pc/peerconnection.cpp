@@ -14,7 +14,7 @@
 //#include "datachannel.h"
 
 #if RTC_ENABLE_MEDIA
-#include "impl/dtlssrtptransport.hpp"
+//#include "impl/dtlssrtptransport.hpp"
 #endif
 
 #include <iomanip>
@@ -2038,6 +2038,65 @@ void PeerConnection::processRemoteDescription(Description description)
 	//	mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
 
 }
+
+
+    std::shared_ptr<Track> PeerConnection::addTrack(Description::Media description) {
+       //  auto trackImpl = emplaceTrack(std::move(description));
+      //   auto track = std::make_shared<Track>(trackImpl);
+
+         return nullptr;
+     }
+
+     void PeerConnection::onTrack(std::function<void(std::shared_ptr<Track>)> callback) {
+        trackCallback = callback;
+      // call back TBD
+        //flushPendingTracks();
+     }
+     
+     
+//     shared_ptr<Track> PeerConnection::emplaceTrack(Description::Media description) {
+////	std::unique_lock lock(mTracksMutex); // we are going to emplace
+//
+//#if !RTC_ENABLE_MEDIA
+//	// No media support, mark as removed
+//	SWarn << "Tracks are disabled (not compiled with media support)";
+//	description.markRemoved();
+//#endif
+//
+//	shared_ptr<Track> track;
+//	if (auto it = mTracks.find(description.mid()); it != mTracks.end())
+//		if (auto t = it->second.lock(); t && !t->isClosed())
+//			track = std::move(t);
+//
+//	if (track) {
+//		track->setDescription(std::move(description));
+//	} else {
+//		track = std::make_shared<Track>(weak_from_this(), std::move(description));
+//		mTracks.emplace(std::make_pair(track->mid(), track));
+//		mTrackLines.emplace_back(track);
+//	}
+//
+//	auto handler = getMediaHandler();
+//	if (handler)
+//		handler->media(track->description());
+//
+//	if (track->description().isRemoved())
+//		track->close();
+//
+//	return track;
+//    }
+     
+     
+     void PeerConnection::setMediaHandler(shared_ptr<MediaHandler> handler) {
+	//std::unique_lock lock(mMediaHandlerMutex);
+	mMediaHandler = handler;
+    }
+
+    shared_ptr<MediaHandler> PeerConnection::getMediaHandler() {
+        //    std::shared_lock lock(mMediaHandlerMutex);
+            return mMediaHandler;
+    }
+
 
 
 } // namespace rtc

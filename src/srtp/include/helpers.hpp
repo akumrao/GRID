@@ -4,14 +4,14 @@
 #define helpers_hpp
 #include "peerconnection.h"
 //#include "rtc/rtc.hpp"
-
+#include "rtcpsrreporter.hpp"
 #include <shared_mutex>
 
 struct ClientTrackData {
-//    std::shared_ptr<rtc::Track> track;
-//    std::shared_ptr<rtc::RtcpSrReporter> sender;
-//
-//    ClientTrackData(std::shared_ptr<rtc::Track> track, std::shared_ptr<rtc::RtcpSrReporter> sender);
+    std::shared_ptr<rtc::Track> track;
+    std::shared_ptr<rtc::RtcpSrReporter> sender;
+
+    ClientTrackData(std::shared_ptr<rtc::Track> track, std::shared_ptr<rtc::RtcpSrReporter> sender);
 };
 
 struct Client {

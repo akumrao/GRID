@@ -20,9 +20,9 @@
 #include "RestAPI.h"
 #include "uv.h"
 
-#define localtesting 1
+//#define localtesting 1
 //#define remotetesting 1
-//#define VIDEOMEDIA 1
+#define VIDEOMEDIA 1
 
 
 //#define CERTFROMFILE 1

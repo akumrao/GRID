@@ -6,6 +6,8 @@
 #include "candidate.hpp"
 #include "common.hpp"
 #include "configuration.h"
+
+
 #define DATACHANNEL 1
 
 #if DATACHANNEL
@@ -19,7 +21,7 @@
 #include "description.hpp"
 #include "reliability.h"
 #include "net/certificate.h"
-
+#include "track.hpp"
 
 
 //#include "track.h"
@@ -299,6 +301,28 @@ public:
 	size_t bytesSent();
 	size_t bytesReceived();
 	optional<std::chrono::milliseconds> rtt();
+        
+        
+        
+        
+        std::shared_ptr<Track> PeerConnection::addTrack(Description::Media description) ;
+        void PeerConnection::onTrack(std::function<void(std::shared_ptr<Track>)> callback) ;
+        shared_ptr<Track> PeerConnection::emplaceTrack(Description::Media description);
+        
+        synchronized_callback<shared_ptr<rtc::Track>> trackCallback;
+        
+        std::unordered_map<string, weak_ptr<Track>> mTracks;         // by mid
+        std::unordered_map<uint32_t, weak_ptr<Track>> mTracksBySsrc; // by SSRC
+        std::vector<weak_ptr<Track>> mTrackLines;                    // by SDP order
+        Queue<shared_ptr<Track>> mPendingTracks;
+        
+        shared_ptr<MediaHandler> mMediaHandler;
+        
+        void setMediaHandler(shared_ptr<MediaHandler> handler);
+	shared_ptr<MediaHandler> getMediaHandler();
+
+       
+        
 };
 
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, PeerConnection::State state);

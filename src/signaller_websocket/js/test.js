@@ -12,7 +12,7 @@ let starttime;
 
 let camAudio = false;
 let appAudio = false;
-
+let appVideo = true;
 let inboundStream = null;
 
 // Mock context tracker replacing Socket.io tracking properties on the instance
@@ -200,7 +200,21 @@ async function maybeStart() {
     console.log('>>>>>> creating peer connection');
     createPeerConnection();
 
-    if( appAudio)
+   if( appVideo)
+    {
+      localVideoStream();
+      
+      const stream = await navigator.mediaDevices.getUserMedia({video: true});
+
+      var localVideo = document.querySelector('#localVideo');
+      localVideo.srcObject = stream;
+      stream.getTracks().forEach(track => pc.addTrack(track, stream));
+      // const transceiver = pc.getTransceivers().find(t => t.sender && t.sender.track === stream.getAudioTracks()[0]);
+      // const {codecs} = RTCRtpSender.getCapabilities('audio');
+      // const selectedCodecIndex = codecs.findIndex(c => c.mimeType === 'audio/PCMA');
+      // transceiver.setCodecPreferences([codecs[selectedCodecIndex]]);
+    }
+    else if( appAudio)
     {
       localVideoStream();
       

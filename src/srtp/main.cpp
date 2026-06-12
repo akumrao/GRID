@@ -11,8 +11,8 @@
  */
 
 
-//#include "h264fileparser.hpp"
-//#include "opusfileparser.hpp"
+#include "h264fileparser.hpp"
+#include "opusfileparser.hpp"
 #include "helpers.hpp"
 #include "socketio/socketioClient.h"
 
@@ -26,10 +26,13 @@
 
 #include "sctptransport.hpp"
 #include "DtlsTransport.h"
+#include "stream.hpp"
 
-#define localtesting 1
+
+
+//#define localtesting 1
 //#define remotetesting 1
-//#define VIDEOMEDIA 1
+#define VIDEOMEDIA 1
 #include "peerconnection.h"
 
 #include "http/HttpsClient.h"
@@ -82,7 +85,7 @@ void startStream();
 //DispatchQueue MainThread("Main");
 
 /// Audio and video stream
-//optional<shared_ptr<Stream>> avStream = nullopt;
+optional<shared_ptr<Stream>> avStream = nullopt;
 
 const string defaultRootDirectory = "../../../examples/streamer/samples/";
 const string defaultH264SamplesDirectory = defaultRootDirectory + "h264/";
@@ -293,6 +296,7 @@ void wsOnMessage(json const &m) {
 
 
     if (type == "offer") {
+        
 
         if (clients.find(id) != clients.end())
             clients.erase(id);
@@ -304,7 +308,7 @@ void wsOnMessage(json const &m) {
             auto pc = jt->second->peerConnection;
 
             auto sdp = m["desc"]["sdp"].get<string>();
-
+            SInfo << sdp;
             SInfo << "setRemoteDescription " << type;
 
             auto description = Description(sdp, type);
@@ -314,13 +318,13 @@ void wsOnMessage(json const &m) {
 
 
     } else if (type == "answer") {
-
+        
         //clients.emplace(id, createPeerConnection(config,  id));
         if (auto jt = clients.find(id); jt != clients.end()) {
             auto pc = jt->second->peerConnection;
 
             auto sdp = m["desc"]["sdp"].get<string>();
-
+             SInfo << sdp;
             SInfo << "setRemoteDescription " << type;
 
             auto description = Description(sdp, type);
@@ -709,12 +713,12 @@ int main(int argc, char **argv) {
 //    return -1;
 //}
 
-//shared_ptr<ClientTrackData> addVideo(const shared_ptr<PeerConnection> pc, const uint8_t payloadType, const uint32_t ssrc, const string cname, const string msid, const function<void (void)> onOpen) {
-//    auto video = Description::Video(cname);
-//    video.addH264Codec(payloadType);
-//    video.addSSRC(ssrc, cname, msid, cname);
-//    auto track = pc->addTrack(video);
-//    // create RTP configuration
+shared_ptr<ClientTrackData> addVideo(const shared_ptr<PeerConnection> pc, const uint8_t payloadType, const uint32_t ssrc, const string cname, const string msid, const function<void (void)> onOpen) {
+    auto video = Description::Video(cname);
+    video.addH264Codec(payloadType);
+    video.addSSRC(ssrc, cname, msid, cname);
+    auto track = pc->addTrack(video);
+    // create RTP configuration
 //    auto rtpConfig = make_shared<RtpPacketizationConfig>(ssrc, cname, payloadType, H264RtpPacketizer::defaultClockRate);
 //    // create packetizer
 //    auto packetizer = make_shared<H264RtpPacketizer>(NalUnit::Separator::Length, rtpConfig);
@@ -724,12 +728,14 @@ int main(int argc, char **argv) {
 //    // add RTCP NACK handler
 //    auto nackResponder = make_shared<RtcpNackResponder>();
 //    packetizer->addToChain(nackResponder);
-//    // set handler
+    // set handler
 //    track->setMediaHandler(packetizer);
-//    track->onOpen(onOpen);
+    track->onOpen(onOpen);
 //    auto trackData = make_shared<ClientTrackData>(track, srReporter);
-//    return trackData;
-//}
+  //  return trackData;
+    
+    return nullptr;
+}
 
 //shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const uint8_t payloadType, const uint32_t ssrc, const string cname, const string msid, const function<void (void)> onOpen) {
 //    auto audio = Description::Audio(cname);
@@ -1370,19 +1376,19 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
         SInfo << "Video from " << id << " opened" << endl;
     });
 
-    client->audio = addAudio(pc, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
-
-
-        //MainThread.dispatch([wc]() 
-
-        {
-            if (auto c = wc.lock()) {
-                addToStream(c, false);
-            }
-        }
-        //);
-        SInfo << "Audio from " << id << " opened" << endl;
-    });
+//    client->audio = addAudio(pc, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+//
+//
+//        //MainThread.dispatch([wc]() 
+//
+//        {
+//            if (auto c = wc.lock()) {
+//                addToStream(c, false);
+//            }
+//        }
+//        //);
+//        SInfo << "Audio from " << id << " opened" << endl;
+//    });
 
 #endif
     std::string dcchat = "Settings::getdatachannel()";
@@ -1443,7 +1449,6 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 };
 #endif
 
-/*
 /// Create stream
 shared_ptr<Stream> createStream(const string h264Samples, const unsigned fps, const string opusSamples) {
     // video source
@@ -1499,76 +1504,76 @@ shared_ptr<Stream> createStream(const string h264Samples, const unsigned fps, co
                 }
             }
         }
-        MainThread.dispatch([ws]() {
-            if (clients.empty()) {
-                // we have no clients, stop the stream
-                if (auto stream = ws.lock()) {
-                    stream->stop();
-                }
-            }
-        });
+//        MainThread.dispatch([ws]() {
+//            if (clients.empty()) {
+//                // we have no clients, stop the stream
+//                if (auto stream = ws.lock()) {
+//                    stream->stop();
+//                }
+//            }
+//        });
     });
     return stream;
 }
- */
+ 
 /// Start stream
-//void startStream() {
-//    shared_ptr<Stream> stream;
-//    if (avStream.has_value()) {
-//        stream = avStream.value();
-//        if (stream->isRunning) {
-//            // stream is already running
-//            return;
-//        }
-//    } else {
-//        stream = createStream(h264SamplesDirectory, 30, opusSamplesDirectory);
-//        avStream = stream;
-//    }
-//    stream->start();
-//}
+void startStream() {
+    shared_ptr<Stream> stream;
+    if (avStream.has_value()) {
+        stream = avStream.value();
+        if (stream->isRunning) {
+            // stream is already running
+            return;
+        }
+    } else {
+        stream = createStream(h264SamplesDirectory, 30, opusSamplesDirectory);
+        avStream = stream;
+    }
+    stream->start();
+}
 
 /// Send previous key frame so browser can show something to user
 /// @param stream Stream
 /// @param video Video track data
-//void sendInitialNalus(shared_ptr<Stream> stream, shared_ptr<ClientTrackData> video) {
-//    auto h264 = dynamic_cast<H264FileParser *>(stream->video.get());
-//    auto initialNalus = h264->initialNALUS();
-//
-//    // send previous NALU key frame so users don't have to wait to see stream works
-//    if (!initialNalus.empty()) {
-//        const double frameDuration_s = double(h264->getSampleDuration_us()) / (1000 * 1000);
-//        const uint32_t frameTimestampDuration = video->sender->rtpConfig->secondsToTimestamp(frameDuration_s);
-//        video->sender->rtpConfig->timestamp = video->sender->rtpConfig->startTimestamp - frameTimestampDuration * 2;
-//        video->track->send(initialNalus);
-//        video->sender->rtpConfig->timestamp += frameTimestampDuration;
-//        // Send initial NAL units again to start stream in firefox browser
-//        video->track->send(initialNalus);
-//    }
-//}
+void sendInitialNalus(shared_ptr<Stream> stream, shared_ptr<ClientTrackData> video) {
+    auto h264 = dynamic_cast<H264FileParser *>(stream->video.get());
+    auto initialNalus = h264->initialNALUS();
+
+    // send previous NALU key frame so users don't have to wait to see stream works
+    if (!initialNalus.empty()) {
+        const double frameDuration_s = double(h264->getSampleDuration_us()) / (1000 * 1000);
+        const uint32_t frameTimestampDuration = video->sender->rtpConfig->secondsToTimestamp(frameDuration_s);
+        video->sender->rtpConfig->timestamp = video->sender->rtpConfig->startTimestamp - frameTimestampDuration * 2;
+        video->track->send(initialNalus);
+        video->sender->rtpConfig->timestamp += frameTimestampDuration;
+        // Send initial NAL units again to start stream in firefox browser
+        video->track->send(initialNalus);
+    }
+}
 
 /// Add client to stream
 /// @param client Client
 /// @param adding_video True if adding video
-//void addToStream(shared_ptr<Client> client, bool isAddingVideo) {
-//    if (client->getState() == Client::State::Waiting) {
-//        client->setState(isAddingVideo ? Client::State::WaitingForAudio : Client::State::WaitingForVideo);
-//    } else if ((client->getState() == Client::State::WaitingForAudio && !isAddingVideo)
-//               || (client->getState() == Client::State::WaitingForVideo && isAddingVideo)) {
-//
-//        // Audio and video tracks are collected now
-//        assert(client->video.has_value() && client->audio.has_value());
-//        auto video = client->video.value();
-//
-//        if (avStream.has_value()) {
-//            sendInitialNalus(avStream.value(), video);
-//        }
-//
-//        client->setState(Client::State::Ready);
-//    }
-//    if (client->getState() == Client::State::Ready) {
-//        startStream();
-//    }
-//}
+void addToStream(shared_ptr<Client> client, bool isAddingVideo) {
+    if (client->getState() == Client::State::Waiting) {
+        client->setState(isAddingVideo ? Client::State::WaitingForAudio : Client::State::WaitingForVideo);
+    } else if ((client->getState() == Client::State::WaitingForAudio && !isAddingVideo)
+               || (client->getState() == Client::State::WaitingForVideo && isAddingVideo)) {
+
+        // Audio and video tracks are collected now
+        assert(client->video.has_value() && client->audio.has_value());
+        auto video = client->video.value();
+
+        if (avStream.has_value()) {
+            sendInitialNalus(avStream.value(), video);
+        }
+
+        client->setState(Client::State::Ready);
+    }
+    if (client->getState() == Client::State::Ready) {
+        startStream();
+    }
+}
 
 #if 0
 //Defragmentation Logic for dtls: Implement a custom defragmentation layer in your code before passing the packet to MbedTLS. Catch the ClientHello fragments manually, concatenate them to reconstruct the full message in memory, and then feed the complete packet into mbedtls_ssl_read
