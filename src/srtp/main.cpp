@@ -13,6 +13,10 @@
 
 #include "h264fileparser.hpp"
 #include "opusfileparser.hpp"
+#include "h264rtppacketizer.hpp"
+#include "rtppacketizationconfig.hpp"
+#include "rtcpnackresponder.hpp"
+
 #include "helpers.hpp"
 #include "socketio/socketioClient.h"
 
@@ -30,7 +34,7 @@
 
 
 
-//#define localtesting 1
+#define localtesting 1
 //#define remotetesting 1
 #define VIDEOMEDIA 1
 #include "peerconnection.h"
@@ -719,22 +723,22 @@ shared_ptr<ClientTrackData> addVideo(const shared_ptr<PeerConnection> pc, const 
     video.addSSRC(ssrc, cname, msid, cname);
     auto track = pc->addTrack(video);
     // create RTP configuration
-//    auto rtpConfig = make_shared<RtpPacketizationConfig>(ssrc, cname, payloadType, H264RtpPacketizer::defaultClockRate);
+    auto rtpConfig = make_shared<RtpPacketizationConfig>(ssrc, cname, payloadType, H264RtpPacketizer::defaultClockRate);
 //    // create packetizer
-//    auto packetizer = make_shared<H264RtpPacketizer>(NalUnit::Separator::Length, rtpConfig);
+    auto packetizer = make_shared<H264RtpPacketizer>(NalUnit::Separator::Length, rtpConfig);
 //    // add RTCP SR handler
-//    auto srReporter = make_shared<RtcpSrReporter>(rtpConfig);
-//    packetizer->addToChain(srReporter);
+    auto srReporter = make_shared<RtcpSrReporter>(rtpConfig);
+    packetizer->addToChain(srReporter);
 //    // add RTCP NACK handler
-//    auto nackResponder = make_shared<RtcpNackResponder>();
-//    packetizer->addToChain(nackResponder);
+    auto nackResponder = make_shared<RtcpNackResponder>();
+    packetizer->addToChain(nackResponder);
     // set handler
-//    track->setMediaHandler(packetizer);
+    track->setMediaHandler(packetizer);
     track->onOpen(onOpen);
-//    auto trackData = make_shared<ClientTrackData>(track, srReporter);
-  //  return trackData;
+    auto trackData = make_shared<ClientTrackData>(track, nullptr);
+    return trackData;
     
-    return nullptr;
+  
 }
 
 //shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const uint8_t payloadType, const uint32_t ssrc, const string cname, const string msid, const function<void (void)> onOpen) {
@@ -780,7 +784,7 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
                 {
                     clients.erase(id);
 
-                            int x = 1; //arvind
+
                 }
                 //);
             }
@@ -858,19 +862,19 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
             SInfo << "Video from " << id << " opened" << endl;
         });
 
-        client->audio = addAudio(pc1, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
-
-
-            //MainThread.dispatch([wc]() 
-
-            {
-                if (auto c = wc.lock()) {
-                    addToStream(c, false);
-                }
-            }
-            //);
-            SInfo << "Audio from " << id << " opened" << endl;
-        });
+//        client->audio = addAudio(pc1, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+//
+//
+//            //MainThread.dispatch([wc]() 
+//
+//            {
+//                if (auto c = wc.lock()) {
+//                    addToStream(c, false);
+//                }
+//            }
+//            //);
+//            SInfo << "Audio from " << id << " opened" << endl;
+//        });
 
 #endif
 
@@ -918,8 +922,8 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
                         << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
 
 
-                sleep(5);
-                dc->send("PC1 to PC2");
+              //  sleep(5);
+              //  dc->send("PC1 to PC2");
 
             });
 
@@ -944,7 +948,6 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
                 {
                     clients.erase(id);
 
-                            int x = 1; //arvind
                 }
                 //);
             }
@@ -997,34 +1000,55 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
                 });
 #if VIDEOMEDIA
 
-        client->video = addVideo(pc2, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)](){
-            // MainThread.dispatch([wc]() 
 
-            SInfo << "addToStream";
-
-            {
-                if (auto c = wc.lock()) {
-                    addToStream(c, true);
-                }
+          shared_ptr<Track> t2;
+          string newTrackMid;
+          pc2->onTrack([&t2, &newTrackMid](shared_ptr<Track> t) {
+            string mid = t->mid();
+            cout << "Track 2: Received track with mid \"" << mid << "\"" << endl;
+            if (mid != newTrackMid) {
+              cerr << "Wrong track mid" << endl;
+              return;
             }
 
-            //);
-            SInfo << "Video from " << id << " opened" << endl;
-        });
+            t->onOpen([mid]() {
+              cout << "Track 2: Track with mid \"" << mid << "\" is open" << endl; });
 
-        client->audio = addAudio(pc2, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+            t->onClosed(
+              [mid]() {
+                cout << "Track 2: Track with mid \"" << mid << "\" is closed" << endl; });
 
+            std::atomic_store(&t2, t);
+          });
+                
+//        client->video = addVideo(pc2, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+//            // MainThread.dispatch([wc]() 
+//
+//            SInfo << "addToStream";
+//
+//            {
+//                if (auto c = wc.lock()) {
+//                    addToStream(c, true);
+//                }
+//            }
+//
+//            //);
+//            SInfo << "Video from " << id << " opened" << endl;
+//        });
 
-            //MainThread.dispatch([wc]() 
-
-            {
-                if (auto c = wc.lock()) {
-                    addToStream(c, false);
-                }
-            }
-            //);
-            SInfo << "Audio from " << id << " opened" << endl;
-        });
+//        client->audio = addAudio(pc2, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+//
+//
+//            //MainThread.dispatch([wc]() 
+//
+//            {
+//                if (auto c = wc.lock()) {
+//                    addToStream(c, false);
+//                }
+//            }
+//            //);
+//            SInfo << "Audio from " << id << " opened" << endl;
+//        });
 
 #endif
 
@@ -1070,8 +1094,8 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
                     SInfo << "onDataChannel:onMessage PC2 Binary message from " << id
                         << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
 
-                sleep(5);
-                dc->send("PC2 tp PC1");
+                //sleep(5);
+                //dc->send("PC2 tp PC1");
 
             });
 

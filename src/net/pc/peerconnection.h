@@ -105,9 +105,17 @@ public:
 	PeerConnection( Configuration &config);
 	~PeerConnection();
 
+  void iterateRemoteTracks(std::function<void(shared_ptr<Track> track)> func);
+  void iterateTracks(std::function<void(shared_ptr<Track> track)> func);
+  void openTracks();
+  void closeTracks();
+  void triggerTrack(weak_ptr<Track> weakTrack);
+
+  void triggerPendingTracks();
+  
 	void close();
 
-        const Configuration config;
+  const Configuration config;
         
 	State state() const;
 	IceState iceState() const;

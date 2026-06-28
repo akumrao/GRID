@@ -4,7 +4,7 @@
 
 #include "rtppacketizationconfig.hpp"
 
-#include "impl/utils.hpp"
+#include "UtilString.h"
 
 #include <cassert>
 #include <cmath>
@@ -13,7 +13,7 @@
 
 namespace rtc {
 
-namespace utils = impl::utils;
+//namespace utils = impl::utils;
 
 RtpPacketizationConfig::RtpPacketizationConfig(SSRC ssrc, string cname, uint8_t payloadType,
                                                uint32_t clockRate, uint8_t videoOrientationId)

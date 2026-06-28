@@ -41,7 +41,7 @@ struct Client {
 
 private:
     std::shared_mutex _mutex;
-    State state = State::Waiting;
+    State state { State::Waiting};
     std::string id;
     std::shared_ptr<rtc::PeerConnection> _peerConnection;
 };

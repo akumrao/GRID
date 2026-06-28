@@ -5,8 +5,8 @@
 
 #if RTC_ENABLE_MEDIA
 
-#include "rtc.h"
 #include "common.hpp"
+
 #include <cassert>
 
 namespace rtc {

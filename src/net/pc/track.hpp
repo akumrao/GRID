@@ -8,9 +8,10 @@
 #include "description.hpp"
 #include "mediahandler.hpp"
 
+#include "sctptransport.hpp"
 
 #include "queue.hpp"
-
+#include <shared_mutex>
 
 namespace rtc {
 
@@ -63,7 +64,7 @@ public:
         
         
 
-private:
+public:
     
     
    
@@ -94,7 +95,8 @@ private:
 	void ImpsetMediaHandler(shared_ptr<MediaHandler> handler);
 
 #if RTC_ENABLE_MEDIA
-	//void open(shared_ptr<DtlsSrtpTransport> transport);
+	void open(shared_ptr<SctpTransport> transport);
+
 #endif
 
 	bool transportSend(message_ptr message);
@@ -102,13 +104,15 @@ private:
 private:
 	const weak_ptr<PeerConnection> mPeerConnection;
 #if RTC_ENABLE_MEDIA
-	weak_ptr<DtlsSrtpTransport> mDtlsSrtpTransport;
+	weak_ptr<SctpTransport> mDtlsSrtpTransport;
+
+	//shared_ptr<SctpTransport> mDtlsSrtpTransport;
 #endif
 
 	Description::Media mMediaDescription;
 	shared_ptr<MediaHandler> mMediaHandler;
 
-	// std::shared_mutex mMutex;
+	std::shared_mutex mMutex;
 
 	std::atomic<bool> mIsClosed = false;
 
