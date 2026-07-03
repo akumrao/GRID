@@ -66,7 +66,7 @@ unordered_map<string, shared_ptr<Client>> clients
 /// @param id Client ID
 /// @returns Client
 shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool isClient);
-shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id);
+void createPeerConnection_lc(Configuration &config);
 
 shared_ptr<Client> createPeerConnection_rm(Configuration &config, string id, Async &async, bool isClient);
 
@@ -91,7 +91,7 @@ void startStream();
 /// Audio and video stream
 optional<shared_ptr<Stream>> avStream = nullopt;
 
-const string defaultRootDirectory = "../../../examples/streamer/samples/";
+const string defaultRootDirectory = "../examples/streamer/samples/";
 const string defaultH264SamplesDirectory = defaultRootDirectory + "h264/";
 string h264SamplesDirectory = defaultH264SamplesDirectory;
 const string defaultOpusSamplesDirectory = defaultRootDirectory + "opus/";
@@ -447,7 +447,7 @@ int main(int argc, char **argv) {
 #if localtesting 
     settingconfig.console = true;
     std::string id = "server";
-    clients.emplace(id, createPeerConnection_lc(settingconfig, id));
+   createPeerConnection_lc(settingconfig);
 #elif remotetesting
 
 
@@ -735,7 +735,7 @@ shared_ptr<ClientTrackData> addVideo(const shared_ptr<PeerConnection> pc, const 
     // set handler
     track->setMediaHandler(packetizer);
     track->onOpen(onOpen);
-    auto trackData = make_shared<ClientTrackData>(track, nullptr);
+    auto trackData = make_shared<ClientTrackData>(track, srReporter);
     return trackData;
     
   
@@ -766,11 +766,12 @@ shared_ptr<ClientTrackData> addVideo(const shared_ptr<PeerConnection> pc, const 
 #if localtesting 
 // Create and setup a PeerConnection
 
-shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
+void createPeerConnection_lc(Configuration &config) {
     auto pc1 = make_shared<PeerConnection>(config);
     config.portdefault = config.portdefault + 1;
     auto pc2 = make_shared<PeerConnection>(config);
     {
+        string id = "server";
 
         auto client = make_shared<Client>(pc1);
 
@@ -847,6 +848,27 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
                 });
 #if VIDEOMEDIA
 
+                
+//          shared_ptr<Track> t2;
+//          string newTrackMid;
+//          pc1->onTrack([&t2, &newTrackMid](shared_ptr<Track> t) {
+//            string mid = t->mid();
+//            cout << "Track 2: Received track with mid \"" << mid << "\"" << endl;
+//            if (mid != newTrackMid) {
+//              cerr << "Wrong track mid" << endl;
+//              return;
+//            }
+//
+//            t->onOpen([mid]() {
+//              cout << "Track 2: Track with mid \"" << mid << "\" is open" << endl; });
+//
+//            t->onClosed(
+//              [mid]() {
+//                cout << "Track 2: Track with mid \"" << mid << "\" is closed" << endl; });
+//
+//            std::atomic_store(&t2, t);
+//          });
+//          
         client->video = addVideo(pc1, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)](){
             // MainThread.dispatch([wc]() 
 
@@ -932,9 +954,12 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
 
         pc1->setLocalDescription();
         //   return client;
+        
+        clients[id] =  client;
     }
 
     {
+        string id = "client";
 
         auto client = make_shared<Client>(pc2);
 
@@ -999,7 +1024,6 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
                     }
                 });
 #if VIDEOMEDIA
-
 
           shared_ptr<Track> t2;
           string newTrackMid;
@@ -1103,7 +1127,10 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
         });
 
         pc2->setLocalDescription(); // this will create offfer
-        return client;
+        
+        //clients.emplace(id, client);
+         clients[id] =  client;    
+
     }
 };
 
@@ -1585,7 +1612,7 @@ void addToStream(shared_ptr<Client> client, bool isAddingVideo) {
                || (client->getState() == Client::State::WaitingForVideo && isAddingVideo)) {
 
         // Audio and video tracks are collected now
-        assert(client->video.has_value() && client->audio.has_value());
+        assert(client->video.has_value());
         auto video = client->video.value();
 
         if (avStream.has_value()) {
