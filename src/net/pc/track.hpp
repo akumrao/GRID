@@ -8,7 +8,13 @@
 #include "description.hpp"
 #include "mediahandler.hpp"
 
+#if RTC_ENABLE_MEDIA
+//#include "dtlssrtptransport.hpp"
+//#include "impl/dtlssrtptransport.hpp"
+
 #include "sctptransport.hpp"
+
+#endif
 
 #include "queue.hpp"
 #include <shared_mutex>
@@ -17,7 +23,7 @@ namespace rtc {
 
 struct PeerConnection;
 
-class  Track  : public Channel {
+class Track  :  public std::enable_shared_from_this<Track>, public Channel {
 public:
     
      	Track(weak_ptr<PeerConnection> pc, Description::Media desc);
