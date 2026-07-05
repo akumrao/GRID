@@ -33,6 +33,18 @@
 //#include "track.hpp"
 
 
+#if 1
+
+    
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <cstdint>
+#include <map>
+
+#endif
+
+
 #define SRTP 1
 
 using namespace base;
@@ -41,6 +53,162 @@ using json = nlohmann::json;
 
 namespace rtc
 {
+
+#if 1
+class SafeH264RtpDumper {
+private:
+    std::ofstream outFile;
+    const uint8_t annexBStartCode[4] = {0x00, 0x00, 0x00, 0x01};
+    
+    // Sequence tracking variables
+    uint16_t nextExpectedSequence{0};
+    bool isFirstPacket{true};
+
+    // Buffer to hold out-of-order packets (sorted automatically by sequence number)
+    std::map<uint16_t, std::vector<uint8_t>> packetBufferMap;
+    const size_t MAX_BUFFER_SIZE = 30; // Max packets to hold while waiting for missing ones
+
+public:
+    SafeH264RtpDumper(const std::string& filename) {
+        outFile.open(filename, std::ios::binary | std::ios::out);
+    }
+
+    ~SafeH264RtpDumper() {
+        // Flush remaining buffered packets before closing
+        FlushRemainingBuffer();
+        if (outFile.is_open()) outFile.close();
+    }
+
+    // Call this whenever a network packet arrives from mediasoup
+    void OnRtpPacketReceived(const uint8_t* packetBuffer, size_t packetLength) {
+        if (packetLength < 12) return;
+
+        // Extract 16-bit RTP Sequence Number (Bytes 2 and 3 of RTP header)
+        uint16_t sequenceNumber = (packetBuffer[2] << 8) | packetBuffer[3];
+
+        // Store copy of the packet in our sorting map
+        packetBufferMap[sequenceNumber] = std::vector<uint8_t>(packetBuffer, packetBuffer + packetLength);
+
+        // Initialize sequence tracking on the very first packet
+        if (isFirstPacket) {
+            nextExpectedSequence = sequenceNumber;
+            isFirstPacket = false;
+        }
+
+        // Process buffered packets that are ready and in the correct order
+        ProcessOrderedQueue();
+    }
+
+private:
+    void ProcessOrderedQueue() {
+        while (!packetBufferMap.empty()) {
+            auto it = packetBufferMap.begin();
+            uint16_t currentSeq = it->first;
+
+            // Scenario A: The packet we were waiting for has arrived
+            if (currentSeq == nextExpectedSequence) {
+                DecodeAndWritePayload(it->second.data(), it->second.size());
+                nextExpectedSequence++;
+                packetBufferMap.erase(it);
+            }
+            // Scenario B: Packet is from the past (duplicate or very late arrival), discard it
+            else if (IsSequenceOlder(currentSeq, nextExpectedSequence)) {
+                packetBufferMap.erase(it);
+            }
+            // Scenario C: There is a gap (currentSeq > nextExpectedSequence)
+            else {
+                // If our sorting buffer is full, we must give up on the missing packet(s)
+                if (packetBufferMap.size() > MAX_BUFFER_SIZE) {
+                    std::clog << "[Warning] Missing packets detected between seq " 
+                              << nextExpectedSequence << " and " << currentSeq << ". Skipping gap." << std::endl;
+                    
+                    // Advance our timeline to the oldest packet currently sitting in the buffer
+                    nextExpectedSequence = currentSeq;
+                    continue; // Loop again to process it
+                }
+                // Buffer is not full yet; stop and wait for the missing packet to arrive
+                break; 
+            }
+        }
+    }
+
+    // Accounts for 16-bit sequence number rollover wrapping around at 65535
+    bool IsSequenceOlder(uint16_t current, uint16_t expected) {
+        return (current != expected) && ((uint16_t)(expected - current) < 32768);
+    }
+
+    void FlushRemainingBuffer() {
+        while (!packetBufferMap.empty()) {
+            auto it = packetBufferMap.begin();
+            DecodeAndWritePayload(it->second.data(), it->second.size());
+            packetBufferMap.erase(it);
+        }
+    }
+
+    // Contains the RFC 6184 H.264 parsing logic from the previous solution
+    void DecodeAndWritePayload(const uint8_t* packetBuffer, size_t packetLength) {
+        size_t headerLength = 12 + ((packetBuffer[0] & 0x0F) * 4);
+        if ((packetBuffer[0] >> 4 & 0x01)) { // Extension header check
+            size_t extIndex = headerLength;
+            uint16_t extLength = (packetBuffer[extIndex + 2] << 8) | packetBuffer[extIndex + 3];
+            headerLength += 4 + (extLength * 4);
+        }
+
+        if (packetLength <= headerLength) return;
+
+        const uint8_t* payload = packetBuffer + headerLength;
+        size_t payloadLength = packetLength - headerLength;
+
+        if (packetBuffer[0] >> 5 & 0x01) { // Padding check
+            uint8_t paddingLength = packetBuffer[packetLength - 1];
+            if (paddingLength < payloadLength) payloadLength -= paddingLength;
+        }
+
+        if (payloadLength < 2) return;
+        uint8_t nalType = payload[0] & 0x1F;
+
+        if (nalType >= 1 && nalType <= 23) { // Single NAL
+            WriteToFile(payload, payloadLength);
+        } 
+        else if (nalType == 28) { // FU-A Fragment
+            bool isStart = payload[1] & 0x80;
+            if (isStart) {
+                uint8_t reconNalHeader = (payload[0] & 0xE0) | (payload[1] & 0x1F);
+                outFile.write(reinterpret_cast<const char*>(annexBStartCode), 4);
+                outFile.write(reinterpret_cast<const char*>(&reconNalHeader), 1);
+            }
+            if (payloadLength > 2) {
+                outFile.write(reinterpret_cast<const char*>(payload + 2), payloadLength - 2);
+            }
+        } 
+        else if (nalType == 24) { // STAP-A Aggregation
+            size_t idx = 1;
+            while (idx < payloadLength - 2) {
+                uint16_t nalSize = (payload[idx] << 8) | payload[idx + 1];
+                idx += 2;
+                if (idx + nalSize <= payloadLength) {
+                    WriteToFile(payload + idx, nalSize);
+                }
+                idx += nalSize;
+            }
+        }
+    }
+
+    void WriteToFile(const uint8_t* data, size_t length) {
+        outFile.write(reinterpret_cast<const char*>(annexBStartCode), 4);
+        outFile.write(reinterpret_cast<const char*>(data), length);
+    }
+};
+
+    
+
+#endif  
+    
+    
+    
+    
+    
+    
 	class Transport : 
 	                public SctpTransport::Listener,
 //                        public Track::Listener,
@@ -79,6 +247,10 @@ namespace rtc
 
 	public:
 		virtual void HandleRequest();
+                
+                #if 1
+                SafeH264RtpDumper h246dump{"test.264"};
+		#endif
 
 	public:
 		// Must be called from the subclass.

@@ -354,6 +354,8 @@ void Track::open(Transport *transport) {
             }
             SInfo << "Track::transportSend RTCP ";
             mDtlsSrtpTransport->SendRtcpPacket(packet);
+            
+             delete packet;
 
         } else {
 
@@ -364,8 +366,13 @@ void Track::open(Transport *transport) {
 
                 return false;
             }
+            
+            SInfo <<  "no suitable Producer for received RTP packet [ssrc:"  << packet->GetSsrc() <<  ", payloadType: " << packet->GetPayloadType() << "] seq: " << packet->GetSequenceNumber()   << " isKeyFrame: "  <<  packet->IsKeyFrame();
+                
 
             mDtlsSrtpTransport->SendRtpPacket(packet);
+            
+            delete packet;
         }
 
 
@@ -417,7 +424,7 @@ void Track::open(Transport *transport) {
         if (!mOpenTriggered)
             return;
 
-        while (messageCallback || frameCallback) {
+        while ((messageCallback || frameCallback) && mRecvQueue.size() ) {
             auto next = mRecvQueue.front();
             if (!next)
                 break;

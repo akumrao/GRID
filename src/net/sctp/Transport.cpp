@@ -476,23 +476,36 @@ namespace rtc
 		packet->SetAbsSendTimeExtensionId(this->recvRtpHeaderExtensionIds.absSendTime);
 		packet->SetTransportWideCc01ExtensionId(this->recvRtpHeaderExtensionIds.transportWideCc01);
 
-		auto nowMs = base::Application::GetTimeMs();
+		//auto nowMs = base::Application::GetTimeMs();
 
 		// Feed the TransportCongestionControlServer.
 		//if (this->tccServer)
 		//	this->tccServer->IncomingPacket(nowMs, packet);
 
 		// Get the associated Producer.
-		rtc::Producer* producer = this->rtpListener.GetProducer(packet);
-
-		if (!producer)
-		{
-			SDebug <<  "no suitable Producer for received RTP packet [ssrc:"  << packet->GetSsrc() <<  ", payloadType: " << packet->GetPayloadType() << "]";
+                
+                SInfo <<  "no suitable Producer for received RTP packet [ssrc:"  << packet->GetSsrc() <<  ", payloadType: " << packet->GetPayloadType() << "] seq: " << packet->GetSequenceNumber()   << " isKeyFrame: "  <<  packet->IsKeyFrame();
+                
+                if(packet->IsKeyFrame() == true)
+                {
+                    int x = 1;
+                }
+                
+              //  h246dump.OnRtpPacketReceived( packet->GetData(), packet->GetSize());
 			
-			delete packet;
-
-			return;
-		}
+               delete packet;
+                        
+                
+//		rtc::Producer* producer = this->rtpListener.GetProducer(packet);
+//
+//		if (!producer)
+//		{
+//			SDebug <<  "no suitable Producer for received RTP packet [ssrc:"  << packet->GetSsrc() <<  ", payloadType: " << packet->GetPayloadType() << "]";
+//			
+//			delete packet;
+//
+//			return;
+//		}
 
 		// MS_DEBUG_DEV(
 		//   "RTP packet received [ssrc:%" PRIu32 ", payloadType:%" PRIu8 ", producerId:%s]",
@@ -514,7 +527,7 @@ namespace rtc
 //			default:;
 //		}
 
-		delete packet;
+		//delete packet;
 	}
         
         void Transport::ReceiveRtcpPacket(rtc::RTCP::Packet* packet)

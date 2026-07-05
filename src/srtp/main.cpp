@@ -34,7 +34,7 @@
 
 
 #define socketio 1
-#define localtesting 1
+//#define localtesting 1
 //#define remotetesting 1
 #define VIDEOMEDIA 1
 #include "peerconnection.h"
@@ -744,27 +744,27 @@ shared_ptr<ClientTrackData> addVideo(const shared_ptr<PeerConnection> pc, const 
   
 }
 
-//shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const uint8_t payloadType, const uint32_t ssrc, const string cname, const string msid, const function<void (void)> onOpen) {
-//    auto audio = Description::Audio(cname);
-//    audio.addOpusCodec(payloadType);
-//    audio.addSSRC(ssrc, cname, msid, cname);
-//    auto track = pc->addTrack(audio);
-//    // create RTP configuration
-//    auto rtpConfig = make_shared<RtpPacketizationConfig>(ssrc, cname, payloadType, OpusRtpPacketizer::DefaultClockRate);
-//    // create packetizer
-//    auto packetizer = make_shared<OpusRtpPacketizer>(rtpConfig);
-//    // add RTCP SR handler
-//    auto srReporter = make_shared<RtcpSrReporter>(rtpConfig);
-//    packetizer->addToChain(srReporter);
-//    // add RTCP NACK handler
-//    auto nackResponder = make_shared<RtcpNackResponder>();
-//    packetizer->addToChain(nackResponder);
-//    // set handler
-//    track->setMediaHandler(packetizer);
-//    track->onOpen(onOpen);
-//    auto trackData = make_shared<ClientTrackData>(track, srReporter);
-//    return trackData;
-//}
+shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const uint8_t payloadType, const uint32_t ssrc, const string cname, const string msid, const function<void (void)> onOpen) {
+    auto audio = Description::Audio(cname);
+    audio.addOpusCodec(payloadType);
+    audio.addSSRC(ssrc, cname, msid, cname);
+    auto track = pc->addTrack(audio);
+    // create RTP configuration
+    auto rtpConfig = make_shared<RtpPacketizationConfig>(ssrc, cname, payloadType, OpusRtpPacketizer::DefaultClockRate);
+    // create packetizer
+    auto packetizer = make_shared<OpusRtpPacketizer>(rtpConfig);
+    // add RTCP SR handler
+    auto srReporter = make_shared<RtcpSrReporter>(rtpConfig);
+    packetizer->addToChain(srReporter);
+    // add RTCP NACK handler
+    auto nackResponder = make_shared<RtcpNackResponder>();
+    packetizer->addToChain(nackResponder);
+    // set handler
+    track->setMediaHandler(packetizer);
+    track->onOpen(onOpen);
+    auto trackData = make_shared<ClientTrackData>(track, srReporter);
+    return trackData;
+}
 
 #if localtesting 
 // Create and setup a PeerConnection
@@ -1430,19 +1430,19 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
         SInfo << "Video from " << id << " opened" << endl;
     });
 
-//    client->audio = addAudio(pc, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
-//
-//
-//        //MainThread.dispatch([wc]() 
-//
-//        {
-//            if (auto c = wc.lock()) {
-//                addToStream(c, false);
-//            }
-//        }
-//        //);
-//        SInfo << "Audio from " << id << " opened" << endl;
-//    });
+    client->audio = addAudio(pc, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+
+
+        //MainThread.dispatch([wc]() 
+
+        {
+            if (auto c = wc.lock()) {
+                addToStream(c, false);
+            }
+        }
+        //);
+        SInfo << "Audio from " << id << " opened" << endl;
+    });
 
 #endif
     std::string dcchat = "Settings::getdatachannel()";
