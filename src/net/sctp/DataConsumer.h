@@ -4,7 +4,7 @@
 #include "common.h"
 //#include "Channel/Request.h"
 #include "sctptransport.hpp"
-
+#include "RTC/SctpDictionaries.h"
 #include <string>
 
 namespace rtc

@@ -2,7 +2,7 @@
 #define MS_RTC_DATA_CONSUMER_HPP
 
 #include "common.h"
-#include "Channel/Request.h"
+//#include "Channel/Request.h"
 #include "RTC/SctpDictionaries.h"
 #include <json.hpp>
 #include <string>
@@ -31,7 +31,7 @@ namespace rtc
 	public:
 		void FillJson(json& jsonObject) const;
 		void FillJsonStats(json& jsonArray) const;
-		void HandleRequest(Channel::Request* request);
+//		void HandleRequest(Channel::Request* request);
 		rtc::SctpStreamParameters& GetSctpStreamParameters() ;
 		bool IsActive() const;
 		void TransportConnected();

@@ -65,21 +65,21 @@ RTC_CPP_EXPORT std::shared_future<void> Cleanup();
 };
 
 
-
-	class SctpStreamParameters
-	{
-	public:
-		SctpStreamParameters() = default;
-		explicit SctpStreamParameters(json& data);
-
-		void FillJson(json& jsonObject) const;
-
-	public:
-		uint16_t streamId{ 0u };
-		bool ordered{ true };
-		uint16_t maxPacketLifeTime{ 0u };
-		uint16_t maxRetransmits{ 0u };
-	};
+//
+//	class SctpStreamParameters
+//	{
+//	public:
+//		SctpStreamParameters() = default;
+//		explicit SctpStreamParameters(json& data);
+//
+//		void FillJson(json& jsonObject) const;
+//
+//	public:
+//		uint16_t streamId{ 0u };
+//		bool ordered{ true };
+//		uint16_t maxPacketLifeTime{ 0u };
+//		uint16_t maxRetransmits{ 0u };
+//	};
         
 RTC_CPP_EXPORT void SetSctpSettings(SctpSettings s);
 

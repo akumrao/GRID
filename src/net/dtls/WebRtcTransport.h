@@ -134,6 +134,13 @@ namespace rtc
                 rtc::SrtpSession* srtpRecvSession{ nullptr };
 		rtc::SrtpSession* srtpSendSession{ nullptr };
                 
+      /*          
+                
+                void SendRtpPacket(rtc::RtpPacket* packet, Track::onSendCallback cb);
+                void SendRtcpPacket(rtc::RTCP::Packet* packet);
+                void SendRtcpCompoundPacket(rtc::RTCP::CompoundPacket* packet);
+    
+      */          
             //    Listener* iceListener{ nullptr };
 	};
 } // namespace rtc

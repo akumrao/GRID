@@ -12,8 +12,10 @@
 //#include "dtlssrtptransport.hpp"
 //#include "impl/dtlssrtptransport.hpp"
 
-#include "sctptransport.hpp"
-
+#include "Transport.h"
+//#include "RTC/Transport.h"
+#include "RTC/RtpPacket.h"
+#include "RTC/RTCP/CompoundPacket.h"
 #endif
 
 #include "queue.hpp"
@@ -21,119 +23,130 @@
 
 namespace rtc {
 
-struct PeerConnection;
+    struct PeerConnection;
 
-class Track  :  public std::enable_shared_from_this<Track>, public Channel {
-public:
-    
-     	Track(weak_ptr<PeerConnection> pc, Description::Media desc);
+    class Track : public std::enable_shared_from_this<Track>, public Channel {
+    public:
+
+        string mid() const;
+        Description::Direction direction() const;
+        Description::Media description() const;
+
+        void setDescription(Description::Media description);
+
+        void close(void) override;
+        bool send(message_variant data) override;
+        bool send(const byte *data, size_t size) override;
+
+        bool isOpen(void) const override;
+        bool isClosed(void) const override;
+        size_t maxMessageSize() const override;
+
+        void onFrame(std::function<void(binary data, FrameInfo frame) > callback);
+
+        bool requestKeyframe();
+        bool requestBitrate(unsigned int bitrate);
+
+        void setMediaHandler(shared_ptr<MediaHandler> handler);
+        void chainMediaHandler(shared_ptr<MediaHandler> handler);
+        //shared_ptr<MediaHandler> getMediaHandler();
+
+        // Deprecated, use setMediaHandler() and getMediaHandler()
+
+        inline void setRtcpHandler(shared_ptr<MediaHandler> handler) {
+            setMediaHandler(handler);
+        }
+
+        inline shared_ptr<MediaHandler> getRtcpHandler() {
+            return getMediaHandler();
+        }
         
-	//Track();
-	~Track() override;
+        using onSendCallback = const std::function<void(bool sent)>;
 
-	string mid() const;
-	Description::Direction direction() const;
-	Description::Media description() const;
+/*
+        class Listener {
+        public:
+            virtual void SendRtcpPacket(rtc::RTCP::Packet* packet) = 0;
+            virtual void SendRtcpCompoundPacket(rtc::RTCP::CompoundPacket* packet) = 0;
+            virtual void SendRtpPacket(rtc::RtpPacket* packet, onSendCallback cb = nullptr) = 0;
 
-	void setDescription(Description::Media description);
+        };
 
-	void close(void) override;
-	bool send(message_variant data) override;
-	bool send(const byte *data, size_t size) override;
 
-	bool isOpen(void) const override;
-	bool isClosed(void) const override;
-	size_t maxMessageSize() const override;
-
-	void onFrame(std::function<void(binary data, FrameInfo frame)> callback);
-
-	bool requestKeyframe();
-	bool requestBitrate(unsigned int bitrate);
-
-	void setMediaHandler(shared_ptr<MediaHandler> handler);
-	void chainMediaHandler(shared_ptr<MediaHandler> handler);
-	//shared_ptr<MediaHandler> getMediaHandler();
-
-	// Deprecated, use setMediaHandler() and getMediaHandler()
-	inline void setRtcpHandler(shared_ptr<MediaHandler> handler) { setMediaHandler(handler); }
-	inline shared_ptr<MediaHandler> getRtcpHandler() { return getMediaHandler(); }
+        Listener* listener{ nullptr};
+   */     
         
-        
-        
-        
-        
-        
-        
-                
-        
-        
-        
-        
+        Track( weak_ptr<PeerConnection> pc, Description::Media desc);
 
-public:
-    
-    
-   
-	void ImpDesTrack();
+        //Track();
+        ~Track() override;
 
-	void Impclose();
-	void incoming(message_ptr message);
-	bool outgoing(message_ptr message);
 
-	optional<message_variant> receive() override;
-	optional<message_variant> peek() override;
-	size_t availableAmount() const override;
-	void flushPendingMessages() override;
-	message_variant trackMessageToVariant(message_ptr message);
 
-	void ImponFrame(std::function<void(binary data, FrameInfo frame)> callback);
+    public:
 
-	bool ImpisOpen() const;
-	bool ImpisClosed() const;
-	size_t ImpmaxMessageSize() const;
 
-	string Impmid() const;
-	Description::Direction Impdirection() const;
-	Description::Media Impdescription() const;
-	void ImpsetDescription(Description::Media desc);
 
-	shared_ptr<MediaHandler> getMediaHandler();
-	void ImpsetMediaHandler(shared_ptr<MediaHandler> handler);
+        void ImpDesTrack();
+
+        void Impclose();
+        void incoming(message_ptr message);
+        bool outgoing(message_ptr message);
+
+        optional<message_variant> receive() override;
+        optional<message_variant> peek() override;
+        size_t availableAmount() const override;
+        void flushPendingMessages() override;
+        message_variant trackMessageToVariant(message_ptr message);
+
+        void ImponFrame(std::function<void(binary data, FrameInfo frame) > callback);
+
+        bool ImpisOpen() const;
+        bool ImpisClosed() const;
+        size_t ImpmaxMessageSize() const;
+
+        string Impmid() const;
+        Description::Direction Impdirection() const;
+        Description::Media Impdescription() const;
+        void ImpsetDescription(Description::Media desc);
+
+        shared_ptr<MediaHandler> getMediaHandler();
+        void ImpsetMediaHandler(shared_ptr<MediaHandler> handler);
 
 #if RTC_ENABLE_MEDIA
-	void open(shared_ptr<SctpTransport> transport);
+        void open( Transport* transport);
 
 #endif
 
-	bool transportSend(message_ptr message);
+        bool transportSend(message_ptr message);
 
-private:
-	const weak_ptr<PeerConnection> mPeerConnection;
+    private:
+        const weak_ptr<PeerConnection> mPeerConnection;
 #if RTC_ENABLE_MEDIA
-	weak_ptr<SctpTransport> mDtlsSrtpTransport;
+         Transport *mDtlsSrtpTransport;
 
-	//shared_ptr<SctpTransport> mDtlsSrtpTransport;
+        //shared_ptr<Transport> mDtlsSrtpTransport;
 #endif
 
-	Description::Media mMediaDescription;
-	shared_ptr<MediaHandler> mMediaHandler;
+        Description::Media mMediaDescription;
+        shared_ptr<MediaHandler> mMediaHandler;
 
-	std::shared_mutex mMutex;
+        std::shared_mutex mMutex;
 
-	std::atomic<bool> mIsClosed = false;
+        std::atomic<bool> mIsClosed = false;
 
-//	Queue<message_ptr> mRecvQueue;
-        
+        //	Queue<message_ptr> mRecvQueue;
+
         std::queue<message_ptr> mRecvQueue;
 
-	synchronized_callback<binary, FrameInfo> frameCallback;
-    
-    
-    
-    
-    
-	
-};
+        synchronized_callback<binary, FrameInfo> frameCallback;
+
+
+
+
+
+
+    };
 
 } // namespace rtc
 

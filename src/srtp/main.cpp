@@ -16,7 +16,7 @@
 #include "h264rtppacketizer.hpp"
 #include "rtppacketizationconfig.hpp"
 #include "rtcpnackresponder.hpp"
-
+#include "DepLibSRTP.h"
 #include "helpers.hpp"
 #include "socketio/socketioClient.h"
 
@@ -33,7 +33,7 @@
 #include "stream.hpp"
 
 
-
+#define socketio 1
 #define localtesting 1
 //#define remotetesting 1
 #define VIDEOMEDIA 1
@@ -390,6 +390,7 @@ int main(int argc, char **argv) {
     rtc::SctpSettings mCurrentSctpSettings = {};
     rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
 
+    DepLibSRTP::ClassInit();
 
 
 
@@ -693,6 +694,8 @@ int main(int argc, char **argv) {
         SInfo << "app.run() is over";
         //    Settings::exit();         
         //    rtc::CleanupSSL();
+        
+        DepLibSRTP::ClassDestroy();
         Logger::destroy();
 
         //    if(ctx->txt)

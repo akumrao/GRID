@@ -2,7 +2,7 @@
 #define MS_RTC_DATA_PRODUCER_HPP
 
 #include "common.h"
-#include "Channel/Request.h"
+//#include "Channel/Request.h"
 #include "RTC/SctpDictionaries.h"
 #include <json.hpp>
 #include <string>
@@ -26,7 +26,7 @@ namespace rtc
 	public:
 		void FillJson(json& jsonObject) const;
 		void FillJsonStats(json& jsonArray) const;
-		void HandleRequest(Channel::Request* request);
+		//void HandleRequest(Channel::Request* request);
 		 rtc::SctpStreamParameters& GetSctpStreamParameters() ;
 		void ReceiveSctpMessage(uint32_t ppid, const uint8_t* msg, size_t len);
 

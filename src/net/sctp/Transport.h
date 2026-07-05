@@ -30,6 +30,8 @@
 #include "base/Timer.h"
 #include <string>
 #include <unordered_map>
+//#include "track.hpp"
+
 
 #define SRTP 1
 
@@ -41,6 +43,7 @@ namespace rtc
 {
 	class Transport : 
 	                public SctpTransport::Listener,
+//                        public Track::Listener,
 	                public Timer::Listener
 	{
 	protected:
@@ -238,8 +241,11 @@ namespace rtc
 		rtc::Consumer* GetConsumerByRtxSsrc(uint32_t ssrc) const;
                 
                 
-                
-                
+                /*
+		void SendRtcpPacket(rtc::RTCP::Packet* packet){} ;
+		void SendRtcpCompoundPacket(rtc::RTCP::CompoundPacket* packet) {};
+                void SendRtpPacket(rtc::RtpPacket* packet, Track::onSendCallback cb = nullptr) {};
+		*/                
                 
                 #endif
                 

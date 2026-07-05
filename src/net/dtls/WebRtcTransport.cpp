@@ -406,12 +406,15 @@ namespace rtc {
    #if SRTP
         if (rtc::RTCP::Packet::IsRtcp(data, len))
         {
-                OnRtcpDataReceived(tuple, data, len);
+            SInfo << "AgentNo " << agentNo << " OnPacketReceived RTCP::Packet " << len;
+            OnRtcpDataReceived(tuple, data, len);
         }
         // Check if it's RTP.
         else if (rtc::RtpPacket::IsRtp(data, len))
         {
-                OnRtpDataReceived(tuple, data, len);
+           // SInfo << "AgentNo " << agentNo << " OnPacketReceived rtc::RtpPacket " << len;
+            
+            OnRtpDataReceived(tuple, data, len);
         }
 
         // Check if it's DTLS.
@@ -538,7 +541,7 @@ namespace rtc {
 
         IP::GetAddressInfo(
                 remoteAddr, family, peerIp, peerPort);
-        SInfo << "AgentNo " << agentNo << " OnUdpSocketPacketReceived " << peerIp << ":" << peerPort;
+        SDebug << "AgentNo " << agentNo << " OnUdpSocketPacketReceived " << peerIp << ":" << peerPort;
         addr_record_t remotesrc;
         IP::CopyAddress(remoteAddr, remotesrc);
 
@@ -557,7 +560,7 @@ namespace rtc {
             IP::AddressToString(remotesrc, ip, 40, port);
             ret += ip + std::string(":") + std::to_string(port);
 
-            SInfo << "AgentNo " << agentNo << " addr_unmap_inet6_v4mapped " << ret;
+            SDebug << "AgentNo " << agentNo << " addr_unmap_inet6_v4mapped " << ret;
 
 
         }

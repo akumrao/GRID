@@ -17,7 +17,7 @@ RtpPacketizer::~RtpPacketizer() {}
 
 message_ptr RtpPacketizer::packetize(shared_ptr<binary> payload, bool mark) {
     
-     SInfo << "Track::RtpPacketizer::packetize ";
+     SDebug << "Track::RtpPacketizer::packetize ";
      
 	size_t rtpExtHeaderSize = 0;
 

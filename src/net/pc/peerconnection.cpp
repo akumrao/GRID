@@ -108,11 +108,14 @@ void PeerConnection::openTracks() {
 //	if (!transport)
 //		return;
 
-	auto srtpTransport =  std::atomic_load(&mSctpTransport);;
+       auto transport = std::atomic_load(&mIceTransport);
+       
+ 	WebRtcTransport* websocketTransport =  transport->agent.socket;
 	iterateRemoteTracks([&](shared_ptr<Track> track) {
 		if(!track->isOpen()) {
-			if (srtpTransport) {
-				track->open(srtpTransport);
+			if (websocketTransport) {
+				//track->open(websocketTransport); 
+                                track->open(websocketTransport);
 			} else {
 				// A track was added during a latter renegotiation, whereas SRTP transport was
 				// not initialized. This is an optimization to use the library with data
