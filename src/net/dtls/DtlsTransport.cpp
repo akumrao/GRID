@@ -634,13 +634,21 @@ namespace rtc {
         {"server", DtlsTransport::Role::SERVER}
     };
 
-    std::vector<DtlsTransport::SrtpProfileMapEntry> DtlsTransport::srtpProfiles = {
-        {DtlsTransport::Profile::AEAD_AES_256_GCM, "SRTP_AEAD_AES_256_GCM"},
-        {DtlsTransport::Profile::AEAD_AES_128_GCM, "SRTP_AEAD_AES_128_GCM"},
-        {DtlsTransport::Profile::AES_CM_128_HMAC_SHA1_80, "SRTP_AES128_CM_SHA1_80"},
-        {DtlsTransport::Profile::AES_CM_128_HMAC_SHA1_32,
-            "SRTP_AES128_CM_SHA1_32"}
-    };
+//    std::vector<DtlsTransport::SrtpProfileMapEntry> DtlsTransport::srtpProfiles = {
+//        {DtlsTransport::Profile::AEAD_AES_256_GCM, "SRTP_AEAD_AES_256_GCM"},
+//        {DtlsTransport::Profile::AEAD_AES_128_GCM, "SRTP_AEAD_AES_128_GCM"},
+//        {DtlsTransport::Profile::AES_CM_128_HMAC_SHA1_80, "SRTP_AES128_CM_SHA1_80"},
+//        {DtlsTransport::Profile::AES_CM_128_HMAC_SHA1_32,
+//            "SRTP_AES128_CM_SHA1_32"}
+//    };
+    
+        std::vector<DtlsTransport::SrtpProfileMapEntry> DtlsTransport::srtpProfiles =
+	{
+		{ rtc::SrtpSession::Profile::AEAD_AES_256_GCM, "SRTP_AEAD_AES_256_GCM" },
+		{ rtc::SrtpSession::Profile::AEAD_AES_128_GCM, "SRTP_AEAD_AES_128_GCM" },
+		{ rtc::SrtpSession::Profile::AES_CM_128_HMAC_SHA1_80, "SRTP_AES128_CM_SHA1_80" },
+		{ rtc::SrtpSession::Profile::AES_CM_128_HMAC_SHA1_32, "SRTP_AES128_CM_SHA1_32" }
+	};
 
     //	std::vector<DtlsTransport::Fingerprint>
     // DtlsTransport::localFingerprints;
@@ -1496,6 +1504,148 @@ error:
         return true;
     }
 
+    
+    inline void DtlsTransport::ExtractSrtpKeys(rtc::SrtpSession::Profile srtpProfile)
+    {
+		
+
+		size_t srtpKeyLength{ 0 };
+		size_t srtpSaltLength{ 0 };
+		size_t srtpMasterLength{ 0 };
+
+		switch (srtpProfile)
+		{
+			case rtc::SrtpSession::Profile::AES_CM_128_HMAC_SHA1_80:
+			case rtc::SrtpSession::Profile::AES_CM_128_HMAC_SHA1_32:
+			{
+				srtpKeyLength    = SrtpMasterKeyLength;
+				srtpSaltLength   = SrtpMasterSaltLength;
+				srtpMasterLength = SrtpMasterLength;
+
+				break;
+			}
+
+			case rtc::SrtpSession::Profile::AEAD_AES_256_GCM:
+			{
+				srtpKeyLength    = SrtpAesGcm256MasterKeyLength;
+				srtpSaltLength   = SrtpAesGcm256MasterSaltLength;
+				srtpMasterLength = SrtpAesGcm256MasterLength;
+
+				break;
+			}
+
+			case rtc::SrtpSession::Profile::AEAD_AES_128_GCM:
+			{
+				srtpKeyLength    = SrtpAesGcm128MasterKeyLength;
+				srtpSaltLength   = SrtpAesGcm128MasterSaltLength;
+				srtpMasterLength = SrtpAesGcm128MasterLength;
+
+				break;
+			}
+
+			default:
+			{
+				MS_ABORT("unknown SRTP profile");
+			}
+		}
+
+		auto* srtpMaterial = new uint8_t[srtpMasterLength * 2];
+		uint8_t* srtpLocalKey{ nullptr };
+		uint8_t* srtpLocalSalt{ nullptr };
+		uint8_t* srtpRemoteKey{ nullptr };
+		uint8_t* srtpRemoteSalt{ nullptr };
+		auto* srtpLocalMasterKey  = new uint8_t[srtpMasterLength];
+		auto* srtpRemoteMasterKey = new uint8_t[srtpMasterLength];
+		int ret;
+
+		ret = SSL_export_keying_material(
+		  this->ssl, srtpMaterial, srtpMasterLength * 2, "EXTRACTOR-dtls_srtp", 19, nullptr, 0, 0);
+
+		assertm(ret != 0, "SSL_export_keying_material() failed");
+
+		switch (this->localRole)
+		{
+			case Role::SERVER:
+			{
+				srtpRemoteKey  = srtpMaterial;
+				srtpLocalKey   = srtpRemoteKey + srtpKeyLength;
+				srtpRemoteSalt = srtpLocalKey + srtpKeyLength;
+				srtpLocalSalt  = srtpRemoteSalt + srtpSaltLength;
+
+				break;
+			}
+
+			case Role::CLIENT:
+			{
+				srtpLocalKey   = srtpMaterial;
+				srtpRemoteKey  = srtpLocalKey + srtpKeyLength;
+				srtpLocalSalt  = srtpRemoteKey + srtpKeyLength;
+				srtpRemoteSalt = srtpLocalSalt + srtpSaltLength;
+
+				break;
+			}
+
+			default:
+			{
+				MS_ABORT("no DTLS role set");
+			}
+		}
+
+		// Create the SRTP local master key.
+		std::memcpy(srtpLocalMasterKey, srtpLocalKey, srtpKeyLength);
+		std::memcpy(srtpLocalMasterKey + srtpKeyLength, srtpLocalSalt, srtpSaltLength);
+		// Create the SRTP remote master key.
+		std::memcpy(srtpRemoteMasterKey, srtpRemoteKey, srtpKeyLength);
+		std::memcpy(srtpRemoteMasterKey + srtpKeyLength, srtpRemoteSalt, srtpSaltLength);
+
+		// Set state and notify the listener.
+		this->state = DtlsState::CONNECTED;
+		this->listener->OnDtlsTransportConnected(
+		  this,
+		  srtpProfile,
+		  srtpLocalMasterKey,
+		  srtpMasterLength,
+		  srtpRemoteMasterKey,
+		  srtpMasterLength
+		 );
+
+		delete[] srtpMaterial;
+		delete[] srtpLocalMasterKey;
+		delete[] srtpRemoteMasterKey;
+	}
+
+	inline rtc::SrtpSession::Profile DtlsTransport::GetNegotiatedSrtpProfile()
+	{
+		
+
+		rtc::SrtpSession::Profile negotiatedSrtpProfile = rtc::SrtpSession::Profile::NONE;
+
+		// Ensure that the SRTP profile has been negotiated.
+		SRTP_PROTECTION_PROFILE* sslSrtpProfile = SSL_get_selected_srtp_profile(this->ssl);
+
+		if (!sslSrtpProfile)
+			return negotiatedSrtpProfile;
+
+		// Get the negotiated SRTP profile.
+		for (auto& srtpProfile : DtlsTransport::srtpProfiles)
+		{
+			SrtpProfileMapEntry* profileEntry = std::addressof(srtpProfile);
+
+			if (std::strcmp(sslSrtpProfile->name, profileEntry->name) == 0)
+			{
+				SDebug << "chosen SRTP profile: " <<  profileEntry->name;
+
+				negotiatedSrtpProfile = profileEntry->profile;
+			}
+		}
+
+		assertm(
+		  negotiatedSrtpProfile != rtc::SrtpSession::Profile::NONE,
+		  "chosen SRTP profile is not an available one");
+
+		return negotiatedSrtpProfile;
+	}
+    
     inline bool DtlsTransport::ProcessHandshake() {
 
         SInfo << "DtlsTransport::ProcessHandshake()";
@@ -1515,29 +1665,33 @@ error:
 
             return false;
         }
+        
+        
+        
+        
+        
+        
+        // Get the negotiated SRTP profile.
+        rtc::SrtpSession::Profile srtpProfile = GetNegotiatedSrtpProfile();
 
-        //		// Get the negotiated SRTP profile.
-        //		rtc::SrtpSession::Profile srtpProfile =
-        // GetNegotiatedSrtpProfile();
-        //
-        //		if (srtpProfile != rtc::SrtpSession::Profile::NONE)
-        //		{
-        //			// Extract the SRTP keys (will notify the listener with
-        // them). 			ExtractSrtpKeys(srtpProfile);
-        //
-        //			return true;
-        //		}
-        //
-        //		// NOTE: We assume that "use_srtp" DTLS extension is required
-        // even if
+        if (srtpProfile != rtc::SrtpSession::Profile::NONE)
+        {
+        // Extract the SRTP keys (will notify the listener with them).
+            ExtractSrtpKeys(srtpProfile);
+
+            return true;
+        }
+
+        // NOTE: We assume that "use_srtp" DTLS extension is required even if
         // there is no audio/video.
+        SInfo << "SRTP profile not negotiated";
 
-        this->state = DtlsState::CONNECTED;
-        this->listener->OnDtlsTransportConnected(this);
+       // this->state = DtlsState::CONNECTED;
+       // this->listener->OnDtlsTransportConnected(this); //TBD
 
-        SWarn << "SRTP profile not negotiated";
+       SWarn << "SRTP profile not negotiated";
 
-        return true;
+       // return true;
 
         Reset();
 

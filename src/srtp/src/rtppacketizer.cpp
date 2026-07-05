@@ -6,6 +6,8 @@
 
 #include <cmath>
 #include <cstring>
+#include "base/logger.h"
+using namespace base;
 
 namespace rtc {
 
@@ -14,6 +16,9 @@ RtpPacketizer::RtpPacketizer(shared_ptr<RtpPacketizationConfig> rtpConfig) : rtp
 RtpPacketizer::~RtpPacketizer() {}
 
 message_ptr RtpPacketizer::packetize(shared_ptr<binary> payload, bool mark) {
+    
+     SInfo << "Track::RtpPacketizer::packetize ";
+     
 	size_t rtpExtHeaderSize = 0;
 
 	const bool setVideoRotation = (rtpConfig->videoOrientationId != 0) &&

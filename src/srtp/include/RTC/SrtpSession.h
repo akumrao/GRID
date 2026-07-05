@@ -4,6 +4,8 @@
 #include "common.h"
 #include <srtp.h>
 #include <arpa/inet.h>
+#include <RTC/SrtpSession.h>
+
 namespace rtc
 {
 	class SrtpSession

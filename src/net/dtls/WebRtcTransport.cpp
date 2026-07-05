@@ -616,7 +616,16 @@ namespace rtc {
         //		Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
     }
 
-    inline void WebRtcTransport::OnDtlsTransportConnected(const rtc::DtlsTransport* dtlsTransport) {
+    inline void WebRtcTransport::OnDtlsTransportConnected(const rtc::DtlsTransport* dtlsTransport,
+    
+    	  rtc::SrtpSession::Profile srtpProfile,
+	  uint8_t* srtpLocalKey,
+	  size_t srtpLocalKeyLen,
+	  uint8_t* srtpRemoteKey,
+	  size_t srtpRemoteKeyLen
+    
+    ) 
+    {
 
         SInfo << "AgentNo " << agentNo << " OnDtlsTransportConnected";
 
@@ -624,55 +633,55 @@ namespace rtc {
         // OnDtlsTransportSendData( dtlsTransport, tmp, 7);
 
 
-        //		assertm(this->iceServer, "no iceServer");
-        //		assertm(this->dtlsTransport, "no dtlsTransport");
-        //
-        //		LTrace( "DTLS connected");
-        //
-        //		// Close it if it was already set and update it.
-        //		if (this->srtpSendSession)
-        //		{
-        //			delete this->srtpSendSession;
-        //			this->srtpSendSession = nullptr;
-        //		}
-        //		if (this->srtpRecvSession)
-        //		{
-        //			delete this->srtpRecvSession;
-        //			this->srtpRecvSession = nullptr;
-        //		}
-        //
-        //		try
-        //		{
-        //			this->srtpSendSession = new rtc::SrtpSession(
-        //			  rtc::SrtpSession::Type::OUTBOUND, srtpProfile, srtpLocalKey, srtpLocalKeyLen);
-        //		}
-        //		catch (const std::exception& error)
-        //		{
-        //			MS_ERROR("error creating SRTP sending session: %s", error.what());
-        //		}
-        //
-        //		try
-        //		{
-        //			this->srtpRecvSession = new rtc::SrtpSession(
-        //			  rtc::SrtpSession::Type::INBOUND, srtpProfile, srtpRemoteKey, srtpRemoteKeyLen);
-        //		}
-        //		catch (const std::exception& error)
-        //		{
-        //			MS_ERROR("error creating SRTP receiving session: %s", error.what());
-        //
-        //			delete this->srtpSendSession;
-        //			this->srtpSendSession = nullptr;
-        //		}
-        //
-        //		// Notify the Node WebRtcTransport.
-        //		json data = json::object();
-        //
-        //		data["dtlsState"]      = "connected";
-        //		data["dtlsRemoteCert"] = remoteCert;
-        //
-        //		Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
-        //
-        //		// Tell the parent class.
+        assertm(this->iceServer, "no iceServer");
+        assertm(this->dtlsTransport, "no dtlsTransport");
+
+        LTrace( "DTLS connected");
+
+        // Close it if it was already set and update it.
+        if (this->srtpSendSession)
+        {
+                delete this->srtpSendSession;
+                this->srtpSendSession = nullptr;
+        }
+        if (this->srtpRecvSession)
+        {
+                delete this->srtpRecvSession;
+                this->srtpRecvSession = nullptr;
+        }
+
+        try
+        {
+                this->srtpSendSession = new rtc::SrtpSession(
+                  rtc::SrtpSession::Type::OUTBOUND, srtpProfile, srtpLocalKey, srtpLocalKeyLen);
+        }
+        catch (const std::exception& error)
+        {
+                 SError << "error creating SRTP sending session: " <<  error.what() ;
+        }
+
+        try
+        {
+                this->srtpRecvSession = new rtc::SrtpSession(
+                  rtc::SrtpSession::Type::INBOUND, srtpProfile, srtpRemoteKey, srtpRemoteKeyLen);
+        }
+        catch (const std::exception& error)
+        {
+                SError << "error creating SRTP receiving session: " <<  error.what() ;
+
+                delete this->srtpSendSession;
+                this->srtpSendSession = nullptr;
+        }
+
+        // Notify the Node WebRtcTransport.
+        json data = json::object();
+
+        data["dtlsState"]      = "connected";
+//        data["dtlsRemoteCert"] = remoteCert;
+
+      //  Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
+
+        // Tell the parent class.
 
 
         iceListener->OnDtlsTransportStatus(id, DtlsTransport::DtlsState::CONNECTED);

@@ -5,6 +5,47 @@
 using namespace base;
 //#include "impl/internals.hpp"
 #include "peerconnection.h"
+#include "RTC/RtpPacket.h"
+
+/*
+Track::send()
+  ↳ H264RtpPacketizer::outgoing() 
+  ↳ RtpTransport::sendMedia()
+  ↳ DtlsSrtpTransport::encrypt()  
+  ↳ SrtpSession::protect()
+  ↳ UdpSocket::send()
+
+ 
+ UdpSocket::recv()
+  ↳ DtlsSrtpTransport::decrypt()  
+  ↳ RtpTransport::recvMedia()
+  ↳ RtcpNackResponder::incoming() 
+
+ 
+RtcpSrReporter::incoming() or RtcpReceivingSession::incoming()
+  ↳ MediaHandler::sendOutcome()
+  ↳ RtpTransport::sendMedia()
+  ↳ SrtpTransport::encrypt()                     // Evaluates buffer headers to detect RTCP
+      ↳ srtp_protect_rtcp(mTransmitSession, ...) // Third-party libsrtp C-function call
+  ↳ IceTransport::send()                         // Routes to libjuice / transport layer
+  ↳ UdpSocket::send()                            // Physical network transmission
+
+  
+ 
+ 
+UdpSocket::recv()                                // Platform network read event
+  ↳ IceTransport::incoming()                     // Dispatched from libjuice
+  ↳ SrtpTransport::decrypt()                     // Explicitly looks at multiplexed packet boundaries
+      ↳ srtp_unprotect_rtcp(mReceiveSession, ...) // Third-party libsrtp C-function call
+  ↳ RtpTransport::recvMedia()
+  ↳ RtpTransport::recvRtcp()                    // Parses binary compounds into rtc::RtcpPacket structures
+  ↳ MediaHandler::incoming()
+      ↳ RtcpNackResponder::incoming()
+
+
+ * 
+ *   
+*/
 
 namespace rtc {
 
@@ -287,6 +328,22 @@ bool Track::outgoing(message_ptr message) {
 }
 
 bool Track::transportSend([[maybe_unused]] message_ptr message) {
+    
+    SInfo << "Track::transportSend ";
+    
+    
+    const uint8_t* rtpData = reinterpret_cast<const uint8_t*>(message->data());
+    rtc::RtpPacket* packet = rtc::RtpPacket::Parse(rtpData, message->size());
+
+
+    if (!packet)
+    {
+            SError <<  " rtc::RtpPacket::Parser failed ";
+
+            return;
+    }
+
+        
 #if RTC_ENABLE_MEDIA
 	shared_ptr<SctpTransport> transport;
 	{

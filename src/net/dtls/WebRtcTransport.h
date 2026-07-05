@@ -94,7 +94,7 @@ namespace rtc
 		/* Pure virtual methods inherited from rtc::DtlsTransport::Listener. */
 	public:
 		void OnDtlsTransportConnecting(const rtc::DtlsTransport* dtlsTransport) override;
-                void OnDtlsTransportConnected( const rtc::DtlsTransport* /*dtlsTransport*/) override;
+        	void OnDtlsTransportConnected( const rtc::DtlsTransport* /*dtlsTransport*/, rtc::SrtpSession::Profile srtpProfile,  uint8_t* srtpLocalKey,  size_t srtpLocalKeyLen,  uint8_t* srtpRemoteKey,  size_t srtpRemoteKeyLen) override;
 		
 		void OnDtlsTransportFailed(const rtc::DtlsTransport* dtlsTransport) override;
 		void OnDtlsTransportClosed(const rtc::DtlsTransport* dtlsTransport) override;
