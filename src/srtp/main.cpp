@@ -34,7 +34,7 @@
 
 
 #define socketio 1
-//#define localtesting 1
+#define localtesting 1
 //#define remotetesting 1
 #define VIDEOMEDIA 1
 #include "peerconnection.h"
@@ -111,68 +111,71 @@ std::string id;
 
 #if 1
 
- ClientConnecton *m_client = nullptr;
+ClientConnecton *m_client = nullptr;
 
-  // Helper function to emit data over native websocket matching the server
+// Helper function to emit data over native websocket matching the server
 // protocol wrapper
-void emitWebSocketEvent(const std::string &eventName, const json &payload) {
-  json outerPacket;
-  outerPacket["event"] = eventName;
-  outerPacket["payload"] = payload;
 
-  // Convert to string and send as text frame
-  m_client->send(outerPacket.dump());
+void emitWebSocketEvent(const std::string &eventName, const json &payload) {
+    json outerPacket;
+    outerPacket["event"] = eventName;
+    outerPacket["payload"] = payload;
+
+    // Convert to string and send as text frame
+    m_client->send(outerPacket.dump());
 }
 
-
 void sendCandidate(const std::string &mid, int mlineindex,
-                   const std::string &sdp) {
-  json desc;
-  desc["sdpMid"] = mid;
-  desc["sdpMLineIndex"] = mlineindex;
-  desc["candidate"] = sdp;
+        const std::string &sdp) {
+    json desc;
+    desc["sdpMid"] = mid;
+    desc["sdpMLineIndex"] = mlineindex;
+    desc["candidate"] = sdp;
 
-  json m;
-  m["type"] = "candidate";
-  m["candidate"] = desc;
+    json m;
+    m["type"] = "candidate";
+    m["candidate"] = desc;
 
-  if (!from.empty()) {
-    m["from"] = from;
-    m["to"] = from;
-  }
+    if (!from.empty()) {
+        m["from"] = from;
+        m["to"] = from;
+    }
 
-  m["room"] = room;
-  SInfo << "send:" << sdp << "candidate to: " << from << std::endl;
+    m["room"] = room;
+    SInfo << "send:" << sdp << "candidate to: " << from << std::endl;
 
-  // Converted to native protocol wrapper routing
+    // Converted to native protocol wrapper routing
 #if socketio
-  mysocket->emit("message", m);
+    mysocket->emit("message", m);
 #else
-  emitWebSocketEvent("message", m);
+    emitWebSocketEvent("message", m);
 #endif
 }
 
 void sendSdp(const std::string &sdp, const std::string &type) {
-  json desc = {{"type", type}, {"sdp", sdp}};
+    json desc = {
+        {"type", type},
+        {"sdp", sdp}
+    };
 
-  json m;
-  m["type"] = type;
-  m["desc"] = desc;
+    json m;
+    m["type"] = type;
+    m["desc"] = desc;
 
-  if (!from.empty()) {
-    m["from"] = from;
-    m["to"] = from;
-  }
+    if (!from.empty()) {
+        m["from"] = from;
+        m["to"] = from;
+    }
 
-  m["room"] = room;
+    m["room"] = room;
 
-  SInfo << "send:" << type << " to: " << from << std::endl;
+    SInfo << "send:" << type << " to: " << from << std::endl;
 
-  // Converted to native protocol wrapper routing
+    // Converted to native protocol wrapper routing
 #if socketio
-  mysocket->emit("message", m);
+    mysocket->emit("message", m);
 #else
-  emitWebSocketEvent("message", m);
+    emitWebSocketEvent("message", m);
 #endif
 }
 
@@ -300,7 +303,7 @@ void wsOnMessage(json const &m) {
 
 
     if (type == "offer") {
-        
+
 
         if (clients.find(id) != clients.end())
             clients.erase(id);
@@ -322,13 +325,13 @@ void wsOnMessage(json const &m) {
 
 
     } else if (type == "answer") {
-        
+
         //clients.emplace(id, createPeerConnection(config,  id));
         if (auto jt = clients.find(id); jt != clients.end()) {
             auto pc = jt->second->peerConnection;
 
             auto sdp = m["desc"]["sdp"].get<string>();
-             SInfo << sdp;
+            SInfo << sdp;
             SInfo << "setRemoteDescription " << type;
 
             auto description = Description(sdp, type);
@@ -448,7 +451,7 @@ int main(int argc, char **argv) {
 #if localtesting 
     settingconfig.console = true;
     std::string id = "server";
-   createPeerConnection_lc(settingconfig);
+    createPeerConnection_lc(settingconfig);
 #elif remotetesting
 
 
@@ -473,7 +476,7 @@ int main(int argc, char **argv) {
     std::string host = ip_address;
     int port = 8443;
 
-    #if socketio
+#if socketio
     sockio::SocketioClient *client;
 
 
@@ -567,7 +570,7 @@ int main(int argc, char **argv) {
 
         mysocket->emit("createorjoin", room);
     }));
-    #else 
+#else 
     std::ostringstream url;
     bool ssl = true;
     //std::string host = SERVER_HOST;
@@ -575,100 +578,100 @@ int main(int argc, char **argv) {
 
     url << "/";
 
-   
+
 
     if (!ssl) {
-      m_client = new HttpClient("ws", host, port, url.str());
+        m_client = new HttpClient("ws", host, port, url.str());
     } else {
-      m_client = new HttpsClient("wss", host, port, url.str());
+        m_client = new HttpsClient("wss", host, port, url.str());
     }
 
     // conn->Complete += sdelegate(&context,
     // &CallbackContext::onClientConnectionComplete);
-    m_client->fnComplete = [&](const Response &response) {
-      std::string reason = response.getReason();
-      StatusCode statuscode = response.getStatus();
-      std::string body =
-          m_client->readStream() ? m_client->readStream()->str() : "";
-      STrace << "SocketIO handshake response:" << "Reason: " << reason
-             << " Response: " << body;
+    m_client->fnComplete = [&](const Response & response) {
+        std::string reason = response.getReason();
+        StatusCode statuscode = response.getStatus();
+        std::string body =
+                m_client->readStream() ? m_client->readStream()->str() : "";
+        STrace << "SocketIO handshake response:" << "Reason: " << reason
+                << " Response: " << body;
     };
 
-    m_client->fnConnect = [&](HttpBase *con) {
-      STrace << "client->fnConnect ";
-      //  m_con_state = con_opened;
-      // m_reconn_timer.Stop();
+    m_client->fnConnect = [&](HttpBase * con) {
+        STrace << "client->fnConnect ";
+        //  m_con_state = con_opened;
+        // m_reconn_timer.Stop();
 
-      SInfo << "Connected securely to native WebSocket server." << std::endl;
+        SInfo << "Connected securely to native WebSocket server." << std::endl;
 
-      // Map the primary handshake logic registration event sequence
-      json joinPayload;
-      joinPayload["roomId"] = room;
-      joinPayload["client"] =
-          false; // Mirrors client state property tracking requirements
+        // Map the primary handshake logic registration event sequence
+        json joinPayload;
+        joinPayload["roomId"] = room;
+        joinPayload["client"] =
+                false; // Mirrors client state property tracking requirements
 
-      emitWebSocketEvent("createorjoin", joinPayload);
+        emitWebSocketEvent("createorjoin", joinPayload);
 
 
-     // char tmp[3] = "{}";
+        // char tmp[3] = "{}";
 
-     // con->send(tmp, 2);
+        // con->send(tmp, 2);
     };
 
     m_client->fnPayload = [&](HttpBase *con, const char *data, size_t sz) {
-      STrace << "client->fnPayload " << std::string(data, sz);
-      try {
-        // Parse the outer payload protocol layer out of the text string frame
-        // execution
-        json packet = json::parse(std::string(data, sz));
-        std::string eventName = packet["event"].get<std::string>();
-        json data = packet["payload"];
+        STrace << "client->fnPayload " << std::string(data, sz);
+        try {
+            // Parse the outer payload protocol layer out of the text string frame
+            // execution
+            json packet = json::parse(std::string(data, sz));
+            std::string eventName = packet["event"].get<std::string>();
+            json data = packet["payload"];
 
-        if (eventName == "created") {
-          SInfo << data.dump() << std::endl;
-          SInfo << "ws: Created room " << data[0] << "- my client ID is "
-                << data[1] << std::endl;
-        } else if (eventName == "join") {
-          SInfo << "ws join " << data.dump() << std::endl;
-          SInfo << "ws: Created room " << data[0] << "- my client ID is "
-                << data[1] << " noClientInRoom: " << data[2] << std::endl;
+            if (eventName == "created") {
+                SInfo << data.dump() << std::endl;
+                SInfo << "ws: Created room " << data[0] << "- my client ID is "
+                        << data[1] << std::endl;
+            } else if (eventName == "join") {
+                SInfo << "ws join " << data.dump() << std::endl;
+                SInfo << "ws: Created room " << data[0] << "- my client ID is "
+                        << data[1] << " noClientInRoom: " << data[2] << std::endl;
 
-          std::string room1 = data[0].get<std::string>();
-          int noClientInRoom = data[2].get<int>();
+                std::string room1 = data[0].get<std::string>();
+                int noClientInRoom = data[2].get<int>();
 
-          if (noClientInRoom > 1) {
-            initiate(room1);
-          }
-        } else if (eventName == "joined") {
-          SInfo << "ws joined " << data.dump() << std::endl;
-        } else if (eventName == "message") {
-          STrace << "SocketioClient received message: " << data.dump()
-                 << std::endl;
-          wsOnMessage(data);
-        } else if (eventName == "disconnectClient") {
-          std::string clientFrom = data.get<std::string>();
-          SInfo << "disconnectClient " << clientFrom << std::endl;
-          LInfo(data.dump());
-        } else if (eventName == "bye") {
-          SInfo << data.dump() << std::endl;
+                if (noClientInRoom > 1) {
+                    initiate(room1);
+                }
+            } else if (eventName == "joined") {
+                SInfo << "ws joined " << data.dump() << std::endl;
+            } else if (eventName == "message") {
+                STrace << "SocketioClient received message: " << data.dump()
+                        << std::endl;
+                wsOnMessage(data);
+            } else if (eventName == "disconnectClient") {
+                std::string clientFrom = data.get<std::string>();
+                SInfo << "disconnectClient " << clientFrom << std::endl;
+                LInfo(data.dump());
+            } else if (eventName == "bye") {
+                SInfo << data.dump() << std::endl;
+            }
+        } catch (const std::exception &e) {
+            std::cerr << "JSON Parsing runtime error handling text frames: "
+                    << e.what() << std::endl;
         }
-      } catch (const std::exception &e) {
-        std::cerr << "JSON Parsing runtime error handling text frames: "
-                  << e.what() << std::endl;
-      }
-   
+
     };
 
     m_client->fnClose = [&](HttpBase *con, std::string str) {
-      STrace << "client->fnClose " << str;
-      // close(0,"exit");
-      // on_close();
-      SInfo << "WebSocket connection closed by endpoint structure.";
-      m_client->Close();
-      delete m_client;
-      //m_client = nullptr;
+        STrace << "client->fnClose " << str;
+        // close(0,"exit");
+        // on_close();
+        SInfo << "WebSocket connection closed by endpoint structure.";
+        m_client->Close();
+        delete m_client;
+        //m_client = nullptr;
 
-      //            m_con_state = con_closed;
+        //            m_con_state = con_closed;
     };
 
     //  conn->_request.setKeepAlive(false);
@@ -676,7 +679,7 @@ int main(int argc, char **argv) {
     m_client->send();
     LTrace("sendHandshakeRequest over")
 
-    #endif
+#endif
 
 #endif
 
@@ -694,7 +697,7 @@ int main(int argc, char **argv) {
         SInfo << "app.run() is over";
         //    Settings::exit();         
         //    rtc::CleanupSSL();
-        
+
         DepLibSRTP::ClassDestroy();
         Logger::destroy();
 
@@ -720,19 +723,19 @@ int main(int argc, char **argv) {
 //    return -1;
 //}
 
-shared_ptr<ClientTrackData> addVideo(const shared_ptr<PeerConnection> pc, const uint8_t payloadType, const uint32_t ssrc, const string cname, const string msid, const function<void (void)> onOpen) {
+shared_ptr<ClientTrackData> addVideo(const shared_ptr<PeerConnection> pc, const uint8_t payloadType, const uint32_t ssrc, const string cname, const string msid, const function<void (void) > onOpen) {
     auto video = Description::Video(cname);
     video.addH264Codec(payloadType);
     video.addSSRC(ssrc, cname, msid, cname);
     auto track = pc->addTrack(video);
     // create RTP configuration
     auto rtpConfig = make_shared<RtpPacketizationConfig>(ssrc, cname, payloadType, H264RtpPacketizer::defaultClockRate);
-//    // create packetizer
+    //    // create packetizer
     auto packetizer = make_shared<H264RtpPacketizer>(NalUnit::Separator::Length, rtpConfig);
-//    // add RTCP SR handler
+    //    // add RTCP SR handler
     auto srReporter = make_shared<RtcpSrReporter>(rtpConfig);
     packetizer->addToChain(srReporter);
-//    // add RTCP NACK handler
+    //    // add RTCP NACK handler
     auto nackResponder = make_shared<RtcpNackResponder>();
     packetizer->addToChain(nackResponder);
     // set handler
@@ -740,11 +743,11 @@ shared_ptr<ClientTrackData> addVideo(const shared_ptr<PeerConnection> pc, const 
     track->onOpen(onOpen);
     auto trackData = make_shared<ClientTrackData>(track, srReporter);
     return trackData;
-    
-  
+
+
 }
 
-shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const uint8_t payloadType, const uint32_t ssrc, const string cname, const string msid, const function<void (void)> onOpen) {
+shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const uint8_t payloadType, const uint32_t ssrc, const string cname, const string msid, const function<void (void) > onOpen) {
     auto audio = Description::Audio(cname);
     audio.addOpusCodec(payloadType);
     audio.addSSRC(ssrc, cname, msid, cname);
@@ -851,27 +854,27 @@ void createPeerConnection_lc(Configuration &config) {
                 });
 #if VIDEOMEDIA
 
-                
-//          shared_ptr<Track> t2;
-//          string newTrackMid;
-//          pc1->onTrack([&t2, &newTrackMid](shared_ptr<Track> t) {
-//            string mid = t->mid();
-//            cout << "Track 2: Received track with mid \"" << mid << "\"" << endl;
-//            if (mid != newTrackMid) {
-//              cerr << "Wrong track mid" << endl;
-//              return;
-//            }
-//
-//            t->onOpen([mid]() {
-//              cout << "Track 2: Track with mid \"" << mid << "\" is open" << endl; });
-//
-//            t->onClosed(
-//              [mid]() {
-//                cout << "Track 2: Track with mid \"" << mid << "\" is closed" << endl; });
-//
-//            std::atomic_store(&t2, t);
-//          });
-//          
+
+        //          shared_ptr<Track> t2;
+        //          string newTrackMid;
+        //          pc1->onTrack([&t2, &newTrackMid](shared_ptr<Track> t) {
+        //            string mid = t->mid();
+        //            cout << "Track 2: Received track with mid \"" << mid << "\"" << endl;
+        //            if (mid != newTrackMid) {
+        //              cerr << "Wrong track mid" << endl;
+        //              return;
+        //            }
+        //
+        //            t->onOpen([mid]() {
+        //              cout << "Track 2: Track with mid \"" << mid << "\" is open" << endl; });
+        //
+        //            t->onClosed(
+        //              [mid]() {
+        //                cout << "Track 2: Track with mid \"" << mid << "\" is closed" << endl; });
+        //
+        //            std::atomic_store(&t2, t);
+        //          });
+        //          
         client->video = addVideo(pc1, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)](){
             // MainThread.dispatch([wc]() 
 
@@ -887,19 +890,19 @@ void createPeerConnection_lc(Configuration &config) {
             SInfo << "Video from " << id << " opened" << endl;
         });
 
-//        client->audio = addAudio(pc1, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
-//
-//
-//            //MainThread.dispatch([wc]() 
-//
-//            {
-//                if (auto c = wc.lock()) {
-//                    addToStream(c, false);
-//                }
-//            }
-//            //);
-//            SInfo << "Audio from " << id << " opened" << endl;
-//        });
+        //        client->audio = addAudio(pc1, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+        //
+        //
+        //            //MainThread.dispatch([wc]() 
+        //
+        //            {
+        //                if (auto c = wc.lock()) {
+        //                    addToStream(c, false);
+        //                }
+        //            }
+        //            //);
+        //            SInfo << "Audio from " << id << " opened" << endl;
+        //        });
 
 #endif
 
@@ -947,8 +950,8 @@ void createPeerConnection_lc(Configuration &config) {
                         << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
 
 
-              //  sleep(5);
-              //  dc->send("PC1 to PC2");
+                //  sleep(5);
+                //  dc->send("PC1 to PC2");
 
             });
 
@@ -957,8 +960,8 @@ void createPeerConnection_lc(Configuration &config) {
 
         pc1->setLocalDescription();
         //   return client;
-        
-        clients[id] =  client;
+
+        clients[id] = client;
     }
 
     {
@@ -1028,54 +1031,192 @@ void createPeerConnection_lc(Configuration &config) {
                 });
 #if VIDEOMEDIA
 
-          shared_ptr<Track> t2;
-          string newTrackMid;
-          pc2->onTrack([&t2, &newTrackMid](shared_ptr<Track> t) {
+
+
+        //                
+        //#include <fstream>
+        //#include <iostream>
+        //#include <memory>
+        //#include <string>
+        //#include <atomic>
+
+        //        // Assume these file streams are initialized safely in your setup code
+        //        std::ofstream videoFile("output.h264", std::ios::binary);
+        //        std::ofstream audioFile("output.raw_opus", std::ios::binary); // Raw payload packets
+        //        shared_ptr<Track> t2;
+        //        string newTrackMid;
+        //        pc2->onTrack([&t2, newTrackMid](std::shared_ptr<rtc::Track> t) {
+        //            std::string mid = t->mid();
+        //            std::cout << "Track 2: Received track with mid \"" << mid << "\"\n";
+        //
+        //            if (mid != newTrackMid) {
+        //                return;
+        //            }
+        //
+        //            t->onOpen([mid]() {
+        //                std::cout << "Track 2: Track with mid \"" << mid << "\" is open\n";
+        //            });
+        //
+        //
+        //
+        //            t->onMessage([](rtc::binary data) {
+        //                // 1. Enforce a safety check to avoid buffer overreads
+        //                if (data.size() < sizeof (rtc::RtpHeader)) {
+        //                    std::cerr << "Packet too small to contain an RTP header\n";
+        //                    return;
+        //                }
+        //
+        //                // 2. Cast the byte buffer directly to the RtpHeader structure
+        //                const auto* rtpHeader = reinterpret_cast<const rtc::RtpHeader*> (data.data());
+        //
+        //                // 3. Extract the body pointer to calculate exact payload size
+        //                const char* body = rtpHeader->getBody();
+        //                const uint8_t* payload = reinterpret_cast<const uint8_t*> (body);
+        //
+        //                // Safety bounds check to make sure the body pointer lies within our binary data size
+        //                if (reinterpret_cast<const uint8_t*> (body) < data.data() ||
+        //                        reinterpret_cast<const uint8_t*> (body) > data.data() + data.size()) {
+        //                    return;
+        //                }
+        //
+        //                size_t payloadSize = data.size() - (body - reinterpret_cast<const char*> (data.data()));
+        //
+        //                // 4. Access individual field variables directly from the struct
+        //                uint8_t payloadType = rtpHeader->payloadType();
+        //
+        //                // 111 is standard for Opus audio over WebRTC
+        //                bool isAudio = (payloadType == 111);
+        //
+        //                if (isAudio) {
+        //                    if (audioFile.is_open() && payloadSize > 0) {
+        //                        audioFile.write(reinterpret_cast<const char*> (payload), payloadSize);
+        //                    }
+        //                } else {
+        //                    if (videoFile.is_open() && payloadSize > 0) {
+        //                        videoFile.write(reinterpret_cast<const char*> (payload), payloadSize);
+        //                    }
+        //                }
+        //            });
+        //
+        //            t->onClosed([mid]() {
+        //                std::cout << "Track 2: Track with mid \"" << mid << "\" is closed\n";
+        //            });
+        //
+        //            std::atomic_store(&t2, t);
+        //        });
+
+
+
+        /*
+
+        std::ofstream videoFile("output.h264", std::ios::binary);
+        std::ofstream audioFile("output.opus", std::ios::binary);
+
+        pc.onTrack([&t2, newTrackMid](std::shared_ptr<rtc::Track> t) {
+            std::string mid = t->mid();
+    
+            if (mid != newTrackMid) return;
+
+            // 1. Check the track type or payload type to link the correct Depacketizer
+            // Let's check the description to see if it's audio or video
+            bool isAudio = false;
+            if (auto trackDescription = t->description()) {
+                isAudio = (trackDescription->type == rtc::Description::Type::Audio);
+            }
+
+            // 2. Attach the Media Handler Chain
+            // This handles RTCP reports and parses RTP packets into raw codec frames
+            if (isAudio) {
+                auto audioConfig = std::make_shared<rtc::RtpPacketizationConfig>(111, "opus", 48000);
+                auto audioHandler = std::make_shared<rtc::OpusRtpDepacketizer>(audioConfig);
+                audioHandler->addToChain(std::make_shared<rtc::RtcpReceivingSession>());
+                t->setMediaHandler(audioHandler);
+            } else {
+                auto videoConfig = std::make_shared<rtc::RtpPacketizationConfig>(96, "H264", 90000);
+        
+                // Use LongStartSequence so libdatachannel inserts Annex-B codes (\x00\x00\x00\x01) 
+                // directly into the video frame payload for you!
+                auto videoHandler = std::make_shared<rtc::H264RtpDepacketizer>(
+                    videoConfig, rtc::H264RtpDepacketizer::Separator::LongStartSequence
+                );
+                videoHandler->addToChain(std::make_shared<rtc::RtcpReceivingSession>());
+                t->setMediaHandler(videoHandler);
+            }
+
+            // 3. Register the onFrame callback
+            t->onFrame([isAudio](rtc::binary data, rtc::FrameInfo info) {
+                // 'data' contains the perfectly defragmented frame payload!
+                // 'info' provides context like info.timestamp and info.payloadType
+        
+                if (isAudio) {
+                    if (audioFile.is_open()) {
+                        audioFile.write(reinterpret_cast<const char*>(data.data()), data.size());
+                    }
+                } else {
+                    if (videoFile.is_open()) {
+                        // Because we used Separator::LongStartSequence above, 
+                        // this data is a standard Annex-B H.264 frame, ready for disk storage or decoding.
+                        videoFile.write(reinterpret_cast<const char*>(data.data()), data.size());
+                    }
+                }
+            });
+
+            t->onOpen([mid]() { std::cout << "Track " << mid << " opened.\n"; });
+            t->onClosed([mid]() { std::cout << "Track " << mid << " closed.\n"; });
+            std::atomic_store(&t2, t);
+        });
+
+         */
+
+
+        shared_ptr<Track> t2;
+        string newTrackMid;
+        pc2->onTrack([&t2, &newTrackMid](shared_ptr<Track> t) {
             string mid = t->mid();
             cout << "Track 2: Received track with mid \"" << mid << "\"" << endl;
             if (mid != newTrackMid) {
-              cerr << "Wrong track mid" << endl;
-              return;
+                cerr << "Wrong track mid" << endl;
+                return;
             }
 
             t->onOpen([mid]() {
-              cout << "Track 2: Track with mid \"" << mid << "\" is open" << endl; });
+                cout << "Track 2: Track with mid \"" << mid << "\" is open" << endl; });
 
             t->onClosed(
-              [mid]() {
-                cout << "Track 2: Track with mid \"" << mid << "\" is closed" << endl; });
+                    [mid]() {
+                        cout << "Track 2: Track with mid \"" << mid << "\" is closed" << endl; });
 
             std::atomic_store(&t2, t);
-          });
-                
-//        client->video = addVideo(pc2, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)](){
-//            // MainThread.dispatch([wc]() 
-//
-//            SInfo << "addToStream";
-//
-//            {
-//                if (auto c = wc.lock()) {
-//                    addToStream(c, true);
-//                }
-//            }
-//
-//            //);
-//            SInfo << "Video from " << id << " opened" << endl;
-//        });
+        });
 
-//        client->audio = addAudio(pc2, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
-//
-//
-//            //MainThread.dispatch([wc]() 
-//
-//            {
-//                if (auto c = wc.lock()) {
-//                    addToStream(c, false);
-//                }
-//            }
-//            //);
-//            SInfo << "Audio from " << id << " opened" << endl;
-//        });
+        client->video = addVideo(pc2, 102, 1, "video-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+            // MainThread.dispatch([wc]() 
+
+            SInfo << "addToStream";
+
+            {
+                if (auto c = wc.lock()) {
+                    addToStream(c, true);
+                }
+            }
+
+            //);
+            SInfo << "Video from " << id << " opened" << endl;
+        });
+
+        //        client->audio = addAudio(pc2, 111, 2, "audio-stream", "stream1", [id, wc = make_weak_ptr(client)](){
+        //
+        //
+        //            //MainThread.dispatch([wc]() 
+        //
+        //            {
+        //                if (auto c = wc.lock()) {
+        //                    addToStream(c, false);
+        //                }
+        //            }
+        //            //);
+        //            SInfo << "Audio from " << id << " opened" << endl;
+        //        });
 
 #endif
 
@@ -1130,9 +1271,9 @@ void createPeerConnection_lc(Configuration &config) {
         });
 
         pc2->setLocalDescription(); // this will create offfer
-        
+
         //clients.emplace(id, client);
-         clients[id] =  client;    
+        clients[id] = client;
 
     }
 };
@@ -1504,6 +1645,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 #endif
 
 /// Create stream
+
 shared_ptr<Stream> createStream(const string h264Samples, const unsigned fps, const string opusSamples) {
     // video source
     auto video = make_shared<H264FileParser>(h264Samples, fps, true);
@@ -1512,39 +1654,40 @@ shared_ptr<Stream> createStream(const string h264Samples, const unsigned fps, co
 
     auto stream = make_shared<Stream>(video, audio);
     // set callback responsible for sample sending
-    stream->onSample([ws = make_weak_ptr(stream)](Stream::StreamSourceType type, uint64_t sampleTime, rtc::binary sample) {
-        vector<ClientTrack> tracks{};
+    stream->onSample([ws = make_weak_ptr(stream)](Stream::StreamSourceType type, uint64_t sampleTime, rtc::binary sample){
+        vector<ClientTrack> tracks
+        {};
         string streamType = type == Stream::StreamSourceType::Video ? "video" : "audio";
         // get track for given type
-        function<optional<shared_ptr<ClientTrackData>> (shared_ptr<Client>)> getTrackData = [type](shared_ptr<Client> client) {
+        function < optional<shared_ptr < ClientTrackData >> (shared_ptr<Client>) > getTrackData = [type](shared_ptr<Client> client) {
             return type == Stream::StreamSourceType::Video ? client->video : client->audio;
         };
         // get all clients with Ready state
-        for(auto id_client: clients) {
+        for (auto id_client : clients) {
             auto id = id_client.first;
-            auto client = id_client.second;
-            auto optTrackData = getTrackData(client);
+                    auto client = id_client.second;
+                    auto optTrackData = getTrackData(client);
             if (client->getState() == Client::State::Ready && optTrackData.has_value()) {
                 auto trackData = optTrackData.value();
-                tracks.push_back(ClientTrack(id, trackData));
+                        tracks.push_back(ClientTrack(id, trackData));
             }
         }
         if (!tracks.empty()) {
-            for (auto clientTrack: tracks) {
+            for (auto clientTrack : tracks) {
                 auto client = clientTrack.id;
-                auto trackData = clientTrack.trackData;
-                auto rtpConfig = trackData->sender->rtpConfig;
+                        auto trackData = clientTrack.trackData;
+                        auto rtpConfig = trackData->sender->rtpConfig;
 
-                // sample time is in us, we need to convert it to seconds
-                auto elapsedSeconds = double(sampleTime) / (1000 * 1000);
-                // get elapsed time in clock rate
-                uint32_t elapsedTimestamp = rtpConfig->secondsToTimestamp(elapsedSeconds);
-                // set new timestamp
-                rtpConfig->timestamp = rtpConfig->startTimestamp + elapsedTimestamp;
+                        // sample time is in us, we need to convert it to seconds
+                        auto elapsedSeconds = double(sampleTime) / (1000 * 1000);
+                        // get elapsed time in clock rate
+                        uint32_t elapsedTimestamp = rtpConfig->secondsToTimestamp(elapsedSeconds);
+                        // set new timestamp
+                        rtpConfig->timestamp = rtpConfig->startTimestamp + elapsedTimestamp;
 
-                // get elapsed time in clock rate from last RTCP sender report
-                auto reportElapsedTimestamp = rtpConfig->timestamp - trackData->sender->lastReportedTimestamp();
-                // check if last report was at least 1 second ago
+                        // get elapsed time in clock rate from last RTCP sender report
+                        auto reportElapsedTimestamp = rtpConfig->timestamp - trackData->sender->lastReportedTimestamp();
+                        // check if last report was at least 1 second ago
                 if (rtpConfig->timestampToSeconds(reportElapsedTimestamp) > 1) {
                     trackData->sender->setNeedsToReport();
                 }
@@ -1554,23 +1697,24 @@ shared_ptr<Stream> createStream(const string h264Samples, const unsigned fps, co
                     // send sample
                     trackData->track->send(sample);
                 } catch (const std::exception &e) {
-                    cerr << "Unable to send "<< streamType << " packet: " << e.what() << endl;
+                    cerr << "Unable to send " << streamType << " packet: " << e.what() << endl;
                 }
             }
         }
-//        MainThread.dispatch([ws]() {
-//            if (clients.empty()) {
-//                // we have no clients, stop the stream
-//                if (auto stream = ws.lock()) {
-//                    stream->stop();
-//                }
-//            }
-//        });
+        //        MainThread.dispatch([ws]() {
+        //            if (clients.empty()) {
+        //                // we have no clients, stop the stream
+        //                if (auto stream = ws.lock()) {
+        //                    stream->stop();
+        //                }
+        //            }
+        //        });
     });
     return stream;
 }
- 
+
 /// Start stream
+
 void startStream() {
     shared_ptr<Stream> stream;
     if (avStream.has_value()) {
@@ -1589,8 +1733,9 @@ void startStream() {
 /// Send previous key frame so browser can show something to user
 /// @param stream Stream
 /// @param video Video track data
+
 void sendInitialNalus(shared_ptr<Stream> stream, shared_ptr<ClientTrackData> video) {
-    auto h264 = dynamic_cast<H264FileParser *>(stream->video.get());
+    auto h264 = dynamic_cast<H264FileParser *> (stream->video.get());
     auto initialNalus = h264->initialNALUS();
 
     // send previous NALU key frame so users don't have to wait to see stream works
@@ -1608,11 +1753,12 @@ void sendInitialNalus(shared_ptr<Stream> stream, shared_ptr<ClientTrackData> vid
 /// Add client to stream
 /// @param client Client
 /// @param adding_video True if adding video
+
 void addToStream(shared_ptr<Client> client, bool isAddingVideo) {
     if (client->getState() == Client::State::Waiting) {
         client->setState(isAddingVideo ? Client::State::WaitingForAudio : Client::State::WaitingForVideo);
     } else if ((client->getState() == Client::State::WaitingForAudio && !isAddingVideo)
-               || (client->getState() == Client::State::WaitingForVideo && isAddingVideo)) {
+            || (client->getState() == Client::State::WaitingForVideo && isAddingVideo)) {
 
         // Audio and video tracks are collected now
         assert(client->video.has_value());

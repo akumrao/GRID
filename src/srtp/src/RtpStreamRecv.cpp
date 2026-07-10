@@ -6,6 +6,37 @@
 #include "Utils.h"
 #include "RTC/Codecs/Codecs.h"
 
+
+/*
+
+ 0                   1                   2                   3
+ 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+|V=2|P|   FMT=1 |   PT=205      |             Length            |
+|     | (NACK)  |  (Transport)  |                               |
++-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
+
+
+To see how these contrast with other feedback types in WebRTC:
+
+
+PT=205, FMT=15: Transport-Wide Congestion Control (TWCC feedback)
+
+PT=206, FMT=1: Picture Loss Indicator (PLI - payload-specific feedback for video)
+
+
+
+1. RTCP Receiver Reports (RR)Every few seconds, mediasoup sends a standard Receiver Report (RTCP PT=201) to inform the sender about network reception quality. RtpStreamRecv generates the data for this report:Fraction Lost: The percentage of packets lost since the last report.Cumulative Number of Packets Lost: The total number of missing packets since the stream started.Highest Sequence Number Received: The extended 32-bit sequence number.Interarrival Jitter: The variance in packet arrival times calculated during ReceivePacket.
+
+
+
+
+3. RTCP PLI (Picture Loss Indicator)If RtpStreamRecv detects critical video disruption—such as receiving a dependent delta frame after long bursts of packet loss, or a downstream consumer explicitly requesting it—it generates a PLI request (RTCP PT=206, FMT=1). This feedback explicitly instructs the sender: "I cannot decode this video anymore; please send a brand new Keyframe (I-Frame) immediately."
+
+*/
+
+
 namespace rtc
 {
 	/* Static. */
