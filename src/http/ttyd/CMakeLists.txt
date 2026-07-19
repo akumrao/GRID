@@ -68,7 +68,7 @@ find_package(Threads REQUIRED)
 set(SOURCE_FILES httptests.cpp)
 
 
-set(SOURCE_FILES src/utils.cpp src/pty.cpp src/protocol.cpp src/server.cpp)
+set(SOURCE_FILES main.cpp src/ttydutils.cpp src/ttydpty.cpp src/protocol.cpp src/server.cpp)
 
 file(GLOB SOURCES   
     ../src/*.cpp

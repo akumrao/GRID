@@ -112,10 +112,14 @@ file(GLOB SOURCES
   )
 else()
 file(GLOB SOURCES   
-    ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../base/src/*.cpp ../../signal/src/*.cpp 
+    ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../base/src/*.cpp ../../signal/src/*.cpp  
   )
 endif()
 
+
+file(GLOB SOURCESTTYD   
+   ../../http/ttyd/src/*.cpp
+  )
 
 if(WIN32)
     list(APPEND LINK_LIBS shell32 ws2_32)
@@ -224,11 +228,12 @@ endif()
 
 
 include_directories(
-           ../sctp/ ../pc/ ../dtls/ ../../http/include/ ../../http_parser/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../json/include/ ../../http_parser/ ../../signal/include/ ../../../src/openssl/buildx64/include ../../webrtcserver/deps/usrsctp/usrsctplib/   ${SSL_ROOT}/include)
+           ../sctp/ ../pc/ ../dtls/ ../../http/include/ ../../http_parser/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../json/include/ ../../http_parser/ ../../signal/include/ ../../../src/openssl/buildx64/include ../../webrtcserver/deps/usrsctp/usrsctplib/   ${SSL_ROOT}/include  ../../http/ttyd/src/
+)
 
 
 
-add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${SOURCES})
+add_executable(${PROJECT_NAME} ${SOURCE_FILES} ${SOURCES} ${SOURCESTTYD} )
 target_include_directories(${PROJECT_NAME} PUBLIC ${INCLUDE_DIRS})
 #target_link_libraries(${PROJECT_NAME}  uv_a)
 target_compile_definitions(${PROJECT_NAME} PUBLIC DUALSTACK  TTYD_VERSION="${TTYD_VERSION}"

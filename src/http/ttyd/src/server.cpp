@@ -10,7 +10,7 @@
 #include <string.h>
 #include <sys/stat.h>
 //#include <unistd.h>
-#include "utils.h"
+#include "ttydutils.h"
 
 #include "base/filesystem.h"
 #include "net/certificate.h"
@@ -31,14 +31,14 @@ using namespace base::net;
 
 
 
-volatile bool force_exit = false;
+//volatile bool force_exit = false;
 
-struct server *server{nullptr};
-
-
+//struct server *server{nullptr};
 
 
-static void print_help() {
+
+
+void TTYServer::print_help() {
     // clang-format off
     fprintf(stderr, "ttyd is a tool for sharing terminal over the web\n\n"
             "USAGE:  ./ttyd bash  then browse    https://localhost:8000/ \n"
@@ -88,7 +88,7 @@ static void print_help() {
     // clang-format on
 }
 
-static void print_config() {
+void TTYServer::print_config() {
     printf("tty configuration:\n");
     printf("https://localhost:8000\n");
     if (server->credential != NULL) printf("  credential: %s\n", server->credential);
@@ -113,37 +113,37 @@ static void print_config() {
     if (!server->writable) printf("The --writable option is not set, will start in readonly mode\n");
 }
 
-static struct server *server_new(int argc, char **argv, int start) {
-    struct server *ts;
+void TTYServer::server_new(int argc, char **argv, int start) {
+  //  struct server *ts;
     size_t cmd_len = 0;
 
-    ts = (struct server*) xmalloc(sizeof (struct server));
+    server = (struct TTYStServer*) xmalloc(sizeof (struct TTYStServer));
 
-    memset(ts, 0, sizeof (struct server));
-    ts->client_count = 0;
-    ts->sig_code = SIGHUP;
-    sprintf(ts->terminal_type, "%s", "xterm-256color");
-    get_sig_name(ts->sig_code, ts->sig_name, sizeof (ts->sig_name));
-    if (start == argc) return ts;
+    memset(server, 0, sizeof (struct TTYStServer));
+    server->client_count = 0;
+    server->sig_code = SIGHUP;
+    sprintf(server->terminal_type, "%s", "xterm-256color");
+    get_sig_name(server->sig_code, server->sig_name, sizeof (server->sig_name));
+    if (start == argc) return;
 
     int cmd_argc = argc - start;
     char **cmd_argv = &argv[start];
-    ts->argv = (char**) xmalloc(sizeof (char *) * (cmd_argc + 1));
+    server->argv = (char**) xmalloc(sizeof (char *) * (cmd_argc + 1));
     for (int i = 0; i < cmd_argc; i++) {
-        ts->argv[i] = strdup(cmd_argv[i]);
-        cmd_len += strlen(ts->argv[i]);
+        server->argv[i] = strdup(cmd_argv[i]);
+        cmd_len += strlen(server->argv[i]);
         if (i != cmd_argc - 1) {
             cmd_len++; // for space
         }
     }
-    ts->argv[cmd_argc] = NULL;
-    ts->argc = cmd_argc;
+    server->argv[cmd_argc] = NULL;
+    server->argc = cmd_argc;
 
-    ts->command = (char*) xmalloc(cmd_len + 1);
-    char *ptr = ts->command;
+    server->command = (char*) xmalloc(cmd_len + 1);
+    char *ptr = server->command;
     for (int i = 0; i < cmd_argc; i++) {
-        size_t len = strlen(ts->argv[i]);
-        ptr = (char*) memcpy(ptr, ts->argv[i], len + 1) + len;
+        size_t len = strlen(server->argv[i]);
+        ptr = (char*) memcpy(ptr, server->argv[i], len + 1) + len;
         if (i != cmd_argc - 1) {
             *ptr++ = ' ';
         }
@@ -155,338 +155,31 @@ static struct server *server_new(int argc, char **argv, int start) {
     //ts->loop = (uv_loop_t*) xmalloc(sizeof *ts->loop);
     //uv_loop_init(ts->loop);
 
-    return ts;
-}
-
-static void server_free(struct server *ts) {
-    
-    SInfo << "server_free";
-            
-    if (ts == NULL) return;
-    if (ts->credential != NULL) free(ts->credential);
-    if (ts->auth_header != NULL) free(ts->auth_header);
-    if (ts->index != NULL) free(ts->index);
-    if (ts->cwd != NULL) free(ts->cwd);
-    free(ts->command);
-//    free(ts->prefs_json);
-
-    char **p = ts->argv;
-    for (; *p; p++) free(*p);
-    free(ts->argv);
-
-    if (strlen(ts->socket_path) > 0) {
-        struct stat st;
-        if (!stat(ts->socket_path, &st)) {
-            unlink(ts->socket_path);
-        }
-    }
-
-    uv_loop_close(ts->loop);
-
-    free(ts->loop);
-    free(ts);
-}
-
-static void signal_cb(uv_signal_t *watcher, int signum) {
-    char sig_name[20];
-
-    switch (watcher->signum) {
-        case SIGINT:
-        case SIGTERM:
-            get_sig_name(watcher->signum, sig_name, sizeof (sig_name));
-            printf("received signal: %s (%d), exiting...\n", sig_name, watcher->signum);
-            break;
-        default:
-            signal(SIGABRT, SIG_DFL);
-            abort();
-    }
-
-    if (force_exit) exit(EXIT_FAILURE);
-    force_exit = true;
-
-    //lws_cancel_service(context); arvind
-
-    uv_stop(server->loop);
-
-    printf("send ^C to force exit.\n");
+   // return ts;
 }
 
 
- #if HTTPSSL
-           class testwebscoket : public net::HttpsServer {
-        public:
-    testwebscoket(std::string ip, int port, ServerConnectionFactory *factory = nullptr, bool multithreaded = false) : net::HttpsServer(ip, port, factory, multithreaded) {}
-       
- #else
-
-
-class testwebscoket : public net::HttpServer {
-public:
-   testwebscoket(std::string ip, int port, ServerConnectionFactory *factory = nullptr, bool multithreaded = false) : net::HttpServer(ip, port, factory, multithreaded) {}
+int TTYServer::server_init( uv_loop_t *loop, int argc, char **argv)
+{
   
-
-#endif
-
-
-    void on_wsread(Listener* connection, const char* msg, size_t len) {
-
-        //connection->send("arvind", 6 );
-        SInfo << "msg " << std::string(msg, len);
-        WebSocketConnection *con = (WebSocketConnection*) connection;
-
-        //con->send( msg, len );
-
-        // sendAll( msg, len );
-        
-        struct pss_tty *pss;
-        
-        if(!con->user)
-        {
-            SError << "not possible state";
-            exit (0);
-        }else
-        {
-            pss = (pss_tty*)con->user;
-        }
-        
-        SInfo << "on_wsread" << pss;
-
-        if (pss->buffer == NULL) {
-            pss->buffer = (char *) xmalloc(len);
-            pss->len = len;
-            memcpy(pss->buffer, msg, len);
-        } else {
-            pss->buffer = (char *) xrealloc(pss->buffer, pss->len + len);
-            memcpy(pss->buffer + pss->len, msg, len);
-            pss->len += len;
-        }
-
-        const char command = pss->buffer[0];
-
-        // check auth
-        if (server->credential != NULL && !pss->authenticated && command != JSON_DATA) {
-            printf("WS client not authenticated\n");
-            return;
-        }
-
-        // check if there are more fragmented messages
-        //      if (lws_remaining_packet_payload(wsi) > 0 || !lws_is_final_fragment(wsi)) {
-        //        return ;
-        //      }
-
-        switch (command) {
-            case INPUT:
-            {
-                if (!server->writable) break;
-                int err = pty_write(pss->process, pty_buf_init(pss->buffer + 1, pss->len - 1));
-                if (err) {
-                    printf("uv_write: %s (%s)\n", uv_err_name(err), uv_strerror(err));
-                    return;
-                }
-                break;
-            }
-            case RESIZE_TERMINAL:
-            {
-                if (pss->process == NULL) break;
-                     parse_window_size(pss->buffer + 1, pss->len - 1, &pss->process->columns, &pss->process->rows);
-                pty_resize(pss->process);
-                break;
-            }
-            case PAUSE:
-            {
-                pty_pause(pss->process);
-                break;
-            }
-            case RESUME:
-            {
-                pty_resume(pss->process);
-                break;
-            }
-            case JSON_DATA:
-            {
-                if (pss->process != NULL) break;
-                uint16_t columns = 0;
-                uint16_t rows = 0;
-                json obj = parse_window_size(pss->buffer, pss->len, &columns, &rows);
-//                if (server->credential != NULL) {
-//                    struct json_object *o = NULL;
-//                    if (json_object_object_get_ex(obj, "AuthToken", &o)) {
-//                        const char *token = json_object_get_string(o);
-//                        if (token != NULL && !strcmp(token, server->credential))
-//                            pss->authenticated = true;
-//                        else
-//                            printf("WS authentication failed with token: %s\n", token);
-//                    }
-//                    if (!pss->authenticated) {
-//                        json_object_put(obj);
-//                        lws_close_reason(connection, LWS_CLOSE_STATUS_POLICY_VIOLATION);
-//                        return;
-//                    }
-//                }
-               // json_object_put(obj);
-                if (!spawn_process(pss, columns, rows)) return;
-                break;
-            }
-            default:
-            {
-                printf("ignored unknown message type: %c\n", command);
-                break;
-            }
-        }
-
-        if (pss->buffer != NULL) {
-            free(pss->buffer);
-            pss->buffer = NULL;
-        }
-
-
-
-    }
-
-    void on_wsclose(Listener* connection) {
-
-        
-        WebSocketConnection *con = (WebSocketConnection*) connection;
-         
-
-        struct pss_tty *pss;
-        
-        
-        if(!con->user)
-        {
-            SError << "not possible state";
-            exit (0);
-        }else
-        {
-            pss = (pss_tty*)con->user;
-        }
-        
-        SInfo << "on_wsclose" << pss;
-        
-        
-        if (pss->con == NULL) return;
-
-        server->client_count--;
-        printf("WS closed from %s, clients: %d\n", pss->address, server->client_count);
-        if (pss->buffer != NULL) free(pss->buffer);
-        if (pss->pty_buf != NULL) pty_buf_free(pss->pty_buf);
-        for (int i = 0; i < pss->argc; i++) {
-            free(pss->args[i]);
-        }
-
-        if (pss->process != NULL) {
-            ((pty_ctx_t *) pss->process->ctx)->ws_closed = true;
-            if (process_running(pss->process)) {
-                pty_pause(pss->process);
-                printf("killing process, pid: %d\n", pss->process->pid);
-                pty_kill(pss->process, server->sig_code);
-            }
-        }
-
-        if ((server->once || server->exit_no_conn) && server->client_count == 0) {
-            printf("exiting due to the --once/--exit-no-conn option.\n");
-            force_exit = true;
-            // lws_cancel_service(context);
-            exit(0);
-        }
-        
-        free(pss);
-        con->user = nullptr;
-        
-    }
-
-    void on_wsconnect(Listener* connection) {
-
-       
-        
-        WebSocketConnection *con = (WebSocketConnection*) connection;
-       
-        struct pss_tty *pss;
-        
-        if(!con->user)
-        {
-            pss = (struct pss_tty *) malloc(sizeof (struct pss_tty));
-            
-            memset(pss, 0, sizeof(struct pss_tty));
-            con->user = pss;
-            
-        }else
-        {
-            pss = (pss_tty*)con->user;
-	    SError << "not possible state";
-            exit (0);	
-        }
-        
-        
-        SInfo << "on_wsconnect" << pss;
-         
-
-        pss->initialized = false;
-        pss->authenticated = false;
-        pss->con = connection;
-        pss->lws_close_status = LWS_CLOSE_STATUS_NOSTATUS;
-
-        if (server->url_arg) {
-            //        while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
-            //        if (strncmp(buf, "arg=", 4) == 0) {
-            //          pss->args = (char**)xrealloc(pss->args, (pss->argc + 1) * sizeof(char *));
-            //          pss->args[pss->argc] = strdup(&buf[4]);
-            //          pss->argc++;
-            //        }
-            //        }
-        }
-
-        server->client_count++;
-
-    }
-
-
-
-    //    
-
-};
-
-int main(int argc, char **argv) {
-
-    if (argc == 1 ||  argc >  2 ) {
-        print_help();
-        return 0;
-    }
-#ifdef _WIN32
-    if (!conpty_init()) {
-        fprintf(stderr, "ERROR: ConPTY init failed! Make sure you are on Windows 10 1809 or later.");
-        return 1;
-    }
-#endif
-
-
-    ConsoleChannel *ch = new ConsoleChannel("debug", Level::Info);
-    Logger::instance().add(ch);
-
-
-
+  
     int start = 1;// calc_command_start(argc, argv);
-    server = server_new(argc, argv, start);
+    server_new(argc, argv, start);
+    
+   
 
-    Application app;
+     server->loop = loop ; //app.uvGetLoop();
 
-    server->loop = app.uvGetLoop();
-
-
-    StreamingResponderFactory *stream = new StreamingResponderFactory();
-
-
-    testwebscoket *socket = new testwebscoket("0.0.0.0", 8000, stream, false);
 
 
     //int debug_level =   LLL_NOTICE ;//LLL_ERR | LLL_WARN | LLL_NOTICE;
-    char iface[128] = "";
-    char socket_owner[128] = "";
-    bool browser = false;
-    bool ssl = false;
-    char cert_path[1024] = "";
-    char key_path[1024] = "";
-    char ca_path[1024] = "";
+   // char iface[128] = "";
+   // char socket_owner[128] = "";
+//    bool browser = false;
+//    bool ssl = false;
+//    char cert_path[1024] = "";
+//    char key_path[1024] = "";
+//    char ca_path[1024] = "";
 
     json client_prefs = json::object();
     
@@ -535,68 +228,255 @@ int main(int argc, char **argv) {
         lowercase(server->auth_header);
     }
 
-    void *foreign_loops[1];
-    foreign_loops[0] = server->loop;
+//    void *foreign_loops[1];
+//    foreign_loops[0] = srv->loop;
     //  info.foreign_loops = foreign_loops;
     // info.options |= LWS_SERVER_OPTION_EXPLICIT_VHOSTS;
 
-
-
-
-#define sig_count 2
-    int sig_nums[] = {SIGINT, SIGTERM};
-    uv_signal_t signals[sig_count];
-    for (int i = 0; i < sig_count; i++) {
-        uv_signal_init(server->loop, &signals[i]);
-        uv_signal_start(&signals[i], signal_cb, sig_nums[i]);
-    }
-
-
-
-
-
-
-    //uv_run(server->loop, UV_RUN_DEFAULT);
-
-   app.waitForShutdown([&](void*)
-   {
-     
-        SInfo << "Main shutdwon1";
-        socket->Close();
-        socket->shutdown();
-        delete socket;
-
-        SInfo << "Main shutdwon";
-
-        delete stream;
-
-        SInfo << "Main shutdwon2";
-        
-        for (int i = 0; i < sig_count; i++) {
-            uv_signal_stop(&signals[i]);
-        }
-        
-
-        app.stop();
-        //app.uvDestroy();
-        delete ch;
-
-    }
-    
-    );
-
-    //  lws_service(context, 0);// arvind
-
-   
-#undef sig_count
-
-    //lws_context_destroy(context); // arvind
-
-    // cleanup
-    server_free(server);
-
     return 0;
+  
 }
 
 
+ void TTYServer::server_free() {
+    
+    SInfo << "server_free";
+            
+    if (server == NULL) return;
+    if (server->credential != NULL) free(server->credential);
+    if (server->auth_header != NULL) free(server->auth_header);
+    if (server->index != NULL) free(server->index);
+    if (server->cwd != NULL) free(server->cwd);
+    free(server->command);
+//    free(ts->prefs_json);
 
+    char **p = server->argv;
+    for (; *p; p++) free(*p);
+    free(server->argv);
+
+    if (strlen(server->socket_path) > 0) {
+        struct stat st;
+        if (!stat(server->socket_path, &st)) {
+            unlink(server->socket_path);
+        }
+    }
+
+    uv_loop_close(server->loop);
+
+    free(server->loop);
+    free(server);
+}
+
+
+ 
+ 
+ 
+ 
+ 
+
+
+  void TTYServer::server_wsread(void *user,  const char* msg, size_t len) {
+
+     //connection->send("arvind", 6 );
+     SInfo << "msg " << std::string(msg, len);
+
+
+     struct pss_tty *pss;
+
+     if(!user)
+     {
+         SError << "not possible state";
+         exit (0);
+     }else
+     {
+         pss = (pss_tty*)user;
+     }
+
+     SInfo << "server_wsread" << pss;
+
+     if (pss->buffer == NULL) {
+         pss->buffer = (char *) xmalloc(len);
+         pss->len = len;
+         memcpy(pss->buffer, msg, len);
+     } else {
+         pss->buffer = (char *) xrealloc(pss->buffer, pss->len + len);
+         memcpy(pss->buffer + pss->len, msg, len);
+         pss->len += len;
+     }
+
+     const char command = pss->buffer[0];
+
+     // check auth
+     if (server->credential != NULL && !pss->authenticated && command != JSON_DATA) {
+         printf("WS client not authenticated\n");
+         return;
+     }
+
+     // check if there are more fragmented messages
+     //      if (lws_remaining_packet_payload(wsi) > 0 || !lws_is_final_fragment(wsi)) {
+     //        return ;
+     //      }
+
+     switch (command) {
+         case INPUT:
+         {
+             if (!server->writable) break;
+             int err = pty_write(pss->process, pty_buf_init(pss->buffer + 1, pss->len - 1));
+             if (err) {
+                 printf("uv_write: %s (%s)\n", uv_err_name(err), uv_strerror(err));
+                 return;
+             }
+             break;
+         }
+         case RESIZE_TERMINAL:
+         {
+             if (pss->process == NULL) break;
+                  parse_window_size(pss->buffer + 1, pss->len - 1, &pss->process->columns, &pss->process->rows);
+             pty_resize(pss->process);
+             break;
+         }
+         case PAUSE:
+         {
+             pty_pause(pss->process);
+             break;
+         }
+         case RESUME:
+         {
+             pty_resume(pss->process);
+             break;
+         }
+         case JSON_DATA:
+         {
+             if (pss->process != NULL) break;
+             uint16_t columns = 0;
+             uint16_t rows = 0;
+             json obj = parse_window_size(pss->buffer, pss->len, &columns, &rows);
+//                if (server->credential != NULL) {
+//                    struct json_object *o = NULL;
+//                    if (json_object_object_get_ex(obj, "AuthToken", &o)) {
+//                        const char *token = json_object_get_string(o);
+//                        if (token != NULL && !strcmp(token, server->credential))
+//                            pss->authenticated = true;
+//                        else
+//                            printf("WS authentication failed with token: %s\n", token);
+//                    }
+//                    if (!pss->authenticated) {
+//                        json_object_put(obj);
+//                        lws_close_reason(connection, LWS_CLOSE_STATUS_POLICY_VIOLATION);
+//                        return;
+//                    }
+//                }
+            // json_object_put(obj);
+             if (!spawn_process(pss, columns, rows)) return;
+             break;
+         }
+         default:
+         {
+             printf("ignored unknown message type: %c\n", command);
+             break;
+         }
+     }
+
+     if (pss->buffer != NULL) {
+         free(pss->buffer);
+         pss->buffer = NULL;
+     }
+
+
+
+ }
+
+ void TTYServer::server_wsclose(void **user) {
+
+
+
+     struct pss_tty *pss;
+
+
+     if(!*user)
+     {
+         SError << "not possible state";
+         exit (0);
+     }else
+     {
+         pss = (pss_tty*)*user;
+     }
+
+     SInfo << "server_wsclose" << pss;
+
+
+     if (pss->con == NULL) return;
+
+     server->client_count--;
+     printf("WS closed from %s, clients: %d\n", pss->address, server->client_count);
+     if (pss->buffer != NULL) free(pss->buffer);
+     if (pss->pty_buf != NULL) pty_buf_free(pss->pty_buf);
+     for (int i = 0; i < pss->argc; i++) {
+         free(pss->args[i]);
+     }
+
+     if (pss->process != NULL) {
+         ((pty_ctx_t *) pss->process->ctx)->ws_closed = true;
+         if (process_running(pss->process)) {
+             pty_pause(pss->process);
+             printf("killing process, pid: %d\n", pss->process->pid);
+             pty_kill(pss->process, server->sig_code);
+         }
+     }
+
+     if ((server->once || server->exit_no_conn) && server->client_count == 0) {
+         printf("exiting due to the --once/--exit-no-conn option.\n");
+         force_exit = true;
+         // lws_cancel_service(context);
+         exit(0);
+     }
+
+     free(pss);
+     *user = nullptr;
+
+ }
+
+ struct pss_tty* TTYServer::server_wsconnect(void **user) {
+
+
+     struct pss_tty *pss;
+
+     if(!*user)
+     {
+         pss = (struct pss_tty *) malloc(sizeof (struct pss_tty));
+
+         memset(pss, 0, sizeof(struct pss_tty));
+         *user = pss;
+
+     }else
+     {
+         pss = (pss_tty*)*user;
+         SError << "not possible state";
+         
+         exit (0);	
+         return nullptr;
+     }
+
+
+     SInfo << "server_wsconnect" << pss;
+
+
+     pss->initialized = false;
+     pss->authenticated = false;
+     pss->close_status = CLOSE_STATUS_NOSTATUS;
+
+     if (server->url_arg) {
+         //        while (lws_hdr_copy_fragment(wsi, buf, sizeof(buf), WSI_TOKEN_HTTP_URI_ARGS, n++) > 0) {
+         //        if (strncmp(buf, "arg=", 4) == 0) {
+         //          pss->args = (char**)xrealloc(pss->args, (pss->argc + 1) * sizeof(char *));
+         //          pss->args[pss->argc] = strdup(&buf[4]);
+         //          pss->argc++;
+         //        }
+         //        }
+     }
+
+     server->client_count++;
+     
+     return pss;
+
+ }

@@ -29,8 +29,8 @@ extern char **environ;
 #endif
 #endif
 
-#include "pty.h"
-#include "utils.h"
+#include "ttydpty.h"
+#include "ttydutils.h"
 
 #ifdef _WIN32
 HRESULT (WINAPI *pCreatePseudoConsole)(COORD, HANDLE, HANDLE, DWORD, HPCON *);

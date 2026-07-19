@@ -1,7 +1,9 @@
 #include <stdbool.h>
 #include <uv.h>
-#include "pty.h"
+#include "ttydpty.h"
 #include  "net/netInterface.h"
+
+#include "http/websocket.h"
 
 #include <json/json.hpp>
 #include <uv.h>
@@ -23,12 +25,12 @@ using json = nlohmann::json;
 #define SET_PREFERENCES '2'
 
 
-#define LWS_CLOSE_STATUS_NOSTATUS      0
-#define LWS_CLOSE_STATUS_UNEXPECTED_CONDITION   1011
-#define LWS_CLOSE_STATUS_POLICY_VIOLATION     1008
+#define CLOSE_STATUS_NOSTATUS      0
+#define CLOSE_STATUS_UNEXPECTED_CONDITION   1011
+#define CLOSE_STATUS_POLICY_VIOLATION     1008
 
 
- #define LWS_WRITE_BINARY  1
+ #define WRITE_BINARY  1
 
 // url paths
 //struct endpoints {
@@ -38,10 +40,6 @@ using json = nlohmann::json;
 //  char *parent;
 //};
 
-extern volatile bool force_exit;
-extern struct lws_context *context;
-extern struct server *server;
-//extern struct endpoints endpoints;
 
 struct pss_http {
   char path[128];
@@ -49,6 +47,8 @@ struct pss_http {
   char *ptr;
   size_t len;
 };
+
+class TTYServer;
 
 struct pss_tty {
   bool initialized;
@@ -60,14 +60,17 @@ struct pss_tty {
   char **args;
   int argc;
 
-  base::net::Listener* con{nullptr};
+  base::net::WebSocketConnection *con{nullptr};
+  
+  TTYServer *thisTTYServer{nullptr};
+  
   char *buffer{nullptr};
   size_t len{0};
 
   pty_process *process{nullptr};
   pty_buf_t *pty_buf{nullptr};
 
-  int lws_close_status;
+  int close_status;
 };
 
 typedef struct {
@@ -75,7 +78,7 @@ typedef struct {
   bool ws_closed;
 } pty_ctx_t;
 
-struct server {
+struct TTYStServer {
   int client_count;        // client count
   char prefs_json[256]; // client preferences
   char *credential;        // encoded basic auth credential
@@ -100,8 +103,58 @@ struct server {
 };
 
 
+class TTYServer
+
+{
+
+public:
+  
+volatile bool force_exit;
+struct lws_context *context;
+//struct server *server;
+void print_help();
+void server_new(int argc, char **argv, int start) ;
+void server_free();
+int server_init( uv_loop_t *loop, int argc, char **argv );
+void print_config() ;
+//extern struct endpoints endpoints;
+
+
 json parse_window_size(const char *buf, size_t len, uint16_t *cols, uint16_t *rows);
 
 int lws_close_reason( base::net::Listener* conn, uint16_t statusCode ) ;
 
-extern bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows);
+bool spawn_process(struct pss_tty *pss, uint16_t columns, uint16_t rows);
+
+
+
+
+
+
+
+void server_wsread(void *user,  const char* msg, size_t len) ;
+void server_wsclose(void **user);
+struct pss_tty* server_wsconnect(void **user);
+
+
+
+
+
+
+
+
+ int send_initial_message(struct pss_tty *pss, int index) ;
+ char ** build_env(struct pss_tty *pss) ;
+ char ** build_args(struct pss_tty *pss);
+
+//void close_reason(base::net::Listener* conn, uint16_t statusCode  );
+//
+//
+//int callback_on_writable(	base::net::Listener* conn);
+
+
+
+
+TTYStServer *server{nullptr};
+
+};
