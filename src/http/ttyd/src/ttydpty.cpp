@@ -1,3 +1,4 @@
+#include "base/logger.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -8,6 +9,11 @@
 
 #include "base/logger.h"
 using namespace base;
+
+#ifdef _WIN32
+#include <fcntl.h>
+#include <io.h>
+#endif
 
 #ifndef _WIN32
 #include <sys/ioctl.h>
@@ -242,14 +248,17 @@ static WCHAR *join_args(char **argv) {
   return to_utf16(args);
 }
 
-static bool conpty_setup(HPCON *hnd, COORD size, STARTUPINFOEXW *si_ex, char **in_name, char **out_name) {
+static bool conpty_setup(HPCON *hnd, COORD size, STARTUPINFOEXW *si_ex,char **in_name, char **out_name, HANDLE *hInServer,
+                         HANDLE *hOutServer) {
   static int count = 0;
   char buf[256];
   HPCON pty = INVALID_HANDLE_VALUE;
   SECURITY_ATTRIBUTES sa = {0};
   HANDLE in_pipe = INVALID_HANDLE_VALUE;
   HANDLE out_pipe = INVALID_HANDLE_VALUE;
-  const DWORD open_mode = PIPE_ACCESS_INBOUND | PIPE_ACCESS_OUTBOUND | FILE_FLAG_FIRST_PIPE_INSTANCE;
+
+  const DWORD in_open_mode = PIPE_ACCESS_OUTBOUND | FILE_FLAG_OVERLAPPED | FILE_FLAG_FIRST_PIPE_INSTANCE;
+  const DWORD out_open_mode = PIPE_ACCESS_INBOUND | FILE_FLAG_OVERLAPPED | FILE_FLAG_FIRST_PIPE_INSTANCE;
   const DWORD pipe_mode = PIPE_TYPE_BYTE | PIPE_READMODE_BYTE | PIPE_WAIT;
   DWORD pid = GetCurrentProcessId();
   bool ret = false;
@@ -259,14 +268,27 @@ static bool conpty_setup(HPCON *hnd, COORD size, STARTUPINFOEXW *si_ex, char **i
   *in_name = strdup(buf);
   snprintf(buf, sizeof(buf), "\\\\.\\pipe\\ttyd-term-out-%d-%d", pid, count);
   *out_name = strdup(buf);
-  in_pipe = CreateNamedPipeA(*in_name, open_mode, pipe_mode, 1, 0, 0, 30000, &sa);
-  out_pipe = CreateNamedPipeA(*out_name, open_mode, pipe_mode, 1, 0, 0, 30000, &sa);
+
+  in_pipe = CreateNamedPipeA(*in_name, in_open_mode, pipe_mode, 1, 4096, 4096,   30000, &sa);
+  out_pipe = CreateNamedPipeA(*out_name, out_open_mode, pipe_mode, 1, 4096, 4096, 30000, &sa);
+
   if (in_pipe == INVALID_HANDLE_VALUE || out_pipe == INVALID_HANDLE_VALUE) {
     print_error("CreateNamedPipeA");
     goto failed;
   }
 
-  HRESULT hr = pCreatePseudoConsole(size, in_pipe, out_pipe, 0, &pty);
+  HANDLE hInClient = CreateFileA(*in_name, GENERIC_READ, 0, NULL, OPEN_EXISTING,
+                                 FILE_FLAG_OVERLAPPED, NULL);
+  HANDLE hOutClient = CreateFileA(*out_name, GENERIC_WRITE, 0, NULL,
+                                  OPEN_EXISTING, FILE_FLAG_OVERLAPPED, NULL);
+
+  HRESULT hr = pCreatePseudoConsole(size, hInClient, hOutClient, 0, &pty);
+
+  if (hInClient != INVALID_HANDLE_VALUE)
+    CloseHandle(hInClient);
+  if (hOutClient != INVALID_HANDLE_VALUE)
+    CloseHandle(hOutClient);
+
   if (FAILED(hr)) {
     print_error("CreatePseudoConsole");
     goto failed;
@@ -291,22 +313,25 @@ static bool conpty_setup(HPCON *hnd, COORD size, STARTUPINFOEXW *si_ex, char **i
   }
   count++;
   *hnd = pty;
+  *hInServer = in_pipe;
+  *hOutServer = out_pipe;
   ret = true;
   goto done;
 
 failed:
   ret = false;
+  if (in_pipe != INVALID_HANDLE_VALUE)
+    CloseHandle(in_pipe);
+  if (out_pipe != INVALID_HANDLE_VALUE)
+    CloseHandle(out_pipe);
   free(*in_name);
   *in_name = NULL;
   free(*out_name);
   *out_name = NULL;
+
 done:
-  if (in_pipe != INVALID_HANDLE_VALUE) CloseHandle(in_pipe);
-  if (out_pipe != INVALID_HANDLE_VALUE) CloseHandle(out_pipe);
   return ret;
 }
-
-static void connect_cb(uv_connect_t *req, int status) { free(req); }
 
 static void CALLBACK conpty_exit(void *context, BOOLEAN unused) {
   pty_process *process = (pty_process *) context;
@@ -330,26 +355,33 @@ static void async_cb(uv_async_t *async) {
 int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
   char *in_name = NULL;
   char *out_name = NULL;
+  HANDLE hInServer = INVALID_HANDLE_VALUE;
+  HANDLE hOutServer = INVALID_HANDLE_VALUE;
   DWORD flags = EXTENDED_STARTUPINFO_PRESENT | CREATE_UNICODE_ENVIRONMENT;
-  COORD size = {(int16_t) process->columns, (int16_t) process->rows};
-
-  if (!conpty_setup(&process->pty, size, &process->si, &in_name, &out_name)) return 1;
-
+  COORD size = {(int16_t)process->columns, (int16_t)process->rows};
+  if (!conpty_setup(&process->pty, size, &process->si, &in_name, &out_name,&hInServer, &hOutServer))
+    return 1;
   SetConsoleCtrlHandler(NULL, FALSE);
-
   int status = 1;
-  process->in = (uv_pipe_t*) xmalloc(sizeof(uv_pipe_t));
-  process->out = (uv_pipe_t*)xmalloc(sizeof(uv_pipe_t));
+  process->in = (uv_pipe_t *)xmalloc(sizeof(uv_pipe_t));
+  process->out = (uv_pipe_t *)xmalloc(sizeof(uv_pipe_t));
   uv_pipe_init(process->loop, process->in, 0);
   uv_pipe_init(process->loop, process->out, 0);
 
-  uv_connect_t *in_req = (uv_connect_t*)xmalloc(sizeof(uv_connect_t));
-  uv_connect_t *out_req = (uv_connect_t*) xmalloc(sizeof(uv_connect_t));
-  uv_pipe_connect(in_req, process->in, in_name, connect_cb);
-  uv_pipe_connect(out_req, process->out, out_name, connect_cb);
+      // Convert raw Win32 HANDLES into CRT File Descriptors for libuv
+  int fdIn = _open_osfhandle((intptr_t)hInServer, _O_WRONLY | _O_BINARY);
+  int fdOut = _open_osfhandle((intptr_t)hOutServer, _O_RDONLY | _O_BINARY);
+
+  if (fdIn == -1 || fdOut == -1) {
+    print_error("_open_osfhandle");
+    goto cleanup;
+  }
+
+  uv_pipe_open(process->in, fdIn);
+  uv_pipe_open(process->out, fdOut);
 
   PROCESS_INFORMATION pi = {0};
-  WCHAR *cmdline, *cwd;
+  WCHAR *cmdline = NULL, *cwd = NULL;
   cmdline = join_args(process->argv);
   if (cmdline == NULL) goto cleanup;
   if (process->envp != NULL) {
@@ -375,9 +407,12 @@ int pty_spawn(pty_process *process, pty_read_cb read_cb, pty_exit_cb exit_cb) {
 
   process->pid = pi.dwProcessId;
   process->handle = pi.hProcess;
+  CloseHandle(pi.hThread);
   process->paused = true;
   process->read_cb = read_cb;
   process->exit_cb = exit_cb;
+  process->out->data = process;
+  //uv_read_start((uv_stream_t *)process->out, alloc_cb, ::read_cb);
   process->async.data = process;
   uv_async_init(process->loop, &process->async, async_cb);
 
