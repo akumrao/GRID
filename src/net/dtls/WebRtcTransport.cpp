@@ -413,7 +413,7 @@ namespace rtc
 			return;
 		}
 
-                SInfo << "AgentNo " << agentNo << " SendAPP data " << len;
+    SDebug << "AgentNo " << agentNo << " SendAPP data " << len;
 
 		this->dtlsTransport->SendApplicationData(data, len);
 	}
@@ -554,7 +554,7 @@ namespace rtc
 
             IP::GetAddressInfo(
                         remoteAddr, family, peerIp, peerPort);
-            SInfo  << "AgentNo " << agentNo <<  " OnUdpSocketPacketReceived " << peerIp << ":" << peerPort ;
+            SDebug  << "AgentNo " << agentNo <<  " OnUdpSocketPacketReceived " << peerIp << ":" << peerPort ;
             addr_record_t remotesrc;
             IP::CopyAddress(remoteAddr, remotesrc );
 
@@ -573,7 +573,7 @@ namespace rtc
                  IP::AddressToString(remotesrc, ip, 40, port);
                  ret +=  ip + std::string(":") + std::to_string(port);
 
-                 SInfo << "AgentNo " << agentNo << " addr_unmap_inet6_v4mapped "  << ret;
+                 SDebug << "AgentNo " << agentNo << " addr_unmap_inet6_v4mapped "  << ret;
 
 
              }
@@ -738,7 +738,7 @@ namespace rtc
 	  const rtc::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
 	{
 		
-            SInfo  << "AgentNo " << agentNo << " OnDtlsTransportSendData len:" << len;
+            SDebug  << "AgentNo " << agentNo << " OnDtlsTransportSendData len:" << len;
 
             assertm(this->dtlsTransport, "no dtlsTransport");
 

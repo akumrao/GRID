@@ -256,16 +256,88 @@ function createPeerConnection() {
 
      channelSnd = pc.createDataChannel("chat"); 
     
-     channelSnd.onopen = function(event)
+     channelSnd.onopen = function()
      {
+         console.log("onopen");
          channelSnd.send('Hi you!');
      }
     
      channelSnd.onmessage = function(event)
      {
-         console.log("event.data " + event.data);
+         console.log("onmessage event.data " + event.data);
          channelSnd.send('Hi you!');
      }
+
+     channelSnd.onclose = function()
+     {
+         console.log("onclose " );
+
+     }
+        
+
+    channelSnd.onerror = function(event)
+    {
+        console.error("onerror An operational failure occurred:", event.error.message);
+        // Log telemetry or attempt recovery here
+    }
+
+
+    // On the remote peer's side:
+    pc.ondatachannel = (event) => {
+        const receivedChannel = event.channel;
+        
+        receivedChannel.onopen = (e) => console.log("Remote side channel open!");
+        receivedChannel.onclose = (e) => console.log("Remote side channel closed!");
+        receivedChannel.onmessage = (e) => { console.log("Local peer received message back:", e.data);};
+    };
+
+
+
+    pc.ondatachannel = (event) => {
+    // This is your 'receivedChannel'
+    const receivedChannel = event.channel;
+    
+    // Configure matching binary type
+    receivedChannel.binaryType = "arraybuffer";
+
+    // Handle Open Event
+    receivedChannel.onopen = () => {
+        console.log("Received channel is open and ready to use.");
+        // Reply back immediately if desired
+        receivedChannel.send("hi");
+    };
+
+    // Handle Close Event
+    receivedChannel.onclose = () => {
+        console.log("Received channel is closed.");
+    };
+
+    // Complete handled 'onmessage' function
+    receivedChannel.onmessage = (event) => {
+        const rawData = event.data;
+        
+        // 1. Handle Text Data
+        if (typeof rawData === "string") {
+            try {
+                // Check if it is a JSON object
+                const parsedJson = JSON.parse(rawData);
+                console.log("Remote received JSON Object:", parsedJson);
+                } catch (e) {
+                // If parsing fails, treat it as a standard string
+                console.log("Remote received plain text string:", rawData);
+            }
+        } 
+        // 2. Handle Binary Data (ArrayBuffer)
+        else if (rawData instanceof ArrayBuffer) {
+            console.log(`Remote received binary data of size: ${rawData.byteLength} bytes`);
+         
+        }
+        };
+    };
+
+
+
+
         
     pc.onicecandidate = handleIceCandidate;
     pc.ontrack = ontrack;

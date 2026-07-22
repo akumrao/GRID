@@ -224,8 +224,9 @@ async function runSocketServer() {
                         log('Client ID ' + socketContext.id + ' created room ' + roomId);
                         emitToSocket(socketContext.id, 'join', [roomId, socketContext.id, numClients]);
                     } else if (numClients > 1) {
-                        log('Client ID ' + socketContext.id + ' joined room ' + roomId);
+                        
                         socketContext.isclient = true;
+                        log('Client ID ' + socketContext.id + ' joined room ' + roomId + ' isclinet '+ socketContext.isclient);
 
                         clientsInRoom.forEach(function(scid) {
                             let sc = wsState.get(scid);

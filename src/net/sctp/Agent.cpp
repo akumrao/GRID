@@ -987,7 +987,7 @@ int Agent::agent_dispatch_stun( unsigned char *buf, size_t size, stun::MessageSt
             Priority *result = nullptr;
             if( !msg->find(&result ))
             {
-                SWarn  << "AgentNo " << agentNo << " On Stun MessageStun. Priority attribute is not in stun message";
+                SDebug  << "AgentNo " << agentNo << " On Stun MessageStun. Priority attribute is not in stun message";
                 //exit(0);
             }
             

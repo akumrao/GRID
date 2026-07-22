@@ -215,7 +215,7 @@ namespace rtc {
     }
 
     void DtlsTransport::ProcessDtlsData(const uint8_t *data, size_t len) {
-        SInfo << "ProcessDtlsData " << len;
+        SDebug << "ProcessDtlsData " << len;
 
         /*
          * for below Mbeddtls 3.6.6 we need to add CHellow deassembler cod with includind file src/net/include/net/bioUDPShandshake.h and enabling below code 

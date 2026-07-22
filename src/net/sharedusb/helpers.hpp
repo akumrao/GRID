@@ -29,10 +29,10 @@ struct Client {
     std::optional<std::shared_ptr<ClientTrackData>> audio;
     std::optional<std::shared_ptr<rtc::DataChannel>> dataChannel1;
     std::optional<std::shared_ptr<rtc::DataChannel>> dataChannel2;
-    
-    std::optional<std::shared_ptr<rtc::DataChannel>> dataChannel11;
-    std::optional<std::shared_ptr<rtc::DataChannel>> dataChannel22;
-    
+//    
+//    std::optional<std::shared_ptr<rtc::DataChannel>> dataChannel11;
+//    std::optional<std::shared_ptr<rtc::DataChannel>> dataChannel22;
+//    
 
     void setState(State state);
     State getState();

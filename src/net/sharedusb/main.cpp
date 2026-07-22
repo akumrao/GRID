@@ -567,6 +567,8 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
                 }
             });
 
+    {
+          
     std::string dcchat = "Settings::getdatachannel()";
     auto dc = pc->createDataChannel(dcchat);
     dc->onOpen([id, wdc = make_weak_ptr(dc)](){
@@ -581,10 +583,12 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
         if (auto dc = wdc.lock()) {
 
             SInfo << "onOpen: " << msg;
-                    dc->send("Ping");
+            sleep(1);
+            dc->send("Ping");
         }
     });
     client->dataChannel1 = dc;
+    }
 
 
 
@@ -600,8 +604,11 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
         });
 
 
-        dc->onClosed([id]() {
-            std::cout << "DataChannel from " << id << " closed" << std::endl; });
+        dc->onClosed([id]() 
+        {
+            std::cout << "DataChannel from " << id << " closed" << std::endl;
+        }
+        );
 
         dc->onMessage([id, dc](auto data) {
             // data holds either std::string or rtc::binary
@@ -612,7 +619,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
                 SInfo << "Binary message from " << id
                     << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
 
-            sleep(500);
+            sleep(1);
             dc->send("Send to web");
         });
 
