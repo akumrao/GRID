@@ -37,7 +37,7 @@ namespace rtc
             : rtc::Transport::Transport(id, agentNo, config, listener), IP(IP), port(port), agent(agent)
         {
     
-            
+                    mutex.lock();
             
                     m_udpServer = new base::net::UdpServer(this, IP,  port );
 
@@ -46,6 +46,8 @@ namespace rtc
                     STrace << "AgentNo " << agentNo << " Create a DTLS transport.";
                     this->dtlsTransport = new rtc::DtlsTransport(this);
                     iceServer = new rtc::IceServer();
+                    
+                    mutex.unlock();
 
                    // this->udpSockets[udpSocket] = "listenIp.announcedIp";
 
@@ -150,7 +152,7 @@ namespace rtc
                         if (preferTcp)
                                 iceLocalPreference += 1000;
 
-                        uint32_t icePriority = generateIceCandidatePriority(iceLocalPreference);
+                        generateIceCandidatePriority(iceLocalPreference);
 
                         // This may throw.
                         auto* tcpServer = new base::net::TcpServer(this, listenIp.ip,  listenIp.port);
@@ -170,14 +172,21 @@ namespace rtc
 
 	WebRtcTransport::~WebRtcTransport()
 	{
-            delete iceServer;
+            SInfo << "~WebRtcTransport()";
+              
+            mutex.lock();
 
-            // Must delete the DTLS transport first since it will generate a DTLS alert
-            // to be sent.
+            Disconnected();
+            
             delete this->dtlsTransport;
             this->dtlsTransport = nullptr;
-
-
+            
+            
+            delete iceServer;
+            iceServer = nullptr;	
+    
+            
+            
             for (auto& kv : this->udpSockets)
             {
                     auto* udpSocket = kv.first;
@@ -194,8 +203,15 @@ namespace rtc
                     delete tcpServer;
             }
             this->tcpServers.clear();
+            
+            
+            // Must delete the DTLS transport first since it will generate a DTLS alert
+            // to be sent.
+  
+             mutex.unlock();
+         
 
-		
+            SInfo << "~WebRtcTransport over()";
 	}
 
         void WebRtcTransport::InitDtls(bool server, std::string announcedIp , addr_record_t &remotemapped , CertificateFingerprint dtlsRemoteFingerprint)
@@ -422,7 +438,7 @@ namespace rtc
 	  base::net::TransportTuple* tuple, const char* data, size_t len)
 	{
 		
-            SDebug  << "AgentNo " << agentNo << " OnPacketReceived " << len;
+    SDebug  << "AgentNo " << agentNo << " OnPacketReceived " << len;
 
 		assertm(this->dtlsTransport, "no dtlsTransport");
 
@@ -433,7 +449,15 @@ namespace rtc
 		// Check if it's DTLS.
 		if (rtc::DtlsTransport::IsDtls( (const uint8_t*)data, len))
 		{
+      mutex.lock();
+      
+      SInfo  << "AgentNo " << agentNo << " locked " << len;
+          
+      if(dtlsTransport)
 			OnDtlsDataReceived(tuple, data, len);
+      
+       SInfo  << "AgentNo " << agentNo << " unlocked " << len;
+      mutex.unlock();
 		}
 		else
 		{

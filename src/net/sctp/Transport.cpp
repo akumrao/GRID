@@ -15,7 +15,7 @@ namespace rtc
 	Transport::Transport(const std::string& id, int agentNo, const Configuration &config, Listener* listener)
 	  : id(id), iceListener(listener), agentNo(agentNo), config(config)
 	{
-            
+               SInfo << "Transport "  ; 
 //	
 //
 //		{
@@ -121,8 +121,13 @@ namespace rtc
 	{
                 SInfo << "~Transport delete sctp "  << sctptransport ; 
                 
+                if(sctptransport)
+                {
+               
+                  delete sctptransport;
+                  sctptransport = nullptr;
+                }
                 
-                delete sctptransport;
 
 		// Set the destroying flag.
 		//this->destroying = true;
@@ -178,7 +183,7 @@ namespace rtc
 	{
             
             
-            rtc::SctpTransport::Ports ports = {};
+      rtc::SctpTransport::Ports ports = {};
 	    ports.local = 3868;
 	    ports.remote = 3868;
 
@@ -215,6 +220,16 @@ namespace rtc
                }
                else
                  iceListener->OnClose(id);
+     
+     
+     
+                if(sctptransport)
+                {
+               
+                  delete sctptransport;
+                  sctptransport = nullptr;
+                }
+     
                  
 //				// Tell all DataConsumers.
 //		for (auto& kv : this->mapDataConsumers)

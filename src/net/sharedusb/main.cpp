@@ -38,9 +38,9 @@
 
 
 
-volatile bool force_exit = false;
+//volatile bool force_exit = false;
 
-struct server *server{nullptr};
+//struct server *server{nullptr};
 
 #define CERTFROMFILE 1
 
@@ -56,19 +56,16 @@ template <class T> weak_ptr<T> make_weak_ptr(shared_ptr<T> ptr) {
     return ptr;
 }
 
+
+std::mutex clients_mutex;
 /// all connected clients
-unordered_map<string, shared_ptr<Client>> clients
-{
-};
+unordered_map<string, shared_ptr<Client>> clients;
+;
 
 shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool isClient);
 
-
 void addToStream(shared_ptr<Client> client, bool isAddingVideo);
-
-/// Start stream
 void startStream();
-
 
 const string defaultIPAddress = "127.0.0.1";
 const uint16_t defaultPort = 8000;
@@ -82,6 +79,26 @@ std::string room;
 Configuration settingconfig;
 
 std::string id;
+
+
+
+
+// Explicit function to completely destroy an active peer session
+void destroyClient(const string& clientId) {
+    std::lock_guard<std::mutex> lock(clients_mutex);
+    auto it = clients.find(clientId);
+    if (it != clients.end()) {
+        SInfo << "Cleaning up and destroying peer connection object: " << clientId << std::endl;
+        if (it->second && it->second->peerConnection) {
+            try {
+                it->second->peerConnection->close(); // Cease background async processing thread loops
+            } catch (const std::exception& e) {
+                SError << "Exception thrown during WebRTC object close: " << e.what() << std::endl;
+            }
+        }
+        clients.erase(it); // Erase from mapping container to drop shared_ptr allocation
+    }
+}
 
 #if 1
 
@@ -218,10 +235,15 @@ void wsOnMessage(json const &m) {
 
     if (type == "offer") {
 
-        if (clients.find(id) != clients.end())
-            clients.erase(id);
+       // if (clients.find(id) != clients.end())
+       //     clients.erase(id);
+        
+        destroyClient(id); // Safe erasure structure handles cleanup safely instead of raw `.erase()`
 
-        clients.emplace(id, createPeerConnection(settingconfig, id, false));
+        {
+          std::lock_guard<std::mutex> lock(clients_mutex);
+          clients.emplace(id, createPeerConnection(settingconfig, id, false));
+        }
 
         //clients.emplace(id, createPeerConnection(config,  id));
         if (auto jt = clients.find(id); jt != clients.end()) {
@@ -282,10 +304,10 @@ void initiate(std::string rm) {
     room = rm;
     id = "client"; /// hard coded the id for client(second participant), since it will have only one instance. Second instance should only have one instance, otherwise throw error. TBD 
 
-    if (clients.find(id) != clients.end())
-        clients.erase(id);
 
+    destroyClient(id); // Safe structural cleanup
 
+    std::lock_guard<std::mutex> lock(clients_mutex);
     clients.emplace(id, createPeerConnection(settingconfig, id, true));
 }
 
@@ -293,6 +315,7 @@ void initiate(std::string rm) {
 
 int main(int argc, char **argv) {
 
+  {
     /////////////////////////////////////////////////
     base::cnfg::Configuration cache;
 
@@ -312,7 +335,7 @@ int main(int argc, char **argv) {
 
     Application app;
 
-    Async async;
+    //Async async;
 
 
     if (printHelp) {
@@ -452,13 +475,18 @@ int main(int argc, char **argv) {
     };
 
     m_client->fnClose = [&](HttpBase *con, std::string str) {
-      STrace << "client->fnClose " << str;
+      SInfo << "client->fnClose " << str;
       // close(0,"exit");
       // on_close();
+      //emitWebSocketEvent("bye", "");
+      
+      
+    
+      
       SInfo << "WebSocket connection closed by endpoint structure.";
       m_client->Close();
       delete m_client;
-      //m_client = nullptr;
+      m_client = nullptr;
 
       //            m_con_state = con_closed;
     };
@@ -474,9 +502,49 @@ int main(int argc, char **argv) {
 
     app.waitForShutdown([&](void*) {
 
+      
+      
+        json m;
+      m["type"] = "bye";
+      emitWebSocketEvent("message", m);
+      
+      
+           json joinPayload;
+      joinPayload["roomId"] = "oom";
+      joinPayload["client"] =   false; // Mirrors client state property tracking requirements
+
+      emitWebSocketEvent("createorjoin", joinPayload);
+      
+      
+      
+     
+      
+      {
+        std::lock_guard<std::mutex> lock(clients_mutex);
+        for (auto& pair : clients) {
+            if (pair.second && pair.second->peerConnection) {
+                pair.second->peerConnection->close();
+            }
+        }
+        clients.clear();
+      }
+
+    
+      
+      
+        m_client->Close();
+        //delete m_client;
+        
+     
+         rtc::SctpTransport::Cleanup();
+      
+       // ClassDestroy();
+        
         SInfo << "app.run() is over";
-        //    Settings::exit();         
-        //    rtc::CleanupSSL();
+         
+//        restApi->shutdown();
+//        Settings::exit();         
+//        rtc::CleanupSSL();
         Logger::destroy();
 
         //    if(ctx->txt)
@@ -489,6 +557,8 @@ int main(int argc, char **argv) {
 
     });
 
+    
+  }
 
 
     SInfo << "Cleaning up..." << endl;
@@ -518,7 +588,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
             {
                 clients.erase(id);
 
-                        int x = 1; //arvind
+                       // int x = 1; //arvind
             }
             //);
         }
@@ -574,19 +644,49 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
     dc->onOpen([id, wdc = make_weak_ptr(dc)](){
         if (auto dc = wdc.lock()) {
             SInfo << "onOpen: ";
-                    dc->send("Ping");
+                    dc->send("Ping2");
         }
     });
 
-    dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg){
-        SInfo << "Message from " << id << " received: " << msg << endl;
-        if (auto dc = wdc.lock()) {
+//    dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg){
+//        SInfo << "Message from " << id << " received: " << msg << endl;
+//        if (auto dc = wdc.lock()) {
+//
+//            SInfo << "onOpen: " << msg;
+//            sleep(1);
+//            dc->send(" onMessage Ping");
+//        }
+//    });
+//    
+    
+          dc->onMessage([id, dc](auto data) {
+            // data holds either std::string or rtc::binary
+            if (std::holds_alternative<std::string>(data))
+                SInfo << "Message from " << id << " received: " << std::get<std::string>(data)
+                << std::endl;
+            else
+                SInfo << "Binary message from " << id
+                    << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
 
-            SInfo << "onOpen: " << msg;
-            sleep(1);
-            dc->send("Ping");
-        }
-    });
+          //  sleep(1);
+            
+            
+            
+      //  rtc::binary buffer = { std::byte(0x01), std::byte(0x02), std::byte(0x03) };
+    //    dc->send(buffer);
+
+        // Approach 2: Sending from a raw data chunk (e.g., loaded file or hardware frame)
+       // uint8_t raw_bytes[] = { 0x04, 0x05, 0x06, 0x07 };
+       // dc->send(reinterpret_cast<const std::byte*>(raw_bytes), sizeof(raw_bytes));
+
+    
+    
+    
+            
+         //  dc->send("Send to web2");
+        });
+    
+    
     client->dataChannel1 = dc;
     }
 
@@ -599,7 +699,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
         dc->onOpen([wdc = make_weak_ptr(dc)](){
             if (auto dc = wdc.lock()) {
                 SInfo << "DataChannel 2: Open" << endl;
-                        dc->send("Hello from 2");
+                dc->send("Ping1");
             }
         });
 
@@ -620,7 +720,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
                     << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
 
             sleep(1);
-            dc->send("Send to web");
+            dc->send("Send to web1");
         });
 
         client->dataChannel2 = dc;

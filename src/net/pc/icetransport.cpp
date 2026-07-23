@@ -32,11 +32,11 @@ namespace rtc {
     
     
 void IceTransport::Init() {
-	// Dummy
+	SInfo << "IceTransport::Init()";
 }
 
 void IceTransport::Cleanup() {
-	// Dummy
+		SInfo << "IceTransport::Cleanup()";
 }
 
 
@@ -52,7 +52,7 @@ IceTransport::IceTransport(const Configuration &config, dtls_state_callback dtls
       agent(  (Configuration &)config, this, this)  
 {
 
-SDebug << "Initializing ICE transport";	
+  SInfo << "Initializing ICE transport";	
 }
 
 void IceTransport::setIceAttributes(string uFrag, string pwd) {
@@ -97,7 +97,7 @@ void IceTransport::addIceServer(IceServer_conf server) {
 }
 
 IceTransport::~IceTransport() {
-	SInfo << "Destroying ICE transport";
+	SInfo << "Destroying ICE transport ~IceTransport()";
 //	mAgent.reset();
 }
 
@@ -173,7 +173,7 @@ void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer_conf>
 	changeGatheringState(GatheringState::InProgress);
 
         
-         if (agent.gather_candidates() < 0) {
+    if (agent.gather_candidates() < 0) {
 		throw std::runtime_error("Failed to gather local ICE candidates");
  	  }
 }

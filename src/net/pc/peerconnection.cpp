@@ -65,13 +65,13 @@ PeerConnection::PeerConnection( Configuration &config1): config(config1)
 }
 
 PeerConnection::~PeerConnection() {
-	STrace << "Destroying PeerConnection";
+	SInfo << "~PeerConnection()";
 	close();
 	//delete mCertificate;
 }
 
 void PeerConnection::close() {
-	STrace << "Closing PeerConnection";
+	SInfo << "Closing PeerConnection";
 
 	mNegotiationNeeded = false;
         

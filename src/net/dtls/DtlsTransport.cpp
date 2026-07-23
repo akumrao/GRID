@@ -43,7 +43,7 @@ namespace rtc {
         if (fin_ms == 0) {
             // uv_timer_stop(&t_ctx->timer1);
             t_ctx->timer->Stop();
-            std::cout << "uv_timer_stop" << std::endl << std::flush;
+            //std::cout << "uv_timer_stop" << std::endl << std::flush;
             t_ctx->is_cancelled = 1;
             return;
         }
@@ -125,21 +125,6 @@ namespace rtc {
         mbedtls_ssl_conf_authmode(&mConf, MBEDTLS_SSL_VERIFY_OPTIONAL);
     }
 
-    DtlsTransport::~DtlsTransport() {
-        // stop();
-
-        shutdown();
-                
-        if( localRole == Role::SERVER)
-            mbedtls_ssl_session_reset( &mSsl );
-
-        SDebug << "Destroying DTLS transport";
-        mbedtls_entropy_free(&mEntropy);
-        mbedtls_ctr_drbg_free(&mDrbg);
-        mbedtls_ssl_free(&mSsl);
-        mbedtls_ssl_config_free(&mConf);
-        delete this->timer;
-    }
 
     inline bool DtlsTransport::CheckRemoteFingerprint() {
         return true;
@@ -156,7 +141,7 @@ namespace rtc {
 
         STrace << "Send size=" << len;
 
-        int ret;
+      //  int ret;
         // std::lock_guard lock(mSslMutex);
         if (len > size_t(mbedtls_ssl_get_max_out_record_payload(&mSsl)))
             return;
@@ -215,7 +200,7 @@ namespace rtc {
     }
 
     void DtlsTransport::ProcessDtlsData(const uint8_t *data, size_t len) {
-        SDebug << "ProcessDtlsData " << len;
+        SInfo << "ProcessDtlsData " << len;
 
         /*
          * for below Mbeddtls 3.6.6 we need to add CHellow deassembler cod with includind file src/net/include/net/bioUDPShandshake.h and enabling below code 
@@ -229,6 +214,26 @@ namespace rtc {
         // else  TLS_BIO_write(app_bio_, (const char *) data, len);
         // }
         // Remove below   TLS_BIO_write(app_bio_, (const char *) data, len);
+        
+                // ==========================================
+        // CRITICAL BUGFIX: DEMULTIPLEX DTLS PACKETS
+        // ==========================================
+        uint8_t contentType = data[0];
+
+//        // DTLS structural records use Content Types:
+//        // 20 (ChangeCipherSpec), 21 (Alert), 22 (Handshake), 23 (Application Data)
+//        if (contentType < 20 || contentType > 24) {
+//            SWarn << "Dropping non-DTLS network data packet with header byte: " << (int)contentType;
+//            return;
+//        }
+//        
+        
+         // Catch stray encrypted Application Data (23) if the handshake isn't explicitly completed yet.
+        // MbedTLS will crash if it receives an Application Data Record while still in handshake initialization state.
+        if (contentType == 23 && !this->handshakeDone) {
+            SWarn << "Dropping stray client media/application packet (Content Type 23) received before Handshake completion!";
+            return;
+        }         
         
         {
 
@@ -496,6 +501,23 @@ namespace rtc {
         // TBD
     }
 
+        DtlsTransport::~DtlsTransport() {
+        // stop();
+
+        shutdown();
+                
+        if( localRole == Role::SERVER)
+            mbedtls_ssl_session_reset( &mSsl );
+
+        SInfo << "Destroying DTLS transport";
+        mbedtls_entropy_free(&mEntropy);
+        mbedtls_ctr_drbg_free(&mDrbg);
+        mbedtls_ssl_free(&mSsl);
+        mbedtls_ssl_config_free(&mConf);
+        delete this->timer;
+    }
+
+        
     void DtlsTransport::shutdown() {
         SInfo << "Shutdown";
         int ret;
@@ -1453,7 +1475,7 @@ error:
             return false;
         }
 
-        SDebug << "valid remote fingerprint";
+        SInfo << "valid remote fingerprint";
 
         // Get the remote certificate in PEM format.
 
@@ -1566,7 +1588,7 @@ error:
 namespace rtc {
 
     void DtlsTransport::ClassInit() {
-        STrace << "DtlsTransport::ClassInit()";
+        SInfo << "DtlsTransport::ClassInit()";
 
         // Generate a X509 certificate and private key (unless PEM files are
         // provided).
@@ -1608,13 +1630,13 @@ namespace rtc {
             return false;
 
         //	if (config.disableFingerprintVerification) {
-        //		STrace << "Skipping fingerprint validation";
+        //		SInfo << "Skipping fingerprint validation";
         //		return true;
         //	}
 
         auto expectedFingerprint = remoteFingerprint.value;
         if (expectedFingerprint == fingerprint) {
-            STrace << "Valid fingerprint \"" << fingerprint << "\"";
+            SInfo << "Valid fingerprint \"" << fingerprint << "\"";
             return true;
         }
 

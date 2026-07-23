@@ -16,6 +16,8 @@
 
 #include <Reader.h>
 #include <Writer.h>
+#include <mutex>
+
 
 using namespace stun;
 
@@ -119,7 +121,7 @@ namespace rtc
 		rtc::DtlsTransport::Role dtlsRole{ rtc::DtlsTransport::Role::AUTO };
                 
                 
-                
+    std::mutex mutex;           
             //    Listener* iceListener{ nullptr };
 	};
 } // namespace rtc

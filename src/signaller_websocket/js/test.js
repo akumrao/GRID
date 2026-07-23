@@ -35,28 +35,6 @@ function emitSocketEvent(event, payload) {
     }
 }
 
-// Set up audio and video regardless of what devices are present.
-
-var browserName = (function(agent) {
-    switch (true) {
-        case agent.indexOf("edge") > -1:
-            return "Edge";
-        case agent.indexOf("edg/") > -1:
-            return "Edge ( chromium based)";
-        case agent.indexOf("opr") > -1 && !!window.opr:
-            return "Opera";
-        case agent.indexOf("chrome") > -1 && !!window.chrome:
-            return "Chrome";
-        case agent.indexOf("trident") > -1:
-            return "MS IE";
-        case agent.indexOf("firefox") > -1:
-            return "Firefox";
-        case agent.indexOf("safari") > -1:
-            return "Safari";
-        default:
-            return "other";
-    }
-})(window.navigator.userAgent.toLowerCase());
 
 // Could prompt for room name:
 var roomId = prompt('Enter camera name:', '65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0');
@@ -136,7 +114,6 @@ function sendMessage(message) {
     emitSocketEvent('message', message);
 }
 
-let inputF = document.getElementById("idips");
 
 // This client receives a message router handler configuration
 registerSocketEvent('message', function(message) {
@@ -159,40 +136,11 @@ registerSocketEvent('message', function(message) {
       candidate: message.candidate.candidate
     });
     pc.addIceCandidate(candidate);
-  } else if (message.type === 'bye' && isStarted) {
-
-    console.log('Camera state', message.desc);
-    handleRemoteHangup();
-  }
-  else if(message.type === 'error') {
-   
-    console.log('Camera state', message.desc);
-    hangup();
-  }
+  } 
+  
 });
 
-////////////////////////////////////////////////////
 
-var remoteVideo = document.querySelector('#remoteVideo');
-
-function localVideoStream()
-{
-var localVideo = document.querySelector('#localVideo');
-  if( !localVideo)
-  {
-      let el = document.createElement("audio");
-
-      el.setAttribute('playsinline', true);
-      el.setAttribute('autoplay', true);
-      el.muted = false;
-      el.id = 'localVideo';
-     
-      el.controls = true;
-
-      var divVid =   document.getElementById("divvideos");
-      divVid.appendChild(el);
-    }
-}
 
 async function maybeStart() {
   console.log('>>>>>>> maybeStart() ', isStarted, localStream, isChannelReady);
@@ -234,14 +182,6 @@ async function maybeStart() {
   }
 }
 
-window.onbeforeunload = function() {
-    sendMessage({
-        room: roomId,
-        type: 'bye'
-    });
-};
-
-/////////////////////////////////////////////////////////
 
 function createPeerConnection() {
   try {
@@ -253,43 +193,6 @@ function createPeerConnection() {
           rtcpMuxPolicy      : 'require',
           sdpSemantics       : 'unified-plan'
       });
-
-     channelSnd = pc.createDataChannel("chat"); 
-    
-     channelSnd.onopen = function()
-     {
-         console.log("onopen");
-         channelSnd.send('Hi you!');
-     }
-    
-     channelSnd.onmessage = function(event)
-     {
-         console.log("onmessage event.data " + event.data);
-         channelSnd.send('Hi you!');
-     }
-
-     channelSnd.onclose = function()
-     {
-         console.log("onclose " );
-
-     }
-        
-
-    channelSnd.onerror = function(event)
-    {
-        console.error("onerror An operational failure occurred:", event.error.message);
-        // Log telemetry or attempt recovery here
-    }
-
-
-    // On the remote peer's side:
-    pc.ondatachannel = (event) => {
-        const receivedChannel = event.channel;
-        
-        receivedChannel.onopen = (e) => console.log("Remote side channel open!");
-        receivedChannel.onclose = (e) => console.log("Remote side channel closed!");
-        receivedChannel.onmessage = (e) => { console.log("Local peer received message back:", e.data);};
-    };
 
 
 
@@ -304,19 +207,19 @@ function createPeerConnection() {
     receivedChannel.onopen = () => {
         console.log("Received channel is open and ready to use.");
         // Reply back immediately if desired
-        receivedChannel.send("hi");
+        receivedChannel.send("hi onopen testing you 2");
     };
 
     // Handle Close Event
     receivedChannel.onclose = () => {
-        console.log("Received channel is closed.");
+        console.log("Received channel is closed 2.");
     };
 
     // Complete handled 'onmessage' function
     receivedChannel.onmessage = (event) => {
         const rawData = event.data;
-        
-        // 1. Handle Text Data
+          //console.log("Remote received plain text string:", rawData);
+       // 1. Handle Text Data
         if (typeof rawData === "string") {
             try {
                 // Check if it is a JSON object
@@ -332,10 +235,44 @@ function createPeerConnection() {
             console.log(`Remote received binary data of size: ${rawData.byteLength} bytes`);
          
         }
+
+        // 3. Create your binary data (e.g., a 4-byte buffer)
+        const buffer = new ArrayBuffer(4);
+        const view = new Int32Array(buffer);
+        view[0] = 42; // Example data`
+
+
+         receivedChannel.send(buffer);
         };
     };
 
 
+     channelSnd = pc.createDataChannel("chat"); 
+    
+     channelSnd.onopen = function()
+     {
+         console.log("onopen");
+        // channelSnd.send('Hi you!');
+     }
+    
+     channelSnd.onmessage = function(event)
+     {
+         console.log("onmessage event.data " + event.data);
+         //channelSnd.send('Hi you!');
+     }
+
+     channelSnd.onclose = function()
+     {
+         console.log("onclose " );
+
+     }
+        
+
+    channelSnd.onerror = function(event)
+    {
+        console.error("onerror An operational failure occurred:", event.error.message);
+        // Log telemetry or attempt recovery here
+    }
 
 
         
@@ -448,11 +385,6 @@ function ontrack({
 
 }
 
-// function handleRemoteStreamAdded(event) {
-//     console.log('Remote stream added.');
-//     //remoteStream = event.stream;
-//     remoteVideo.srcObject =  event.stream;
-// }
 
 function handleRemoteStreamRemoved(event) {
     console.log('Remote stream removed. Event: ', event);
@@ -461,10 +393,7 @@ function handleRemoteStreamRemoved(event) {
 function hangup() {
     console.log('Hanging up.');
     stop();
-    sendMessage({
-        room: roomId,
-        type: 'bye'
-    });
+   
 }
 
 function handleRemoteHangup() {
@@ -510,4 +439,66 @@ function onIceStateChange(pc, event) {
             console.log('failed...');
             break;
     }
+}
+
+
+
+async function checkWebRtcRoles1() {
+  try {
+    const stats = await pc.getStats();
+    
+    stats.forEach(report => {
+      // 1. Check ICE Roles
+      if (report.type === 'transport') {
+        console.log(`ICE Role: ${report.iceRole}`); 
+        // Outputs: "controlling" or "controlled"
+      }
+      
+      // 2. Check DTLS Roles
+      if (report.type === 'certificate') {
+
+      }
+    });
+  } catch (error) {
+    console.error("Error fetching WebRTC stats:", error);
+  }
+}
+
+
+
+async function checkWebRtcRoles2() {
+  if (!pc) {
+    console.warn("PeerConnection object does not exist yet.");
+    return;
+  }
+
+  // FIX: Verify localDescription is not null before checking SDP
+  if (pc.localDescription && pc.localDescription.sdp) {
+    const sdp = pc.localDescription.sdp;
+    
+    if (sdp.includes("a=setup:actpass")) {
+      console.log("DTLS Role: Willing to be client or server");
+    } else if (sdp.includes("a=setup:active")) {
+      console.log("DTLS Role: Client");
+    } else if (sdp.includes("a=setup:passive")) {
+      console.log("DTLS Role: Server");
+    }
+  } else {
+    console.log("SDP is not ready yet. Wait for createOffer/createAnswer to finish.");
+  }
+}
+
+
+
+async function checkDtlsState() {
+  const stats = await pc.getStats();
+  let state = 'unknown';
+  stats.forEach((report) => {
+    if (report.type === 'transport') {
+      state = report.dtlsState; // "connected", "connecting", "failed", etc.
+
+        console.log("Error fetching WebRTC stats:", state);
+    }
+  });
+  return state;
 }
