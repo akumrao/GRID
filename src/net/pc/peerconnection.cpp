@@ -363,7 +363,7 @@ void PeerConnection::processLocalDescription(Description &description) {
 	// Set local fingerprint (wait for certificate if necessary)
 	description.setFingerprint(config.gconfig->mCertificate->fingerprint());
 
-	STrace << "Issuing local description: " << description;
+	SInfo << "Issuing local description: " << description;
 
 	if (description.mediaCount() == 0)
 		throw std::logic_error("Local description has no media line");
@@ -2002,7 +2002,7 @@ void PeerConnection::validateRemoteDescription(const Description &description)
 	if (activeMediaCount == 0)
 		throw std::invalid_argument("Remote description has no active media");
 
-	STrace << "Remote description looks valid";
+	STrace << "Remote description looks valid " << description ;
 }
 
 

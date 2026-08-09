@@ -143,9 +143,18 @@ namespace base {
             return reinterpret_cast<const struct sockaddr*> (&this->localAddr.addr)->sa_family;
         }
 
-        inline const std::string& UdpSocket::GetLocalIp() const {
-            return this->localIp;
-        }
+//        inline const std::string& UdpSocket::GetLocalIp() const {
+//            
+//            // return this->localIp; will not work for when port is binded to port 0
+//            do the following
+//            int family;
+//            std::string ip;
+//            uint16_t port;
+//
+//            IP::GetAddressInfo(reinterpret_cast<struct sockaddr *>(&addr), family, ip, port);
+//            
+//            STrace << "ip " << ip << " port " << port;
+//        }
 
         inline uint16_t UdpSocket::GetLocalPort() const {
             return this->localPort;

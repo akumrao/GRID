@@ -45,8 +45,8 @@ namespace rtc
 
 		};
                 
-                std::string IP;
-                int port;
+              //  std::string IP;
+               // int port;
                 Agent *agent;
         public:
                 UdpServer *m_udpServer{nullptr};

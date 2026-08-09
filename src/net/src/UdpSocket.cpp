@@ -343,6 +343,7 @@ namespace base {
                 LError("uv_udp_getsockname() failed: %s", uv_strerror(err));
                 return false;
             }
+            IP::CopyAddress(reinterpret_cast<struct sockaddr*> (&addr), localAddr);
 
             #if DEBUG 
             int family;

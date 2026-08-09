@@ -34,7 +34,7 @@ namespace rtc
        
         /*with stun*/
         WebRtcTransport::WebRtcTransport(const std::string& id, int agentNo,  const Configuration &config, rtc::Transport::Listener* listener, std::string IP, int port, Agent *agent)
-            : rtc::Transport::Transport(id, agentNo, config, listener), IP(IP), port(port), agent(agent)
+            : rtc::Transport::Transport(id, agentNo, config, listener),  agent(agent)
         {
     
                     mutex.lock();

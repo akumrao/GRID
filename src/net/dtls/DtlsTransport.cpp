@@ -200,7 +200,7 @@ namespace rtc {
     }
 
     void DtlsTransport::ProcessDtlsData(const uint8_t *data, size_t len) {
-        SInfo << "ProcessDtlsData " << len;
+        STrace << "ProcessDtlsData " << len;
 
         /*
          * for below Mbeddtls 3.6.6 we need to add CHellow deassembler cod with includind file src/net/include/net/bioUDPShandshake.h and enabling below code 
@@ -357,7 +357,7 @@ namespace rtc {
         // Update local role.
         this->localRole = localRole;
 
-        SInfo << ((localRole == Role::CLIENT) ? "running [role:client]" : "running [role:server]");
+        SInfo << ((localRole == Role::CLIENT) ? "running [role:client/active]" : "running [role:server/passive]");
 
         handshake();
     }
@@ -1014,7 +1014,7 @@ error:
         switch (this->localRole) {
             case Role::CLIENT:
             {
-                SInfo << "running [role:client]";
+                SInfo << "running [role:client/active]";
 
                 SSL_set_connect_state(this->ssl);
                 SSL_do_handshake(this->ssl);
@@ -1026,7 +1026,7 @@ error:
 
             case Role::SERVER:
             {
-                SInfo << "running [role:server]";
+                SInfo << "running [role:server/passive]";
 
                 SSL_set_accept_state(this->ssl);
                 SSL_do_handshake(this->ssl);
