@@ -451,12 +451,12 @@ namespace rtc
 		{
       mutex.lock();
       
-      SInfo  << "AgentNo " << agentNo << " locked " << len;
+//      SInfo  << "AgentNo " << agentNo << " locked " << len;
           
       if(dtlsTransport)
 			OnDtlsDataReceived(tuple, data, len);
       
-       SInfo  << "AgentNo " << agentNo << " unlocked " << len;
+ //      SInfo  << "AgentNo " << agentNo << " unlocked " << len;
       mutex.unlock();
 		}
 		else

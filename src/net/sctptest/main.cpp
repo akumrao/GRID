@@ -26,8 +26,9 @@
 
 #include "sctptransport.hpp"
 #include "DtlsTransport.h"
+#include "DepUsrSCTP.h"
 
-//#define localtesting 1
+#define localtesting 1
 //#define remotetesting 1  // not working broken
 //#define VIDEOMEDIA 1
 #include "peerconnection.h"
@@ -378,9 +379,9 @@ int main(int argc, char **argv) {
 
 
 
-    rtc::SctpTransport::Init();
-    rtc::SctpSettings mCurrentSctpSettings = {};
-    rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
+//    rtc::SctpTransport::Init();
+//    rtc::SctpSettings mCurrentSctpSettings = {};
+//    rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
 
 
 
@@ -435,6 +436,7 @@ int main(int argc, char **argv) {
     cout << "The local ID is: " << localId << endl;
 
     rtc::DtlsTransport::ClassInit();
+    DepUsrSCTP::ClassInit();
 
 #if localtesting 
     settingconfig.console = true;
@@ -685,6 +687,8 @@ int main(int argc, char **argv) {
         SInfo << "app.run() is over";
         //    Settings::exit();         
         //    rtc::CleanupSSL();
+        
+        DepUsrSCTP::ClassDestroy();
         Logger::destroy();
 
         //    if(ctx->txt)
@@ -774,7 +778,6 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
                 {
                     clients.erase(id);
 
-                            int x = 1; //arvind
                 }
                 //);
             }
@@ -938,7 +941,6 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
                 {
                     clients.erase(id);
 
-                            int x = 1; //arvind
                 }
                 //);
             }

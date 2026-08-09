@@ -48,21 +48,21 @@ RTC_CPP_EXPORT std::shared_future<void> Cleanup();
 //};
 
 
-    struct SctpSettings {
-	// For the following settings, not set means optimized default
-	size_t recvBufferSize{1024 * 1024};                // in bytes
-	size_t sendBufferSize{1024 * 1024};                // in bytes
-	size_t maxChunksOnQueue{10 * 1024};              // in chunks
-	size_t initialCongestionWindow{10};       // in MTUs
-	size_t maxBurst{10};                      // in MTUs
-	unsigned int congestionControlModule{0}; // 0: RFC2581, 1: HSTCP, 2: H-TCP, 3: RTCC
-	std::chrono::milliseconds delayedSackTime{20};
-	std::chrono::milliseconds minRetransmitTimeout{200};
-	std::chrono::milliseconds maxRetransmitTimeout{10000};
-	std::chrono::milliseconds initialRetransmitTimeout{1000};
-	unsigned int maxRetransmitAttempts{5};
-	std::chrono::milliseconds heartbeatInterval{10000};
-};
+//    struct SctpSettings {
+//	// For the following settings, not set means optimized default
+//	size_t recvBufferSize{1024 * 1024};                // in bytes
+//	size_t sendBufferSize{1024 * 1024};                // in bytes
+//	size_t maxChunksOnQueue{10 * 1024};              // in chunks
+//	size_t initialCongestionWindow{10};       // in MTUs
+//	size_t maxBurst{10};                      // in MTUs
+//	unsigned int congestionControlModule{0}; // 0: RFC2581, 1: HSTCP, 2: H-TCP, 3: RTCC
+//	std::chrono::milliseconds delayedSackTime{20};
+//	std::chrono::milliseconds minRetransmitTimeout{200};
+//	std::chrono::milliseconds maxRetransmitTimeout{10000};
+//	std::chrono::milliseconds initialRetransmitTimeout{1000};
+//	unsigned int maxRetransmitAttempts{5};
+//	std::chrono::milliseconds heartbeatInterval{10000};
+//};
 
 
 
@@ -81,7 +81,7 @@ RTC_CPP_EXPORT std::shared_future<void> Cleanup();
 		uint16_t maxRetransmits{ 0u };
 	};
         
-RTC_CPP_EXPORT void SetSctpSettings(SctpSettings s);
+//RTC_CPP_EXPORT void SetSctpSettings(SctpSettings s);
 
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, LogLevel level);
 

@@ -35,7 +35,7 @@
 #include "http/HttpsClient.h"
 
 #include "server.h"
-
+#include "DepUsrSCTP.h"
 
 
 //volatile bool force_exit = false;
@@ -325,9 +325,12 @@ int main(int argc, char **argv) {
 
 
 
-    rtc::SctpTransport::Init();
-    rtc::SctpSettings mCurrentSctpSettings = {};
-    rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
+   //rtc::SctpTransport::Init();
+    
+
+        
+    //rtc::SctpSettings mCurrentSctpSettings = {};
+   // rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
 
 
     bool printHelp = false;
@@ -353,6 +356,10 @@ int main(int argc, char **argv) {
     cout << "STUN server is " << stunServer << endl;
     settingconfig.iceServers.emplace_back(stunServer);
     settingconfig.disableAutoNegotiation = true;
+    
+    settingconfig.portdefault =0;
+    
+      
     // read cert from file
 #if CERTFROMFILE == 1
     settingconfig.gconfig->keyPemFile = ConfSettings::configuration.keyFile;
@@ -377,8 +384,7 @@ int main(int argc, char **argv) {
     cout << "The local ID is: " << localId << endl;
 
     rtc::DtlsTransport::ClassInit();
-
-
+       DepUsrSCTP::ClassInit();
 
 
 #if 1   
@@ -536,7 +542,7 @@ int main(int argc, char **argv) {
         //delete m_client;
         
      
-         rtc::SctpTransport::Cleanup();
+       //  rtc::SctpTransport::Cleanup();
       
        // ClassDestroy();
         
@@ -545,7 +551,11 @@ int main(int argc, char **argv) {
 //        restApi->shutdown();
 //        Settings::exit();         
 //        rtc::CleanupSSL();
+        
+        
+        DepUsrSCTP::ClassDestroy();
         Logger::destroy();
+        
 
         //    if(ctx->txt)
         //    delete ctx->txt;

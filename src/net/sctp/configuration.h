@@ -113,7 +113,7 @@ struct RTC_CPP_EXPORT Configuration {
 	//string keyPemPass;
 
         bool console{false}; /* allow to test from console with external ips" */
-        uint16_t portdefault{7345};
+        uint16_t portdefault{7345};   // 0  for random port
         ConfCert *gconfig{&config};
         
         void allocRestApi(Async &async, std::string room)

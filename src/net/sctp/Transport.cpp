@@ -225,7 +225,9 @@ namespace rtc
      
                 if(sctptransport)
                 {
-               
+                  sctptransport->stop();
+                  
+                  //sctptransport->shutdown();
                   delete sctptransport;
                   sctptransport = nullptr;
                 }
@@ -258,7 +260,7 @@ namespace rtc
 //
 //		// Pass it to the SctpTransport.
                 if(sctptransport)
-		   sctptransport->incoming(make_message(data, data + len));
+                  sctptransport->incoming(make_message(data, data + len));
                else
                  iceListener->OnReceiveData(id, data, len);
 		
