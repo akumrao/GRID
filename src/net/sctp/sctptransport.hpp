@@ -6,11 +6,12 @@
 #include "global.hpp"
 #include "message.hpp"
 
+#include <atomic>
 #include <condition_variable>
 #include <functional>
-#include <map>
 #include <mutex>
 #include <queue>
+#include <thread>
 #include "usrsctp.h"
 
 namespace rtc {
@@ -161,10 +162,7 @@ namespace rtc {
         uint16_t lastSsnReceived{ 0};
 
     public:
-
-        struct socket* socket {
-            nullptr
-        };
+        struct socket* socket{ nullptr };
     };
 
 } // namespace rtc

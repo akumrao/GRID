@@ -214,7 +214,7 @@ namespace base {
             }
             // Error,
             if (sent != UV_EAGAIN) {
-                 SWarn << "uv_udp_try_send() failed trying uv_udp_send()"<< uv_strerror(sent) <<  "  "  << sent; // will cause recursion lock
+                 STrace << "uv_udp_try_send() failed trying uv_udp_send()"<< uv_strerror(sent) <<  "  "  << sent; // will cause recursion lock
                 //SWarn << "uv_udp_try_send() failed UV_EAGAIN: " << uv_strerror(sent);
                 //return -1; // arvind do not return
 
