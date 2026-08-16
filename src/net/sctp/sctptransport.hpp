@@ -18,7 +18,7 @@ namespace rtc {
 
     class SctpTransport {
     public:
-        using amount_callback = std::function<void(uint16_t streamId, size_t amount)>;
+        using Task = std::function<void()>;
 
         struct Ports {
             uint16_t local = DEFAULT_SCTP_PORT;
@@ -57,21 +57,18 @@ namespace rtc {
         ~SctpTransport();
 
         bool send(message_ptr message);
-        bool flush();
         void closeStream(unsigned int stream);
-        void close();
-
         unsigned int maxStream() const;
 
-        void clearStats();
-        size_t bytesSent();
-        size_t bytesReceived();
-        std::chrono::milliseconds rtt();
+//        void clearStats();
+//        size_t bytesSent();
+//        size_t bytesReceived();
+//        std::chrono::milliseconds rtt();
 
         void start();
         void stop();
-        void incoming(message_ptr message);
         void shutdown();
+        void incoming(message_ptr message);
 
     private:
 
@@ -84,6 +81,16 @@ namespace rtc {
             PPID_STRING_EMPTY = 56,
             PPID_BINARY_EMPTY = 57
         };
+
+        // Task Queue Synchronization
+        void enqueueTask(Task task);
+        void workerLoop();
+
+   	void doConnect();
+        bool doSend(message_ptr message);
+        void doResetStream(uint16_t streamId, StreamDirection direction);
+        void doShutdown();
+
 
         uint16_t mNegotiatedStreamsCount{MAX_SCTP_STREAMS_COUNT};
 
@@ -112,6 +119,13 @@ namespace rtc {
 
         const size_t mMaxMessageSize;
         const Ports mPorts;
+
+        // Command Queue Synchronization replacing mShutdownMutex / mSendShutdown
+        std::queue<Task> mTaskQueue;
+        std::mutex mQueueMutex;
+        std::condition_variable mQueueCv;
+        std::thread mWorkerThread;
+        std::atomic<bool> mRunning{ true };
 
         std::recursive_mutex mSendMutex;
         std::queue<message_ptr> mSendQueue;
@@ -155,7 +169,7 @@ namespace rtc {
         uint16_t mis{ 1024};
         size_t maxSctpMessageSize{ 262144};
         bool isDataChannel{ true};
-        uint8_t* messageBuffer{ nullptr};
+        //uint8_t* messageBuffer{ nullptr};
 
         uint16_t desiredOs{ 0};
         size_t messageBufferLen{ 0};

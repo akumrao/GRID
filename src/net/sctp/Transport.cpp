@@ -248,7 +248,7 @@ namespace rtc
 	void Transport::ReceiveSctpData(byte * data, size_t len)
 	{   
 // 		
-                 SDebug << "AgentNo " << agentNo << " ReceiveSctpData: " << len;
+                // SInfo << "AgentNo " << agentNo << " ReceiveSctpData: begin " << len;
 
 //
 //		if (!this->sctpAssociation)

@@ -244,6 +244,8 @@ function createPeerConnection() {
 
          receivedChannel.send(buffer);
         };
+
+        //receivedChannel.close();
     };
 
 
@@ -252,13 +254,14 @@ function createPeerConnection() {
      channelSnd.onopen = function()
      {
          console.log("onopen");
-        // channelSnd.send('Hi you!');
+         channelSnd.send('Hi you!');
      }
     
      channelSnd.onmessage = function(event)
      {
          console.log("onmessage event.data " + event.data);
-         //channelSnd.send('Hi you!');
+        // channelSnd.send('Hi you!');
+        // channelSnd.close();
      }
 
      channelSnd.onclose = function()

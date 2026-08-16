@@ -1263,12 +1263,12 @@ void PeerConnection::onIceStateChange(std::function<void(IceState state)> callba
                     openDataChannels();
                     break;
             case SctpTransport::State::Failed:
-                    changeState(State::Failed);
-                    remoteClose();
+                   // changeState(State::Failed);
+                   // remoteClose();
                     break;
             case SctpTransport::State::Disconnected:
-                    changeState(State::Disconnected);
-                    remoteClose();
+                   // changeState(State::Disconnected);
+                   // remoteClose();
                     break;
             default:
                     {

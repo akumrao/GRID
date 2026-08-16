@@ -225,7 +225,7 @@ namespace base {
 
                  IP::GetAddressInfo(addr,
                                     family, ip, port);
-                 SInfo << "ip " << ip << " port " << port;
+//                 SInfo << "ip " << ip << " port " << port;
 #endif
             }
 

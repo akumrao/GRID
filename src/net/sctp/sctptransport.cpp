@@ -11,13 +11,10 @@
 #include <cstdio>
 #include <exception>
 #include <iostream>
-#include <limits>
-#include <shared_mutex>
-#include <thread>
-#include <unordered_set>
-#include <vector>
 
-#define USE_PMTUD 0
+//#define USE_PMTUD 0
+
+static constexpr size_t SctpMtu{ 1200};
 
 using namespace std::chrono_literals;
 using namespace std::chrono;
@@ -37,8 +34,6 @@ namespace rtc {
         SCTP_STREAM_CHANGE_EVENT
     };
 
-    /* Static methods for usrsctp callbacks. */
-
     inline static int onRecvSctpData(
       struct socket* sock,
       union sctp_sockstore addr,
@@ -51,185 +46,13 @@ namespace rtc {
 
         if (sctpAssociation == nullptr) {
             std::free(data);
-
             return 0;
         }
 
         sctpAssociation->onRecvSctpData_obj(sock, addr, data, len, rcv, flags, ulpInfo);
-
         std::free(data);
-
         return 1;
     }
-
-#define DATA_CHANNEL_CLOSED     0
-#define DATA_CHANNEL_CONNECTING 1
-#define DATA_CHANNEL_OPEN       2
-#define DATA_CHANNEL_CLOSING    3
-
-#define DC_TYPE_OPEN 0x03
-#define DC_TYPE_ACK 0x02
-
-#define DATA_CHANNEL_PPID_CONTROL   50
-#define DATA_CHANNEL_PPID_DOMSTRING 51
-#define DATA_CHANNEL_PPID_BINARY    52
-
-#define DATA_CHANNEL_RELIABLE                0
-#define DATA_CHANNEL_RELIABLE_STREAM         1
-#define DATA_CHANNEL_UNRELIABLE              2
-#define DATA_CHANNEL_PARTIAL_RELIABLE_REXMIT 3
-#define DATA_CHANNEL_PARTIAL_RELIABLE_TIMED  4
-
-#define DATA_CHANNEL_FLAG_OUT_OF_ORDER_ALLOWED 0x0001
-
-#ifndef _WIN32
-#define SCTP_PACKED __attribute__((packed))
-#else
-#pragma pack (push, 1)
-#define SCTP_PACKED
-#endif
-
-#if defined(_WIN32) && !defined(__MINGW32__)
-#pragma warning( push )
-#pragma warning( disable : 4200 )
-#endif /* defined(_WIN32) && !defined(__MINGW32__) */
-
-struct rtcweb_datachannel_open_request {
-        uint8_t msg_type; /* DATA_CHANNEL_OPEN_REQUEST */
-        uint8_t channel_type;
-        uint16_t flags;
-        uint16_t reliability_params;
-        int16_t priority;
-        char label[];
-    } SCTP_PACKED;
-#if defined(_WIN32) && !defined(__MINGW32__)
-#pragma warning( pop )
-#endif /* defined(_WIN32) && !defined(__MINGW32__) */
-
-    struct rtcweb_datachannel_open_response {
-        uint8_t msg_type; /* DATA_CHANNEL_OPEN_RESPONSE */
-        uint8_t error;
-        uint16_t flags;
-        uint16_t reverse_stream;
-    } SCTP_PACKED;
-
-    struct rtcweb_datachannel_ack {
-        uint8_t msg_type; /* DATA_CHANNEL_ACK */
-    } SCTP_PACKED;
-
-#ifdef _WIN32
-#pragma pack(pop)
-#endif
-
-    struct channel {
-        uint8_t msg_type;
-        uint8_t chan_type;
-        uint16_t priority;
-        uint32_t reliability;
-        uint16_t label_len;
-        uint16_t protocol_len;
-        char *label;
-        char *protocol;
-    };
-
-#undef SCTP_PACKED
-
-    static std::map< rtc::SctpTransport*, struct channel > stpMap;
-
-    static void print_status(rtc::SctpTransport *pc, struct channel *channel) {
-        struct sctp_status status;
-        socklen_t len;
-
-        struct socket* sock = pc->socket;
-
-        len = (socklen_t)sizeof (struct sctp_status);
-        if (usrsctp_getsockopt(sock, IPPROTO_SCTP, SCTP_STATUS, &status, &len) < 0) {
-            perror("getsockopt");
-            return;
-        }
-        LInfo("Association state: ");
-        switch (status.sstat_state) {
-            case SCTP_CLOSED:
-                LInfo("CLOSED");
-                break;
-            case SCTP_BOUND:
-                LInfo("BOUND");
-                break;
-            case SCTP_LISTEN:
-                LInfo("LISTEN");
-                break;
-            case SCTP_COOKIE_WAIT:
-                LInfo("COOKIE_WAIT");
-                break;
-            case SCTP_COOKIE_ECHOED:
-                LInfo("COOKIE_ECHOED");
-                break;
-            case SCTP_ESTABLISHED:
-                LInfo("ESTABLISHED");
-                break;
-            case SCTP_SHUTDOWN_PENDING:
-                LInfo("SHUTDOWN_PENDING");
-                break;
-            case SCTP_SHUTDOWN_SENT:
-                LInfo("SHUTDOWN_SENT");
-                break;
-            case SCTP_SHUTDOWN_RECEIVED:
-                LInfo("SHUTDOWN_RECEIVED");
-                break;
-            case SCTP_SHUTDOWN_ACK_SENT:
-                LInfo("SHUTDOWN_ACK_SENT");
-                break;
-            default:
-                LInfo("UNKNOWN");
-                break;
-        }
-    }
-
-    static void
-    handle_open_request_message(rtc::SctpTransport *pc,
-      uint8_t* raw_msg,
-      size_t length,
-      uint16_t i_stream) {
-        struct channel *channel = &stpMap[pc];
-
-        channel->chan_type = raw_msg[1];
-        channel->priority = (raw_msg[2] << 8) + raw_msg[3];
-        channel->reliability = (raw_msg[4] << 24) + (raw_msg[5] << 16) + (raw_msg[6] << 8) + raw_msg[7];
-        channel->label_len = (raw_msg[8] << 8) + raw_msg[9];
-        channel->protocol_len = (raw_msg[10] << 8) + raw_msg[11];
-
-        std::string label(reinterpret_cast<char *> (raw_msg + 12), channel->label_len);
-        std::string protocol(reinterpret_cast<char *> (raw_msg + 12 + channel->label_len), channel->protocol_len);
-
-        SInfo << "Creating channel with stream id:" << i_stream << " channel type: " << channel->chan_type << " label:" << label << " protocol: " << protocol;
-
-        switch (channel->chan_type) {
-            case DATA_CHANNEL_RELIABLE:
-                break;
-            case DATA_CHANNEL_RELIABLE_STREAM:
-                break;
-            case DATA_CHANNEL_UNRELIABLE:
-                break;
-            case DATA_CHANNEL_PARTIAL_RELIABLE_REXMIT:
-                break;
-            case DATA_CHANNEL_PARTIAL_RELIABLE_TIMED:
-                break;
-            default:
-                break;
-        }
-
-        print_status(pc, channel);
-    }
-
-    static void
-    handle_open_response_message(rtc::SctpTransport * /*pc*/,
-      struct rtcweb_datachannel_open_response * /*rsp*/,
-      size_t /*length*/, uint16_t /*i_stream*/) {
-        return;
-    }
-
-    static constexpr size_t SctpMtu{ 1200};
-    static constexpr uint16_t MaxSctpStreams{ 65535};
 
     SctpTransport::SctpTransport(Listener* listener, int agentNo, const Configuration &config, Ports ports)
     : mMaxMessageSize(config.maxMessageSize),
@@ -238,7 +61,6 @@ struct rtcweb_datachannel_open_request {
     listener(listener) {
         SInfo << "AgentNo " << agentNo << " Initializing SCTP transport";
 
-        // Register ourselves in usrsctp.
         usrsctp_register_address(static_cast<void*> (this));
 
         int ret;
@@ -333,62 +155,73 @@ struct rtcweb_datachannel_open_request {
         SInfo << "SctpTransport with socket " << this->socket << " this " << this;
 
         DepUsrSCTP::IncreaseSctpTransports();
+
+         mWorkerThread = std::thread(&SctpTransport::workerLoop, this);
     }
 
     SctpTransport::~SctpTransport() {
-        usrsctp_set_ulpinfo(this->socket, nullptr);
-        usrsctp_close(this->socket);
+        SInfo << "~SctpTransport() begin";
 
-        // Deregister ourselves from usrsctp.
-        usrsctp_deregister_address(static_cast<void*> (this));
+        // Stop accepting new tasks and wake worker thread
+        {
+            std::lock_guard<std::mutex> lock(mQueueMutex);
+            mRunning = false;
+           // std::queue<Task> empty;
+           // std::swap(mTaskQueue, empty);
+        }
+        mQueueCv.notify_all();
 
+//        // Close socket to unblock any pending usrsctp calls in worker thread
+//        if (this->socket) {
+//            usrsctp_shutdown(this->socket, SHUT_RDWR);
+//            usrsctp_close(this->socket);
+//            this->socket = nullptr;
+//        }
+
+        if (mWorkerThread.joinable()) {
+            mWorkerThread.join();
+        }
+        
+
+        usrsctp_deregister_address(static_cast<void*>(this));
         DepUsrSCTP::DecreaseSctpTransports();
-
-        delete[] this->messageBuffer;
+        
+        
+        SInfo << "~SctpTransport() over";
     }
 
-    void SctpTransport::connect() {
-        if (this->mState != State::Disconnected)
-            return;
 
-        try {
-            int ret;
-            struct sockaddr_conn rconn;
 
-            std::memset(&rconn, 0, sizeof (rconn));
-            rconn.sconn_family = AF_CONN;
-            rconn.sconn_port = htons(5000);
-            rconn.sconn_addr = static_cast<void*> (this);
-#ifdef HAVE_SCONN_LEN
-            rconn.sconn_len = sizeof (rconn);
-#endif
+    void SctpTransport::start() {
+        enqueueTask([this]() { doConnect(); });
+    }
 
-            ret = usrsctp_connect(this->socket, reinterpret_cast<struct sockaddr*> (&rconn), sizeof (rconn));
+    void SctpTransport::stop() {
+        shutdown();
+    }
 
-            if (ret < 0 && errno != EINPROGRESS)
-                base::uv::throwError("usrsctp_connect() failed: ", errno);
+    void SctpTransport::shutdown() {
+        
+        SInfo << "shutdown " ;
+        enqueueTask([this]() { doShutdown(); });
+    }
 
-            // Disable MTU discovery.
-            sctp_paddrparams peerAddrParams;
+    void SctpTransport::closeStream(unsigned int stream) {
+        
+         SInfo << "closeStream closeStream " << stream;
+        
+        enqueueTask([this, stream]() {
+          //  doResetStream(uint16_t(stream), StreamDirection::OUTGOING);
+  
+            doSend(make_message(0, Message::Reset, stream));
+        });
+    }
 
-            std::memset(&peerAddrParams, 0, sizeof (peerAddrParams));
-            std::memcpy(&peerAddrParams.spp_address, &rconn, sizeof (rconn));
-            peerAddrParams.spp_flags = SPP_PMTUD_DISABLE;
-
-            peerAddrParams.spp_pathmtu = SctpMtu - sizeof (struct sctp_common_header);
-
-            ret = usrsctp_setsockopt(
-              this->socket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &peerAddrParams, sizeof (peerAddrParams));
-
-            if (ret < 0)
-                base::uv::throwError("usrsctp_setsockopt(SCTP_PEER_ADDR_PARAMS) failed: ", errno);
-
-            changeState(State::Connecting);
-            this->listener->OnSctpTransportConnecting(this);
-        } catch (const std::exception& /*error*/) {
-            changeState(State::Failed);
-            this->listener->OnSctpTransportFailed(this);
-        }
+    bool SctpTransport::send(message_ptr message) {
+        enqueueTask([this, message]() {
+            doSend(message);
+        });
+        return true;
     }
 
     void SctpTransport::incoming(message_ptr message) {
@@ -396,17 +229,55 @@ struct rtcweb_datachannel_open_request {
             return;
 
         if (!message) {
-            SInfo << "AgentNo " << agentNo << " SCTP disconnected";
+            SInfo << "AgentNo " << agentNo << " SCTP disconnected stream "  << message->stream;
             changeState(State::Disconnected);
             return;
         }
 
-        SDebug << "Incoming size=" << message->size();
+       // SDebug << "Incoming size=" << message->size();
 
         usrsctp_conninput(this, message->data(), message->size(), 0);
     }
 
-    bool SctpTransport::send(message_ptr message) {
+
+    void SctpTransport::doConnect() {
+        if (mState != State::Disconnected || !this->socket) return;
+
+        struct sockaddr_conn rconn;
+        std::memset(&rconn, 0, sizeof (rconn));
+        rconn.sconn_family = AF_CONN;
+        rconn.sconn_port = htons(5000);
+        rconn.sconn_addr = static_cast<void*> (this);
+
+        int ret = usrsctp_connect(this->socket, reinterpret_cast<struct sockaddr*> (&rconn), sizeof (rconn));
+
+        if (ret < 0 && errno != EINPROGRESS) {
+            changeState(State::Failed);
+            listener->OnSctpTransportFailed(this);
+            return;
+        }
+
+        sctp_paddrparams peerAddrParams;
+        std::memset(&peerAddrParams, 0, sizeof (peerAddrParams));
+        std::memcpy(&peerAddrParams.spp_address, &rconn, sizeof (rconn));
+        peerAddrParams.spp_flags = SPP_PMTUD_DISABLE;
+        peerAddrParams.spp_pathmtu = 1200 - sizeof (struct sctp_common_header);
+
+        usrsctp_setsockopt(this->socket, IPPROTO_SCTP, SCTP_PEER_ADDR_PARAMS, &peerAddrParams, sizeof (peerAddrParams));
+
+        changeState(State::Connecting);
+        listener->OnSctpTransportConnecting(this);
+    }
+
+
+    void SctpTransport::OnUsrSctpSendSctpData(void* buffer, size_t len) {
+        const uint8_t* data = static_cast<uint8_t*> (buffer);
+
+        this->listener->OnSctpTransportSendData(this, data, len);
+    }
+
+
+    bool SctpTransport::doSend(message_ptr message) {
         if (mState != State::Connected)
             return false;
 
@@ -499,451 +370,23 @@ struct rtcweb_datachannel_open_request {
         return true;
     }
 
-    void SctpTransport::closeStream(unsigned int stream) {
 
-        if (stream < 0) {
-            SError << "SCTP is not initialzed yet. You can try to supply correct value from config file";
-            return;
-        }
 
-        ResetSctpStream(stream, StreamDirection::OUTGOING);
-    }
 
-    void SctpTransport::ResetSctpStream(uint16_t streamId, StreamDirection direction) {
-        if (direction == StreamDirection::OUTGOING && streamId > this->os - 1)
-            return;
+    void SctpTransport::doShutdown() {
+        if (!this->socket) return;
+        
+        SInfo << "doShutdown";
+        // Perform clean usrsctp teardown
+        usrsctp_shutdown(this->socket, SHUT_RDWR);
+        usrsctp_set_ulpinfo(this->socket, nullptr);
+        usrsctp_close(this->socket);
 
-        int ret;
-        struct sctp_assoc_value av;
-        socklen_t len = sizeof (av);
 
-        ret = usrsctp_getsockopt(this->socket, IPPROTO_SCTP, SCTP_RECONFIG_SUPPORTED, &av, &len);
-
-        if (ret == 0) {
-            if (av.assoc_value != 1) {
-                SDebug << "stream reconfiguration not negotiated";
-
-                return;
-            }
-        } else {
-            SWarn << "could not retrieve whether stream reconfiguration has been negotiated:" << " error " << std::strerror(errno);
-            return;
-        }
-
-        len = sizeof (sctp_assoc_t) + (2 + 1) * sizeof (uint16_t);
-
-        auto* srs = static_cast<struct sctp_reset_streams*> (std::malloc(len));
-
-        switch (direction) {
-            case StreamDirection::INCOMING:
-                srs->srs_flags = SCTP_STREAM_RESET_INCOMING;
-                break;
-
-            case StreamDirection::OUTGOING:
-                srs->srs_flags = SCTP_STREAM_RESET_OUTGOING;
-                break;
-        }
-
-        srs->srs_number_streams = 1;
-        srs->srs_stream_list[0] = streamId;
-
-        ret = usrsctp_setsockopt(this->socket, IPPROTO_SCTP, SCTP_RESET_STREAMS, srs, len);
-
-        if (ret == 0) {
-            SDebug << "SCTP_RESET_STREAMS sent [streamId:%d]" << streamId;
-        } else {
-            SDebug << "usrsctp_setsockopt(SCTP_RESET_STREAMS) failed: %s " << " error " << std::strerror(errno);
-        }
-
-        std::free(srs);
-    }
-
-    void SctpTransport::AddOutgoingStreams(bool force) {
-        uint16_t additionalOs{ 0};
-
-        if (MaxSctpStreams - this->os >= 32)
-            additionalOs = 32;
-        else
-            additionalOs = MaxSctpStreams - this->os;
-
-        if (additionalOs == 0) {
-            SDebug << "cannot add more outgoing streams [OS:%d] " << this->os;
-
-            return;
-        }
-
-        auto nextDesiredOs = this->os + additionalOs;
-
-        if (!force && nextDesiredOs == this->desiredOs)
-            return;
-
-        this->desiredOs = nextDesiredOs;
-
-        if (this->mState != State::Connected) {
-            SDebug << "SCTP not connected, deferring OS increase";
-
-            return;
-        }
-
-        struct sctp_add_streams sas;
-
-        std::memset(&sas, 0, sizeof (sas));
-        sas.sas_instrms = 0;
-        sas.sas_outstrms = additionalOs;
-
-        SDebug << "adding %d outgoing streams " << additionalOs;
-
-        int ret = usrsctp_setsockopt(
-          this->socket, IPPROTO_SCTP, SCTP_ADD_STREAMS, &sas, static_cast<socklen_t> (sizeof (sas)));
-
-        if (ret < 0)
-            SDebug << "usrsctp_setsockopt(SCTP_ADD_STREAMS) failed: %s " << std::strerror(errno);
-    }
-
-    void SctpTransport::OnUsrSctpSendSctpData(void* buffer, size_t len) {
-        const uint8_t* data = static_cast<uint8_t*> (buffer);
-
-        this->listener->OnSctpTransportSendData(this, data, len);
-    }
-
-    void SctpTransport::OnUsrSctpReceiveSctpData(
-      uint16_t i_stream, uint16_t ssn, uint32_t ppid, int flags, const uint8_t* data, size_t len) {
-
-        struct rtcweb_datachannel_ack *msg;
-        switch (ppid) {
-            case DATA_CHANNEL_PPID_CONTROL:
-                if (len < sizeof (struct rtcweb_datachannel_ack)) {
-                    return;
-                }
-                msg = (struct rtcweb_datachannel_ack *) data;
-                switch (msg->msg_type) {
-                    case DC_TYPE_OPEN:
-                        if (len < sizeof (struct rtcweb_datachannel_open_request)) {
-                            return;
-                        }
-                        SInfo << " channel open request streamid " << i_stream << " this " << this;
-
-                        handle_open_request_message(this, (uint8_t*) data, len, i_stream);
-                        break;
-
-                    case DC_TYPE_ACK:
-                        if (len < sizeof (struct rtcweb_datachannel_ack)) {
-                            return;
-                        }
-
-                        SInfo << " channel ack streamid " << i_stream;
-                        break;
-                    default:
-                        SError << "Unknown state ";
-                        break;
-                }
-                break;
-            case DATA_CHANNEL_PPID_DOMSTRING:
-            case DATA_CHANNEL_PPID_BINARY:
-                break;
-            default:
-                break;
-        };
-
-        if (ppid == 50) {
-            SDebug << "ignoring SCTP data with ppid:50 (WebRTC DataChannel Control)";
-
-            return;
-        }
-        SInfo << "streamId: " << i_stream << " this " << this << " ssn: " << ssn << " ppid: " << ppid << " data: " << data;
-        if (this->messageBufferLen != 0 && ssn != this->lastSsnReceived) {
-            SDebug << "message chunk received with different SSN while buffer not empty, buffer discarded [ssn:%" PRIu16 "  <<   last ssn" << ssn << "  last  received " << this->lastSsnReceived;
-
-            this->messageBufferLen = 0;
-        }
-
-        this->lastSsnReceived = ssn;
-
-        auto eor = static_cast<bool> (flags & MSG_EOR);
-
-        if (this->messageBufferLen + len > this->maxSctpMessageSize) {
-            SWarn << "ongoing received message exceeds max allowed message size [message size:%zu, :%zu, eor:%u] " << this->messageBufferLen + len << " max message size " << this->maxSctpMessageSize << " eor " << (eor ? 1 : 0);
-
-            this->lastSsnReceived = 0;
-
-            return;
-        }
-
-        if (eor && this->messageBufferLen == 0) {
-            SDebug << "directly notifying listener [eor:1, buffer len:0]";
-        } else if (eor && this->messageBufferLen != 0) {
-            std::memcpy(this->messageBuffer + this->messageBufferLen, data, len);
-            this->messageBufferLen += len;
-
-            SDebug << "notifying listener [eor:1, buffer len:%zu] " << this->messageBufferLen;
-
-            this->messageBufferLen = 0;
-        } else if (!eor) {
-            if (!this->messageBuffer)
-                this->messageBuffer = new uint8_t[this->maxSctpMessageSize];
-
-            std::memcpy(this->messageBuffer + this->messageBufferLen, data, len);
-            this->messageBufferLen += len;
-
-            SDebug << "data buffered [eor:0, buffer len:%zu] " << this->messageBufferLen;
-        }
-    }
-
-    void SctpTransport::OnUsrSctpReceiveSctpNotification(union sctp_notification* notification, size_t len) {
-        if (notification->sn_header.sn_length != (uint32_t) len)
-            return;
-
-        switch (notification->sn_header.sn_type) {
-            case SCTP_ADAPTATION_INDICATION:
-            {
-                SInfo << "SCTP adaptation indication " << notification->sn_adaptation_event.sai_adaptation_ind;
-                break;
-            }
-
-            case SCTP_ASSOC_CHANGE:
-            {
-                switch (notification->sn_assoc_change.sac_state) {
-                    case SCTP_COMM_UP:
-                    {
-                        SInfo << "SCTP association connected, streams  out:" << notification->sn_assoc_change.sac_outbound_streams << " in:" << notification->sn_assoc_change.sac_inbound_streams;
-
-                        this->os = notification->sn_assoc_change.sac_outbound_streams;
-
-                        if (this->desiredOs > this->os)
-                            AddOutgoingStreams(/*force*/ true);
-
-                        if (this->mState != State::Connected) {
-                            SInfo << "OnSctpAssociationConnected ";
-                            changeState(State::Connected);
-                            this->listener->OnSctpTransportConnected(this);
-                        }
-
-                        break;
-                    }
-
-                    case SCTP_COMM_LOST:
-                    {
-                        if (notification->sn_header.sn_length > 0) {
-                            static const size_t BufferSize{ 1024};
-                            static char buffer[BufferSize];
-
-                            uint32_t headerLen = notification->sn_header.sn_length;
-
-                            for (uint32_t i{0}; i < headerLen; ++i) {
-                                std::snprintf(
-                                  buffer, BufferSize, " 0x%02x", notification->sn_assoc_change.sac_info[i]);
-                            }
-
-                            SDebug << "SCTP communication lost [info:%s] " << buffer;
-                        } else {
-                            SDebug << "SCTP communication lost";
-                        }
-
-                        if (this->mState != State::Disconnected) {
-                            changeState(State::Disconnected);
-                            this->listener->OnSctpTransportClosed(this);
-                        }
-
-                        break;
-                    }
-
-                    case SCTP_RESTART:
-                    {
-                        SDebug << "SCTP remote association restarted, streams out: " << notification->sn_assoc_change.sac_outbound_streams << " in " << notification->sn_assoc_change.sac_inbound_streams;
-
-                        this->os = notification->sn_assoc_change.sac_outbound_streams;
-
-                        if (this->desiredOs > this->os)
-                            AddOutgoingStreams(/*force*/ true);
-
-                        if (this->mState != State::Connected) {
-                            this->mState = State::Connected;
-                            this->listener->OnSctpTransportConnected(this);
-                        }
-
-                        break;
-                    }
-
-                    case SCTP_SHUTDOWN_COMP:
-                    {
-                        SDebug << "SCTP association gracefully closed";
-
-                        if (this->mState != State::Disconnected) {
-                            this->mState = State::Disconnected;
-                            this->listener->OnSctpTransportClosed(this);
-                        }
-
-                        break;
-                    }
-
-                    case SCTP_CANT_STR_ASSOC:
-                    {
-                        if (notification->sn_header.sn_length > 0) {
-                            static const size_t BufferSize{ 1024};
-                            static char buffer[BufferSize];
-
-                            uint32_t headerLen = notification->sn_header.sn_length;
-
-                            for (uint32_t i{0}; i < headerLen; ++i) {
-                                std::snprintf(
-                                  buffer, BufferSize, " 0x%02x", notification->sn_assoc_change.sac_info[i]);
-                            }
-
-                            SDebug << "SCTP setup failed: " << buffer;
-                        }
-
-                        if (this->mState != State::Failed) {
-                            changeState(State::Failed);
-                            this->listener->OnSctpTransportFailed(this);
-                        }
-
-                        break;
-                    }
-
-                    default:;
-                }
-
-                break;
-            }
-
-            case SCTP_ASSOC_RESET_EVENT:
-            {
-                SDebug << "SCTP association reset event received";
-                break;
-            }
-
-            case SCTP_REMOTE_ERROR:
-            {
-                static const size_t BufferSize{ 1024};
-                static char buffer[BufferSize];
-
-                uint32_t errLen = notification->sn_remote_error.sre_length - sizeof (struct sctp_remote_error);
-
-                for (uint32_t i{0}; i < errLen; i++) {
-                    std::snprintf(buffer, BufferSize, "0x%02x", notification->sn_remote_error.sre_data[i]);
-                }
-
-                SWarn << " remote SCTP association error type: " << " type " << notification->sn_remote_error.sre_error << " data " << buffer;
-
-                break;
-            }
-
-            case SCTP_SHUTDOWN_EVENT:
-            {
-                SDebug << "remote SCTP association shutdown";
-
-                if (this->mState != State::Disconnected) {
-                    changeState(State::Disconnected);
-                    this->listener->OnSctpTransportClosed(this);
-                }
-
-                break;
-            }
-
-            case SCTP_SEND_FAILED_EVENT:
-            {
-                static const size_t BufferSize{ 1024};
-                static char buffer[BufferSize];
-
-                uint32_t failLen =
-                  notification->sn_send_failed_event.ssfe_length - sizeof (struct sctp_send_failed_event);
-
-                for (uint32_t i{0}; i < failLen; ++i) {
-                    std::snprintf(buffer, BufferSize, "0x%02x", notification->sn_send_failed_event.ssfe_data[i]);
-                }
-
-                SWarn << " SCTP message sent failure [streamId: ]" << notification->sn_send_failed_event.ssfe_info.snd_sid << " ppid " << ntohl(notification->sn_send_failed_event.ssfe_info.snd_ppid) <<
-                  "sent " << ((notification->sn_send_failed_event.ssfe_flags & SCTP_DATA_SENT) ? "yes" : "no") << " err " << notification->sn_send_failed_event.ssfe_error <<
-                  " info " << buffer;
-
-                break;
-            }
-
-            case SCTP_STREAM_RESET_EVENT:
-            {
-                bool incoming{ false};
-                bool outgoing{ false};
-                uint16_t numStreams =
-                  (notification->sn_strreset_event.strreset_length - sizeof (struct sctp_stream_reset_event)) /
-                  sizeof (uint16_t);
-
-                if (notification->sn_strreset_event.strreset_flags & SCTP_STREAM_RESET_INCOMING_SSN)
-                    incoming = true;
-
-                if (notification->sn_strreset_event.strreset_flags & SCTP_STREAM_RESET_OUTGOING_SSN)
-                    outgoing = true;
-
-                if (incoming && !outgoing && this->isDataChannel) {
-                    for (uint16_t i{0}; i < numStreams; ++i) {
-                        auto streamId = notification->sn_strreset_event.strreset_stream_list[i];
-
-                        ResetSctpStream(streamId, StreamDirection::OUTGOING);
-                    }
-                }
-
-                break;
-            }
-
-            case SCTP_STREAM_CHANGE_EVENT:
-            {
-                if (notification->sn_strchange_event.strchange_flags == 0) {
-                    SDebug << "[sctp] SCTP stream changed, streams [out:" << notification->sn_strchange_event.strchange_outstrms << ", in:" << notification->sn_strchange_event.strchange_instrms << ", flags:" << notification->sn_strchange_event.strchange_flags << "]";
-                } else if (notification->sn_strchange_event.strchange_flags & SCTP_STREAM_RESET_DENIED) {
-                    SDebug << "[sctp] SCTP stream change denied, streams [out:" << notification->sn_strchange_event.strchange_outstrms << ", in:" << notification->sn_strchange_event.strchange_instrms << ", flags:" << notification->sn_strchange_event.strchange_flags << "]";
-                    break;
-                } else if (notification->sn_strchange_event.strchange_flags & SCTP_STREAM_RESET_FAILED) {
-                    SDebug << "[sctp] SCTP stream change failed, streams [out:" << notification->sn_strchange_event.strchange_outstrms << ", in:" << notification->sn_strchange_event.strchange_instrms << ", flags:" << notification->sn_strchange_event.strchange_flags << "]";
-                    break;
-                }
-
-                this->os = notification->sn_strchange_event.strchange_outstrms;
-
-                break;
-            }
-
-            default:
-            {
-                SWarn << "[sctp] unhandled SCTP event received [type:" << notification->sn_header.sn_type << "]";
-            }
-        }
-    }
-
-    unsigned int SctpTransport::maxStream() const {
-        unsigned int streamsCount = std::min(os, mis);
-        ;
-        return streamsCount > 0 ? streamsCount - 1 : 0;
-    }
-
-    void SctpTransport::sendReset(uint16_t streamId) {
-        SInfo << "AgentNo " << " sendReset start streamId " << streamId;
-
-        if (mState != State::Connected)
-            return;
-
-        SDebug << "SCTP resetting stream " << streamId;
-
-        using srs_t = struct sctp_reset_streams;
-        const size_t len = sizeof (srs_t) + sizeof (uint16_t);
-        byte buffer[len] = {};
-        srs_t &srs = *reinterpret_cast<srs_t *> (buffer);
-        srs.srs_flags = SCTP_STREAM_RESET_OUTGOING;
-        srs.srs_number_streams = 1;
-        srs.srs_stream_list[0] = streamId;
-
-        if (usrsctp_setsockopt(this->socket, IPPROTO_SCTP, SCTP_RESET_STREAMS, &srs, len) == 0) {
-        } else if (errno == EINVAL) {
-            SDebug << "SCTP stream " << streamId << " already reset";
-        } else {
-            SWarn << "SCTP reset stream " << streamId << " failed, errno=" << errno;
-        }
-    }
-
-    void SctpTransport::start() {
-        SInfo << "AgentNo " << agentNo << " start";
-        connect();
-    }
-
-    void SctpTransport::stop() {
+        changeState(State::Disconnected);
+        
+        
+        SInfo << "doShutdown over";
     }
 
     void SctpTransport::recv(message_ptr message) {
@@ -1061,7 +504,7 @@ struct rtcweb_datachannel_open_request {
         switch (type) {
             case SCTP_ASSOC_CHANGE:
             {
-                STrace << "SCTP association change event";
+                SInfo << "SCTP association change event";
                 const struct sctp_assoc_change &sac = notify->sn_assoc_change;
                 if (sac.sac_state == SCTP_COMM_UP) {
                     SDebug << "SCTP negotiated streams: incoming=" << sac.sac_inbound_streams
@@ -1078,7 +521,7 @@ struct rtcweb_datachannel_open_request {
                         SInfo << "AgentNo " << agentNo << " SCTP disconnected";
                         recv(nullptr);
                         listener->OnSctpTransportClosed(this);
-                        changeState(State::Disconnected);
+                     //   changeState(State::Disconnected);
                     } else {
                         SError << "AgentNo " << agentNo << " SCTP connection failed";
                         changeState(State::Failed);
@@ -1090,12 +533,14 @@ struct rtcweb_datachannel_open_request {
 
             case SCTP_SENDER_DRY_EVENT:
             {
-                STrace << "SCTP sender dry event";
+                SInfo << "SCTP sender dry event";
                 break;
             }
 
             case SCTP_STREAM_RESET_EVENT:
             {
+                 SInfo << "SCTP sSCTP_STREAM_RESET_EVENT";
+                 
                 const struct sctp_stream_reset_event &reset_event = notify->sn_strreset_event;
                 const int count = (reset_event.strreset_length - sizeof (reset_event)) / sizeof (uint16_t);
                 const uint16_t flags = reset_event.strreset_flags;
@@ -1135,6 +580,57 @@ struct rtcweb_datachannel_open_request {
                         recv(make_message(0, Message::Reset, streamId));
                     }
                 }
+                break;
+            }
+            
+            
+            
+             case SCTP_REMOTE_ERROR:
+            {
+                static const size_t BufferSize{ 1024};
+                static char buffer[BufferSize];
+
+                uint32_t errLen = notify->sn_remote_error.sre_length - sizeof (struct sctp_remote_error);
+
+                for (uint32_t i{0}; i < errLen; i++) {
+                    std::snprintf(buffer, BufferSize, "0x%02x", notify->sn_remote_error.sre_data[i]);
+                }
+
+                SWarn << " remote SCTP association error type: " << " type " << notify->sn_remote_error.sre_error << " data " << buffer;
+
+                break;
+            }
+
+            case SCTP_SHUTDOWN_EVENT:
+            {
+                //SInfo << "remote SCTP association shutdown";
+
+                if (this->mState != State::Disconnected) {
+                  //  this->listener->OnSctpTransportClosed(this);
+                   // changeState(State::Disconnected);
+                }
+
+                break;
+            }
+
+            case SCTP_SEND_FAILED_EVENT:
+            {
+                SInfo << "remote SCTP association Failed";
+                  
+                static const size_t BufferSize{ 1024};
+                static char buffer[BufferSize];
+
+                uint32_t failLen =
+                  notify->sn_send_failed_event.ssfe_length - sizeof (struct sctp_send_failed_event);
+
+                for (uint32_t i{0}; i < failLen; ++i) {
+                    std::snprintf(buffer, BufferSize, "0x%02x", notify->sn_send_failed_event.ssfe_data[i]);
+                }
+
+                SWarn << " SCTP message sent failure [streamId: ]" << notify->sn_send_failed_event.ssfe_info.snd_sid << " ppid " << ntohl(notify->sn_send_failed_event.ssfe_info.snd_ppid) <<
+                  "sent " << ((notify->sn_send_failed_event.ssfe_flags & SCTP_DATA_SENT) ? "yes" : "no") << " err " << notify->sn_send_failed_event.ssfe_error <<
+                  " info " << buffer;
+
                 break;
             }
 
@@ -1185,5 +681,137 @@ struct rtcweb_datachannel_open_request {
 
         listener->OnSctpState(state);
     }
+
+    unsigned int SctpTransport::maxStream() const {
+        unsigned int streamsCount = std::min(os, mis);
+        ;
+        return streamsCount > 0 ? streamsCount - 1 : 0;
+    }
+
+    void SctpTransport::enqueueTask(Task task) {
+        if (!mRunning) return;
+        {
+            std::lock_guard<std::mutex> lock(mQueueMutex);
+            mTaskQueue.push(std::move(task));
+        }
+        mQueueCv.notify_one();
+    }
+
+    void SctpTransport::workerLoop() {
+        while (mRunning || !mTaskQueue.empty()) {
+            Task task;
+            {
+                std::unique_lock<std::mutex> lock(mQueueMutex);
+                mQueueCv.wait(lock, [this]() {
+                    return !mTaskQueue.empty() || !mRunning;
+                });
+
+                if (mTaskQueue.empty()) continue;
+
+                task = std::move(mTaskQueue.front());
+                mTaskQueue.pop();
+            }
+
+            if (task) {
+                task();
+            }
+        }
+        SInfo << "workerLoop() exit";
+    }
+
+    void SctpTransport::sendReset(uint16_t streamId) {
+        SInfo << "AgentNo " << " sendReset start streamId " << streamId;
+
+        if (mState != State::Connected)
+            return;
+
+        SDebug << "SCTP resetting stream " << streamId;
+
+        using srs_t = struct sctp_reset_streams;
+        const size_t len = sizeof (srs_t) + sizeof (uint16_t);
+        byte buffer[len] = {};
+        srs_t &srs = *reinterpret_cast<srs_t *> (buffer);
+        srs.srs_flags = SCTP_STREAM_RESET_OUTGOING;
+        srs.srs_number_streams = 1;
+        srs.srs_stream_list[0] = streamId;
+
+        if (usrsctp_setsockopt(this->socket, IPPROTO_SCTP, SCTP_RESET_STREAMS, &srs, len) == 0) {
+        } else if (errno == EINVAL) {
+            SDebug << "SCTP stream " << streamId << " already reset";
+        } else {
+            SWarn << "SCTP reset stream " << streamId << " failed, errno=" << errno;
+        }
+    }
+
+//    void SctpTransport::start() {
+//        SInfo << "AgentNo " << agentNo << " start";
+//        doConnect();
+//    }
+
+
+
+
+
+
+
+
+
+// void SctpTransport::ResetSctpStream(uint16_t streamId, StreamDirection direction) {
+//        if (direction == StreamDirection::OUTGOING && streamId > this->os - 1)
+//            return;
+//
+//        int ret;
+//        struct sctp_assoc_value av;
+//        socklen_t len = sizeof (av);
+//
+//        ret = usrsctp_getsockopt(this->socket, IPPROTO_SCTP, SCTP_RECONFIG_SUPPORTED, &av, &len);
+//
+//        if (ret == 0) {
+//            if (av.assoc_value != 1) {
+//                SDebug << "stream reconfiguration not negotiated";
+//
+//                return;
+//            }
+//        } else {
+//            SWarn << "could not retrieve whether stream reconfiguration has been negotiated:" << " error " << std::strerror(errno);
+//            return;
+//        }
+//
+//        len = sizeof (sctp_assoc_t) + (2 + 1) * sizeof (uint16_t);
+//
+//        auto* srs = static_cast<struct sctp_reset_streams*> (std::malloc(len));
+//
+//        switch (direction) {
+//            case StreamDirection::INCOMING:
+//                srs->srs_flags = SCTP_STREAM_RESET_INCOMING;
+//                break;
+//
+//            case StreamDirection::OUTGOING:
+//                srs->srs_flags = SCTP_STREAM_RESET_OUTGOING;
+//                break;
+//        }
+//
+//        srs->srs_number_streams = 1;
+//        srs->srs_stream_list[0] = streamId;
+//
+//        ret = usrsctp_setsockopt(this->socket, IPPROTO_SCTP, SCTP_RESET_STREAMS, srs, len);
+//
+//        if (ret == 0) {
+//            SDebug << "SCTP_RESET_STREAMS sent [streamId:%d]" << streamId;
+//        } else {
+//            SDebug << "usrsctp_setsockopt(SCTP_RESET_STREAMS) failed: %s " << " error " << std::strerror(errno);
+//        }
+//
+//        std::free(srs);
+//    }
+
+
+
+
+
+
+
+
+
 
 } // namespace rtc

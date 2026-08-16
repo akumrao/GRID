@@ -669,6 +669,13 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 //    });
 //    
     
+    
+        dc->onClosed([id]() 
+        {
+             SInfo << "DataChannel from " << id << " closed" ;
+        }
+        );
+    
           dc->onMessage([id, dc](auto data) {
             // data holds either std::string or rtc::binary
             if (std::holds_alternative<std::string>(data))
@@ -680,7 +687,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 
           //  sleep(1);
             
-            
+             //dc->close();
             
       //  rtc::binary buffer = { std::byte(0x01), std::byte(0x02), std::byte(0x03) };
     //    dc->send(buffer);
@@ -716,7 +723,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 
         dc->onClosed([id]() 
         {
-            std::cout << "DataChannel from " << id << " closed" << std::endl;
+             SInfo << "DataChannel from " << id << " closed" ;
         }
         );
 
@@ -731,6 +738,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 
             sleep(1);
             dc->send("Send to web1");
+           // dc->close();
         });
 
         client->dataChannel2 = dc;

@@ -502,19 +502,21 @@ namespace rtc {
     }
 
         DtlsTransport::~DtlsTransport() {
-        // stop();
+        SInfo << "~DtlsTransport() begin";
 
         shutdown();
                 
         if( localRole == Role::SERVER)
             mbedtls_ssl_session_reset( &mSsl );
 
-        SInfo << "Destroying DTLS transport";
+    
         mbedtls_entropy_free(&mEntropy);
         mbedtls_ctr_drbg_free(&mDrbg);
         mbedtls_ssl_free(&mSsl);
         mbedtls_ssl_config_free(&mConf);
         delete this->timer;
+        
+        SInfo << "~DtlsTransport over()";
     }
 
         
@@ -544,6 +546,8 @@ namespace rtc {
             mbedtls_strerror(ret, error_buf, sizeof (error_buf));
             SError << " Error during close_notify " << error_buf;
         }
+        
+         SInfo << "Shutdown over";
 
         /* Ignore other errors, the connection may be closed or unusable */
 

@@ -513,6 +513,8 @@ namespace rtc
                 
             if ( this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CLOSED )
             {    
+                 SInfo  << "AgentNo " << agentNo << " reset and new dtls connection" << len;
+                 
                  delete dtlsTransport;
                  dtlsTransport = new DtlsTransport(this);
                  dtlsTransport->SetRemoteFingerprint(config.gconfig->mCertificate->fingerprint());
@@ -524,7 +526,7 @@ namespace rtc
               this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CONNECTING ||
               this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CONNECTED)
             {
-                    //MS_DEBUG_DEV("DTLS data received, passing it to the DTLS transport");
+                  // SInfo  << "AgentNo " << agentNo << " ProcessDtlsData " << len;
                 
                     while (!binaryPacketQueue.empty()) {
                         // Access the front element by reference to avoid copying
@@ -541,6 +543,8 @@ namespace rtc
                     }
 
                     this->dtlsTransport->ProcessDtlsData((const uint8_t*)data, len);
+                    
+                  //   SInfo  << "AgentNo " << agentNo << " ProcessDtlsData over" << len;
             }
             else
             {
@@ -785,7 +789,7 @@ namespace rtc
 	  const rtc::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
 	{
 		
-///            SInfo  << "AgentNo " << agentNo << " ReceiveSctpData len:" << len;
+          //  SInfo  << "AgentNo " << agentNo << " OnDtlsTransportApplicationDataReceived len:" << len;
 
             assertm(this->dtlsTransport, "no dtlsTransport");
 
