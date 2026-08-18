@@ -7,20 +7,14 @@
 
 #include "mbedtls/ssl.h"
 
-
-
-
 enum { /* ssl Constants */
        SSL_FAILURE = 0,
        SSL_SUCCESS = 1
 };
 
-
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
 
 typedef unsigned char BYTE;
 
@@ -58,26 +52,16 @@ enum BIO_TYPE {
 BIO* SSL_BIO_new(int type);
 int TLS_BIO_make_bio_pair(BIO* b1, BIO* b2);
 
-size_t TLS_BIO_ctrl_pending(BIO* bio);
-int TLS_BIO_read(BIO* bio, const char* buf, size_t size);
-int TLS_BIO_write(BIO* bio, const char* buf, size_t size);
+int TLS_BIO_ctrl_pending(BIO* bio);
+/* Fixed: Changed const char* to char* since the buffer is written into */
+int TLS_BIO_read(BIO* bio, char* buf, int size);
+int TLS_BIO_write(BIO* bio, const char* buf, int size);
 
 int TLS_BIO_reset(BIO* bio);
-int TLS_BIO_net_recv(void* ctx, unsigned char* buf, size_t len);
-int TLS_BIO_net_send(void* ctx, const unsigned char* buf, size_t len);
+int TLS_BIO_net_recv(void* ctx, unsigned char* buf, int len);
+int TLS_BIO_net_send(void* ctx, const unsigned char* buf, int len);
 int TLS_BIO_free_all(BIO* bio);
 int TLS_BIO_free(BIO* bio);
-
-
-
-
-
-
-
-
-
-
-
 
 #ifdef __cplusplus
 };
