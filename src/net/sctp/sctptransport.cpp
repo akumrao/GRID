@@ -156,7 +156,7 @@ namespace rtc {
 
         DepUsrSCTP::IncreaseSctpTransports();
 
-         mWorkerThread = std::thread(&SctpTransport::workerLoop, this);
+        // mWorkerThread = std::thread(&SctpTransport::workerLoop, this);
     }
 
     SctpTransport::~SctpTransport() {
@@ -169,7 +169,7 @@ namespace rtc {
            // std::queue<Task> empty;
            // std::swap(mTaskQueue, empty);
         }
-        mQueueCv.notify_all();
+       // mQueueCv.notify_all();
 
 //        // Close socket to unblock any pending usrsctp calls in worker thread
 //        if (this->socket) {
@@ -178,9 +178,9 @@ namespace rtc {
 //            this->socket = nullptr;
 //        }
 
-        if (mWorkerThread.joinable()) {
-            mWorkerThread.join();
-        }
+//        if (mWorkerThread.joinable()) {
+//            mWorkerThread.join();
+//        }
         
 
         usrsctp_deregister_address(static_cast<void*>(this));
@@ -193,7 +193,8 @@ namespace rtc {
 
 
     void SctpTransport::start() {
-        enqueueTask([this]() { doConnect(); });
+	//enqueueTask([this]() { doConnect(); });
+        doConnect();
     }
 
     void SctpTransport::stop() {
@@ -203,24 +204,25 @@ namespace rtc {
     void SctpTransport::shutdown() {
         
         SInfo << "shutdown " ;
-        enqueueTask([this]() { doShutdown(); });
+	 //enqueueTask([this]() { doShutdown(); });
+         doShutdown(); 
     }
 
     void SctpTransport::closeStream(unsigned int stream) {
         
          SInfo << "closeStream closeStream " << stream;
         
-        enqueueTask([this, stream]() {
-          //  doResetStream(uint16_t(stream), StreamDirection::OUTGOING);
-  
+        //enqueueTask([this, stream]()
+        //{
+
             doSend(make_message(0, Message::Reset, stream));
-        });
+      //  });
     }
 
     bool SctpTransport::send(message_ptr message) {
-        enqueueTask([this, message]() {
+       // enqueueTask([this, message]() {
             doSend(message);
-        });
+       // });
         return true;
     }
 
@@ -688,6 +690,7 @@ namespace rtc {
         return streamsCount > 0 ? streamsCount - 1 : 0;
     }
 
+#if 0
     void SctpTransport::enqueueTask(Task task) {
         if (!mRunning) return;
         {
@@ -718,7 +721,7 @@ namespace rtc {
         }
         SInfo << "workerLoop() exit";
     }
-
+#endif
     void SctpTransport::sendReset(uint16_t streamId) {
         SInfo << "AgentNo " << " sendReset start streamId " << streamId;
 

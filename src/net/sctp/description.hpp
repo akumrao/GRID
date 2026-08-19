@@ -231,7 +231,7 @@ public:
 		virtual string generateSdpLines(const string& eol) const override;
 
 		uint16_t mSctpPort{5000};   // const uint16_t DEFAULT_SCTP_PORT = 5000; // SCTP port to use by default
-		size_t mMaxMessageSize;
+		size_t mMaxMessageSize{0};
 	};
 
 	// Media (non-data)

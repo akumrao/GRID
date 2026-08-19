@@ -121,10 +121,10 @@ namespace rtc {
         const Ports mPorts;
 
         // Command Queue Synchronization replacing mShutdownMutex / mSendShutdown
-        std::queue<Task> mTaskQueue;
+        //std::queue<Task> mTaskQueue;
         std::mutex mQueueMutex;
-        std::condition_variable mQueueCv;
-        std::thread mWorkerThread;
+        //std::condition_variable mQueueCv;
+        //std::thread mWorkerThread;
         std::atomic<bool> mRunning{ true };
 
         std::recursive_mutex mSendMutex;
