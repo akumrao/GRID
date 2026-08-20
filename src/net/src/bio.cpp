@@ -1,5 +1,8 @@
 
-/* A BIO (Basic I/O) abstraction layer provides an in-memory ring-buffer pipeline to connect mbedTLS with custom transport layers 
+/* 
+ * Note: Bio is Ring Buffer, but it is not thread safe . 
+ * 
+ * A BIO (Basic I/O) abstraction layer provides an in-memory ring-buffer pipeline to connect mbedTLS with custom transport layers 
  without requiring direct socket attachments.  Primary Use CasesCustom Transport Security: Interfacing mbedTLS SSL/TLS operations
  with custom network layers (e.g., WebSockets, custom UDP, IPC, non-blocking asynchronous event loops) using TLS_BIO_net_send and 
  TLS_BIO_net_recv as mbedTLS callbacks.  In-Memory SSL Tunneling: Using paired memory BIOs (BIO_BIO) to route encrypted data back 

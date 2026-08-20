@@ -1509,13 +1509,12 @@ shared_ptr<IceTransport> PeerConnection::initIceTransport() {
                                       auto iceTransport = initIceTransport();
 
                                         bool is_controlling = iceTransport->agent.m_mode == AGENT_MODE_CONTROLLING;
+                                         bool is_server =   iceTransport->mRole == Description::Role::Passive;
 
-                                          if( config.console)
-                                          iceTransport->mRole = iceTransport->agent.m_mode == AGENT_MODE_CONTROLLING ? Description::Role::Active: Description::Role::Passive;
-
+                                      
                                         SInfo << "\033[36m" << "AgentNo " << iceTransport->agent.agentNo <<  " initDtlsTransport "  << " is_controlling " << is_controlling << "\033[0m";
                                           if(iceTransport->agent.m_selected_pair)
-                                       iceTransport->agent.socket->InitDtls( is_controlling, iceTransport->agent.m_selected_pair->local->address() ,  iceTransport->agent.m_selected_pair->remote->resolved , mRemoteDescription->fingerprint());
+                                       iceTransport->agent.socket->InitDtls( is_server, iceTransport->agent.m_selected_pair->local->address() ,  iceTransport->agent.m_selected_pair->remote->resolved , mRemoteDescription->fingerprint());
 
                                   
 

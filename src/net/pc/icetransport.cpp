@@ -133,9 +133,13 @@ void IceTransport::setRemoteDescription(const Description &description) {
 	// will not begin until the answerer is received, which adds additional latency.
 	// setup:active allows the answer and the DTLS handshake to occur in parallel. Thus,
 	// setup:active is RECOMMENDED.
-	if (mRole == Description::Role::ActPass)
-		mRole = description.role() == Description::Role::Active ? Description::Role::Passive
-		                                                        : Description::Role::Active;
+        if (mRole == Description::Role::ActPass) {
+            if (config.serverdtsRole)
+
+                mRole = description.role() == Description::Role::Active ? Description::Role::Passive : Description::Role::Active;
+            else
+                mRole = description.role() == Description::Role::Passive ? Description::Role::Active : Description::Role::Passive;
+        }
 
 	if (mRole == description.role())
 		throw std::invalid_argument("Incompatible roles with remote description");
