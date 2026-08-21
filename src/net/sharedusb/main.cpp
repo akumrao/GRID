@@ -78,13 +78,13 @@ std::string from;
 std::string room;
 Configuration settingconfig;
 
-std::string id;
-
-
 
 
 // Explicit function to completely destroy an active peer session
 void destroyClient(const string& clientId) {
+    
+    SInfo << "destroyClient clientId: " << clientId;
+    
     std::lock_guard<std::mutex> lock(clients_mutex);
     auto it = clients.find(clientId);
     if (it != clients.end()) {
@@ -182,6 +182,8 @@ void wsOnMessage(json const &m) {
 
     std::string to;
     std::string user;
+    
+    std::string id;
 
     if (m.find("room") != m.end()) {
         room = m["room"].get<std::string>();
@@ -237,6 +239,8 @@ void wsOnMessage(json const &m) {
 
        // if (clients.find(id) != clients.end())
        //     clients.erase(id);
+        
+        SInfo << " offer from clinet id " <<   id;
         
         destroyClient(id); // Safe erasure structure handles cleanup safely instead of raw `.erase()`
 
@@ -299,11 +303,9 @@ void wsOnMessage(json const &m) {
 
 }
 
-void initiate(std::string rm) {
+void initiate(std::string rm , std::string id) {
 
     room = rm;
-    id = "client"; /// hard coded the id for client(second participant), since it will have only one instance. Second instance should only have one instance, otherwise throw error. TBD 
-
 
     destroyClient(id); // Safe structural cleanup
 
@@ -380,8 +382,8 @@ int main(int argc, char **argv) {
 
 #endif
 
-    string localId = "server";
-    cout << "The local ID is: " << localId << endl;
+  //  string localId = "server";
+  //  cout << "The local ID is: " << localId << endl;
 
     rtc::DtlsTransport::ClassInit();
        DepUsrSCTP::ClassInit();
@@ -447,18 +449,19 @@ int main(int argc, char **argv) {
 
         if (eventName == "created") {
           SInfo << data.dump() << std::endl;
-          SInfo << "ws: Created room " << data[0] << "- my client ID is "
+          SInfo << "ws: Created room " << data[0] << "- my  ID is "
                 << data[1] << std::endl;
         } else if (eventName == "join") {
           SInfo << "ws join " << data.dump() << std::endl;
-          SInfo << "ws: Created room " << data[0] << "- my client ID is "
+          SInfo << "ws: Created room " << data[0] << "- my ID is "
                 << data[1] << " noClientInRoom: " << data[2] << std::endl;
 
           std::string room1 = data[0].get<std::string>();
+          std::string id = data[1].get<std::string>();
           int noClientInRoom = data[2].get<int>();
 
           if (noClientInRoom > 1) {
-            initiate(room1);
+            initiate(room1, id );
           }
         } else if (eventName == "joined") {
           SInfo << "ws joined " << data.dump() << std::endl;
@@ -582,7 +585,7 @@ int main(int argc, char **argv) {
 
 
 shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool isClient) {
-    SInfo << "createPeerConnection";
+    SInfo << "createPeerConnection id " << id  << " is client " << isClient ;
 
 
     auto pc = make_shared<PeerConnection>(config);

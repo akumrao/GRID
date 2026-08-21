@@ -260,7 +260,7 @@ function createPeerConnection() {
      channelSnd.onmessage = function(event)
      {
          console.log("onmessage event.data " + event.data);
-        // channelSnd.send('Hi you!');
+         channelSnd.send('Hi you!');
         // channelSnd.close();
      }
 
