@@ -19,13 +19,13 @@ option(USE_MBEDTLS "Use Mbed TLS instead of OpenSSL" OFF)
 
 
 
-message("Current Source Directory: ${CMAKE_CURRENT_SOURCE_DIR}/../openssl/buildx64")
+message("Current Source Directory: ${CMAKE_CURRENT_SOURCE_DIR}/../../openssl/buildx64")
 message("Current Binary Directory: ${CMAKE_CURRENT_BINARY_DIR}")
-message("Current List File Directory: ${CMAKE_CURRENT_LIST_DIR}/../openssl/buildx64")
+message("Current List File Directory: ${CMAKE_CURRENT_LIST_DIR}/../../openssl/buildx64")
 
 
-SET(SSL_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../openssl/buildx64")
-SET(SSL_LIB "${CMAKE_CURRENT_LIST_DIR}/../../openssl/buildx64/lib")
+SET(SSL_ROOT "${CMAKE_CURRENT_LIST_DIR}/../../../openssl/buildx64")
+SET(SSL_LIB "${CMAKE_CURRENT_LIST_DIR}/../../../openssl/buildx64/lib")
 
 
 
@@ -85,11 +85,11 @@ set(sctp_werror           OFF CACHE BOOL "Disable werror" FORCE)
 # Subdirectory inclusion
 #add_subdirectory(usrsctp)
 #add_subdirectory(./usrsctp buildusrstcp EXCLUDE_FROM_ALL)
-add_subdirectory(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/usrsctp buildusrstcp EXCLUDE_FROM_ALL)
+add_subdirectory(${CMAKE_SOURCE_DIR}/../../../webrtcserver/deps/usrsctp buildusrstcp EXCLUDE_FROM_ALL)
 
 
 if (MSYS OR MINGW)
-	add_compile_definitions(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/usrsctp PUBLIC -DSCTP_STDINT_INCLUDE=<stdint.h>)
+	add_compile_definitions(${CMAKE_SOURCE_DIR}/../../../webrtcserver/deps/usrsctp PUBLIC -DSCTP_STDINT_INCLUDE=<stdint.h>)
 endif()
 #add_library(Usrsctp::Usrsctp ALIAS usrsctp)
 
@@ -107,11 +107,11 @@ set(SOURCE_FILES main.cpp helpers.cpp)
 
 if(UNIX)
 file(GLOB SOURCES   
-    ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../base/src/*.cpp ../../signal/src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp
+    ../../src/*.cpp ../../dtls/*.cpp ../../sctp/*.cpp ../../pc/*.cpp ../../../json/src/*.cpp ../../../http/src/*.cpp ../../../http_parser/*.cpp ../../../base/src/*.cpp ../../../signal/src/*.cpp ../../../libuv/src/*.cpp ../../../libuv/src/unix/*.cpp
   )
 else()
 file(GLOB SOURCES   
-    ../src/*.cpp ../dtls/*.cpp ../sctp/*.cpp ../pc/*.cpp ../../json/src/*.cpp ../../http/src/*.cpp ../../http_parser/*.cpp ../../base/src/*.cpp ../../signal/src/*.cpp 
+    ../../src/*.cpp ../../dtls/*.cpp ../../sctp/*.cpp ../../pc/*.cpp ../../../json/src/*.cpp ../../../http/src/*.cpp ../../../http_parser/*.cpp ../../../base/src/*.cpp ../../../signal/src/*.cpp 
   )
 endif()
 
@@ -160,11 +160,11 @@ if(USE_MBEDTLS)
 	option(ENABLE_PROGRAMS OFF)
 	set(CMAKE_POLICY_DEFAULT_CMP0077 NEW)
 
-	add_subdirectory(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/mbedtls buildtmpmbed EXCLUDE_FROM_ALL)
+	add_subdirectory(${CMAKE_SOURCE_DIR}/../../../webrtcserver/deps/mbedtls buildtmpmbed EXCLUDE_FROM_ALL)
 
 	add_compile_definitions(  USE_MBEDTLS=1 HTTPSSL=1)
 
-	include_directories(${CMAKE_SOURCE_DIR}/../../webrtcserver/deps/mbedtls/include)
+	include_directories(${CMAKE_SOURCE_DIR}/../../../webrtcserver/deps/mbedtls/include)
 	link_libraries(   ${LINK_LIBS}  mbedtls mbedx509 mbedcrypto )
 	
 else()
@@ -223,7 +223,7 @@ endif()
 
 
 include_directories(
-           ../sctp/ ../pc/ ../dtls/ ../../http/include/ ../../http_parser/ ../../base/include/ ../../net/include/ ../../libuv/include ../../libuv/src ../../json/include/ ../../http_parser/ ../../signal/include/ ../../../src/openssl/buildx64/include ../../webrtcserver/deps/usrsctp/usrsctplib/   ${SSL_ROOT}/include)
+           ../../sctp/ ../../pc/ ../../dtls/ ../../../http/include/ ../../../http_parser/ ../../../base/include/ ../../../net/include/ ../../../libuv/include ../../../libuv/src ../../../json/include/ ../../../http_parser/ ../../../signal/include/ ../../../../src/openssl/buildx64/include ../../../webrtcserver/deps/usrsctp/usrsctplib/   ${SSL_ROOT}/include)
 
 
 

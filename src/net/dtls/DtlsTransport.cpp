@@ -1068,7 +1068,7 @@ error:
         }
 
         // Compare the remote fingerprint with the value given via signaling.
-        ret = X509_digest(certificate, hashFunction, binaryFingerprint, &size);
+        int ret = X509_digest(certificate, hashFunction, binaryFingerprint, &size);
 
         if (ret == 0) {
             SError << "X509_digest() failed";

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+
+    <title>Realtime communication with WebRTC</title>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="css/test.css" />
+
+  </head>
+
+  <body>
+    <h1>Realtime communication with WebRTC</h1>
+
+    <div id="videos">
+      <video id="localVideo" autoplay controls></video>
+      <video id="remoteVideo" autoplay></video>
+    </div>
+
+    <script src="js/lib/adapter.js"></script>
+    <script src="js/tty.js"></script>
+
+    <button onclick="checkWebRtcRoles1()">Check WebRTC Roles1</button>
+
+    <button onclick="checkWebRtcRoles2()">Check WebRTC Roles2</button>
+
+     <button onclick="checkDtlsState()">Check Dtls State</button>
+
+
+  </body>
+
+</html>
