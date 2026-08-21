@@ -439,7 +439,7 @@ int main(int argc, char **argv) {
     DepUsrSCTP::ClassInit();
 
 #if localtesting 
-    settingconfig.console = true;
+//    settingconfig.console = true;
     std::string id = "server";
     clients.emplace(id, createPeerConnection_lc(settingconfig, id));
 #elif remotetesting

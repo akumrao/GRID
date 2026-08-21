@@ -14,7 +14,6 @@
 #if !USE_NICE
 //#include <juice/juice.h>
 #include <Agent.h>
-#include "configuration.h"
 #include "net/tls.h"
 #include "json/json.hpp" 
 #else

@@ -112,7 +112,6 @@ struct RTC_CPP_EXPORT Configuration {
 	//string keyPemFile;
 	//string keyPemPass;
 
-        bool serverdtsRole{true}; /* allow dtls server or client when setup is actpass" */
         uint16_t portdefault{7345};   // 0  for random port
         ConfCert *gconfig{&config};
         

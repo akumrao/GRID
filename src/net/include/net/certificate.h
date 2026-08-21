@@ -128,6 +128,8 @@ struct  ConfCert {
     string certificatePemFile;
     string keyPemFile;
     string keyPemPass;
+    bool serverdtsRole{true}; /* allow dtls server or client when setup is actpass" */
+
 
     rtc::Certificate* mCertificate{nullptr};
 
