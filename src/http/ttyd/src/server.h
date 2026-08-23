@@ -3,7 +3,13 @@
 #include "ttydpty.h"
 #include  "net/netInterface.h"
 
-#include "http/websocket.h"
+
+#ifdef WEBRTCDATACHANNEL
+ #include "datachannel.h"
+#else
+  #include "http/websocket.h"
+#endif
+
 
 #include <json/json.hpp>
 #include <uv.h>
@@ -60,7 +66,11 @@ struct pss_tty {
   char **args;
   int argc;
 
+#ifdef WEBRTCDATACHANNEL
+  std::shared_ptr<rtc::DataChannel> con;
+#else
   base::net::WebSocketConnection *con{nullptr};
+#endif
   
   TTYServer *thisTTYServer{nullptr};
   

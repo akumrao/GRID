@@ -134,7 +134,7 @@ void IceTransport::setRemoteDescription(const Description &description) {
 	// setup:active allows the answer and the DTLS handshake to occur in parallel. Thus,
 	// setup:active is RECOMMENDED.
         if (mRole == Description::Role::ActPass) {
-            if (config.serverdtsRole)
+            if (!config.serverdtsRole)
 
                 mRole = description.role() == Description::Role::Active ? Description::Role::Passive : Description::Role::Active;
             else

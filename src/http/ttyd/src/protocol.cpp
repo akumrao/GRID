@@ -10,9 +10,11 @@
 #ifndef _WIN32
 //#include <unistd.h>
 #endif
-
+#ifdef WEBRTCDATACHANNEL
+#include "datachannel.h"
+#else
 #include "http/websocket.h"
-
+#endif
 #include "base/application.h"
 
 using namespace base;
@@ -29,7 +31,21 @@ int write ( struct pss_tty *pss, unsigned char * buf, size_t len, bool binary)
 {
     
    // base::net::WebSocketConnection *con = (base::net::WebSocketConnection*)conn;
-     pss->con->send((const char*) buf, len, binary );
+     
+     
+#ifdef WEBRTCDATACHANNEL
+    rtc::binary binData(len);
+    
+    // 2. Copy the memory from the raw pointer into the vector
+    if (len > 0 && buf != nullptr) {
+        std::memcpy(binData.data(), buf, len);
+    }
+
+    pss->con->send(binData);
+    
+#else
+    pss->con->send((const char*) buf, len, binary );
+#endif
 
     return 0;
 }
@@ -59,8 +75,13 @@ static void close_reason(struct pss_tty *pss, uint16_t statusCode  )
 {
         
    // base::net::WebSocketConnection *con = (base::net::WebSocketConnection*)conn;
+#ifdef WEBRTCDATACHANNEL
+pss->con->close();
+#else
+
     std::string reason= "close";
     pss->con->shutdown( statusCode, reason);
+#endif
 
 }
 

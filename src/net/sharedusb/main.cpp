@@ -37,8 +37,45 @@
 #include "server.h"
 #include "DepUsrSCTP.h"
 
+/*************************************************************************/
+ #include "ttydutils.h"
 
-//volatile bool force_exit = false;
+volatile bool force_exit = false;
+
+
+    TTYServer  ttyServer;
+
+    static void signal_cb(uv_signal_t *handle, int signum) {
+        char sig_name[20];
+
+        switch (handle->signum) {
+            case SIGINT:
+            case SIGTERM:
+                get_sig_name(handle->signum, sig_name, sizeof (sig_name));
+                printf("received signal: %s (%d), exiting...\n", sig_name, handle->signum);
+                break;
+            default:
+                signal(SIGABRT, SIG_DFL);
+                abort();
+        }
+
+        if (force_exit) exit(EXIT_FAILURE);
+        force_exit = true;
+
+        //lws_cancel_service(context); arvind
+        uv_signal_stop(handle);
+        uv_stop(handle->loop);
+
+        printf("send ^C to force exit.\n");
+    }
+
+
+
+/*************************************************************************/
+
+
+
+
 
 //struct server *server{nullptr};
 
@@ -346,7 +383,29 @@ int main(int argc, char **argv) {
 
     Application app;
 
-    //Async async;
+    ///////////////////////////////////////////////////////////////////////////////////////////
+    
+    
+    
+
+        if (ttyServer.server_init(app.uvGetLoop(), argc, argv)) {
+            return -1;
+        }
+
+
+
+
+
+        #define sig_count 2
+        int sig_nums[] = {SIGINT, SIGTERM};
+        uv_signal_t signals[sig_count];
+        for (int i = 0; i < sig_count; i++) {
+            uv_signal_init(app.uvGetLoop(), &signals[i]);
+            uv_signal_start(&signals[i], signal_cb, sig_nums[i]);
+        }
+
+
+    /////////////////////////////////////////////////////////////////////////////////////////////
 
 
     if (printHelp) {
@@ -662,7 +721,12 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
     dc->onOpen([id, wdc = make_weak_ptr(dc)](){
         if (auto dc = wdc.lock()) {
             SInfo << "onOpen: ";
-                    dc->send("Ping2");
+                   // dc->send("Ping2");
+            
+                struct pss_tty *pss = ttyServer.server_wsconnect(&dc->user);
+                if (pss) {
+                    pss->con = dc;
+                }
         }
     });
 
@@ -678,20 +742,37 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 //    
     
     
-        dc->onClosed([id]() 
+        dc->onClosed([id, dc]() 
         {
              SInfo << "DataChannel from " << id << " closed" ;
+             ttyServer.server_wsclose(&dc->user);
         }
         );
     
           dc->onMessage([id, dc](auto data) {
             // data holds either std::string or rtc::binary
-            if (std::holds_alternative<std::string>(data))
-                SInfo << "Message from " << id << " received: " << std::get<std::string>(data)
-                << std::endl;
-            else
-                SInfo << "Binary message from " << id
-                    << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+
+              const char* msg = nullptr;
+              size_t len = 0;
+
+              // 1. Check if the incoming variant is a String
+              if (std::holds_alternative<rtc::string>(data)) {
+                  const std::string& strData = std::get<rtc::string>(data);
+                          msg = strData.data();
+                          len = strData.size();
+              }                  // 2. Check if the incoming variant is Binary (std::vector<std::byte>)
+              else if (std::holds_alternative<rtc::binary>(data)) {
+                  const rtc::binary& binData = std::get<rtc::binary>(data);
+                          // reinterpret_cast is required to change std::byte* or uint8_t* to const char*
+                          msg = reinterpret_cast<const char*> (binData.data());
+                          len = binData.size();
+              }
+
+
+              SInfo << "Message from " << id << " len " << len << " received: " << msg;
+
+              ttyServer.server_wsread(dc->user, msg, len);
+              
 
           //  sleep(1);
             
@@ -724,14 +805,19 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
         dc->onOpen([wdc = make_weak_ptr(dc)](){
             if (auto dc = wdc.lock()) {
                 SInfo << "DataChannel 2: Open" << endl;
-                dc->send("Ping1");
+               // dc->send("Ping1");
+                
+
             }
+            
+            
         });
 
 
-        dc->onClosed([id]() 
+        dc->onClosed([id,dc]() 
         {
-             SInfo << "DataChannel from " << id << " closed" ;
+          
+            SInfo << "DataChannel from " << id << " closed" ;
         }
         );
 
@@ -743,9 +829,11 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
             else
                 SInfo << "Binary message from " << id
                     << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+            
+            
 
-            sleep(1);
-            dc->send("Send to web1");
+           
+            
            // dc->close();
         });
 

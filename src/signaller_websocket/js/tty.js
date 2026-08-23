@@ -182,6 +182,7 @@ async function maybeStart() {
   }
 }
 
+ let receivedChannel;
 
 function createPeerConnection() {
   try {
@@ -195,10 +196,11 @@ function createPeerConnection() {
       });
 
 
+   
 
     pc.ondatachannel = (event) => {
     // This is your 'receivedChannel'
-    const receivedChannel = event.channel;
+    receivedChannel = event.channel;
     
     // Configure matching binary type
     receivedChannel.binaryType = "arraybuffer";
@@ -207,7 +209,16 @@ function createPeerConnection() {
     receivedChannel.onopen = () => {
         console.log("Received channel is open and ready to use.");
         // Reply back immediately if desired
-        receivedChannel.send("hi onopen testing you 2");
+       // receivedChannel.send("hi onopen testing you 2");
+
+        term.write('\r\n\x1b[32m*** WebRTC Channel Open ***\x1b[0m\r\n\r\n');
+
+          // Send initial dimensions
+       // sendResizeSignal(term.cols, term.rows);
+
+          const emptyJsonBuffer = encoder.encode('{}').buffer;
+          receivedChannel.send(emptyJsonBuffer);
+
     };
 
     // Handle Close Event
@@ -217,50 +228,72 @@ function createPeerConnection() {
 
     // Complete handled 'onmessage' function
     receivedChannel.onmessage = (event) => {
-        const rawData = event.data;
-          //console.log("Remote received plain text string:", rawData);
-       // 1. Handle Text Data
-        if (typeof rawData === "string") {
-            try {
-                // Check if it is a JSON object
-                const parsedJson = JSON.parse(rawData);
-                console.log("Remote received JSON Object:", parsedJson);
-                } catch (e) {
-                // If parsing fails, treat it as a standard string
-                console.log("Remote received plain text string:", rawData);
-            }
-        } 
-        // 2. Handle Binary Data (ArrayBuffer)
-        else if (rawData instanceof ArrayBuffer) {
-            console.log(`Remote received binary data of size: ${rawData.byteLength} bytes`);
-         
+
+
+       const buffer = event.data;
+      if (!buffer || buffer.byteLength === 0) return;
+
+      //const view = new Uint8Array(buffer);
+      const cmd = String.fromCharCode(new Uint8Array(buffer)[0]); // Byte 0 = Command Opcode
+      const payloadBytes = buffer.slice(1); // Payload bytes
+
+      switch (cmd) {
+        case CMD_SERVER.OUTPUT:
+          // Decode payload bytes back to string for Xterm[cite: 1]
+          term.write(decoder.decode(payloadBytes));
+          break;
+
+        case CMD_SERVER.SET_WINDOW_TITLE: {
+          const title = decoder.decode(payloadBytes);
+          document.title = title;
+          document.getElementById('page-title').textContent = title;
+          break;
         }
 
-        // 3. Create your binary data (e.g., a 4-byte buffer)
-        const buffer = new ArrayBuffer(4);
-        const view = new Int32Array(buffer);
-        view[0] = 42; // Example data`
+        case CMD_SERVER.SET_PREFERENCES:
+          try {
+            const prefs = JSON.parse(decoder.decode(payloadBytes));
+            Object.keys(prefs).forEach((key) => {
+              term.options[key] = prefs[key];
+            });
+            fitAddon.fit();
+          } catch (err) {
+            console.error('Failed to parse preferences payload:', err);
+          }
+          break;
+
+        default:
+          console.warn('Unknown Server Command Opcode:', cmd);
+          break;
+      }
 
 
-         receivedChannel.send(buffer);
+
+
+
+
         };
 
         //receivedChannel.close();
     };
 
 
-     channelSnd = pc.createDataChannel("chat"); 
+    channelSnd = pc.createDataChannel("chat", { ordered: true });
+    channelSnd.binaryType = 'arraybuffer'; // Configure channel for binary handling
     
      channelSnd.onopen = function()
      {
-         console.log("onopen");
-         channelSnd.send('Hi you!');
+        console.log("onopen");
+        // channelSnd.send('Hi you!');
+
+
+
      }
     
      channelSnd.onmessage = function(event)
      {
          console.log("onmessage event.data " + event.data);
-         channelSnd.send('Hi you!');
+         //channelSnd.send('Hi you!');
         // channelSnd.close();
      }
 
@@ -446,62 +479,94 @@ function onIceStateChange(pc, event) {
 
 
 
-async function checkWebRtcRoles1() {
-  try {
-    const stats = await pc.getStats();
-    
-    stats.forEach(report => {
-      // 1. Check ICE Roles
-      if (report.type === 'transport') {
-        console.log(`ICE Role: ${report.iceRole}`); 
-        // Outputs: "controlling" or "controlled"
-      }
-      
-      // 2. Check DTLS Roles
-      if (report.type === 'certificate') {
 
-      }
-    });
-  } catch (error) {
-    console.error("Error fetching WebRTC stats:", error);
-  }
-}
+  // --- Protocol Command Identifiers ---
+  const CMD_CLIENT = {
+    INPUT: '0',
+    RESIZE_TERMINAL: '1',
+    PAUSE: '2',
+    RESUME: '3'
+  };
+
+  const CMD_SERVER = {
+    OUTPUT: '0',
+    SET_WINDOW_TITLE: '1',
+    SET_PREFERENCES: '2'
+  };
 
 
 
-async function checkWebRtcRoles2() {
-  if (!pc) {
-    console.warn("PeerConnection object does not exist yet.");
-    return;
-  }
-
-  // FIX: Verify localDescription is not null before checking SDP
-  if (pc.localDescription && pc.localDescription.sdp) {
-    const sdp = pc.localDescription.sdp;
-    
-    if (sdp.includes("a=setup:actpass")) {
-      console.log("DTLS Role: Willing to be client or server");
-    } else if (sdp.includes("a=setup:active")) {
-      console.log("DTLS Role: Client");
-    } else if (sdp.includes("a=setup:passive")) {
-      console.log("DTLS Role: Server");
-    }
-  } else {
-    console.log("SDP is not ready yet. Wait for createOffer/createAnswer to finish.");
-  }
-}
+const encoder = new TextEncoder();
+const decoder = new TextDecoder();
 
 
-
-async function checkDtlsState() {
-  const stats = await pc.getStats();
-  let state = 'unknown';
-  stats.forEach((report) => {
-    if (report.type === 'transport') {
-      state = report.dtlsState; // "connected", "connecting", "failed", etc.
-
-        console.log("Error fetching WebRTC stats:", state);
-    }
+const term = new window.Terminal({
+    cursorBlink: true,
+    fontFamily: 'Courier New, monospace',
+    fontSize: 14
   });
-  return state;
+
+  const fitAddon = new window.FitAddon.FitAddon();
+  term.loadAddon(fitAddon);
+  term.open(document.getElementById('terminal-container'));
+  fitAddon.fit();
+
+  window.addEventListener('resize', () => fitAddon.fit());
+
+
+  term.onData((data) => {
+      sendControlCommand(CMD_CLIENT.INPUT, data);
+    });
+
+    // Window resize handler -> Send Command '1'
+    term.onResize(({ cols, rows }) => {
+      sendResizeSignal(cols, rows);
+    });
+
+
+  // --- UI Control Buttons (Pause / Resume Commands) ---
+  document.getElementById('btn-pause').addEventListener('click', () => {
+    sendControlCommand(CMD_CLIENT.PAUSE);
+    term.write('\r\n\x1b[33m[Stream Paused]\x1b[0m\r\n');
+  });
+
+  document.getElementById('btn-resume').addEventListener('click', () => {
+    sendControlCommand(CMD_CLIENT.RESUME);
+    term.write('\r\n\x1b[32m[Stream Resumed]\x1b[0m\r\n');
+  });
+
+
+
+
+
+  // // Generic Frame Sender: [1-Byte Code][Payload String]
+  // function sendControlCommand(cmdCode, payload = '') {
+  //   if (receivedChannel && receivedChannel.readyState === 'open') {
+  //     receivedChannel.send(cmdCode + payload);
+  //   }
+  // }
+
+
+function sendControlCommand(cmdCode, payload = '') {
+  if (receivedChannel && receivedChannel.readyState === 'open') {
+   // const payloadBytes = typeof payload === 'string' ? encoder.encode(payload) : payload;
+   // const packet = new Uint8Array(1 + payloadBytes.byteLength);
+
+  //  packet[0] = cmdCode; // First byte represents command opcode
+   // packet.set(payloadBytes, 1); // Remaining bytes contain encoded payload
+
+
+
+    receivedChannel.send(encoder.encode(cmdCode + payload));
+  }
+}
+
+
+
+
+  // Convenience function to package CMD_CLIENT.RESIZE_TERMINAL
+
+function sendResizeSignal(cols, rows) {
+  const jsonPayload = JSON.stringify({ cols: cols, rows: rows });
+  sendControlCommand(CMD_CLIENT.RESIZE_TERMINAL, jsonPayload);
 }

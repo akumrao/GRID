@@ -1,32 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">Custom Protocol Terminal</title>
 
-  <head>
+  <!-- Local or CDN Xterm CSS -->
+  <link rel="stylesheet" href="css/xterm.css" />
 
-    <title>Realtime communication with WebRTC</title>
-    <meta charset="utf-8"/>
-    <link rel="stylesheet" href="css/test.css" />
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body, html {
+      width: 100vw;
+      height: 100vh;
+      background-color: #000;
+      overflow: hidden;
+    }
+    #controls {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      z-index: 100;
+      display: flex;
+      gap: 8px;
+    }
+    button {
+      background: #333;
+      color: #fff;
+      border: 1px solid #555;
+      padding: 6px 12px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+    button:hover { background: #444; }
+    #terminal-container {
+      width: 100vw;
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
 
-  </head>
+  <div id="controls">
+    <button id="btn-pause">Pause ('2')</button>
+    <button id="btn-resume">Resume ('3')</button>
+  </div>
 
-  <body>
-    <h1>Realtime communication with WebRTC</h1>
-
-    <div id="videos">
-      <video id="localVideo" autoplay controls></video>
-      <video id="remoteVideo" autoplay></video>
-    </div>
-
-    <script src="js/lib/adapter.js"></script>
-    <script src="js/tty.js"></script>
-
-    <button onclick="checkWebRtcRoles1()">Check WebRTC Roles1</button>
-
-    <button onclick="checkWebRtcRoles2()">Check WebRTC Roles2</button>
-
-     <button onclick="checkDtlsState()">Check Dtls State</button>
+  <div id="terminal-container"></div>
 
 
-  </body>
-
+  <script src="js/lib/adapter.js"></script>
+  <script src="js/xterm.js"></script>
+  <script src="js/xterm-addon-fit.js"></script>
+  <script src="js/tty.js"></script>
+</body>
 </html>
