@@ -78,7 +78,7 @@ std::string from;
 std::string room;
 Configuration settingconfig;
 
-
+bool isClient = false;// only one id possible. Multiple connect of client will connect one server 
 
 // Explicit function to completely destroy an active peer session
 void destroyClient(const string& clientId) {
@@ -207,8 +207,10 @@ void wsOnMessage(json const &m) {
 
     if (m.find("from") != m.end()) {
         from = m["from"].get<std::string>();
-        if (id.empty())
+        if (!isClient)
             id = from;
+        else
+            id = "client";// only one id possible. Multiple connect of client will connect one server 
     } else {
         SError << " On Peer message is missing participant id ";
         return;
@@ -224,7 +226,7 @@ void wsOnMessage(json const &m) {
 
 
     if (m.find("cam") != m.end()) {
-        id = m["cam"].get<std::string>();
+        std::string id = m["cam"].get<std::string>();
 
     }
 
@@ -265,6 +267,8 @@ void wsOnMessage(json const &m) {
 
     } else if (type == "answer") {
 
+        
+        SInfo << "Answer to id " << id;
         //clients.emplace(id, createPeerConnection(config,  id));
         if (auto jt = clients.find(id); jt != clients.end()) {
             auto pc = jt->second->peerConnection;
@@ -303,10 +307,12 @@ void wsOnMessage(json const &m) {
 
 }
 
-void initiate(std::string rm , std::string id) {
+void initiate(std::string rm) {
 
+    
     room = rm;
-
+    std::string id = "client";//   only one id possible. Multiple connect of client will connect one server 
+    isClient = true;
     destroyClient(id); // Safe structural cleanup
 
     std::lock_guard<std::mutex> lock(clients_mutex);
@@ -431,8 +437,7 @@ int main(int argc, char **argv) {
       // Map the primary handshake logic registration event sequence
       json joinPayload;
       joinPayload["roomId"] = room;
-      joinPayload["client"] =
-          false; // Mirrors client state property tracking requirements
+      joinPayload["client"] =    false; // Mirrors client state property tracking requirements
 
       emitWebSocketEvent("createorjoin", joinPayload);
 
@@ -461,7 +466,7 @@ int main(int argc, char **argv) {
           int noClientInRoom = data[2].get<int>();
 
           if (noClientInRoom > 1) {
-            initiate(room1, id );
+            initiate(room1);
           }
         } else if (eventName == "joined") {
           SInfo << "ws joined " << data.dump() << std::endl;

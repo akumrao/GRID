@@ -101,15 +101,17 @@ async function runSocketServer() {
     function emitToSocket(targetSocketId, eventName, data) {
         const clientState = wsState.get(targetSocketId);
         if (clientState && clientState.ws.readyState === WebSocket.OPEN) {
+            //console.log(`[EMIT] To Socket: ${targetSocketId} | Event: ${eventName}`);
             clientState.ws.send(JSON.stringify({ event: eventName, payload: data }));
+        } else {
+            console.log(`[EMIT FAILED] Socket ${targetSocketId} unavailable or closed.`);
         }
     }
 
     wss.on('connection', function(ws, req) {
-        console.log('received connection');
-
         const socketId = Math.random().toString(36).substring(2, 15);
-                
+        console.log(`[CONNECTION] New socket connected: ${socketId}`);
+
         const socketContext = {
             id: socketId,
             room: null,
@@ -125,34 +127,34 @@ async function runSocketServer() {
         }
 
         ws.on('close', function() {
-            console.log("disconnect " + socketContext.id);
-            const targetRoom = socketContext.room;
+            const roleTag = socketContext.isclient ? '[CLIENT_TO_SERVER_FLOW]' : '[SERVER_TO_CLIENT_FLOW]';
+            console.log(`${roleTag} Disconnect: ${socketContext.id}`);
             
+            const targetRoom = socketContext.room;
             if (!targetRoom) {
                 wsState.delete(socketContext.id);
                 return;
             }
 
             leaveRoom(targetRoom, socketContext.id);
-
             const clientsInRoom = getClientsInRoom(targetRoom);
 
             if (!socketContext.isclient) {
-                console.log("Host server left the room. Disconnecting all clients.");
+                console.log(`[SERVER_TO_CLIENT_FLOW] Host server ${socketContext.id} left room ${targetRoom}. Disconnecting remaining clients.`);
                 clientsInRoom.forEach(function(scid) {
                     let sc = wsState.get(scid);
                     if (sc && sc.isclient) {
-                        console.log("Closing connected client peer: " + sc.id);
+                        console.log(`[SERVER_TO_CLIENT_FLOW] Closing peer client: ${sc.id}`);
                         emitToSocket(sc.id, 'leave', [targetRoom, -1, -1]);
                         sc.ws.close();
                     }
                 });
             } else {
-                console.log("Client disconnected: " + socketContext.id);
+                console.log(`[CLIENT_TO_SERVER_FLOW] Client ${socketContext.id} disconnected from room ${targetRoom}`);
                 clientsInRoom.forEach(function(scid) {
                     let sc = wsState.get(scid);
                     if (sc && !sc.isclient) {
-                        console.log("Sending disconnectClient notification to Host server: " + sc.id);
+                        console.log(`[CLIENT_TO_SERVER_FLOW] Notifying Host server ${sc.id} about client disconnection`);
                         emitToSocket(sc.id, 'disconnectClient', socketContext.id);
                     }
                 });
@@ -186,11 +188,11 @@ async function runSocketServer() {
 
                     if (numClients === 1) {
                         socketContext.isclient = false;
-                        log('Host server created room ' + roomId + ' with ID ' + socketContext.id);
+                        console.log(`[SERVER_TO_CLIENT_FLOW] Socket ${socketContext.id} created room ${roomId} as Host Server.`);
                         emitToSocket(socketContext.id, 'join', [roomId, socketContext.id, numClients]);
                     } else if (numClients > 1) {
                         socketContext.isclient = true;
-                        log('Client connected to room ' + roomId + ' with ID ' + socketContext.id);
+                        //console.log(`[CLIENT_TO_SERVER_FLOW] Socket ${socketContext.id} joined room ${roomId} as Client.`);
 
                         clientsInRoom.forEach(function(scid) {
                             let sc = wsState.get(scid);
@@ -200,6 +202,7 @@ async function runSocketServer() {
                                     room: roomId,
                                     socketId: socketContext.id
                                 };
+                                console.log(`[CLIENT_TO_SERVER_FLOW] Forwarding message ${message.type} from Client ${socketContext.id} to Host server ${sc.id} `);
                                 emitToSocket(sc.id, 'joined', message);
                             }
                         });
@@ -211,13 +214,17 @@ async function runSocketServer() {
                 else if (event === 'message') {
                     let message = data;
                     message.from = socketContext.id;
+                    const flowTag = socketContext.isclient ? '[CLIENT_TO_SERVER_FLOW]' : '[SERVER_TO_CLIENT_FLOW]';
 
                     if (message.to && message.to.length !== 0) {
+                        console.log(`${flowTag} Direct message ${message.type}  from ${socketContext.id} to ${message.to}`);
                         emitToSocket(message.to, 'message', message);
                     } 
                     else {
                         const clientsInRoom = getClientsInRoom(message.room);
                         if (clientsInRoom.size === 0) return;
+
+                        //console.log(`${flowTag} Broadcast message from ${socketContext.id} in room ${message.room}`);
 
                         clientsInRoom.forEach(function(scid) {
                             let sc = wsState.get(scid);
@@ -225,10 +232,12 @@ async function runSocketServer() {
 
                             if (socketContext.isclient) {
                                 if (!sc.isclient) {
+                                    console.log(`[CLIENT_TO_SERVER_FLOW] Forwarding message ${message.type}  from ${socketContext.id} to Host server ${sc.id}`);
                                     emitToSocket(sc.id, 'message', message);
                                 }
                             } else {
                                 if (sc.isclient) {
+                                    console.log(`[SERVER_TO_CLIENT_FLOW] Forwarding message ${message.type} from ${socketContext.id} to Client ${sc.id}`);
                                     emitToSocket(sc.id, 'message', message);
                                 }
                             }
