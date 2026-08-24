@@ -769,7 +769,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
               }
 
 
-              SInfo << "Message from " << id << " len " << len << " received: " << msg;
+             // SInfo << "Message from " << id << " len " << len << " received: " << msg;
 
               ttyServer.server_wsread(dc->user, msg, len);
               
