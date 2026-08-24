@@ -223,7 +223,19 @@ function createPeerConnection() {
 
     // Handle Close Event
     receivedChannel.onclose = () => {
-        console.log("Received channel is closed 2.");
+
+        console.log("Received data channel is closed.");
+
+        // 1. Notify the user before cleanup (Optional)
+        term.write('\r\n\x1b[31m*** Session Closed. Cleaning up... ***\x1b[0m\r\n');
+
+        // 2. Remove event listeners to prevent memory leaks
+        window.removeEventListener('resize', fitAddon.fit);
+
+        // 3. Destroy the Xterm instance and detach it from the DOM
+        term.dispose();
+
+
     };
 
     // Complete handled 'onmessage' function
@@ -570,3 +582,17 @@ function sendResizeSignal(cols, rows) {
   const jsonPayload = JSON.stringify({ cols: cols, rows: rows });
   sendControlCommand(CMD_CLIENT.RESIZE_TERMINAL, jsonPayload);
 }
+
+
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        // Automatically pause when the user leaves the tab
+        sendControlCommand(CMD_CLIENT.PAUSE);
+        term.write('\r\n\x1b[33m[Tab Inactive: Stream Automatically Paused]\x1b[0m\r\n');
+    } else {
+        // Automatically resume when the user returns to the tab
+        sendControlCommand(CMD_CLIENT.RESUME);
+        term.write('\r\n\x1b[32m[Tab Active: Stream Automatically Resumed]\x1b[0m\r\n');
+    }
+});

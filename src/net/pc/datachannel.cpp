@@ -183,7 +183,13 @@ void DataChannel::open(shared_ptr<SctpTransport> transport) {
 	}
 
 	if (!mIsClosed && !mIsOpen.exchange(true))
+        {
+            SInfo << "DataChannel opened - Stream ID: " 
+		           << (mStream.has_value() ? std::to_string(mStream.value()) : "unassigned") 
+		           << ", Name: " << mLabel;
+            
 		triggerOpen();
+        }
 }
 
 void DataChannel::processOpenMessage(message_ptr) {
@@ -226,11 +232,15 @@ void DataChannel::incoming(message_ptr message) {
 		case MESSAGE_OPEN:
 			processOpenMessage(message);
 			break;
-		case MESSAGE_ACK:
-			if (!mIsOpen.exchange(true)) {
-				triggerOpen();
-			}
-			break;
+                        
+                case MESSAGE_ACK:
+                        if (!mIsOpen.exchange(true)) {
+                            SInfo << "Local Host DataChannel opened (ACK received) - Stream ID: "
+                                    << (mStream.has_value() ? std::to_string(mStream.value()) : "unassigned")
+                                    << ", Name: " << mLabel;
+                            triggerOpen();
+                        }
+                        break;
 		default:
 			// Ignore
 			break;
@@ -403,6 +413,11 @@ void IncomingDataChannel::processOpenMessage(message_ptr message) {
 	ack.type = MESSAGE_ACK;
 
 	transport->send(make_message(buffer.begin(), buffer.end(), Message::Control, mStream.value()));
+        
+        
+        SInfo << "Remote Peer Incoming DataChannel opened - Stream ID: " 
+	           << (mStream.has_value() ? std::to_string(mStream.value()) : "unassigned") 
+	           << ", Name: " << mLabel;
 
 	if (!mIsOpen.exchange(true))
 		triggerOpen();

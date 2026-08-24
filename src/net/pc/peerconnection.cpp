@@ -1954,8 +1954,10 @@ void PeerConnection::triggerDataChannel(weak_ptr<DataChannel> weakDataChannel) {
 	auto dataChannel = weakDataChannel.lock();
 	if (!dataChannel)
 		return;
-       mDataChannelCallback( std::move(dataChannel));
-	//mProcessor->enqueue(mDataChannelCallback.wrap(), std::move(dataChannel));
+       mDataChannelCallback(dataChannel);  // On remote open
+       
+       dataChannel->triggerOpen();
+ 	//mProcessor->enqueue(mDataChannelCallback.wrap(), std::move(dataChannel));
 }
 
 
