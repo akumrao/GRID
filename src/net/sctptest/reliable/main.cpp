@@ -67,7 +67,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 void addToStream(shared_ptr<Client> client, bool isAddingVideo);
 void startStream();
 
-const string defaultIPAddress = "127.0.0.1";
+const string defaultIPAddress = "192.168.0.19";
 const uint16_t defaultPort = 8000;
 string ip_address = defaultIPAddress;
 //uint16_t port = defaultPort;
@@ -662,24 +662,31 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
         std::string dcchat = "reliableServerChannel";
 
 
-        /*  
-    
-        sudo tc qdisc add dev lo root netem loss 20%
-        sudo tc qdisc del dev lo root netem
-
-        Verification Command
-        To verify that your rules were successfully applied and check how many packets have been dropped so far, run:
-        sudo tc qdisc add dev enp4s0 root netem loss 20%
-        sudo tc qdisc del dev enp4s0 root netem
-
-        tc -s qdisc show dev lo
-        # OR
-        tc -s qdisc show dev enp4s0
-
-         */
+       
 
 
         rtc::DataChannelInit dcInit;
+        
+        /*
+         check readme file
+        by default is reliable 
+        
+        take two laptop  A and B
+       
+        at A 
+        cd /src/signaller_websocket# 
+                
+                
+
+        ./reliableSctp 
+                
+        
+        at B run 
+        
+         iptables -A OUTPUT -p udp -m statistic --mode random --probability 0.10 -j DROP
+         iptables -A INPUT -p udp -m statistic --mode random --probability 0.10 -j DROP
+        ./reliableSctp 
+        */
         dcInit.reliability.unordered = true; // by default datachannlel is reliable
         dcInit.reliability.maxRetransmits = 1;
 
