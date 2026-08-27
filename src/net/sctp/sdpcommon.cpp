@@ -351,6 +351,9 @@ int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count, ch
             }
 
         }
+ 	 if (info != nullptr) {
+            uv_free_interface_addresses(info, icount);
+        }
 
 
     return ret;
