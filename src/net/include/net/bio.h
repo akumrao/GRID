@@ -70,8 +70,8 @@ int TLS_BIO_read(BIO* bio, char* buf, int size);
 int TLS_BIO_write(BIO* bio, const char* buf, int size);
 
 int TLS_BIO_reset(BIO* bio);
-int TLS_BIO_net_recv(void* ctx, unsigned char* buf, int len);
-int TLS_BIO_net_send(void* ctx, const unsigned char* buf, int len);
+int TLS_BIO_net_recv(void *ctx, unsigned char *buf, size_t len);
+int TLS_BIO_net_send(void *ctx, const unsigned char *buf, size_t len);
 int TLS_BIO_free_all(BIO* bio);
 int TLS_BIO_free(BIO* bio);
 

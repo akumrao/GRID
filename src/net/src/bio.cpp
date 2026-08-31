@@ -336,7 +336,7 @@ int TLS_BIO_free_all(BIO* bio) {
     return 0;
 }
 
-int TLS_BIO_net_send(void* ctx, const unsigned char* buf, int len) {
+int TLS_BIO_net_send(void *ctx, const unsigned char *buf, size_t len) {
     if (ctx == NULL || buf == NULL || len <= 0) {
         return MBEDTLS_ERR_SSL_WANT_WRITE;
     }
@@ -350,7 +350,7 @@ int TLS_BIO_net_send(void* ctx, const unsigned char* buf, int len) {
     return sz;
 }
 
-int TLS_BIO_net_recv(void* ctx, unsigned char* buf, int len) {
+int TLS_BIO_net_recv(void *ctx, unsigned char *buf, size_t len) {
     if (ctx == NULL || buf == NULL || len <= 0) {
         return MBEDTLS_ERR_SSL_WANT_READ;
     }

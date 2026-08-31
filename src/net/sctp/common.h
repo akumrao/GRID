@@ -44,7 +44,20 @@
 #include <string_view>
 #include <variant>
 #include <vector>
-#include <netinet/in.h>
+
+
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+// Link with Winsock library
+#pragma comment(lib, "ws2_32.lib")
+#else
+#include <arpa/inet.h>
+//#include <netinet/in.h>
+//#include <sys/socket.h>
+#endif
+
+
 
 namespace rtc {
 
