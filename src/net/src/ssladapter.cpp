@@ -233,7 +233,8 @@ void SSLAdapter::initSSL()
         //mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret );
         //goto exit;
         
-        SError << "mbedtls_x509_crt_parse returned " << ret ;
+        SError << "mbedtls_x509_crt_parse returned " << ret << " missing "
+               << CertFile;
         
         
           exit(0);
