@@ -364,6 +364,14 @@ int main(int argc, char **argv) {
     /////////////////////////////////////////////////
     base::cnfg::Configuration cache;
 
+    #ifdef _WIN32
+    if (!conpty_init()) {
+      fprintf(stderr, "ERROR: ConPTY init failed! Make sure you are on Windows "
+                      "10 1809 or later.");
+      return 1;
+    }
+#endif
+
     cache.load("./cache.js");
 
     ConfSettings::SetConfiguration(cache.root);
@@ -457,7 +465,7 @@ int main(int argc, char **argv) {
 #if 1   
     std::string room = "65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0";
     std::string host = ip_address;
-    int port = 8443;
+    int port = 443;
 
     #if 1
     std::ostringstream url;
