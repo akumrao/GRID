@@ -126,7 +126,9 @@ static int  callback_on_writable(struct pss_tty *pss)
         pty_buf_free(pss->pty_buf);
         pss->pty_buf = NULL;
         pty_resume(pss->process);
+	return 0;
     }
+     return 0;
 }
 
 
