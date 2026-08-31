@@ -122,7 +122,7 @@ namespace rtc
 		return nullptr;
 	}
 
-	inline void IceServer::SetSelectedTuple(TransportTuple* storedTuple)
+	 void IceServer::SetSelectedTuple(TransportTuple* storedTuple)
 	{
 		
 

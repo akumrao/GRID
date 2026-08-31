@@ -585,14 +585,14 @@ function sendResizeSignal(cols, rows) {
 
 
 
-document.addEventListener('visibilitychange', () => {
-    if (document.hidden) {
-        // Automatically pause when the user leaves the tab
-        sendControlCommand(CMD_CLIENT.PAUSE);
-        term.write('\r\n\x1b[33m[Tab Inactive: Stream Automatically Paused]\x1b[0m\r\n');
-    } else {
-        // Automatically resume when the user returns to the tab
-        sendControlCommand(CMD_CLIENT.RESUME);
-        term.write('\r\n\x1b[32m[Tab Active: Stream Automatically Resumed]\x1b[0m\r\n');
-    }
-});
+// document.addEventListener('visibilitychange', () => {
+//     if (document.hidden) {
+//         // Automatically pause when the user leaves the tab
+//         sendControlCommand(CMD_CLIENT.PAUSE);
+//         term.write('\r\n\x1b[33m[Tab Inactive: Stream Automatically Paused]\x1b[0m\r\n');
+//     } else {
+//         // Automatically resume when the user returns to the tab
+//         sendControlCommand(CMD_CLIENT.RESUME);
+//         term.write('\r\n\x1b[32m[Tab Active: Stream Automatically Resumed]\x1b[0m\r\n');
+//     }
+// });
