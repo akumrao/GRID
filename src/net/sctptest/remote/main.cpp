@@ -67,10 +67,6 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 void addToStream(shared_ptr<Client> client, bool isAddingVideo);
 void startStream();
 
-const string defaultIPAddress = "127.0.0.1";
-const uint16_t defaultPort = 8000;
-string ip_address = defaultIPAddress;
-//uint16_t port = defaultPort;
 
 
 //sockio::Socket *mysocket = nullptr;
@@ -349,15 +345,6 @@ int main(int argc, char **argv) {
     //Async async;
 
 
-    if (printHelp) {
-        cout << "usage: stream-h264 [-a opus_samples_folder] [-b h264_samples_folder] [-d ip_address] [-p port] [-v] [-h]" << endl
-                << "Arguments:" << endl
-                << "\t -p " << "Signaling server port (default: " << defaultPort << ")." << endl
-                << "\t -v " << "Enable debug logs." << endl
-                << "\t -h " << "Print this help and exit." << endl;
-        return 0;
-    }
-
 
 
     string stunServer = "stun:stun.l.google.com:19302";
@@ -397,8 +384,8 @@ int main(int argc, char **argv) {
 
 #if 1   
     std::string room = "65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0";
-    std::string host = ip_address;
-    int port = 8443;
+    std::string host = "127.0.0.1";
+    int port = 443;
 
     #if 1
     std::ostringstream url;
