@@ -36,6 +36,10 @@ namespace base
         typedef struct addr_record {
             struct sockaddr_storage addr;
             socklen_t len;
+            
+            std::string dump();
+        
+    
         } addr_record_t;
 
         class IP

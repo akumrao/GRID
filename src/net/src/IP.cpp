@@ -356,9 +356,24 @@ namespace base
           *len = sizeof(*sin6);
           return true;
         }
+        
+        
+            std::string addr_record::dump()
+            {
+                char ip[40];
+                uint16_t port;
+                IP::AddressToString(*this, ip, 40, port);
+
+                std::string ret =  ip + std::string(":") + std::to_string(port);
+
+                return ret;
+            }
 
 
     } // namespace net
+    
+    
+    
 }//base
 
 

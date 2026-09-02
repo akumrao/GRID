@@ -767,7 +767,7 @@ namespace stun {
                             entry->state = AGENT_STUN_ENTRY_STATE_PENDING;
                             agent_arm_transmission( entry, 0); // transmit now
                           
-                            SDebug << "AgentNo " << agentNo  << " ent " << i <<   entry->dump() <<  " agent_unfreeze_candidate_pair " <<   pair->dump();
+                            SDebug << "AgentNo " << agentNo  << " ent " << i <<   entry->dump() <<  " agent_unfreeze_candidate_pair ";
 
                             return 0;
                     }
@@ -879,7 +879,7 @@ namespace stun {
     
     int Agent::onStunMessage( unsigned char *buf, size_t len, const addr_record_t *src,  const addr_record_t *relayed)
     {
-	SDebug << "AgentNo " << agentNo << " Received datagram, size "<<  len;
+	//SDebug << "AgentNo " << agentNo << " Received onStunMessage, size "<<  len;
 
 	if(m_state == JUICE_STATE_DISCONNECTED || m_state == JUICE_STATE_GATHERING)
 		return 0;
@@ -1370,7 +1370,8 @@ int Agent::agent_process_stun_binding( stun::MessageStun *msg,   agent_stun_entr
 
 	switch (msg->msg_class) {
 	case STUN_CLASS_REQUEST: {
-		LDebug("Received STUN Binding request");
+		//LDebug("Received STUN Binding request") <<  src->dump();;
+                SDebug<< "Received STUN Binding request  " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ")  <<  src->dump();
 		if (entry->type != AGENT_STUN_ENTRY_TYPE_CHECK)
 			return -1;
 
@@ -1464,7 +1465,7 @@ int Agent::agent_process_stun_binding( stun::MessageStun *msg,   agent_stun_entr
 		break;
 	}
 	case STUN_CLASS_RESP_SUCCESS: {
-		SDebug<< "Received STUN Binding success response from " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer" : "server");
+		SDebug<< "Received STUN Binding success response from " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ")  <<  src->dump();
 
 		if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER)
 			LInfo("STUN server binding successful");
@@ -1691,7 +1692,7 @@ void Agent::agent_arm_keepalive(agent_stun_entry_t *entry)
 
 int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_class, unsigned int error_code, const uint8_t *transaction_id, const addr_record_t *mapped) {
 	// Send STUN Binding
-	SDebug << "Sending STUN Binding "  <<     (msg_class == STUN_CLASS_REQUEST  ? "request" : (msg_class == STUN_CLASS_INDICATION ? "indication" : "response"));
+	
 
 //	stun_message_t msg;
 //	memset(&msg, 0, sizeof(msg));
@@ -1900,8 +1901,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
        // char ip[40];  uint16_t port;
       //  IP::AddressToString(entry->record, ip, port) ;
         
-        
-        SDebug <<  "AgentNo " << agentNo << " send stun request to " << entry->dump(); ; 
+        SDebug <<  "AgentNo " << agentNo << " send stun  " <<   (msg_class == STUN_CLASS_REQUEST  ? "request " : (msg_class == STUN_CLASS_INDICATION ? "indication " : "response ")) << " to " <<  (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ")  <<  entry->record.dump() ;//  entry->dump(); ; 
              
 
         
