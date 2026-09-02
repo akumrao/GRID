@@ -588,7 +588,10 @@ namespace base
 
             if (IP::GetFamily(ip) == AF_INET6)
             {
-                bind_flags = UV_TCP_IPV6ONLY;
+                //bind_flags = UV_TCP_IPV6ONLY;
+                // REMOVED: bind_flags = UV_TCP_IPV6ONLY;
+                // Setting bind_flags to 0 allows dual-stack mode (IPv4-mapped IPv6)
+                bind_flags = 0;
                 ASSERT(0 == uv_ip6_addr(ip.c_str(), port, &addr6));
                 r = uv_tcp_bind(uvHandle, (const struct sockaddr*) &addr6, bind_flags);
                 ASSERT(r == 0);

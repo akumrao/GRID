@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.12.0)
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 
-project(runUdp VERSION 1.7.7 LANGUAGES CXX)
+project(run VERSION 1.7.7 LANGUAGES CXX)
 
 
 set(TTYD_VERSION "${PROJECT_VERSION}")
@@ -55,6 +55,8 @@ endif()
 set(SOURCE_FILES testUdpServer.cpp)
 set(SOURCE_FILES2 testUdpClient.cpp)
 set(SOURCE_FILES3 testUdpServerToServer.cpp)
+set(SOURCE_FILES4 testTcpClient.cpp)
+set(SOURCE_FILES5 testTcpServer.cpp)
 
 
 if(UNIX)
@@ -66,6 +68,19 @@ file(GLOB SOURCES
     ../src/UdpSocket.cpp  ../src/IP.cpp ../src/dns.cpp  ../../base/src/*.cpp 
   )
 endif()
+
+
+
+if(UNIX)
+file(GLOB SOURCESTCP   
+    ../src/TcpConnection.cpp ../src/TcpServer.cpp  ../src/IP.cpp ../src/dns.cpp  ../../base/src/*.cpp ../../libuv/src/*.cpp ../../libuv/src/unix/*.cpp
+  )
+else()
+file(GLOB SOURCESTCP   
+    ../src/TcpConnection.cpp ../src/TcpServer.cpp  ../src/IP.cpp ../src/dns.cpp  ../../base/src/*.cpp 
+  )
+endif()
+
 
 
 if(WIN32)
@@ -150,6 +165,26 @@ add_executable(${PROJECT_NAME}_serverToServer ${SOURCE_FILES3} ${SOURCES})
 target_include_directories(${PROJECT_NAME}_serverToServer PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME}_serverToServer   ${LINK_LIBS})
 target_compile_definitions(${PROJECT_NAME}_serverToServer PUBLIC
+    TTYD_VERSION="${TTYD_VERSION}"
+    $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
+)
+
+
+
+add_executable(${PROJECT_NAME}_tcpClient ${SOURCE_FILES4} ${SOURCESTCP})
+target_include_directories(${PROJECT_NAME}_tcpClient PUBLIC ${INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME}_tcpClient   ${LINK_LIBS})
+target_compile_definitions(${PROJECT_NAME}_tcpClient PUBLIC
+    TTYD_VERSION="${TTYD_VERSION}"
+    $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
+)
+
+
+
+add_executable(${PROJECT_NAME}_tcpServer ${SOURCE_FILES5} ${SOURCESTCP})
+target_include_directories(${PROJECT_NAME}_tcpServer PUBLIC ${INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME}_tcpServer   ${LINK_LIBS})
+target_compile_definitions(${PROJECT_NAME}_tcpServer PUBLIC
     TTYD_VERSION="${TTYD_VERSION}"
     $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
 )

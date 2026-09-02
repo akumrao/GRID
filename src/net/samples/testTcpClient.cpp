@@ -23,7 +23,7 @@ using namespace net;
 //using namespace base::test;
 
 
-class tesTcpClient {
+class tesTcpClient :public Listener {
 public:
 
     tesTcpClient() {}
@@ -31,7 +31,7 @@ public:
     void start(std::string ip, int port) {
 
         // socket.send("Arvind", "127.0.0.1", 7331);
-        tcpClient = new TcpConnectionBase();
+        tcpClient = new TcpConnectionBase(this);
 
         tcpClient->Connect(ip, port);
         const char snd[6] = "12345";
@@ -52,12 +52,18 @@ public:
     void on_close(Listener* connection) {
 
     
-        std::cout << " Close Con LocalIP" << connection->GetLocalIp() << " PeerIP" << connection->GetPeerIp() << std::endl << std::flush;
+        std::cout << " on_close " << connection->GetLocalIp() << " PeerIP " << connection->GetPeerIp() << std::endl << std::flush;
 
     }
 
     void on_read(Listener* connection, const char* data, size_t len) {
         std::cout << "data: " << data << "len: " << len << std::endl << std::flush;
+        
+        
+        std::cout << "Client on_read " << connection->GetLocalIp() << " PeerIP " << connection->GetPeerIp() << std::endl << std::flush;
+        
+        std::cout << "Client on_read " << connection->GetLocalPort() << " PeerIP " << connection->GetPeerPort() << std::endl << std::flush;
+             
         std::string send = "12345";
         connection->send((const char*) send.c_str(), 5);
 
@@ -95,13 +101,13 @@ int main(int argc, char** argv) {
         socket.start(ip, port);
 
 
-        // app.waitForShutdown([&](void*) {
-        //     socket.shutdown();
+         app.waitForShutdown([&](void*) {
+             socket.shutdown();
 
-        // });
+         });
 
 
-        base::sleep(250);
+        base::sleep(4250);
         
         socket.shutdown();
 

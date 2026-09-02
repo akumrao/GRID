@@ -44,12 +44,17 @@ public:
 
     void on_close(Listener* connection) {
 
-        std::cout << "TCP server closing, LocalIP" << connection->GetLocalIp() << " PeerIP" << connection->GetPeerIp() << std::endl << std::flush;
-
+        std::cout << "TCP server closing, LocalIP " << connection->GetLocalIp() << " PeerIP " << connection->GetPeerIp() << std::endl << std::flush;
+        std::cout << " Close Con LocalIP " << connection->GetLocalPort() << " PeerIP " << connection->GetPeerPort() << std::endl << std::flush;      
     }
 
     void on_read(Listener* connection, const char* data, size_t len) {
         std::cout << "TCP server send data: " << data << "len: " << len << std::endl << std::flush;
+        
+        std::cout << "Server on_read " << connection->GetLocalIp() << " PeerIP " << connection->GetPeerIp() << std::endl << std::flush;
+        
+        std::cout << "Server on_read " << connection->GetLocalPort() << " PeerIP " << connection->GetPeerPort() << std::endl << std::flush;
+        
         std::string send = "12345";
         connection->send((const char*) send.c_str(), 5);
 
@@ -64,7 +69,7 @@ int main(int argc, char** argv) {
 
         int port = 51038;
         
-        std::string ip = "0.0.0.0";
+        std::string ip = "::";
         
         if (argc > 1) {
             ip = argv[1];
