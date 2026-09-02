@@ -1370,8 +1370,12 @@ int Agent::agent_process_stun_binding( stun::MessageStun *msg,   agent_stun_entr
 
 	switch (msg->msg_class) {
 	case STUN_CLASS_REQUEST: {
+                if(entry->type == AGENT_STUN_ENTRY_TYPE_CHECK)
+                {
+                    STUN_requests_received++;
+                }
 		//LDebug("Received STUN Binding request") <<  src->dump();;
-                SDebug<< "Received STUN Binding request  " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ")  <<  src->dump();
+                SDebug<< "\033[34m" << "Received STUN Binding request  " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ")  << "(summary: Receive Req " << STUN_requests_received << ", Receive Resp " << STUN_responses_received << ") "  <<  src->dump() << "\033[0m";//  entry->dump(); ; 
 		if (entry->type != AGENT_STUN_ENTRY_TYPE_CHECK)
 			return -1;
 
@@ -1465,7 +1469,13 @@ int Agent::agent_process_stun_binding( stun::MessageStun *msg,   agent_stun_entr
 		break;
 	}
 	case STUN_CLASS_RESP_SUCCESS: {
-		SDebug<< "Received STUN Binding success response from " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ")  <<  src->dump();
+
+                if(entry->type == AGENT_STUN_ENTRY_TYPE_CHECK)
+                {
+                    STUN_responses_received++;
+                }
+
+		SDebug<< "Received STUN Binding success response from " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ") <<    "(summary: Receive Req " << STUN_requests_received << ", Receive Resp " << STUN_responses_received << ") "   <<  src->dump();
 
 		if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER)
 			LInfo("STUN server binding successful");
@@ -1785,6 +1795,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
                         
                         if(use_candidate)
                         msg.addAttribute(new stun::UseCandidate);
+                        ++STUN_requests_sent;
 
 			entry->mode = m_mode; // save current mode in case of conflict
 			break;
@@ -1795,6 +1806,7 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
 			msg.error_code = error_code;
 			if (mapped)
 				msg.mapped = mapped;
+                        ++STUN_responses_sent;
 
 			break;
 		}
@@ -1901,7 +1913,9 @@ int Agent::agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_
        // char ip[40];  uint16_t port;
       //  IP::AddressToString(entry->record, ip, port) ;
         
-        SDebug <<  "AgentNo " << agentNo << " send stun  " <<   (msg_class == STUN_CLASS_REQUEST  ? "request " : (msg_class == STUN_CLASS_INDICATION ? "indication " : "response ")) << " to " <<  (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ")  <<  entry->record.dump() ;//  entry->dump(); ; 
+        SDebug << "\033[34m" <<  "AgentNo " << agentNo << " send stun  " <<   (msg_class == STUN_CLASS_REQUEST  ? "request " : (msg_class == STUN_CLASS_INDICATION ? "indication " : "response ")) 
+               << "(summary: Sent Req " << STUN_requests_sent << ", Sent Resp " << STUN_responses_sent << ") "
+               << " to " <<  (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ")  <<  entry->record.dump() << "\033[0m";//  entry->dump(); ; 
              
 
         

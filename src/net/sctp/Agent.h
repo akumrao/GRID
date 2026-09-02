@@ -341,6 +341,16 @@ typedef struct agent_stun_entry {
     int parse_sdp_candidate(const char *line, Candidate *candidate);
     int ice_parse_sdp(const char *sdp, ice_description_t *description);
     int parse_sdp_line(const char *line, ice_description_t *description);
+    
+
+    uint64_t STUN_requests_sent{0};  
+    uint64_t STUN_responses_received{0};
+    
+    uint64_t STUN_responses_sent{0};
+    uint64_t STUN_requests_received{0};
+            
+            
+            
 
   };
 
