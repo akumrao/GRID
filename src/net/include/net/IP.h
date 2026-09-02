@@ -37,7 +37,7 @@ namespace base
             struct sockaddr_storage addr;
             socklen_t len;
             
-            std::string dump();
+            std::string dump() const;
         
     
         } addr_record_t;

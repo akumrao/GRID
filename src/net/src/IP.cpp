@@ -358,11 +358,12 @@ namespace base
         }
         
         
-            std::string addr_record::dump()
+            std::string addr_record::dump() const
             {
                 char ip[40];
                 uint16_t port;
-                IP::AddressToString(*this, ip, 40, port);
+                IP::AddressToString((addr_record_t &)(*this), ip, 40,
+                                    port);
 
                 std::string ret =  ip + std::string(":") + std::to_string(port);
 
