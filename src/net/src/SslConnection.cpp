@@ -29,7 +29,8 @@ SslConnection::SslConnection()
   
 {
     LTrace("Create")
-     _sslAdapter.initSSL();
+    _sslAdapter.server = false;
+    _sslAdapter.initSSL();
  
 }
 
@@ -40,8 +41,15 @@ SslConnection::SslConnection( bool server)
     ,serverMode(server)
 {
     if(server)
+    {
         _sslAdapter.server = server;
         _sslAdapter.initSSL();
+    }
+    else
+    {
+        _sslAdapter.server = false;
+        _sslAdapter.initSSL();
+    }
     LTrace("Create")
 }
 
@@ -110,4 +118,3 @@ void SslConnection::on_connect()  // only called when called from client. For se
 
 } // namespace net
 } // namespace base
-

@@ -318,16 +318,17 @@ void SSLAdapter::initSSL()
      
 
 #else 
-    
-        //config.keyPemFile = "/mnt/key/private_key.pem";
-        //config.certificatePemFile  = "/mnt/key/certificate.crt";       
-        config.init();
-       auto [crt, pk] = config.mCertificate->credentials();
 
-       //  mbedtls_ssl_conf_ca_chain(&_ssl_conf, crt, NULL);
+        if (server)
+        {
+            //config.keyPemFile = "/mnt/key/private_key.pem";
+            //config.certificatePemFile  = "/mnt/key/certificate.crt";
+            config.init();
+            auto [crt, pk] = config.mCertificate->credentials();
+             //  mbedtls_ssl_conf_ca_chain(&_ssl_conf, crt, NULL);
          
-      rtc::mbedtls::check(mbedtls_ssl_conf_own_cert(&_ssl_conf, crt, pk));
-
+            rtc::mbedtls::check(mbedtls_ssl_conf_own_cert(&_ssl_conf, crt, pk));
+        }
 
 #endif
 
@@ -869,32 +870,32 @@ SSL_CTX *InitCTX(bool server)
 
 #else
 
-        config.init();
-
-        auto [x509, pkey] = config.mCertificate->credentials();
-        SSL_CTX_use_certificate(ctx, x509);
-
-        if (SSL_CTX_use_certificate(ctx, x509) <= 0)
+        if (server)
         {
-            ERR_print_errors_fp(stderr);
-            abort();
+            config.init();
+
+            auto [x509, pkey] = config.mCertificate->credentials();
+            SSL_CTX_use_certificate(ctx, x509);
+
+            if (SSL_CTX_use_certificate(ctx, x509) <= 0)
+            {
+                ERR_print_errors_fp(stderr);
+                abort();
+            }
+
+            if ( SSL_CTX_use_PrivateKey(ctx, pkey) <= 0)
+            {
+                ERR_print_errors_fp(stderr);
+                abort();
+            }
+
+         
+            if (!SSL_CTX_check_private_key(ctx)) {
+                ERR_print_errors_fp(stderr);
+             fprintf(stderr, "Private key does not match the public certificate\n");
+             abort();
+           }
         }
-
-        if ( SSL_CTX_use_PrivateKey(ctx, pkey) <= 0)
-        {
-            ERR_print_errors_fp(stderr);
-            abort();
-        }
-
-     
-        if (!SSL_CTX_check_private_key(ctx)) {
-            ERR_print_errors_fp(stderr);
-         fprintf(stderr, "Private key does not match the public certificate\n");
-         abort();
-       }
-
-
-      
 
 #endif
 
@@ -1110,6 +1111,19 @@ void SSLAdapter::addOutgoingData(const char *data, size_t len)
 
 int SSLAdapter::handshake()
 {
+    if (handshake_state == STATE_HANDSHAKE_DONE) {
+      return STATE_HANDSHAKE_DONE;
+    }
+
+/*
+    // Set TLS Server Name Indication (SNI) host extension dynamically before handshake starts
+    if (!server && _ssl && _socket) {
+        std::string host = "desk";
+        if (!host.empty()) {
+            SSL_set_tlsext_host_name(_ssl, host.c_str());
+        }
+    }
+*/
     int r = SSL_do_handshake(_ssl);
     if (r <= 0) swrap_error_handler(r);
    
@@ -1118,7 +1132,7 @@ int SSLAdapter::handshake()
         SInfo << "SSL handshake is over";
         flush();
     }
-    r;
+    return r;
 }
 
 int SSLAdapter::flush()
@@ -1242,4 +1256,3 @@ int evt_is_tls_stream(const char *bfr, const ssize_t nrd)
 }  // namespace base
 
 #endif
-
