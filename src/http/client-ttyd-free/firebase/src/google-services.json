@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "856316427805",
+    "project_id": "webrtc-signaling-9316c",
+    "storage_bucket": "webrtc-signaling-9316c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:856316427805:android:ba3df8b8fb248e24dd50f4",
+        "android_client_info": {
+          "package_name": "com.webrtc.signaling.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBPO055HNQUDkBYlav0HZ1zUj_76fZ0UrY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
