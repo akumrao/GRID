@@ -40,7 +40,7 @@ namespace net
 
 	public:
 		void FillJson(json& jsonObject) const;
-		void Dump() const;
+		std::string Dump() const;
 		void StoreUdpRemoteAddress();
 		bool Compare(const TransportTuple* tuple) const;
 		void SetLocalAnnouncedIp(std::string& localAnnouncedIp);

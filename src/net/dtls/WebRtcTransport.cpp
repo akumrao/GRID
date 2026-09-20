@@ -1,7 +1,3 @@
-
-
-
-
 #include "WebRtcTransport.h"
 #include "base/logger.h"
 #include "base/error.h"
@@ -10,805 +6,941 @@
 //#include "Channel/Notifier.h"
 #include <cmath> // std::pow()
 #include <Agent.h>
+#include <sstream>
 
 using namespace base;
-namespace rtc
-{
-	/* Static. */
-
-	static constexpr uint16_t IceCandidateDefaultLocalPriority{ 10000 };
-	// We just provide "host" candidates so type preference is fixed.
-	static constexpr uint16_t IceTypePreference{ 64 };
-	// We do not support non rtcp-mux so component is always 1.
-	static constexpr uint16_t IceComponent{ 1 };
-
-	static inline uint32_t generateIceCandidatePriority(uint16_t localPreference)
-	{
-		return std::pow(2, 24) * IceTypePreference + std::pow(2, 8) * localPreference +
-		       std::pow(2, 0) * (256 - IceComponent);
-	}
-
-	/* Instance methods. */
-
-        
-       
-        /*with stun*/
-        WebRtcTransport::WebRtcTransport(const std::string& id, int agentNo,  const Configuration &config, rtc::Transport::Listener* listener, std::string IP, int port, Agent *agent)
-            : rtc::Transport::Transport(id, agentNo, config, listener),  agent(agent)
-        {
-    
-                    mutex.lock();
-            
-                    m_udpServer = new base::net::UdpServer(this, IP,  port );
-
-                    m_udpServer->bind();
-
-                    STrace << "AgentNo " << agentNo << " Create a DTLS transport.";
-                    this->dtlsTransport = new rtc::DtlsTransport(this);
-                    iceServer = new rtc::IceServer();
-                    
-                    mutex.unlock();
-
-                   // this->udpSockets[udpSocket] = "listenIp.announcedIp";
-
-
-                   /*
-                         addr_record_t mapped;
-
-                         IP::StringToAddress(remoteip.data() , remotePort,  mapped);
-
-                        tuple = new TransportTuple(
-                        udpSocket, reinterpret_cast<struct sockaddr*>(&mapped.addr)  );
-
-                        tuple = iceServer->AddTuple(tuple);
-
-                        iceServer->SetSelectedTuple(tuple) ;
-                     * 
-                     * */
- /*
-            testUdpServer(std::string IP, int port, Agent *agent);
-
-            void start() {
-                udpServer = new UdpServer( this, IP, port);
-                udpServer->bind();
-            }
-
-            char ip[40];  uint16_t port;
-            base::net::IP::AddressToString(local, ip, 40, port);
-     
-            this->udpSockets[udpSocket] = ip;
-            
-            tuple = new TransportTuple(
-                            udpSocket, reinterpret_cast<struct sockaddr*>(&remote.addr)  );
-
-            tuple = iceServer->AddTuple(tuple);
-
-            iceServer->SetSelectedTuple(tuple) ;
-                            
-   */        
-            
-        }
-        
-        /*with static*/
-	WebRtcTransport::WebRtcTransport(const std::string& id, int agentNo, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort , std::string localip, std::string remoteip )
-	  : agent(agent), rtc::Transport::Transport(id, agentNo, config, listener)
-	{
-		
-            uint16_t iceLocalPreferenceDecrement{ 0 };
-            
-            std::vector<ListenIp> listenIps;
-            listenIps.resize(1);
-            listenIps[0].announcedIp = "0.0.0.0";
-            listenIps[0].ip = localip;
-            listenIps[0].port = localPort;
-            
-            bool enableUdp{ true };
-            bool enableTcp{ false };    
-            
-            bool preferUdp{ false };
-            bool preferTcp{ false };
-            
-            iceServer = new rtc::IceServer();
-            
-            for (auto& listenIp : listenIps)
-            {
-                    if (enableUdp)
-                    {
-                        uint16_t iceLocalPreference =
-                          IceCandidateDefaultLocalPriority - iceLocalPreferenceDecrement;
-
-                        if (preferUdp)
-                                iceLocalPreference += 1000;
-
-                        uint32_t icePriority = generateIceCandidatePriority(iceLocalPreference);
-
-                        // This may throw.
-                        auto* udpSocket = new base::net::UdpServer(this, listenIp.ip,  listenIp.port );
-
-                        udpSocket->bind();
-
-
-                        this->udpSockets[udpSocket] = listenIp.announcedIp;
-
-
-                         addr_record_t mapped;
-
-                         IP::StringToAddress(remoteip.data() , remotePort,  mapped);
-
-                        tuple = new TransportTuple(
-                        udpSocket, reinterpret_cast<struct sockaddr*>(&mapped.addr)  );
-
-                        tuple = iceServer->AddTuple(tuple);
-
-                        iceServer->SetSelectedTuple(tuple) ;
-                           
-                    }
-
-                    if (enableTcp)
-                    {
-                        uint16_t iceLocalPreference =
-                          IceCandidateDefaultLocalPriority - iceLocalPreferenceDecrement;
-
-                        if (preferTcp)
-                                iceLocalPreference += 1000;
-
-                        generateIceCandidatePriority(iceLocalPreference);
-
-                        // This may throw.
-                        auto* tcpServer = new base::net::TcpServer(this, listenIp.ip,  listenIp.port);
-
-                        this->tcpServers[tcpServer] = listenIp.announcedIp;
-
-                    }
-
-                    // Decrement initial ICE local preference for next IP.
-                    iceLocalPreferenceDecrement += 100;
-            }
-
-	    // Create a DTLS transport.
-            STrace << "AgentNo " << agentNo <<" Create a DTLS transport.";
-			this->dtlsTransport = new rtc::DtlsTransport(this);
-	}
-
-	WebRtcTransport::~WebRtcTransport()
-	{
-            SInfo << "~WebRtcTransport()";
-            
-            agent->close_timer();
-              
-            mutex.lock();
-
-            Disconnected();
-            
-            delete this->dtlsTransport;
-            this->dtlsTransport = nullptr;
-            
-            
-            delete iceServer;
-            iceServer = nullptr;	
-    
-            
-            
-            for (auto& kv : this->udpSockets)
-            {
-                    auto* udpSocket = kv.first;
-                    udpSocket->Close();
-                    
-                    delete udpSocket;
-            }
-            this->udpSockets.clear();
-
-            for (auto& kv : this->tcpServers)
-            {
-                    auto* tcpServer = kv.first;
-                     tcpServer->Close();
-                    delete tcpServer;
-            }
-            this->tcpServers.clear();
-            
-            
-            // Must delete the DTLS transport first since it will generate a DTLS alert
-            // to be sent.
-  
-             mutex.unlock();
-         
-
-            SInfo << "~WebRtcTransport over()";
-	}
-
-        void WebRtcTransport::InitDtls(bool server, std::string announcedIp , addr_record_t &remotemapped , CertificateFingerprint dtlsRemoteFingerprint)
-	{
-            this->udpSockets[m_udpServer] = announcedIp;
-
-
-            tuple = new TransportTuple(
-            m_udpServer, reinterpret_cast<struct sockaddr*>(&remotemapped.addr)  );
-
-#if 1
-            char remoteIp[40];  uint16_t remotePort;
-            base::net::
-            IP::AddressToString(remotemapped, remoteIp, 40, remotePort);
-
-            SInfo << "Remote IP: " << remoteIp << ":" << remotePort;
-
-#endif
-            tuple = iceServer->AddTuple(tuple);
-
-            iceServer->SetSelectedTuple(tuple) ;
-            
-            HandleRequest( server , dtlsRemoteFingerprint);
-        }
-       
-
-	void WebRtcTransport::HandleRequest(bool server, CertificateFingerprint &dtlsRemoteFingerprint)
-	{
-		
-            if(server)
-                dtlsRole = rtc::DtlsTransport::Role::SERVER;
-            else
-                dtlsRole = rtc::DtlsTransport::Role::CLIENT;
-            
-            if (this->dtlsTransport->SetRemoteFingerprint(dtlsRemoteFingerprint))
-            {
-                    // If everything is fine, we may run the DTLS transport if ready.
-                    MayRunDtlsTransport();
-            }
-
-            // MayRunDtlsTransport();
-
-
-//            dtlsRemoteRole = rtc::DtlsTransport::Role::AUTO;
-//
-//              // Set local DTLS role.
-//            switch (dtlsRemoteRole)
-//            {
-//                    case rtc::DtlsTransport::Role::CLIENT:
-//                    {
-//                            this->dtlsRole = rtc::DtlsTransport::Role::SERVER;
-//
-//                            break;
-//                    }
-//                    case rtc::DtlsTransport::Role::SERVER:
-//                    {
-//                            this->dtlsRole = rtc::DtlsTransport::Role::CLIENT;
-//
-//                            break;
-//                    }
-//                    // If the peer has role "auto" we become "client" since we are ICE controlled.
-//                    case rtc::DtlsTransport::Role::AUTO:
-//                    {
-//                            this->dtlsRole = rtc::DtlsTransport::Role::CLIENT;
-//
-//                            break;
-//                    }
-//                    case rtc::DtlsTransport::Role::NONE:
-//                    {
-//                            base::uv::throwError("invalid remote DTLS role");
-//                    }
-//            };
-//
-//            this->connectCalled = true;
-//
-//            // Pass the remote fingerprint to the DTLS transport.
-//            if (this->dtlsTransport->SetRemoteFingerprint(dtlsRemoteFingerprint))
-//            {
-//                    // If everything is fine, we may run the DTLS transport if ready.
-//                    MayRunDtlsTransport();
-//            }
-//
-//
-//
-//            switch (this->dtlsRole)
-//            {
-//                    case rtc::DtlsTransport::Role::CLIENT:
-//                            data["dtlsLocalRole"] = "client";
-//                            break;
-//
-//                    case rtc::DtlsTransport::Role::SERVER:
-//                            data["dtlsLocalRole"] = "server";
-//                            break;
-//
-//                    default:
-//                            MS_ABORT("invalid local DTLS role");
-//            }
-
-
-			
-	}
-
-	inline bool WebRtcTransport::IsConnected() const
-	{
-		
-
-		assertm(this->dtlsTransport, "no dtlsTransport");
-
-		
-		return (
-//			(
-//				this->iceServer->GetState() == rtc::IceServer::IceState::CONNECTED ||
-//				this->iceServer->GetState() == rtc::IceServer::IceState::COMPLETED
-//			) &&
-			this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CONNECTED
-		);
-		
-	}
-
-	void WebRtcTransport::MayRunDtlsTransport()
-	{
-		
-
-		assertm(this->dtlsTransport, "no dtlsTransport");
-
-		// Do nothing if we have the same local DTLS role as the DTLS transport.
-		// NOTE: local role in DTLS transport can be NONE, but not ours.
-		if (this->dtlsTransport->GetLocalRole() == this->dtlsRole)
-			return;
-
-		// Check our local DTLS role.
-		switch (this->dtlsRole)
-		{
-			// If still 'auto' then transition to 'server' if ICE is 'connected' or
-			// 'completed'.
-			case rtc::DtlsTransport::Role::AUTO:
-			{
-				
-//				if (
-//					this->iceServer->GetState() == rtc::IceServer::IceState::CONNECTED ||
-//					this->iceServer->GetState() == rtc::IceServer::IceState::COMPLETED
-//				)
-				
-				{
-					LDebug( "transition from DTLS local role 'auto' to 'server' and running DTLS transport");
-
-					this->dtlsRole = rtc::DtlsTransport::Role::SERVER;
-					this->dtlsTransport->Run(rtc::DtlsTransport::Role::SERVER);
-				}
-
-				break;
-			}
-
-			// 'client' is only set if a 'connect' request was previously called with
-			// remote DTLS role 'server'.
-			//
-			// If 'client' then wait for ICE to be 'completed' (got USE-CANDIDATE).
-			//
-			// NOTE: This is the theory, however let's be more flexible as told here:
-			//   https://bugs.chromium.org/p/webrtc/issues/detail?id=3661
-			case rtc::DtlsTransport::Role::CLIENT:
-			{
-				
-//				if (
-//					this->iceServer->GetState() == rtc::IceServer::IceState::CONNECTED ||
-//					this->iceServer->GetState() == rtc::IceServer::IceState::COMPLETED
-//				)
-				
-				{
-					LTrace( "running DTLS transport in local role 'client'");
-
-					this->dtlsTransport->Run(rtc::DtlsTransport::Role::CLIENT);
-				}
-
-				break;
-			}
-
-			// If 'server' then run the DTLS transport if ICE is 'connected' (not yet
-			// USE-CANDIDATE) or 'completed'.
-			case rtc::DtlsTransport::Role::SERVER:
-			{
-				
-//				if (
-//					this->iceServer->GetState() == rtc::IceServer::IceState::CONNECTED ||
-//					this->iceServer->GetState() == rtc::IceServer::IceState::COMPLETED
-//				)
-//				
-				{
-					LTrace( "running DTLS transport in local role 'server'");
-
-					this->dtlsTransport->Run(rtc::DtlsTransport::Role::SERVER);
-				}
-
-				break;
-			}
-
-			case rtc::DtlsTransport::Role::NONE:
-			{
-				MS_ABORT("local DTLS role not set");
-			}
-		}
-	}
-
-
-
-
-
-	void WebRtcTransport::SendSctpData(const uint8_t* data, size_t len)
-	{
-		
-		if (!IsConnected())
-		{
-			SWarn << "AgentNo " << agentNo << "  DTLS not connected, cannot send SCTP data";
-
-			return;
-		}
-
-    SDebug << "AgentNo " << agentNo << " SendAPP data " << len;
-
-		this->dtlsTransport->SendApplicationData(data, len);
-	}
-
-	inline void WebRtcTransport::OnPacketReceived(
-	  base::net::TransportTuple* tuple, const char* data, size_t len)
-	{
-		
-    SDebug  << "AgentNo " << agentNo << " OnPacketReceived " << len;
-
-		assertm(this->dtlsTransport, "no dtlsTransport");
-
-		// Increase receive transmission.
-//		rtc::Transport::DataReceived(len);
-
-		
-		// Check if it's DTLS.
-		if (rtc::DtlsTransport::IsDtls( (const uint8_t*)data, len))
-		{
-      mutex.lock();
-      
-//      SInfo  << "AgentNo " << agentNo << " locked " << len;
-          
-      if(dtlsTransport)
-			OnDtlsDataReceived(tuple, data, len);
-      
- //      SInfo  << "AgentNo " << agentNo << " unlocked " << len;
-      mutex.unlock();
-		}
-		else
-		{
-                    SInfo  << "AgentNo " << agentNo << " OnPacketReceived len: " << len << " data " << data;
-                    
-		    LWarn("ignoring received packet of unknown type");
-		}
-	}
-
-//	inline void WebRtcTransport::OnStunDataReceived(
-//	  base::net::TransportTuple* tuple, const uint8_t* data, size_t len)
-//	{
-//		
-//
-//
-//
-//		rtc::StunPacket* packet = rtc::StunPacket::Parse(data, len);
-//
-//		if (!packet)
-//		{
-//			LWarn("ignoring wrong STUN packet received");
-//
-//			return;
-//		}
-//
-//		// Pass it to the IceServer.
-//		this->iceServer->ProcessStunPacket(packet, tuple);
-//
-//		delete packet;
-//	}
-
-	inline void WebRtcTransport::OnDtlsDataReceived(
-	  const base::net::TransportTuple* tuple, const char* data, size_t len)
-	{
-		
-            SDebug  << "AgentNo " << agentNo << " OnDtlsDataReceived " << len;
-
-            assertm(this->dtlsTransport, "no dtlsTransport");
-
-		// Ensure it comes from a valid tuple.
-		if (!this->iceServer->IsValidTuple(tuple))
-		{
-			LWarn( "ignoring DTLS data coming from an invalid tuple");
-                        
-                        binaryPacketQueue.emplace(data, data + len);
-                        
-			return;
-		}
-
-		// Trick for clients performing aggressive ICE regardless we are ICE-Lite.
-		this->iceServer->ForceSelectedTuple(tuple);
-
-                
-            if ( this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CLOSED )
-            {    
-                 SInfo  << "AgentNo " << agentNo << " reset and new dtls connection" << len;
-                 
-                 delete dtlsTransport;
-                 dtlsTransport = new DtlsTransport(this);
-                 dtlsTransport->SetRemoteFingerprint(config.gconfig->mCertificate->fingerprint());
-                 MayRunDtlsTransport();
-            }
-                
-            // Check that DTLS status is 'connecting' or 'connected'.
-            if (
-              this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CONNECTING ||
-              this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CONNECTED)
-            {
-                  // SInfo  << "AgentNo " << agentNo << " ProcessDtlsData " << len;
-                
-                    while (!binaryPacketQueue.empty()) {
-                        // Access the front element by reference to avoid copying
-                        const std::vector<unsigned char>& packet = binaryPacketQueue.front();
-
-                        // Access raw pointer and size safely
-                        const unsigned char* rawDataPtr = packet.data();
-                        size_t packetSize = packet.size();
-
-                        this->dtlsTransport->ProcessDtlsData((const uint8_t*)rawDataPtr, packetSize);
-
-                        // Remove the processed packet from the queue
-                        binaryPacketQueue.pop();
-                    }
-
-                    this->dtlsTransport->ProcessDtlsData((const uint8_t*)data, len);
-                    
-                  //   SInfo  << "AgentNo " << agentNo << " ProcessDtlsData over" << len;
-            }
-            else
-            {
-                    LWarn( "Transport is not 'connecting' or 'connected', ignoring received DTLS data");
-
-                    return;
-            }
-	}
-
-
-        const uint8_t magicCookie[] = { 0x21, 0x12, 0xA4, 0x42 };
-        inline bool IsStun(const uint8_t* data, size_t len)
-        {
-
-                return (
-                        // STUN headers are 20 bytes.
-                        (len >= 20) &&
-                        // DOC: https://tools.ietf.org/html/draft-ietf-avtcore-rfc5764-mux-fixes
-                        (data[0] < 3) &&
-                        // Magic cookie must match.
-                        (data[4] == magicCookie[0]) && (data[5] == magicCookie[1]) &&
-                        (data[6] == magicCookie[2]) && (data[7] == magicCookie[3])
+namespace rtc {
+    /* Static. */
+
+    static constexpr uint16_t IceCandidateDefaultLocalPriority{ 10000};
+    // We just provide "host" candidates so type preference is fixed.
+    static constexpr uint16_t IceTypePreference{ 64};
+    // We do not support non rtcp-mux so component is always 1.
+    static constexpr uint16_t IceComponent{ 1};
+
+    static inline uint32_t generateIceCandidatePriority(uint16_t localPreference) {
+        return std::pow(2, 24) * IceTypePreference + std::pow(2, 8) * localPreference +
+                std::pow(2, 0) * (256 - IceComponent);
+    }
+
+    const uint8_t magicCookie[] = {0x21, 0x12, 0xA4, 0x42};
+
+    inline bool IsStun(const uint8_t* data, size_t len) {
+
+        return (
+                // STUN headers are 20 bytes.
+                (len >= 20) &&
+                // DOC: https://tools.ietf.org/html/draft-ietf-avtcore-rfc5764-mux-fixes
+                (data[0] < 3) &&
+                // Magic cookie must match.
+                (data[4] == magicCookie[0]) && (data[5] == magicCookie[1]) &&
+                (data[6] == magicCookie[2]) && (data[7] == magicCookie[3])
                 );
 
+    }
+
+    /*with stun*/
+    WebRtcTransport::WebRtcTransport(const std::string& id, int agentNo, const Configuration &config, rtc::Transport::Listener* listener, std::string IP, int port, Agent *agent)
+    : rtc::Transport::Transport(id, agentNo, config, listener), agent(agent) {
+
+        mutex.lock();
+
+        if (config.enableUdp) {
+            m_udpServer = new base::net::UdpServer(this, IP, port);
+
+            m_udpServer->bind();
         }
 
 
-	inline void WebRtcTransport::OnUdpSocketPacketReceived(
-	  base::net::UdpServer* socket, const char* data, size_t len,  struct sockaddr* remoteAddr)
-	{
-            int family;
+        if (config.enableTcp) {
+            m_tcpServer = new base::net::TcpServer(this, IP, port);
+        }
 
-            std::string peerIp;
-            uint16_t peerPort;
+        STrace << "AgentNo " << agentNo << " Create a DTLS transport.";
 
-            IP::GetAddressInfo(
-                        remoteAddr, family, peerIp, peerPort);
-            SDebug  << "AgentNo " << agentNo <<  " OnUdpSocketPacketReceived " << peerIp << ":" << peerPort ;
-            addr_record_t remotesrc;
-            IP::CopyAddress(remoteAddr, remotesrc );
+        iceServer = new rtc::IceServer();
 
-     
+        mutex.unlock();
+
+        // this->udpSockets[udpSocket] = "listenIp.announcedIp";
 
 
-            IP::addr_unmap_inet6_v4mapped((struct sockaddr *)&remotesrc.addr , &remotesrc.len);
+
+
+    }
+
+    /*with static*/
+    WebRtcTransport::WebRtcTransport(const std::string& id, int agentNo, const Configuration &config, rtc::Transport::Listener* listener, int localPort, int remotePort, std::string localip, std::string remoteip)
+    : agent(agent), rtc::Transport::Transport(id, agentNo, config, listener) {
+
+        uint16_t iceLocalPreferenceDecrement{ 0};
+
+        std::vector<ListenIp> listenIps;
+        listenIps.resize(1);
+        listenIps[0].announcedIp = "0.0.0.0";
+        listenIps[0].ip = localip;
+        listenIps[0].port = localPort;
+
+        bool enableUdp{ true};
+        bool enableTcp{ false};
+
+        bool preferUdp{ false};
+        bool preferTcp{ false};
+
+        iceServer = new rtc::IceServer();
+
+        for (auto& listenIp : listenIps) {
+            if (enableUdp) {
+                uint16_t iceLocalPreference =
+                        IceCandidateDefaultLocalPriority - iceLocalPreferenceDecrement;
+
+                if (preferUdp)
+                    iceLocalPreference += 1000;
+
+                uint32_t icePriority = generateIceCandidatePriority(iceLocalPreference);
+
+                // This may throw.
+                auto* udpSocket = new base::net::UdpServer(this, listenIp.ip, listenIp.port);
+
+                udpSocket->bind();
+
+
+                this->udpSockets[udpSocket] = listenIp.announcedIp;
+
+
+                addr_record_t mapped;
+
+                IP::StringToAddress(remoteip.data(), remotePort, mapped);
+
+                TransportTuple tuple(
+                        udpSocket, reinterpret_cast<struct sockaddr*> (&mapped.addr));
+
+                auto* storedTuple = iceServer->AddTuple(&tuple);
+
+                iceServer->SetSelectedTuple(storedTuple);
+
+            }
+
+            if (enableTcp) {
+                uint16_t iceLocalPreference =
+                        IceCandidateDefaultLocalPriority - iceLocalPreferenceDecrement;
+
+                if (preferTcp)
+                    iceLocalPreference += 1000;
+
+                generateIceCandidatePriority(iceLocalPreference);
+
+                // This may throw.
+                auto* tcpServer = new base::net::TcpServer(this, listenIp.ip, listenIp.port);
+
+                this->tcpServers[tcpServer] = listenIp.announcedIp;
+
+
+
+                /// iceServer->SetSelectedTuple(storedTuple) ; TBD
+
+            }
+
+            // Decrement initial ICE local preference for next IP.
+            iceLocalPreferenceDecrement += 100;
+        }
+
+        // Create a DTLS transport.
+        STrace << "AgentNo " << agentNo << " Create a DTLS transport.";
+        this->dtlsTransport = new rtc::DtlsTransport(this);
+    }
+
+    WebRtcTransport::~WebRtcTransport() {
+        SInfo << "~WebRtcTransport()";
+
+        mutex.lock();
+
+
+
+
+        iceServer->clear_connections();
+
+
+
+
+
+        Disconnected();
+
+        delete this->dtlsTransport;
+        this->dtlsTransport = nullptr;
+
+
+        delete iceServer;
+        iceServer = nullptr;
+
+
+
+        for (auto& kv : this->udpSockets) {
+            auto* udpSocket = kv.first;
+            udpSocket->Close();
+
+            delete udpSocket;
+        }
+        this->udpSockets.clear();
+
+        for (auto& kv : this->tcpServers) {
+            auto* tcpServer = kv.first;
+            tcpServer->Close();
+            delete tcpServer;
+        }
+        this->tcpServers.clear();
+
+
+        // Must delete the DTLS transport first since it will generate a DTLS alert
+        // to be sent.
+
+        mutex.unlock();
+
+
+        SInfo << "~WebRtcTransport over()";
+    }
+
+    void WebRtcTransport::InitDtls(bool server, std::string announcedIp, addr_record_t &remotemapped, CertificateFingerprint dtlsRemoteFingerprint) {
+
+        SInfo << "AgentNo " << agentNo << " InitDtls " << remotemapped.dump();
+
+        this->dtlsTransport = new rtc::DtlsTransport(this);
+
+        if (config.enableUdp) {
+            this->udpSockets[m_udpServer] = announcedIp;
+
+            TransportTuple tuple(m_udpServer, reinterpret_cast<struct sockaddr*> (&remotemapped.addr));
+
+
+            auto* storedTuple = iceServer->HasTuple(&tuple);
+
+
+            if (storedTuple)
+                iceServer->SetSelectedTuple(storedTuple);
+            else {
+                SError << "AgentNo " << agentNo << " Valid tuple not found, it is impossible state";
+            }
+
+
+        }
+
+        if (config.enableTcp) {
+            TcpConnectionBase* tcpConn = this->iceServer->find_tcp_connection(remotemapped);
+            if (tcpConn) {
+
+
+                this->tcpServers[m_tcpServer] = announcedIp;
+                TransportTuple tuple(tcpConn);
+                auto* storedTuple = iceServer->HasTuple(&tuple);
+                if (storedTuple)
+                    iceServer->SetSelectedTuple(storedTuple);
+                else {
+                    SError << "AgentNo " << agentNo << " Valid tuple not found, it is impossible state";
+                }
+
+            } else {
+                SError << "AgentNo " << agentNo << " not this connection registered " << remotemapped.dump();
+            }
+
+        }
 
 
 #if 1
-            std::string ret{"addr_record_is_equal "};
-            {
+        char remoteIp[40];
+        uint16_t remotePort;
+        base::net::
+                IP::AddressToString(remotemapped, remoteIp, 40, remotePort);
 
-                 char ip[40];
-                 uint16_t port;
-                 IP::AddressToString(remotesrc, ip, 40, port);
-                 ret +=  ip + std::string(":") + std::to_string(port);
-
-                 SDebug << "AgentNo " << agentNo << " addr_unmap_inet6_v4mapped "  << ret;
-
-
-             }
+        SInfo << "Remote IP: " << remoteIp << ":" << remotePort;
 
 #endif
-                
-                
-            bool isStun = IsStun((const uint8_t*) data,  len);
-            
-            if(isStun)
+
+
+        HandleRequest(server, dtlsRemoteFingerprint);
+    }
+
+    void WebRtcTransport::HandleRequest(bool server, CertificateFingerprint &dtlsRemoteFingerprint) {
+
+        if (server)
+            dtlsRole = rtc::DtlsTransport::Role::SERVER;
+        else
+            dtlsRole = rtc::DtlsTransport::Role::CLIENT;
+
+        if (this->dtlsTransport->SetRemoteFingerprint(dtlsRemoteFingerprint)) {
+            // If everything is fine, we may run the DTLS transport if ready.
+            MayRunDtlsTransport();
+        }
+
+        // MayRunDtlsTransport();
+
+
+        //            dtlsRemoteRole = rtc::DtlsTransport::Role::AUTO;
+        //
+        //              // Set local DTLS role.
+        //            switch (dtlsRemoteRole)
+        //            {
+        //                    case rtc::DtlsTransport::Role::CLIENT:
+        //                    {
+        //                            this->dtlsRole = rtc::DtlsTransport::Role::SERVER;
+        //
+        //                            break;
+        //                    }
+        //                    case rtc::DtlsTransport::Role::SERVER:
+        //                    {
+        //                            this->dtlsRole = rtc::DtlsTransport::Role::CLIENT;
+        //
+        //                            break;
+        //                    }
+        //                    // If the peer has role "auto" we become "client" since we are ICE controlled.
+        //                    case rtc::DtlsTransport::Role::AUTO:
+        //                    {
+        //                            this->dtlsRole = rtc::DtlsTransport::Role::CLIENT;
+        //
+        //                            break;
+        //                    }
+        //                    case rtc::DtlsTransport::Role::NONE:
+        //                    {
+        //                            base::uv::throwError("invalid remote DTLS role");
+        //                    }
+        //            };
+        //
+        //            this->connectCalled = true;
+        //
+        //            // Pass the remote fingerprint to the DTLS transport.
+        //            if (this->dtlsTransport->SetRemoteFingerprint(dtlsRemoteFingerprint))
+        //            {
+        //                    // If everything is fine, we may run the DTLS transport if ready.
+        //                    MayRunDtlsTransport();
+        //            }
+        //
+        //
+        //
+        //            switch (this->dtlsRole)
+        //            {
+        //                    case rtc::DtlsTransport::Role::CLIENT:
+        //                            data["dtlsLocalRole"] = "client";
+        //                            break;
+        //
+        //                    case rtc::DtlsTransport::Role::SERVER:
+        //                            data["dtlsLocalRole"] = "server";
+        //                            break;
+        //
+        //                    default:
+        //                            MS_ABORT("invalid local DTLS role");
+        //            }
+
+
+
+    }
+
+    inline bool WebRtcTransport::IsConnected() const {
+
+
+        assertm(this->dtlsTransport, "no dtlsTransport");
+
+
+        return (
+                //			(
+                //				this->iceServer->GetState() == rtc::IceServer::IceState::CONNECTED ||
+                //				this->iceServer->GetState() == rtc::IceServer::IceState::COMPLETED
+                //			) &&
+                this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CONNECTED
+                );
+
+    }
+
+    void WebRtcTransport::MayRunDtlsTransport() {
+
+
+        assertm(this->dtlsTransport, "no dtlsTransport");
+
+        // Do nothing if we have the same local DTLS role as the DTLS transport.
+        // NOTE: local role in DTLS transport can be NONE, but not ours.
+        if (this->dtlsTransport->GetLocalRole() == this->dtlsRole)
+            return;
+
+        // Check our local DTLS role.
+        switch (this->dtlsRole) {
+                // If still 'auto' then transition to 'server' if ICE is 'connected' or
+                // 'completed'.
+            case rtc::DtlsTransport::Role::AUTO:
             {
 
-                agent->onStunMessage((unsigned char *)data, len,  &remotesrc, nullptr );
+                //				if (
+                //					this->iceServer->GetState() == rtc::IceServer::IceState::CONNECTED ||
+                //					this->iceServer->GetState() == rtc::IceServer::IceState::COMPLETED
+                //				)
+
+                {
+                    LDebug("transition from DTLS local role 'auto' to 'server' and running DTLS transport");
+
+                    this->dtlsRole = rtc::DtlsTransport::Role::SERVER;
+                    this->dtlsTransport->Run(rtc::DtlsTransport::Role::SERVER);
+                }
+
+                break;
             }
-            else
+
+                // 'client' is only set if a 'connect' request was previously called with
+                // remote DTLS role 'server'.
+                //
+                // If 'client' then wait for ICE to be 'completed' (got USE-CANDIDATE).
+                //
+                // NOTE: This is the theory, however let's be more flexible as told here:
+                //   https://bugs.chromium.org/p/webrtc/issues/detail?id=3661
+            case rtc::DtlsTransport::Role::CLIENT:
             {
-                SDebug  << "AgentNo " << agentNo << " OnUdpSocketPacketReceived len: " << len <<  " dtls";
-                     
-                base::net::TransportTuple tuple(socket, (struct sockaddr *) &remotesrc.addr);
 
-                OnPacketReceived(&tuple, data, len);
+                //				if (
+                //					this->iceServer->GetState() == rtc::IceServer::IceState::CONNECTED ||
+                //					this->iceServer->GetState() == rtc::IceServer::IceState::COMPLETED
+                //				)
+
+                {
+                    LTrace("running DTLS transport in local role 'client'");
+
+                    this->dtlsTransport->Run(rtc::DtlsTransport::Role::CLIENT);
+                }
+
+                break;
             }
-	}
 
-       inline void WebRtcTransport::on_close(base::net::Listener* conn)
-	{
-            SInfo  << "AgentNo " << agentNo << " on_close";
+                // If 'server' then run the DTLS transport if ICE is 'connected' (not yet
+                // USE-CANDIDATE) or 'completed'.
+            case rtc::DtlsTransport::Role::SERVER:
+            {
 
-            net::TcpConnection* connection = (net::TcpConnection*) conn;
+                //				if (
+                //					this->iceServer->GetState() == rtc::IceServer::IceState::CONNECTED ||
+                //					this->iceServer->GetState() == rtc::IceServer::IceState::COMPLETED
+                //				)
+                //				
+                {
+                    LTrace("running DTLS transport in local role 'server'");
 
-            base::net::TransportTuple tuple(connection);
-//
-		this->iceServer->RemoveTuple(&tuple);
-	}
+                    this->dtlsTransport->Run(rtc::DtlsTransport::Role::SERVER);
+                }
+
+                break;
+            }
+
+            case rtc::DtlsTransport::Role::NONE:
+            {
+                MS_ABORT("local DTLS role not set");
+            }
+        }
+    }
+
+    void WebRtcTransport::SendSctpData(const uint8_t* data, size_t len) {
+
+        if (!IsConnected()) {
+            SWarn << "AgentNo " << agentNo << "  DTLS not connected, cannot send SCTP data";
+
+            return;
+        }
+
+        SDebug << "AgentNo " << agentNo << " SendAPP data " << len;
+
+        this->dtlsTransport->SendApplicationData(data, len);
+    }
+
+    inline void WebRtcTransport::OnPacketReceived(
+            base::net::TransportTuple* tuple, addr_record_t &remotesrc, const char* data, size_t len) {
+
+        SDebug << "AgentNo " << agentNo << " OnPacketReceived " << len;
+
+        //        assertm(this->dtlsTransport, "no dtlsTransport");
+        //
+        //        // Increase receive transmission.
+        //        //		rtc::Transport::DataReceived(len);
+        //
+        //
+        //        // Check if it's DTLS.
+        //        if (rtc::DtlsTransport::IsDtls((const uint8_t*) data, len)) {
+        //            mutex.lock();
+        //
+        //            //      SInfo  << "AgentNo " << agentNo << " locked " << len;
+        //
+        //            if (dtlsTransport)
+        //                OnDtlsDataReceived(tuple, data, len);
+        //
+        //            //      SInfo  << "AgentNo " << agentNo << " unlocked " << len;
+        //            mutex.unlock();
+        //        } else {
+        //            SInfo << "AgentNo " << agentNo << " OnPacketReceived len: " << len << " data " << data;
+        //
+        //            LWarn("ignoring received packet of unknown type");
+        //        }
 
 
-        void WebRtcTransport::on_read(base::net::Listener* conn, const char* data, size_t len) {
+        SDebug << "AgentNo " << agentNo << " OnPacketReceived " << len;
 
-             SInfo  << "AgentNo " << agentNo << " on_read Len" <<  len;
-             
-//            rtc::TcpConnection* connection = (rtc::TcpConnection*) conn;
-//            base::net::TransportTuple tuple(connection);
-//
-//            OnPacketReceived(&tuple, (const uint8_t*)data, len);   TBD
+        assertm(this->iceServer, "no iceServer");
+        // assertm(this->dtlsTransport, "no dtlsTransport");
 
+
+        bool isStun = IsStun((const uint8_t*) data, len);
+
+        if (isStun) {
+            /// base::net::TransportTuple tuple(socket, (struct sockaddr *) &remotesrc.addr);
+
+            agent->onStunMessage((unsigned char *) data, len, &remotesrc, nullptr, tuple);
+        } else {
+            // Check if it's DTLS.
+            if (rtc::DtlsTransport::IsDtls(data, len)) {
+                OnDtlsDataReceived(tuple, data, len);
+            } else {
+                LWarn("ignoring received packet of unknown type");
+            }
         }
 
 
+    }
 
-	inline void WebRtcTransport::OnDtlsTransportConnecting(const rtc::DtlsTransport* /*dtlsTransport*/)
-	{
-		
-                 SInfo  << "AgentNo " << agentNo << " OnDtlsTransportConnecting";
+    //    void WebRtcTransport::OnStunDataReceived(
+    //            base::net::TransportTuple* tuple, const uint8_t* data, size_t len) {
+    //
+    //
+    //
+    //
+    //        rtc::StunPacket* packet = rtc::StunPacket::Parse(data, len);
+    //
+    //        if (!packet) {
+    //            LWarn("ignoring wrong STUN packet received");
+    //
+    //            return;
+    //        }
+    //
+    //        // Pass it to the IceServer.
+    //        this->iceServer->ProcessStunPacket(packet, tuple);
+    //
+    //        delete packet;
+    //    }
 
-//		assertm(this->dtlsTransport, "no dtlsTransport");
-//
-//		LTrace( "DTLS connecting");
-//
-//		// Notify the Node WebRtcTransport.
-//		json data = json::object();
-//
-//		data["dtlsState"] = "connecting";
-//
-//		Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
-	}
+    inline void WebRtcTransport::OnDtlsDataReceived(
+            const base::net::TransportTuple* tuple, const char* data, size_t len) {
 
-	inline void WebRtcTransport::OnDtlsTransportConnected( const rtc::DtlsTransport* dtlsTransport ) 
-	{
-		
-                SInfo  << "AgentNo " << agentNo << " OnDtlsTransportConnected";
-                
-              //  const uint8_t tmp[7]="arvind";
-               // OnDtlsTransportSendData( dtlsTransport, tmp, 7);
-                
-                
-//		assertm(this->iceServer, "no iceServer");
-//		assertm(this->dtlsTransport, "no dtlsTransport");
-//
-//		LTrace( "DTLS connected");
-//
-//		// Close it if it was already set and update it.
-//		if (this->srtpSendSession)
-//		{
-//			delete this->srtpSendSession;
-//			this->srtpSendSession = nullptr;
-//		}
-//		if (this->srtpRecvSession)
-//		{
-//			delete this->srtpRecvSession;
-//			this->srtpRecvSession = nullptr;
-//		}
-//
-//		try
-//		{
-//			this->srtpSendSession = new rtc::SrtpSession(
-//			  rtc::SrtpSession::Type::OUTBOUND, srtpProfile, srtpLocalKey, srtpLocalKeyLen);
-//		}
-//		catch (const std::exception& error)
-//		{
-//			MS_ERROR("error creating SRTP sending session: %s", error.what());
-//		}
-//
-//		try
-//		{
-//			this->srtpRecvSession = new rtc::SrtpSession(
-//			  rtc::SrtpSession::Type::INBOUND, srtpProfile, srtpRemoteKey, srtpRemoteKeyLen);
-//		}
-//		catch (const std::exception& error)
-//		{
-//			MS_ERROR("error creating SRTP receiving session: %s", error.what());
-//
-//			delete this->srtpSendSession;
-//			this->srtpSendSession = nullptr;
-//		}
-//
-//		// Notify the Node WebRtcTransport.
-//		json data = json::object();
-//
-//		data["dtlsState"]      = "connected";
-//		data["dtlsRemoteCert"] = remoteCert;
-//
-//		Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
-//
-//		// Tell the parent class.
-                
-                
-                iceListener->OnDtlsTransportStatus(id, DtlsTransport::DtlsState::CONNECTED);
-                
-		///rtc::Transport::Connected();
-	}
+        SDebug << "AgentNo " << agentNo << " OnDtlsDataReceived " << len;
 
-	inline void WebRtcTransport::OnDtlsTransportFailed(const rtc::DtlsTransport* /*dtlsTransport*/)
-	{
-		
+        // assertm(this->dtlsTransport, "no dtlsTransport");
 
-		
-		assertm(this->dtlsTransport, "no dtlsTransport");
+        // Ensure it comes from a valid tuple.
+        if (!dtlsTransport) {
+            LWarn("ignoring DTLS data coming from an invalid tuple");
 
-		LWarn( "DTLS failed");
+            binaryPacketQueue.emplace(data, data + len);
+
+            return;
+        }
+
+        // Trick for clients performing aggressive ICE regardless we are ICE-Lite.
+        this->iceServer->ForceSelectedTuple(tuple);
 
 
+        if (this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CLOSED) {
+            SInfo << "AgentNo " << agentNo << " reset and new dtls connection" << len;
 
-	
-	}
+            delete dtlsTransport;
+            dtlsTransport = new DtlsTransport(this);
+            dtlsTransport->SetRemoteFingerprint(config.gconfig->mCertificate->fingerprint());
+            MayRunDtlsTransport();
+        }
 
-	inline void WebRtcTransport::OnDtlsTransportClosed(const rtc::DtlsTransport* /*dtlsTransport*/)
-	{
-	
-            
-            assertm(this->dtlsTransport, "no dtlsTransport");
-            LWarn( "DTLS remotely closed");
+        // Check that DTLS status is 'connecting' or 'connected'.
+        if (
+                this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CONNECTING ||
+                this->dtlsTransport->GetState() == rtc::DtlsTransport::DtlsState::CONNECTED) {
+            // SInfo  << "AgentNo " << agentNo << " ProcessDtlsData " << len;
+
+            while (!binaryPacketQueue.empty()) {
+                // Access the front element by reference to avoid copying
+                const std::vector<unsigned char>& packet = binaryPacketQueue.front();
+
+                // Access raw pointer and size safely
+                const unsigned char* rawDataPtr = packet.data();
+                size_t packetSize = packet.size();
+
+                this->dtlsTransport->ProcessDtlsData((const uint8_t*) rawDataPtr, packetSize);
+
+                // Remove the processed packet from the queue
+                binaryPacketQueue.pop();
+            }
+
+            this->dtlsTransport->ProcessDtlsData((const uint8_t*) data, len);
+
+            //   SInfo  << "AgentNo " << agentNo << " ProcessDtlsData over" << len;
+        } else {
+            LWarn("Transport is not 'connecting' or 'connected', ignoring received DTLS data");
+
+            return;
+        }
+    }
+
+    inline void WebRtcTransport::OnUdpSocketPacketReceived(
+            base::net::UdpServer* socket, const char* data, size_t len, struct sockaddr* remoteAddr) {
+        int family;
+
+        std::string peerIp;
+        uint16_t peerPort;
+
+        IP::GetAddressInfo(
+                remoteAddr, family, peerIp, peerPort);
+        SDebug << "AgentNo " << agentNo << " OnUdpSocketPacketReceived " << peerIp << ":" << peerPort;
+        addr_record_t remotesrc;
+        IP::CopyAddress(remoteAddr, remotesrc);
 
 
 
-             // agent->iceList->getRemoteDescriptio();
-            
-		// Tell the parent class.
-	      rtc::Transport::Disconnected();
-	}
 
-	inline void WebRtcTransport::OnDtlsTransportSendData(
-	  const rtc::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
-	{
-		
-            SDebug  << "AgentNo " << agentNo << " OnDtlsTransportSendData len:" << len;
-
-            assertm(this->dtlsTransport, "no dtlsTransport");
+        IP::addr_unmap_inet6_v4mapped((struct sockaddr *) &remotesrc.addr, &remotesrc.len);
 
 
-
-		if (!this->iceServer->GetSelectedTuple())
-		{
-			LWarn( "no selected tuple set, cannot send DTLS packet");
-
-			return;
-		}
-
-		this->iceServer->GetSelectedTuple()->Send(data, len);
-
-            // Increase send transmission.
-	    //  rtc::Transport::DataSent(len);
-	}
-
-	inline void WebRtcTransport::OnDtlsTransportApplicationDataReceived(
-	  const rtc::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len)
-	{
-		
-          //  SInfo  << "AgentNo " << agentNo << " OnDtlsTransportApplicationDataReceived len:" << len;
-
-            assertm(this->dtlsTransport, "no dtlsTransport");
-
-            // Pass it to the parent transport.
-            rtc::Transport::ReceiveSctpData((byte *)data, len);
-	}
-        
-        
-        int WebRtcTransport::agent_direct_send( uint8_t* data, uint32_t nbytes, addr_record_t record )
+#if 1
+        std::string ret{"addr_record_is_equal "};
         {
+
+            char ip[40];
+            uint16_t port;
+            IP::AddressToString(remotesrc, ip, 40, port);
+            ret += ip + std::string(":") + std::to_string(port);
+
+            SDebug << "AgentNo " << agentNo << " addr_unmap_inet6_v4mapped " << ret;
+
+
+        }
+
+#endif
+        //                
+        //                
+        //            bool isStun = IsStun((const uint8_t*) data,  len);
+        //            
+        //            if(isStun)
+        //            {
+        //
+        //                agent->onStunMessage((unsigned char *)data, len,  &remotesrc, nullptr );
+        //            }
+        //            else
+        //            {
+        //                SDebug  << "AgentNo " << agentNo << " OnUdpSocketPacketReceived len: " << len <<  " dtls";
+        //                     
+        //                base::net::TransportTuple tuple(socket, (struct sockaddr *) &remotesrc.addr);
+        //
+        //                OnPacketReceived(&tuple, data, len);
+        //            }
+
+        //RTC::TransportTuple tuple(socket, remoteAddr);
+        base::net::TransportTuple tuple(socket, (struct sockaddr *) &remotesrc.addr);
+
+        auto* storedTuple = iceServer->AddTuple(&tuple);
+
+        OnPacketReceived(storedTuple, remotesrc, data, len);
+    }
+
+    inline void WebRtcTransport::on_close(base::net::Listener* conn) {
+        SInfo << "AgentNo " << agentNo << " on_close";
+
+        net::TcpConnection* connection = (net::TcpConnection*) conn;
+
+        if (connection) {
+            // Build an address record dynamically to drop it out of the iceServer tracking map
+            addr_record_t record;
+            std::memset(&record, 0, sizeof (record));
+            IP::CopyAddress(connection->GetPeerAddress(), record);
+            // IP::addr_unmap_inet6_v4mapped((struct sockaddr *)&record.addr , &record.len);  // arvind move this code to default tcp connect
+
+            if (this->iceServer) {
+                this->iceServer->unregister_tcp_connection(record);
+            }
+        }
+
+
+        base::net::TransportTuple tuple(connection);
+        //
+        this->iceServer->RemoveTuple(&tuple);
+    }
+
+    void WebRtcTransport::on_read(base::net::Listener* conn, const char* data, size_t len) {
+
+        SInfo << "AgentNo " << agentNo << " on_read Len" << len;
+
+        base::net::TcpConnection* connection = (base::net::TcpConnection*) conn;
+        base::net::TransportTuple tuple(connection);
+
+        auto* storedTuple = iceServer->AddTuple(&tuple);
+
+
+
+        addr_record_t remotesrc;
+
+        IP::CopyAddress(connection->GetPeerAddress(), remotesrc);
+
+        IP::addr_unmap_inet6_v4mapped((struct sockaddr *) &remotesrc.addr, &remotesrc.len);
+
+
+
+        OnPacketReceived(storedTuple, remotesrc, (const uint8_t*) data, len);
+
+    }
+
+    inline void WebRtcTransport::OnDtlsTransportConnecting(const rtc::DtlsTransport* /*dtlsTransport*/) {
+
+        SInfo << "AgentNo " << agentNo << " OnDtlsTransportConnecting";
+
+        //		assertm(this->dtlsTransport, "no dtlsTransport");
+        //
+        //		LTrace( "DTLS connecting");
+        //
+        //		// Notify the Node WebRtcTransport.
+        //		json data = json::object();
+        //
+        //		data["dtlsState"] = "connecting";
+        //
+        //		Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
+    }
+
+    inline void WebRtcTransport::OnDtlsTransportConnected(const rtc::DtlsTransport* dtlsTransport) {
+
+        SInfo << "AgentNo " << agentNo << " OnDtlsTransportConnected";
+
+        //  const uint8_t tmp[7]="arvind";
+        // OnDtlsTransportSendData( dtlsTransport, tmp, 7);
+
+
+        //		assertm(this->iceServer, "no iceServer");
+        //		assertm(this->dtlsTransport, "no dtlsTransport");
+        //
+        //		LTrace( "DTLS connected");
+        //
+        //		// Close it if it was already set and update it.
+        //		if (this->srtpSendSession)
+        //		{
+        //			delete this->srtpSendSession;
+        //			this->srtpSendSession = nullptr;
+        //		}
+        //		if (this->srtpRecvSession)
+        //		{
+        //			delete this->srtpRecvSession;
+        //			this->srtpRecvSession = nullptr;
+        //		}
+        //
+        //		try
+        //		{
+        //			this->srtpSendSession = new rtc::SrtpSession(
+        //			  rtc::SrtpSession::Type::OUTBOUND, srtpProfile, srtpLocalKey, srtpLocalKeyLen);
+        //		}
+        //		catch (const std::exception& error)
+        //		{
+        //			MS_ERROR("error creating SRTP sending session: %s", error.what());
+        //		}
+        //
+        //		try
+        //		{
+        //			this->srtpRecvSession = new rtc::SrtpSession(
+        //			  rtc::SrtpSession::Type::INBOUND, srtpProfile, srtpRemoteKey, srtpRemoteKeyLen);
+        //		}
+        //		catch (const std::exception& error)
+        //		{
+        //			MS_ERROR("error creating SRTP receiving session: %s", error.what());
+        //
+        //			delete this->srtpSendSession;
+        //			this->srtpSendSession = nullptr;
+        //		}
+        //
+        //		// Notify the Node WebRtcTransport.
+        //		json data = json::object();
+        //
+        //		data["dtlsState"]      = "connected";
+        //		data["dtlsRemoteCert"] = remoteCert;
+        //
+        //		Channel::Notifier::Emit(this->id, "dtlsstatechange", data);
+        //
+        //		// Tell the parent class.
+
+
+        iceListener->OnDtlsTransportStatus(id, DtlsTransport::DtlsState::CONNECTED);
+
+        ///rtc::Transport::Connected();
+    }
+
+    inline void WebRtcTransport::OnDtlsTransportFailed(const rtc::DtlsTransport* /*dtlsTransport*/) {
+
+
+
+        assertm(this->dtlsTransport, "no dtlsTransport");
+
+        LWarn("DTLS failed");
+
+
+
+
+    }
+
+    inline void WebRtcTransport::OnDtlsTransportClosed(const rtc::DtlsTransport* /*dtlsTransport*/) {
+
+
+        assertm(this->dtlsTransport, "no dtlsTransport");
+        LWarn("DTLS remotely closed");
+
+
+
+        // agent->iceList->getRemoteDescriptio();
+
+        // Tell the parent class.
+        rtc::Transport::Disconnected();
+    }
+
+    inline void WebRtcTransport::OnDtlsTransportSendData(
+            const rtc::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len) {
+
+        SDebug << "AgentNo " << agentNo << " OnDtlsTransportSendData len:" << len;
+
+        assertm(this->dtlsTransport, "no dtlsTransport");
+
+
+
+        if (!this->iceServer->GetSelectedTuple()) {
+            LWarn("no selected tuple set, cannot send DTLS packet");
+
+            return;
+        }
+
+        this->iceServer->GetSelectedTuple()->Send(data, len);
+
+        // Increase send transmission.
+        //  rtc::Transport::DataSent(len);
+    }
+
+    inline void WebRtcTransport::OnDtlsTransportApplicationDataReceived(
+            const rtc::DtlsTransport* /*dtlsTransport*/, const uint8_t* data, size_t len) {
+
+        //  SInfo  << "AgentNo " << agentNo << " OnDtlsTransportApplicationDataReceived len:" << len;
+
+        assertm(this->dtlsTransport, "no dtlsTransport");
+
+        // Pass it to the parent transport.
+        rtc::Transport::ReceiveSctpData((byte *) data, len);
+    }
+
+    int WebRtcTransport::agent_direct_send(uint8_t* data, uint32_t nbytes, addr_record_t record) {
 
 #if !defined(__linux__) && defined(DUALSTACK)
 
-          socklen_t lent;
-          IP::addr_map_inet6_v4mapped((struct sockaddr_storage *)&record.addr, &record.len);    // convert ipv4 to ipv6 if needed for windows
+        socklen_t lent;
+        IP::addr_map_inet6_v4mapped((struct sockaddr_storage *) &record.addr, &record.len); // convert ipv4 to ipv6 if needed for windows
 #endif   
-            return m_udpServer->send( (char*) data, nbytes , (const struct sockaddr*)&record.addr);
+
+
+        if (config.enableUdp)
+            return m_udpServer->send((char*) data, nbytes, (const struct sockaddr*) &record.addr);
+
+        // if(config.enableTcp)
+        //  return m_tcpServer->send( (char*) data, nbytes , (const struct sockaddr*)&record.addr);
+
+
+    }
+
+    int WebRtcTransport::agent_direct_send_tcp(const uint8_t* data, size_t size, addr_record_t& record) {
+        // Assuming iceServer is a pointer or accessible member within WebRtcTransport
+        if (!this->iceServer) {
+            return -1;
         }
-      
+
+        // 1. Look up the connection directly from IceServer using the binary record
+        TcpConnectionBase* tcpConn = this->iceServer->find_tcp_connection(record);
+
+
+        // 3. Handle connection setup if it doesn't exist yet
+        if (!tcpConn) {
+            tcpConn = new TcpConnectionBase(this, false);
+
+
+
+
+            if (this->iceServer) {
+                this->iceServer->register_tcp_connection(record, tcpConn);
+            }
+
+
+            // Optional: Keep string logs only if needed, otherwise use record.dump()
+            int family;
+            std::string peerIp;
+            uint16_t port = 0;
+            IP::GetAddressInfo(reinterpret_cast<struct sockaddr*> (&record), family, peerIp, port);
+            SInfo << "AgentNo " << agentNo << " register_tcp_connection via IceServer: " << peerIp << ":" << port;
+
+
+            // Pass the stack-allocated addrinfo down to connect directly
+            tcpConn->Connect(peerIp, port);
+        }
+
+        // 4. Verify connection health
+        if (tcpConn->IsClosed()) {
+            return -1;
+        }
+
+
+        return tcpConn->Write(data, size, nullptr);
+    }
+
+    void WebRtcTransport::on_connect(base::net::Listener* conn) {
+
+        net::TcpConnection* connection = (net::TcpConnection*) conn;
+
+        // SInfo << "[Client Connected] Successfully established outbound connection to " << GetPeerIp() << ":" << GetPeerPort() << std::endl;
+
+        // std::cout << "Client on_read " << connection->GetLocalIp() << " PeerIP " << connection->GetPeerIp() << std::endl << std::flush;
+
+        //std::cout << "Client on_read " << connection->GetLocalPort() << " PeerIP " << connection->GetPeerPort() << std::endl << std::flush;
+
+
+
+        SInfo << "AgentNo " << agentNo << " on_connect tcp " << connection->GetLocalIp() << ":" << connection->GetLocalPort() << " <> " << connection->GetPeerIp() << ":" << connection->GetPeerPort();
+
+
+
+        //        if (connection) {
+        //            // Build an address record dynamically to drop it out of the iceServer tracking map
+        //            addr_record_t record;
+        //            std::memset(&record, 0, sizeof (record));
+        //            IP::CopyAddress(connection->GetPeerAddress(), record);
+        //           // IP::addr_unmap_inet6_v4mapped((struct sockaddr *) &record.addr, &record.len);
+        //
+        //            if (this->iceServer) {
+        //                 this->iceServer->register_tcp_connection(record, connection);
+        //            }
+        //        }
+
+
+
+
+
+
+
+
+    }
+
+
+    //        
+    //        
+    //void ClientConnection::on_close() {
+    //    SInfo << "[Client Disconnected] Outbound connection to "
+    //            << GetPeerIp() << ":" << GetPeerPort() << " closed." << std::endl;
+    //    ownerNode.unregister_tcp_connection(GetPeerIp(), GetPeerPort());
+    //}
+    //     
+    // 
+    //
+    //
+    //            // Dedicated Client Event Handlers
+    //void ClientConnection::on_connect()  {
+    //    SInfo << "[Client Connected] Successfully established outbound connection to " 
+    //              << GetPeerIp() << ":" << GetPeerPort() << std::endl;
+    //}
+    //
+    //void ClientConnection::on_read(const char* data, size_t len)  {
+    //   SInfo << "[Client Received Data] From " << GetPeerIp() << ":" << GetPeerPort() 
+    //              << " Payload: " << std::string(data, len) << std::endl;
+    //}
+
+
 } // namespace rtc

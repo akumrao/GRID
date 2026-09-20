@@ -54,7 +54,7 @@ typedef struct ice_description {
 	bool finished{false};
         
     
-    Candidate *ice_find_candidate_from_addr( const addr_record_t *record,  Candidate::Type type)
+    Candidate *ice_find_candidate_from_addr( const addr_record_t *record,  Candidate::Type type, const std::string &transport)
     {
 
         for( int i =0; i < candidates_count; ++i)
@@ -67,6 +67,7 @@ typedef struct ice_description {
             //while (cur != end) 
             //{
             if ((type == Candidate::Type::Unknown || cur->mType == type) &&
+                cur->mTransportString == transport &&
                 IP::addr_is_equal((struct sockaddr *)&record->addr, (struct sockaddr *)&cur->resolved.addr,
                               true))
                     return cur;

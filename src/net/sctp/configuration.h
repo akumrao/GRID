@@ -90,8 +90,8 @@ struct RTC_CPP_EXPORT Configuration {
 	// Options
 	CertificateType certificateType = CertificateType::Default;
 	TransportPolicy iceTransportPolicy = TransportPolicy::All;
-	bool enableTcp {true};    
-        bool enableUdp {false};   
+	bool enableTcp {false };    
+        bool enableUdp {true};   
 	bool enableIceUdpMux{false}; 
 	bool disableAutoNegotiation{false};
 	bool disableAutoGathering{false};

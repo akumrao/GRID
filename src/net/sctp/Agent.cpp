@@ -7,16 +7,17 @@
 #include <algorithm>
 #include "sdpcommon.h"
 //#include "Settings.h"
-
+#include "net/IP.h"
 using namespace base;
 
 
-//#define SDebug  STrace 
+
 
 #define CLAMP(x, low, high) (((x) > (high)) ? (high) : (((x) < (low)) ? (low) : (x)))
 
 namespace stun {
 
+    //#define  SDebug  SInfo
 
 
     //void thread_function() {
@@ -96,8 +97,8 @@ namespace stun {
 
         getInterfaces();
 
-        if(mConfig.publicIP)
-        resolveStunServer(); // arvind if you wish to disable public ip comment this line
+        if (mConfig.publicIP)
+            resolveStunServer(); // arvind if you wish to disable public ip comment this line
 
         return 0;
 
@@ -106,34 +107,56 @@ namespace stun {
     bool Agent::getInterfaces() {
         int port = mConfig.portdefault;
 
-
-
         socket = new WebRtcTransport(std::to_string(port), agentNo, mConfig, listener, "::", port, this);
-
 
         agent_change_state(JUICE_STATE_GATHERING);
 
-
-
         addr_record_t records[ICE_MAX_CANDIDATES_COUNT - 1];
-        int records_count = udp_get_addrs(socket->m_udpServer->localAddr, records, ICE_MAX_CANDIDATES_COUNT - 1, (mConfig.api ? mConfig.api->mac_addr : NULL));
+
+
+        struct addr_record localAddr;
+
+        if (socket->m_udpServer)
+            localAddr = socket->m_udpServer->localAddr;
+        else {
+
+            IP::CopyAddress(socket->m_tcpServer->GetLocalAddress(), localAddr);
+
+        }
+
+        int records_count = udp_get_addrs(localAddr, records, ICE_MAX_CANDIDATES_COUNT - 1, (mConfig.api ? mConfig.api->mac_addr : NULL));
         if (records_count < 0) {
             SError << "Failed to gather local host candidates";
             records_count = 0;
         } else if (records_count == 0) {
             SWarn << "No local host candidates gathered";
-        } else if (records_count > ICE_MAX_CANDIDATES_COUNT - 1)
-            records_count = ICE_MAX_CANDIDATES_COUNT - 1;
+        } else if (records_count > (ICE_MAX_CANDIDATES_COUNT - 1) / 2) {
+            // Cap records count to prevent array overflow when generating both UDP and TCP candidates
+            records_count = (ICE_MAX_CANDIDATES_COUNT - 1) / 2;
+        }
 
+        STrace << "Adding " << records_count << " local host candidate IP address(es) (UDP & TCP)";
 
-        STrace << "Adding " << records_count << " local host candidates";
         for (int i = 0; i < records_count; ++i) {
 
-            Candidate candidate;
-            candidate.mType = Candidate::Type::Host;
-            candidate.resolved = records[i];
+            if (mConfig.enableUdp) {
 
-            ice_create_host_candidate(&candidate);
+                Candidate udp_candidate;
+                udp_candidate.mType = Candidate::Type::Host;
+                udp_candidate.mTransportType = Candidate::TransportType::Udp;
+                udp_candidate.mTransportString = "UDP";
+                udp_candidate.resolved = records[i];
+                ice_create_host_candidate(&udp_candidate);
+            }
+
+            if (mConfig.enableTcp) {
+                Candidate tcp_candidate;
+                tcp_candidate.mType = Candidate::Type::Host;
+                tcp_candidate.mTransportType = Candidate::TransportType::TcpPassive;
+                tcp_candidate.mTransportString = "TCP";
+                tcp_candidate.resolved = records[i];
+                ice_create_host_candidate(&tcp_candidate);
+            }
 
 
         }
@@ -239,9 +262,10 @@ namespace stun {
 
     int Agent::ice_create_host_candidate(Candidate *candidate) {
 
-
-        if (localdesp.ice_find_candidate_from_addr(&candidate->resolved, candidate->resolved.addr.ss_family == AF_INET6 ? Candidate::Type::Unknown : candidate->mType)) {
-            LTrace("A local candidate exists for the mapped address");
+        if (localdesp.ice_find_candidate_from_addr(
+                &candidate->resolved,
+                candidate->resolved.addr.ss_family == AF_INET6 ? Candidate::Type::Unknown : candidate->mType,
+                candidate->mTransportString)) {
             LTrace("A local candidate exists for the mapped address");
             return -1;
         }
@@ -278,7 +302,7 @@ namespace stun {
         //                  return 0;
         //        }
 
-        if (localdesp.ice_find_candidate_from_addr(&candidate->resolved, Candidate::Type::Unknown)) {
+        if (localdesp.ice_find_candidate_from_addr(&candidate->resolved, Candidate::Type::Unknown, candidate->mTransportString)) {
             LTrace("A local candidate exists for the mapped address");
             return 0;
         }
@@ -303,8 +327,9 @@ namespace stun {
             return -1;
         }
 
-        iceList->onCandidateCallback(candStored);
-
+// arvind TBD
+        if( candidate->mTransportType  != rtc::Candidate::TransportType::TcpActive)
+            iceList->onCandidateCallback(candStored);
 
 
         return 0;
@@ -313,13 +338,15 @@ namespace stun {
 
     //  Peer reflex for remote description
 
-    int Agent::agent_add_remote_peer_reflexive_candidate(uint32_t priority, const addr_record_t *record) {
-        if (remotedesp.ice_find_candidate_from_addr(record, Candidate::Type::Unknown)) {
+    int Agent::agent_add_remote_peer_reflexive_candidate(uint32_t priority, const addr_record_t *record, const std::string &transport) {
+        if (remotedesp.ice_find_candidate_from_addr(record, Candidate::Type::Unknown, transport)) {
             STrace << "AgentNo " << agentNo << " A remote candidate exists for the remote address";
             return 0;
         }
         Candidate candidate;
         candidate.mType = Candidate::Type::PeerReflexive;
+        candidate.mTransportString = transport;
+        candidate.mTransportType = (transport == "TCP") ? Candidate::TransportType::TcpActive : Candidate::TransportType::Udp;
         candidate.resolved = *record;
 
         //            char buf[512];
@@ -360,12 +387,18 @@ namespace stun {
     }
 
     int Agent::ice_create_local_candidate(int component, int index, Candidate *candidate) {
-        //  memset(candidate, 0, sizeof (*candidate));
 
         candidate->mComponent = component;
         candidate->mFoundation = "-";
 
-        candidate->mPriority = ice_compute_priority(candidate->mType, candidate->resolved.addr.ss_family, candidate->mComponent, index);
+        candidate->mPriority = ice_compute_priority(
+                candidate->mType,
+                candidate->resolved.addr.ss_family,
+                candidate->mComponent,
+                index,
+                candidate->mTransportString,
+                candidate->mTransportType
+                );
 
 
         //        if (getnameinfo((struct sockaddr *) &record->addr, record->len, candidate->hostname, 256,
@@ -397,31 +430,47 @@ namespace stun {
         return 0;
     }
 
-
-    //	enum class Type { Unknown, Host, ServerReflexive, PeerReflexive, Relayed };
-
-    uint32_t Agent::ice_compute_priority(Candidate::Type type, int family, int component, int index) {
-        // Compute candidate priority according to RFC 8445
-        // See https://www.rfc-editor.org/rfc/rfc8445.html#section-5.1.2.1
-        uint32_t p = 0;
+    uint32_t Agent::ice_compute_priority(Candidate::Type type, int family, int component, int index,
+            const std::string &transport, Candidate::TransportType transportType) {
+        // Compute candidate priority according to RFC 8445 & RFC 6544 (TCP Candidates)
+        uint32_t type_pref = 0;
 
         switch (type) {
             case Candidate::Type::Host:
-                p += ICE_CANDIDATE_PREF_HOST;
+                type_pref = ICE_CANDIDATE_PREF_HOST;
                 break;
             case Candidate::Type::ServerReflexive:
-                p += ICE_CANDIDATE_PREF_SERVER_REFLEXIVE;
+                type_pref = ICE_CANDIDATE_PREF_SERVER_REFLEXIVE;
                 break;
             case Candidate::Type::PeerReflexive:
-                p += ICE_CANDIDATE_PREF_PEER_REFLEXIVE;
+                type_pref = ICE_CANDIDATE_PREF_PEER_REFLEXIVE;
                 break;
             case Candidate::Type::Relayed:
-                p += ICE_CANDIDATE_PREF_RELAYED;
+                type_pref = ICE_CANDIDATE_PREF_RELAYED;
                 break;
             default:
                 break;
         }
-        p <<= 16;
+
+        if (transport == "TCP") {
+            switch (transportType) {
+                case Candidate::TransportType::TcpActive:
+                    type_pref = (type_pref > 6) ? (type_pref - 6) : 0;
+                    break;
+                case Candidate::TransportType::TcpSo:
+                    type_pref = (type_pref > 8) ? (type_pref - 8) : 0;
+                    break;
+                case Candidate::TransportType::TcpPassive:
+                case Candidate::TransportType::TcpUnknown:
+                    type_pref = (type_pref > 10) ? (type_pref - 10) : 0;
+                    break;
+                default:
+                    type_pref = (type_pref > 10) ? (type_pref - 10) : 0;
+                    break;
+            }
+        }
+
+        uint32_t p = type_pref << 16;
 
         switch (family) {
             case AF_INET:
@@ -553,9 +602,45 @@ namespace stun {
         }
     }
 
+    bool Agent::is_tcp_pair_compatible(const Candidate *local, const Candidate *remote) {
+        if (!local || !remote) return true;
+
+        if (local->resolved.addr.ss_family != remote->resolved.addr.ss_family) {
+            return false;
+        }
+
+        if (local->mTransportString != remote->mTransportString) {
+            return false;
+        }
+
+        if (local->mTransportString == "UDP") {
+            return true;
+        }
+
+        if (local->mTransportString == "TCP") {
+            if (local->mTransportType == Candidate::TransportType::TcpActive &&
+                remote->mTransportType == Candidate::TransportType::TcpPassive) {
+                return true;
+            }
+            if (local->mTransportType == Candidate::TransportType::TcpPassive &&
+                remote->mTransportType == Candidate::TransportType::TcpActive) {
+                return true;
+            }
+            if (local->mTransportType == Candidate::TransportType::TcpSo &&
+                remote->mTransportType == Candidate::TransportType::TcpSo) {
+                return true;
+            }
+            return false;
+        }
+
+        return true;
+    }
+
     int Agent::agent_add_candidate_pairs_for_remote(Candidate *remote) {
         // Here is the trick: local non-relayed candidates are undifferentiated for sending.
         // Therefore, we don't need to match remote candidates with local ones.
+// arvind TBD         
+      if( remote->mTransportType  != rtc::Candidate::TransportType::TcpActive)
         if (agent_add_candidate_pair(NULL, remote))
             return -1;
 
@@ -578,6 +663,11 @@ namespace stun {
             return -1;
         }
 
+        if (local && remote && !is_tcp_pair_compatible(local, remote)) {
+            LError("Incompatible candidate pair transport types or TCP roles");
+            return -1;
+        }
+
         //memset(pair, 0, sizeof(*pair));
         pair->local = local;
         pair->remote = remote;
@@ -597,12 +687,12 @@ namespace stun {
                 pair->local
                 ? pair->local->mPriority
                 : ice_compute_priority(Candidate::Type::Host, pair->remote->resolved.addr.ss_family,
-                pair->remote->mComponent, 0);
+                pair->remote->mComponent, 0, pair->remote->mTransportString, pair->remote->mTransportType);
         uint64_t remote_priority =
                 pair->remote
                 ? pair->remote->mPriority
                 : ice_compute_priority(Candidate::Type::Host, pair->local->resolved.addr.ss_family,
-                pair->local->mComponent, 0);
+                pair->local->mComponent, 0, pair->local->mTransportString, pair->local->mTransportType);
         uint64_t g = is_controlling ? local_priority : remote_priority;
         uint64_t d = is_controlling ? remote_priority : local_priority;
         uint64_t min = g < d ? g : d;
@@ -810,8 +900,8 @@ namespace stun {
         return true;
     }
 
-    int Agent::onStunMessage(unsigned char *buf, size_t len, const addr_record_t *src, const addr_record_t *relayed) {
-        //SDebug << "AgentNo " << agentNo << " Received onStunMessage, size "<<  len;
+    int Agent::onStunMessage(unsigned char *buf, size_t len, const addr_record_t *src, const addr_record_t *relayed, TransportTuple *tuple) {
+        //SDebug << "AgentNo " << agentNo << " Received datagram, size " << len;
 
         if (m_state == JUICE_STATE_DISCONNECTED || m_state == JUICE_STATE_GATHERING)
             return 0;
@@ -851,7 +941,7 @@ namespace stun {
                 }
             }
 
-            if (!agent_dispatch_stun(buf, len, &msg, src, relayed))
+            if (!agent_dispatch_stun(buf, len, &msg, src, relayed, tuple))
                 start_timer(0);
 
 
@@ -894,7 +984,7 @@ namespace stun {
 
     }
 
-    int Agent::agent_dispatch_stun(unsigned char *buf, size_t size, stun::MessageStun *msg, const addr_record_t *src, const addr_record_t *relayed) {
+    int Agent::agent_dispatch_stun(unsigned char *buf, size_t size, stun::MessageStun *msg, const addr_record_t *src, const addr_record_t *relayed, TransportTuple *tuple) {
 
         //msg->hasAttribute(stun::STUN_ATTR_USE_CANDIDATE)
 
@@ -912,9 +1002,12 @@ namespace stun {
                 //exit(0);
             }
 
+            std::string incoming_transport = "UDP";
+            if (tuple) {
+                incoming_transport = (tuple->GetProtocol() == TransportTuple::Protocol::TCP) ? "TCP" : "UDP";
+            } 
 
-
-            if (agent_add_remote_peer_reflexive_candidate(result ? result->value : 0, src)) {
+            if (agent_add_remote_peer_reflexive_candidate(result ? result->value : 0, src, incoming_transport)) {
                 SWarn << "AgentNo " << agentNo << " On Stun MessageStun. Failed to add remote peer reflexive candidate from STUN message";
             }
         }
@@ -935,10 +1028,20 @@ namespace stun {
             } else {
                 // This may happen normally, for instance when there is no space left for reflexive
                 // candidates
-                SError << "AgentNo " << agentNo << " On Stun MessageStun.  No STUN entry matching remote address, ignoring";
+
+                char ip[40];
+                uint16_t port;
+                IP::AddressToString((addr_record_t&) * src, ip, 40, port);
+                SError << "AgentNo " << agentNo << " On Stun MessageStun.  No STUN entry matching remote address, ignoring " << ip << ":" << port;
                 return 0;
             }
         }
+
+        if (entry && tuple) {
+            entry->tuple = tuple;
+        }
+
+
 
         // char ip[40];  uint16_t port;
         //IP::AddressToString(entry->record, ip, port); 
@@ -1175,7 +1278,7 @@ namespace stun {
         return entry->pair && pair_is_relayed(entry->pair);
     }
 
-    agent_stun_entry_t *Agent::agent_find_entry_from_record(const addr_record_t *record, const addr_record_t *relayed) {
+agent_stun_entry_t *Agent::agent_find_entry_from_record(const addr_record_t *record, const addr_record_t *relayed) {
         agent_stun_entry_t *selected_entry = m_selected_entry;
 
         if (selected_entry && selected_entry->pair && selected_entry->pair->nominated) {
@@ -1187,9 +1290,16 @@ namespace stun {
                 //				LDebug("STUN selected entry matching incoming relayed address");
                 //				return selected_entry;
             } else {
+                bool match_port = true;
+                if (selected_entry->pair && selected_entry->pair->remote && 
+                    selected_entry->pair->remote->mTransportString == "TCP") {
+                    // RFC 6544: TCP clients connect from ephemeral ports. Match on IP only.
+                    match_port = false;
+                }
+
                 if (!entry_is_relayed(selected_entry) &&
-                        IP::addr_record_is_equal(&selected_entry->record, record, true)) {
-                    SDebug << "AgentNo " << agentNo << " STUN selected entry matching incoming address";
+                        IP::addr_record_is_equal(&selected_entry->record, record, match_port)) {
+                    SDebug << "AgentNo " << agentNo << " STUN selected entry matching incoming address " << selected_entry->dump();
                     return selected_entry;
                 }
 
@@ -1212,7 +1322,7 @@ namespace stun {
             for (int i = 0; i < m_candidate_pairs_count; ++i) {
                 ice_candidate_pair_t *pair = m_ordered_pairs[i];
 
-#if 0
+#if 1
 
                 {
                     std::string ret{"addr_record_is_equal "};
@@ -1231,8 +1341,14 @@ namespace stun {
                 }
 
 #endif
+                bool match_port = true;
+                if (pair->remote && pair->remote->mTransportString == "TCP") {
+                    // RFC 6544: Ignore ephemeral port for TCP matching
+                    match_port = false;
+                }
+
                 if (!pair_is_relayed(pair) &&
-                        IP::addr_record_is_equal(&pair->remote->resolved, record, true)) {
+                        IP::addr_record_is_equal(&pair->remote->resolved, record, match_port)) {
                     matching_pair = pair;
                     break;
                 }
@@ -1252,7 +1368,12 @@ namespace stun {
             // Try to match entries directly
             for (int i = 0; i < m_entriesStun_count; ++i) {
                 agent_stun_entry_t *entry = m_entriesStun + i;
-                if (!entry_is_relayed(entry) && IP::addr_record_is_equal(&entry->record, record, true)) {
+                bool match_port = true;
+                if (entry->pair && entry->pair->remote && entry->pair->remote->mTransportString == "TCP") {
+                    match_port = false;
+                }
+
+                if (!entry_is_relayed(entry) && IP::addr_record_is_equal(&entry->record, record, match_port)) {
                     SDebug << "AgentNo " << agentNo << " STUN entry " << i << "  matching incoming address";
                     return entry;
                 }
@@ -1270,7 +1391,7 @@ namespace stun {
                     STUN_requests_received++;
                 }
                 //LDebug("Received STUN Binding request") <<  src->dump();;
-                SDebug << "\033[34m" << "Received STUN Binding request  " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ") << "(summary: Receive Req " << STUN_requests_received << ", Receive Resp " << STUN_responses_received << ") " << src->dump() << "\033[0m"; //  entry->dump(); ; 
+                SInfo << "\033[34m" <<  "AgentNo " << agentNo  << " Received STUN Binding request  " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ") << "(summary: Receive Req " << STUN_requests_received << " ) from " << src->dump() << "\033[0m"; //  entry->dump(); ; 
                 if (entry->type != AGENT_STUN_ENTRY_TYPE_CHECK)
                     return -1;
 
@@ -1369,7 +1490,7 @@ namespace stun {
                     STUN_responses_received++;
                 }
 
-                SDebug << "Received STUN Binding success response from " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ") << "(summary: Receive Req " << STUN_requests_received << ", Receive Resp " << STUN_responses_received << ") " << src->dump();
+                SInfo << "\033[1;95m" <<  "AgentNo " << agentNo   << " Received STUN Binding success response from " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ") << "(summary:  Receive Resp " << STUN_responses_received << ") from " << src->dump() << "\033[0m";
 
                 if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER)
                     LInfo("STUN server binding successful");
@@ -1396,6 +1517,13 @@ namespace stun {
                     Candidate candidate;
                     candidate.mType = type;
                     candidate.resolved = *msg->mapped;
+                    // Arvind TBD risky code need to be tested
+                    candidate.mTransportString = (entry && entry->pair && entry->pair->remote)
+                            ? entry->pair->remote->mTransportString
+                            : "UDP";
+                    candidate.mTransportType = (candidate.mTransportString == "TCP")
+                            ? Candidate::TransportType::TcpActive
+                            : Candidate::TransportType::Udp;
 
                     char buf[512];
                     uint16_t port;
@@ -1408,6 +1536,9 @@ namespace stun {
                         uv_ip4_name((sockaddr_in*) & candidate.resolved.addr, buf, sizeof (buf));
                         port = ntohs(((sockaddr_in *) & candidate.resolved.addr)->sin_port);
                     }
+                    
+                  //  if(candidate.mTransportString == "TCP")
+                   //     candidate.resolved = entry->pair->remote->resolved;
 
 
                     if (agent_add_local_reflexive_candidate(&candidate)) {
@@ -1426,9 +1557,15 @@ namespace stun {
                     // The ICE agent MUST check that the source and destination transport addresses in the
                     // Binding request and response are symmetric. [...] If the addresses are not symmetric,
                     // the agent MUST set the candidate pair state to Failed.
-                    if (!IP::addr_record_is_equal(src, &entry->record, true)) {
-                        LDebug(
-                                "Candidate pair check failed (non-symmetric source address in response)");
+                    
+                    bool match_symmetric_port = true;
+                    if (pair && pair->remote && pair->remote->mTransportString == "TCP") {
+                        // RFC 6544: TCP clients connect from ephemeral ports. Match on IP only for symmetry verification.
+                        match_symmetric_port = false;
+                    }
+                    
+                    if (!IP::addr_record_is_equal(src, &entry->record, match_symmetric_port)) {
+                        SInfo << "Candidate pair check failed (non-symmetric source address in response) " <<  src->dump() <<  " <> " << entry->record.dump() ;
                         entry->state = AGENT_STUN_ENTRY_STATE_FAILED;
                         entry->next_transmission = 0;
                         if (pair)
@@ -1442,7 +1579,7 @@ namespace stun {
                     }
 
                     if (!pair->local && msg->mapped->len)
-                        pair->local = localdesp.ice_find_candidate_from_addr(msg->mapped, Candidate::Type::Unknown);
+                        pair->local = localdesp.ice_find_candidate_from_addr(msg->mapped, Candidate::Type::Unknown, pair->remote ? pair->remote->mTransportString : "UDP");
 
                     // Update consent timestamp
                     pair->consent_expiry = current_timestamp() + CONSENT_TIMEOUT;
@@ -1656,7 +1793,14 @@ namespace stun {
 
                     Priority *priority = new stun::Priority();
 
-                    priority->value = ice_compute_priority(Candidate::Type::PeerReflexive, family, 1, index);
+                    priority->value = ice_compute_priority(
+                            Candidate::Type::PeerReflexive,
+                            family,
+                            1,
+                            index,
+                            entry->pair && entry->pair->local ? entry->pair->local->mTransportString : "UDP",
+                            entry->pair && entry->pair->local ? entry->pair->local->mTransportType : Candidate::TransportType::Unknown
+                            );
 
                     msg.addAttribute(priority);
 
@@ -1685,7 +1829,7 @@ namespace stun {
                         msg.mapped = mapped;
                     ++STUN_responses_sent;
                     
-                    SInfo << "\033[1;35m" << "AgentNo " << agentNo << " send stun response "  << " to " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ") << entry->record.dump() << "\033[0m"; //  entry->dump(); ;                     
+                    SInfo << "\033[1;35m" << "AgentNo " << agentNo << " send stun response "  << " to " << (entry->type == AGENT_STUN_ENTRY_TYPE_CHECK ? "peer " : "server ") << entry->dump() << "\033[0m"; //  entry->dump(); ;                     
 
                     break;
                 }
@@ -1812,10 +1956,25 @@ namespace stun {
         }
 #endif
 
-        if (socket->agent_direct_send(&writer.buffer[0], writer.buffer.size(), entry->record) < 0) {
-            return -1;
+        bool isTcp = false;
+        if (entry->tuple) {
+            isTcp = (entry->tuple->GetProtocol() == TransportTuple::Protocol::TCP);
+        } else if (entry->pair && entry->pair->remote) {
+            isTcp = (entry->pair->remote->mTransportString == "TCP" ||
+                    entry->pair->remote->mTransportType == Candidate::TransportType::TcpActive ||
+                    entry->pair->remote->mTransportType == Candidate::TransportType::TcpPassive ||
+                    entry->pair->remote->mTransportType == Candidate::TransportType::TcpSo);
         }
 
+        if (entry->tuple) {
+            entry->tuple->Send(writer.buffer.data(), writer.buffer.size());
+        } else if (isTcp) {
+            if (socket->agent_direct_send_tcp(&writer.buffer[0], writer.buffer.size(), entry->record) < 0) {
+                return -1;
+            }
+        } else if (socket->agent_direct_send(&writer.buffer[0], writer.buffer.size(), entry->record) < 0) {
+            return -1;
+        }
 
 
         return 0;
@@ -2416,6 +2575,11 @@ namespace stun {
         //        return ret;
         //    }
 
+        if (selected_entry->tuple) {
+            selected_entry->tuple->Send(data, nbytes);
+            return 0;
+        }
+
         return socket->agent_direct_send(data, nbytes, selected_entry->record);
 
         //return agent_direct_send(agent, &selected_entry->record, data, size, ds);
@@ -2504,6 +2668,11 @@ namespace stun {
 
         if (pair)
             ret += " pair dump " + pair->dump();
+        
+        
+        if(tuple)
+        ret += " tuple " +   tuple->Dump();
+          
 
         return ret;
 
@@ -2532,6 +2701,15 @@ namespace stun {
         };
 
         ret += " pair ";
+
+        std::string transport = "UDP";
+        if (local && !local->mTransportString.empty()) {
+            transport = local->mTransportString;
+        } else if (remote && !remote->mTransportString.empty()) {
+            transport = remote->mTransportString;
+        }
+
+        ret += "Transport:" + transport + " ";
 
 
         char ip[40];
@@ -2672,9 +2850,9 @@ namespace stun {
         char hostname[256 + 1] = {0};
         char service[32 + 1] = {0};
 
-        if (sscanf(line, "%32s %d %32s %u %256s %32s typ %32s", foundation,
-                &candidate->mComponent, transport, &candidate->mPriority, hostname,
-                service, type) != 7) {
+        if (sscanf(line, "%32s %d %32s %u %256s %32s typ %32s",
+                foundation, &candidate->mComponent, transport,
+                &candidate->mPriority, hostname, service, type) != 7) {
             SWarn << "Failed to parse candidate: " << line;
             return ICE_PARSE_ERROR;
         }
@@ -2688,20 +2866,46 @@ namespace stun {
         for (int i = 0; type[i]; ++i)
             type[i] = tolower((unsigned char) type[i]);
 
-        if (strcmp(type, "host") == 0) //enum class Type { Unknown, Host, ServerReflexive, PeerReflexive, Relayed };
+        candidate->mTransportString = transport;
+
+        if (strcmp(type, "host") == 0)
             candidate->mType = Candidate::Type::Host;
         else if (strcmp(type, "srflx") == 0)
             candidate->mType = Candidate::Type::ServerReflexive;
         else if (strcmp(type, "relay") == 0)
             candidate->mType = Candidate::Type::Relayed;
+        else if (strcmp(type, "prflx") == 0)
+            candidate->mType = Candidate::Type::PeerReflexive;
         else {
             SWarn << "Ignoring candidate with unknown type " << type;
             return ICE_PARSE_IGNORED;
         }
 
-        if (strcmp(transport, "UDP") != 0) {
-            SWarn << "Ignoring candidate with transport " << transport;
+        if (strcmp(transport, "UDP") != 0 && strcmp(transport, "TCP") != 0) {
+            SWarn << "Ignoring candidate with unsupported transport " << transport;
             return ICE_PARSE_IGNORED;
+        }
+
+        if (strcmp(transport, "UDP") == 0) {
+            candidate->mTransportType = Candidate::TransportType::Udp;
+        } else if (strcmp(transport, "TCP") == 0) {
+            candidate->mTransportType = Candidate::TransportType::TcpUnknown;
+            const char *tcptype_ptr = strstr(line, "tcptype ");
+            if (tcptype_ptr) {
+                char tcptype_str[32 + 1] = {0};
+                if (sscanf(tcptype_ptr, "tcptype %32s", tcptype_str) == 1) {
+                    for (int i = 0; tcptype_str[i]; ++i)
+                        tcptype_str[i] = tolower((unsigned char) tcptype_str[i]);
+
+                    if (strcmp(tcptype_str, "active") == 0) {
+                        candidate->mTransportType = Candidate::TransportType::TcpActive;
+                    } else if (strcmp(tcptype_str, "passive") == 0) {
+                        candidate->mTransportType = Candidate::TransportType::TcpPassive;
+                    } else if (strcmp(tcptype_str, "so") == 0) {
+                        candidate->mTransportType = Candidate::TransportType::TcpSo;
+                    }
+                }
+            }
         }
 
         return 0;
@@ -2826,17 +3030,16 @@ namespace stun {
     }
 
     int Agent::start_timer(int64_t timeout_ms) {
-        
-        if(timeout_ms < 0 && timeout_ms > 30000 )
-        {
-            SError << "AgentNo " << agentNo <<  " Stun timer can no be negative or very large > than 30000ms. timeout_ms: " << timeout_ms;
-            exit(0); 
+
+        if (timeout_ms < 0 && timeout_ms > 30000) {
+            SError << "AgentNo " << agentNo << " Stun timer can no be negative or very large > than 30000ms. timeout_ms: " << timeout_ms;
+            exit(0);
         }
-        
+
         if (bTimerActive) {
             _timer.Start(timeout_ms, 0);
         }
-	return 0;
+        return 0;
     }
 
     void Agent::close_timer() {

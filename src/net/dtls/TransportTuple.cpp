@@ -57,40 +57,46 @@ namespace net
 		}
 	}
 
-	void TransportTuple::Dump() const
-	{
-		//MS_TRACE();
 
-		SDebug << "<TransportTuple>";
+        std::string TransportTuple::Dump() const {
+            //MS_TRACE();
 
-		int family;
-		std::string ip;
-		uint16_t port;
+            std::ostringstream oss;
 
-		base::net::IP::GetAddressInfo((struct sockaddr*)GetLocalAddress(), family, ip, port);
+            int family;
+            std::string ip;
+            uint16_t port;
 
-		SDebug << "  localIp    : " <<  ip;
-		
-                SDebug << "  localPort  : " <<  port;
+            oss << "Tuple ";
+            
+            switch (GetProtocol()) {
+                case Protocol::UDP:
+                    oss << "udp ";
+                    break;
 
-		base::net::IP::GetAddressInfo((struct sockaddr*)GetRemoteAddress(), family, ip, port);
+                case Protocol::TCP:
+                    oss << "tcp ";
+                    break;
+            }
 
-		SDebug << "  remoteIp   :" << ip;
-		SDebug << "  remotePort :" <<  port;
+            sockaddr* add =  (struct sockaddr*) GetLocalAddress();
+               
+            if(add)
+            {
+                base::net::IP::GetAddressInfo((struct sockaddr*) GetLocalAddress(), family, ip, port);
+                oss << "  localIp " <<  ip;
+                oss << "  : " << port;
+            }
+            
+            
+            base::net::IP::GetAddressInfo((struct sockaddr*) GetRemoteAddress(), family, ip, port);
+            oss << "  remoteIp " << ip ;
+            oss << "  : " << port ;
 
-		switch (GetProtocol())
-		{
-			case Protocol::UDP:
-				SDebug << "  protocol   : udp";
-				break;
 
-			case Protocol::TCP:
-				SDebug << "  protocol   : tcp" ;
-				break;
-		}
 
-		 SDebug << "</TransportTuple>";
-	}
+            return oss.str();
+        }
 
 
 

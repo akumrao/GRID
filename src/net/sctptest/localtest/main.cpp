@@ -882,7 +882,7 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
         dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg){
             SInfo << "Pc1 Message from " << id << " received: " << msg << endl;
             if (auto dc = wdc.lock()) {
-                dc->send("ping-pong-pc1 send on message Ping");
+               // dc->send("ping-pong-pc1 send on message Ping");
             }
         });
         client->dataChannel1 = dc;
@@ -915,8 +915,8 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
                         << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
 
 
-                sleep(5);
-                dc->send("PC1 to PC2");
+                //sleep(5);
+              //  dc->send("PC1 to PC2");
 
             });
 

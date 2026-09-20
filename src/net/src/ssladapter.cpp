@@ -1115,15 +1115,7 @@ int SSLAdapter::handshake()
       return STATE_HANDSHAKE_DONE;
     }
 
-/*
-    // Set TLS Server Name Indication (SNI) host extension dynamically before handshake starts
-    if (!server && _ssl && _socket) {
-        std::string host = "desk";
-        if (!host.empty()) {
-            SSL_set_tlsext_host_name(_ssl, host.c_str());
-        }
-    }
-*/
+
     int r = SSL_do_handshake(_ssl);
     if (r <= 0) swrap_error_handler(r);
    

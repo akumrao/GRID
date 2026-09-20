@@ -212,8 +212,6 @@ async function runSocketServer() {
                 }
 
                 else if (event === 'message') {
-
-
                     let message = data;
                     console.log("Direct message %o", message);
                     message.from = socketContext.id;

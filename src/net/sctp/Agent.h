@@ -1,6 +1,3 @@
-
-
-
 #ifndef STUN_Agent_H
 #define STUN_Agent_H
 
@@ -19,6 +16,7 @@
 #include "net/dns.h"
 #include "configuration.h"
 #include "candidate.hpp"
+#include "TransportTuple.h"
 
 using namespace base::net;
 
@@ -159,6 +157,7 @@ namespace stun {
         int64_t retransmission_timeout{0};
         int retransmissions{0};
         bool transaction_id_expired;
+        TransportTuple *tuple{nullptr};
 
 #if AGENT_DEBUG
         std::string dump();
@@ -232,15 +231,18 @@ namespace stun {
         int ice_create_host_candidate(Candidate *candidate);
         int agent_add_local_reflexive_candidate(Candidate *candidate);
         int ice_create_local_candidate(int component, int index, Candidate *candidate);
-        uint32_t ice_compute_priority(Candidate::Type type, int family, int component, int index);
+        uint32_t ice_compute_priority(Candidate::Type type, int family, int component, int index,
+                const std::string &transport, Candidate::TransportType transportType);
 
 
         //Remote candidate
         int ice_add_remote_candidate(const Candidate *candidate);
         int ice_add_remote_candidate(const char *sdp);
-        int agent_add_remote_peer_reflexive_candidate(uint32_t priority, const addr_record_t *record); // peer-reflex only
+        int agent_add_remote_peer_reflexive_candidate(uint32_t priority, const addr_record_t *record, const std::string &transport); // peer-reflex only
         Candidate * ice_add_candidate(Candidate *candidate, ice_description_t *description);
 
+        // Candidate pair matching helper
+        bool is_tcp_pair_compatible(const Candidate *local, const Candidate *remote);
 
 
         //candidate_callback mCandidateCallback;
@@ -300,8 +302,8 @@ namespace stun {
 
         /// ON return messages 
         int gather_candidates();
-        int onStunMessage(unsigned char *buf, size_t len, const addr_record_t *src, const addr_record_t *relayed);
-        int agent_dispatch_stun(unsigned char *buf, size_t size, stun::MessageStun *msg, const addr_record_t *src, const addr_record_t *relayed);
+        int onStunMessage(unsigned char *buf, size_t len, const addr_record_t *src, const addr_record_t *relayed, TransportTuple *tuple);
+        int agent_dispatch_stun(unsigned char *buf, size_t size, stun::MessageStun *msg, const addr_record_t *src, const addr_record_t *relayed, TransportTuple *tuple);
         int agent_verify_stun_binding(unsigned char *buf, size_t size, stun::MessageStun *msg);
         int agent_verify_credentials(const agent_stun_entry_t *entry, unsigned char *buf, size_t size, stun::MessageStun *msg);
 
