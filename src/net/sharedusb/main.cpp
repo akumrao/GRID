@@ -632,7 +632,7 @@ int main(int argc, char **argv) {
         
         DepUsrSCTP::ClassDestroy();
         Logger::destroy();
-        
+        GetNetInterface::ClassDestroy();
 
         //    if(ctx->txt)
         //    delete ctx->txt;
