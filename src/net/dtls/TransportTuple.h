@@ -35,7 +35,7 @@ namespace net
 
 	public:
 		TransportTuple(net::UdpSocket* udpSocket, const struct sockaddr* udpRemoteAddr);
-		explicit TransportTuple(net::TcpConnection* tcpConnection);
+		explicit TransportTuple(net::TcpConnectionBase* tcpConnection);
 		explicit TransportTuple(const TransportTuple* tuple);
 
 	public:
@@ -55,7 +55,7 @@ namespace net
 		// Passed by argument.
 		net::UdpSocket* udpSocket{ nullptr };
 		struct sockaddr* udpRemoteAddr{ nullptr };
-		net::TcpConnection* tcpConnection{ nullptr };
+		net::TcpConnectionBase* tcpConnection{ nullptr };
 		std::string localAnnouncedIp;
 		// Others.
 		struct sockaddr_storage udpRemoteAddrStorage;

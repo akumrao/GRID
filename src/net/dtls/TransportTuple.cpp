@@ -108,7 +108,7 @@ namespace net
 	{
 	}
 
-	 TransportTuple::TransportTuple(net::TcpConnection* tcpConnection)
+	 TransportTuple::TransportTuple(net::TcpConnectionBase* tcpConnection)
 	  : tcpConnection(tcpConnection), protocol(Protocol::TCP)
 	{
 	}
