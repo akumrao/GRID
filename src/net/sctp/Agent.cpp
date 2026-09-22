@@ -1517,12 +1517,25 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record(const addr_record_t *rec
                     Candidate candidate;
                     candidate.mType = type;
                     candidate.resolved = *msg->mapped;
-                    // Arvind TBD risky code need to be tested
-                    candidate.mTransportString = (entry && entry->pair && entry->pair->remote)
-                            ? entry->pair->remote->mTransportString
-                            : "UDP";
-                    candidate.mTransportType = (candidate.mTransportString == "TCP")
-                            ? Candidate::TransportType::TcpActive
+//                    // Arvind TBD risky code need to be tested
+//                    candidate.mTransportString = (entry && entry->pair && entry->pair->remote)
+//                            ? entry->pair->remote->mTransportString
+//                            : "UDP";
+//                    candidate.mTransportType = (candidate.mTransportString == "TCP")
+//                            ? Candidate::TransportType::TcpActive
+//                            : Candidate::TransportType::Udp;
+                    
+                    // Determine if the transport is TCP using entry->tuple or entry->pair
+                    bool isTcp = false;
+                    if (entry->tuple) {
+                        isTcp = (entry->tuple->GetProtocol() == TransportTuple::Protocol::TCP);
+                    } else if (entry->pair && entry->pair->remote) {
+                        isTcp = (entry->pair->remote->mTransportString == "TCP") ;
+                    }
+
+                    candidate.mTransportString = isTcp ? "TCP" : "UDP";
+                    candidate.mTransportType = isTcp 
+                            ? Candidate::TransportType::TcpActive 
                             : Candidate::TransportType::Udp;
 
                     char buf[512];
@@ -1543,6 +1556,19 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record(const addr_record_t *rec
 
                     if (agent_add_local_reflexive_candidate(&candidate)) {
                         SWarn << "Failed to add local " << candidate.mType << " reflexive candidate from STUN mapped address";
+                    }
+                    
+                    // Explicitly create and force-send the TCP server-reflexive candidate only for ServerReflexive (Google STUN)
+                    if ( mConfig.enableTcp && type == Candidate::Type::ServerReflexive) {
+                        Candidate tcpCandidate;
+                        tcpCandidate.mType = type;
+                        tcpCandidate.resolved = *msg->mapped;
+                        tcpCandidate.mTransportString = "TCP";
+                        tcpCandidate.mTransportType = Candidate::TransportType::TcpPassive;
+
+                        if (agent_add_local_reflexive_candidate(&tcpCandidate)) {
+                            SWarn << "Failed to add local TCP " << tcpCandidate.mType << " reflexive candidate";
+                        }
                     }
                 }
 
