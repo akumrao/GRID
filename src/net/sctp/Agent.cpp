@@ -90,6 +90,9 @@ namespace stun {
     }
 
     int Agent::gather_candidates() {
+        
+        SInfo << "\033[1;95m" << "Agent " << agentNo  <<  " gatherLocalCandidates" << "\033[0m";
+             
         if (m_mode == AGENT_MODE_UNKNOWN) {
 
             m_mode = AGENT_MODE_CONTROLLING;
@@ -1619,7 +1622,7 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record(const addr_record_t *rec
                     }
                 } else if (entry->type == AGENT_STUN_ENTRY_TYPE_SERVER) {
                     agent_update_gathering_done();
-                    SDebug << "AgentNo " << agentNo << "agent_update_gathering_done()";
+                   // SDebug << "AgentNo " << agentNo << "agent_update_gathering_done()";
                 }
                 break;
             }
@@ -2008,9 +2011,6 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record(const addr_record_t *rec
 
     void Agent::agent_update_gathering_done() {
 
-        //STrace <<  "Updating gathering status";
-        SDebug << "AgentNo " << agentNo << " agent_update_gathering_done()";
-
         for (int i = 0; i < m_entriesStun_count; ++i) {
             agent_stun_entry_t *entry = m_entriesStun + i;
             if (entry->type != AGENT_STUN_ENTRY_TYPE_CHECK &&
@@ -2031,6 +2031,8 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record(const addr_record_t *rec
 
             iceList->onGatheringDoneCallback();
 
+            SInfo << "\033[1;95m" << "AgentNo " << agentNo << " agent_update_gathering_done()"<< "\033[0m";
+   
         }
 
     }

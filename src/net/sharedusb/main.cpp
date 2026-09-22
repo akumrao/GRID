@@ -36,6 +36,7 @@
 
 #include "server.h"
 #include "DepUsrSCTP.h"
+#include "sdpcommon.h"
 
 /*************************************************************************/
  #include "ttydutils.h"
@@ -459,7 +460,8 @@ int main(int argc, char **argv) {
   //  cout << "The local ID is: " << localId << endl;
 
     rtc::DtlsTransport::ClassInit();
-       DepUsrSCTP::ClassInit();
+    DepUsrSCTP::ClassInit();
+    GetNetInterface::ClassInit();
 
 
 #if 1   
@@ -709,7 +711,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 
     pc->onGatheringStateChange(
             [](PeerConnection::GatheringState state) {
-                SInfo << "Gathering State";
+                SInfo << "Gathering State" <<  PeerConnection::printState(state);
                 if (state == PeerConnection::GatheringState::Complete) {
                     //  if(auto pc = wpc.lock())
                     {

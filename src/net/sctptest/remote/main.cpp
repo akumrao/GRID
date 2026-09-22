@@ -633,7 +633,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 
     pc->onGatheringStateChange(
             [](PeerConnection::GatheringState state) {
-                SInfo << "Gathering State";
+                SInfo << "Gathering State" <<  PeerConnection::printState(state);
                 if (state == PeerConnection::GatheringState::Complete) {
                     //  if(auto pc = wpc.lock())
                     {

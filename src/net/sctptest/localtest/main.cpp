@@ -823,6 +823,7 @@ shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
 
         pc1->onGatheringStateChange(
                 [](PeerConnection::GatheringState state) {
+                     SInfo << "Gathering State" <<  PeerConnection::printState(state);
 
                     if (state == PeerConnection::GatheringState::Complete) {
                         SInfo << "pc1 Gathering State: Complete";

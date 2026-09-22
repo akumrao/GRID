@@ -99,6 +99,18 @@ public:
 		HaveRemotePranswer = RTC_SIGNALING_HAVE_REMOTE_PRANSWER,
 	};
 
+        static std::string printState(GatheringState state) {
+            switch (state) {
+                case GatheringState::New:
+                    return "Gathering hasn't started yet.";
+                case GatheringState::InProgress:
+                    return "ICE candidates are actively being found.";
+                case GatheringState::Complete:
+                    return "ICE gathering is finished.";
+            }
+            return "Unknown state";
+        }
+
 	PeerConnection();
 	PeerConnection( Configuration &config);
 	~PeerConnection();
