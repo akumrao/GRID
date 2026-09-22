@@ -124,7 +124,7 @@ namespace stun {
 
         }
 
-        int records_count = udp_get_addrs(localAddr, records, ICE_MAX_CANDIDATES_COUNT - 1, (mConfig.api ? mConfig.api->mac_addr : NULL));
+        int records_count = get_addrs(localAddr, records, ICE_MAX_CANDIDATES_COUNT - 1, (mConfig.api ? mConfig.api->mac_addr : NULL));
         if (records_count < 0) {
             SError << "Failed to gather local host candidates";
             records_count = 0;

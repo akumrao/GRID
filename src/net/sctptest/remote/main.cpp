@@ -36,6 +36,7 @@
 
 //#include "server.h"
 #include "DepUsrSCTP.h"
+#include "sdpcommon.h"
 
 
 //volatile bool force_exit = false;
@@ -379,7 +380,9 @@ int main(int argc, char **argv) {
   //  cout << "The local ID is: " << localId << endl;
 
     rtc::DtlsTransport::ClassInit();
-       DepUsrSCTP::ClassInit();
+    DepUsrSCTP::ClassInit();
+    
+    GetNetInterface::ClassInit();
 
 
 #if 1   
@@ -549,6 +552,7 @@ int main(int argc, char **argv) {
         
         
         DepUsrSCTP::ClassDestroy();
+        GetNetInterface::ClassDestroy();
         Logger::destroy();
         
 

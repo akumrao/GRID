@@ -14,7 +14,7 @@
 #include <chrono>
 #include <mutex>
 #include <thread>
-
+#include "uv.h"
 
 #define ICE_PARSE_ERROR -1
 #define ICE_PARSE_IGNORED -2
@@ -24,20 +24,35 @@
 
 
 namespace rtc {
-    
-    int ice_type_suffix(const Candidate *candidate, const char **type , char **suffix  );
-  
-    int ice_generate_candidate_sdp( Candidate *candidate, char *buffer, size_t size);
-    
+
+    int ice_type_suffix(const Candidate *candidate, const char **type, char **suffix);
+
+    int ice_generate_candidate_sdp(Candidate *candidate, char *buffer, size_t size);
+
     int ice_generate_sdp(const ice_description_t *description, char *buffer, size_t size);
-    
+
     bool match_prefix1(const char *str, const char *prefix, const char **end);
-    
+
     const char *skip_prefix(const char *str, const char *prefix);
 
     bool comp(Candidate a, Candidate b);
-     
-    int udp_get_addrs(addr_record_t &bound, addr_record_t *records, size_t count, char *mac_addr);
+
+    int get_addrs(addr_record_t &bound, addr_record_t *records, size_t count, char *mac_addr);
+
+    class GetNetInterface {
+    private:
+
+    public:
+        static void ClassInit();
+        static void ClassDestroy();
+
+    public:
+
+
+        static uv_interface_address_t *info;
+        static int icount;
+
+    };
 
 
 }
