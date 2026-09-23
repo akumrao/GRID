@@ -45,7 +45,8 @@ namespace rtc {
 
         mutex.lock();
 
-        if (config.enableUdp) {
+       // if (config.enableUdp) 
+        {
             m_udpServer = new base::net::UdpServer(this, IP, port);
 
             m_udpServer->bind();
@@ -827,8 +828,8 @@ namespace rtc {
 #endif   
 
 
-        if (config.enableUdp)
-            return m_udpServer->send((char*) data, nbytes, (const struct sockaddr*) &record.addr);
+        //if (config.enableUdp)
+        return m_udpServer->send((char*) data, nbytes, (const struct sockaddr*) &record.addr);
 
         // if(config.enableTcp)
         //  return m_tcpServer->send( (char*) data, nbytes , (const struct sockaddr*)&record.addr);
