@@ -304,10 +304,16 @@ namespace base {
         if (!_timeFormat.empty()) {
             ost << time::print(time::toLocal(stream.ts), _timeFormat.c_str());
             
-#ifdef base_WIN
-            ost << time::print(time::toLocal(stream.ts), _timeFormat.c_str());
-            ost << " [" << getStringFromLevel(stream.level) << "] ";
+#if defined(WIN32) || defined(_WIN32)
+        SYSTEMTIME st;
+        GetLocalTime(&st);
+        int msec = st.wMilliseconds;
 
+        char strmsec[15];
+        sprintf(strmsec, ".%03d ", msec);
+
+        ost << strmsec;
+	ost << " [" << getStringFromLevel(stream.level) << "] ";
 #else
             struct timeval mediaTime;
             memset(&mediaTime, 0, sizeof (mediaTime));
