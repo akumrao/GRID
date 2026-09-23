@@ -31,9 +31,14 @@ public:
 
         std::string log{"/tmp/log/"};
         
-        std::string server{"localhost"};
-        int port{443};
+        std::string websoc_host{"localhost"};
+        int websoc_port{443};
 
+        bool serverdtsRole{true}; /* allow dtls server or client when setup is actpass" */
+        bool enableTcp {false};     
+        bool enableUdp {true};
+        bool publicIP{true};
+        bool noPivateIP{false};
     };
 
 

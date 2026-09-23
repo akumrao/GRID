@@ -91,15 +91,16 @@ struct RTC_CPP_EXPORT Configuration {
 	CertificateType certificateType = CertificateType::Default;
 	TransportPolicy iceTransportPolicy = TransportPolicy::All;
 	bool enableTcp {false };    
-        bool enableUdp {true};   
+        bool enableUdp {true};
+        bool publicIP{true};
+        bool noPivateIP{false};
+
 	bool enableIceUdpMux{false}; 
 	bool disableAutoNegotiation{false};
 	bool disableAutoGathering{false};
 	bool forceMediaTransport{false};
 	bool disableFingerprintVerification{ false};
         
-        bool publicIP{true};
-        bool noPivateIP{false};
 
 	// Port range
 	uint16_t portRangeBegin = 1024;

@@ -75,13 +75,14 @@ std::string from;
 std::string room;
 Configuration settingconfig;
 
-bool isClient = false;// only one id possible. Multiple connect of client will connect one server 
+bool isClient = false; // only one id possible. Multiple connect of client will connect one server 
 
 // Explicit function to completely destroy an active peer session
+
 void destroyClient(const string& clientId) {
-    
+
     SInfo << "destroyClient clientId: " << clientId;
-    
+
     std::lock_guard<std::mutex> lock(clients_mutex);
     auto it = clients.find(clientId);
     if (it != clients.end()) {
@@ -99,68 +100,71 @@ void destroyClient(const string& clientId) {
 
 #if 1
 
- ClientConnecton *m_client = nullptr;
+ClientConnecton *m_client = nullptr;
 
-  // Helper function to emit data over native websocket matching the server
+// Helper function to emit data over native websocket matching the server
 // protocol wrapper
-void emitWebSocketEvent(const std::string &eventName, const json &payload) {
-  json outerPacket;
-  outerPacket["event"] = eventName;
-  outerPacket["payload"] = payload;
 
-  // Convert to string and send as text frame
-  m_client->send(outerPacket.dump());
+void emitWebSocketEvent(const std::string &eventName, const json &payload) {
+    json outerPacket;
+    outerPacket["event"] = eventName;
+    outerPacket["payload"] = payload;
+
+    // Convert to string and send as text frame
+    m_client->send(outerPacket.dump());
 }
 
-
 void sendCandidate(const std::string &mid, int mlineindex,
-                   const std::string &sdp) {
-  json desc;
-  desc["sdpMid"] = mid;
-  desc["sdpMLineIndex"] = mlineindex;
-  desc["candidate"] = sdp;
+        const std::string &sdp) {
+    json desc;
+    desc["sdpMid"] = mid;
+    desc["sdpMLineIndex"] = mlineindex;
+    desc["candidate"] = sdp;
 
-  json m;
-  m["type"] = "candidate";
-  m["candidate"] = desc;
+    json m;
+    m["type"] = "candidate";
+    m["candidate"] = desc;
 
-  if (!from.empty()) {
-    m["from"] = from;
-    m["to"] = from;
-  }
+    if (!from.empty()) {
+        m["from"] = from;
+        m["to"] = from;
+    }
 
-  m["room"] = room;
-  SInfo << "send:" << sdp << "candidate to: " << from << std::endl;
+    m["room"] = room;
+    SInfo << "send:" << sdp << "candidate to: " << from << std::endl;
 
-  // Converted to native protocol wrapper routing
+    // Converted to native protocol wrapper routing
 #if socketio
-  mysocket->emit("message", m);
+    mysocket->emit("message", m);
 #else
-  emitWebSocketEvent("message", m);
+    emitWebSocketEvent("message", m);
 #endif
 }
 
 void sendSdp(const std::string &sdp, const std::string &type) {
-  json desc = {{"type", type}, {"sdp", sdp}};
+    json desc = {
+        {"type", type},
+        {"sdp", sdp}
+    };
 
-  json m;
-  m["type"] = type;
-  m["desc"] = desc;
+    json m;
+    m["type"] = type;
+    m["desc"] = desc;
 
-  if (!from.empty()) {
-    m["from"] = from;
-    m["to"] = from;
-  }
+    if (!from.empty()) {
+        m["from"] = from;
+        m["to"] = from;
+    }
 
-  m["room"] = room;
+    m["room"] = room;
 
-  SInfo << "send:" << type << " to: " << from << std::endl;
+    SInfo << "send:" << type << " to: " << from << std::endl;
 
-  // Converted to native protocol wrapper routing
+    // Converted to native protocol wrapper routing
 #if socketio
-  mysocket->emit("message", m);
+    mysocket->emit("message", m);
 #else
-  emitWebSocketEvent("message", m);
+    emitWebSocketEvent("message", m);
 #endif
 }
 
@@ -179,7 +183,7 @@ void wsOnMessage(json const &m) {
 
     std::string to;
     std::string user;
-    
+
     std::string id;
 
     if (m.find("room") != m.end()) {
@@ -207,7 +211,7 @@ void wsOnMessage(json const &m) {
         if (!isClient)
             id = from;
         else
-            id = "client";// only one id possible. Multiple connect of client will connect one server 
+            id = "client"; // only one id possible. Multiple connect of client will connect one server 
     } else {
         SError << " On Peer message is missing participant id ";
         return;
@@ -236,16 +240,16 @@ void wsOnMessage(json const &m) {
 
     if (type == "offer") {
 
-       // if (clients.find(id) != clients.end())
-       //     clients.erase(id);
-        
-        SInfo << " offer from clinet id " <<   id;
-        
+        // if (clients.find(id) != clients.end())
+        //     clients.erase(id);
+
+        SInfo << " offer from clinet id " << id;
+
         destroyClient(id); // Safe erasure structure handles cleanup safely instead of raw `.erase()`
 
         {
-          std::lock_guard<std::mutex> lock(clients_mutex);
-          clients.emplace(id, createPeerConnection(settingconfig, id, false));
+            std::lock_guard<std::mutex> lock(clients_mutex);
+            clients.emplace(id, createPeerConnection(settingconfig, id, false));
         }
 
         //clients.emplace(id, createPeerConnection(config,  id));
@@ -264,7 +268,7 @@ void wsOnMessage(json const &m) {
 
     } else if (type == "answer") {
 
-        
+
         SInfo << "Answer to id " << id;
         //clients.emplace(id, createPeerConnection(config,  id));
         if (auto jt = clients.find(id); jt != clients.end()) {
@@ -306,9 +310,9 @@ void wsOnMessage(json const &m) {
 
 void initiate(std::string rm) {
 
-    
+
     room = rm;
-    std::string id = "client";//   only one id possible. Multiple connect of client will connect one server 
+    std::string id = "client"; //   only one id possible. Multiple connect of client will connect one server 
     isClient = true;
     destroyClient(id); // Safe structural cleanup
 
@@ -320,254 +324,264 @@ void initiate(std::string rm) {
 
 int main(int argc, char **argv) {
 
-  {
-    /////////////////////////////////////////////////
-    base::cnfg::Configuration cache;
+    {
+        /////////////////////////////////////////////////
+        base::cnfg::Configuration cache;
 
-    cache.load("./cache.js");
-
-    ConfSettings::SetConfiguration(cache.root);
-
-
-
-   //rtc::SctpTransport::Init();
-    
-
-        
-    //rtc::SctpSettings mCurrentSctpSettings = {};
-   // rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
-
-
-    bool printHelp = false;
-    //int c = 0;
-
-    Application app;
-
-    //Async async;
+        std::string room = "65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0";
+        std::string websoc_host = "127.0.0.1";
+        int websoc_port = 443;
 
 
 
+        cache.load("./cache.js");
 
-    string stunServer = "stun:stun.l.google.com:19302";
-    cout << "STUN server is " << stunServer << endl;
-    settingconfig.iceServers.emplace_back(stunServer);
-    settingconfig.disableAutoNegotiation = true;
-    
-    settingconfig.portdefault =0;
-    
-      
-    // read cert from file
+        ConfSettings::SetConfiguration(cache.root);
+
+
+
+        //rtc::SctpTransport::Init();
+
+
+
+        //rtc::SctpSettings mCurrentSctpSettings = {};
+        // rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
+
+
+        bool printHelp = false;
+        //int c = 0;
+
+        Application app;
+
+        //Async async;
+
+
+
+
+        string stunServer = "stun:stun.l.google.com:19302";
+        cout << "STUN server is " << stunServer << endl;
+        settingconfig.iceServers.emplace_back(stunServer);
+        settingconfig.disableAutoNegotiation = true;
+
+        settingconfig.portdefault = 0;
+
+
+        settingconfig.gconfig->serverdtsRole = ConfSettings::configuration.serverdtsRole;
+        settingconfig.enableTcp = ConfSettings::configuration.enableTcp;
+        settingconfig.enableUdp = ConfSettings::configuration.enableUdp;
+        settingconfig.publicIP = ConfSettings::configuration.publicIP;
+        settingconfig.noPivateIP = ConfSettings::configuration.noPivateIP;
+        websoc_host = ConfSettings::configuration.websoc_host;
+        websoc_port = ConfSettings::configuration.websoc_port;
+
+
+
+        // read cert from file
 #if CERTFROMFILE == 1
-    settingconfig.gconfig->keyPemFile = ConfSettings::configuration.keyFile;
-    settingconfig.gconfig->certificatePemFile = ConfSettings::configuration.certFile;
-    settingconfig.gconfig->keyPemPass = "12345678";
+        settingconfig.gconfig->keyPemFile = ConfSettings::configuration.keyFile;
+        settingconfig.gconfig->certificatePemFile = ConfSettings::configuration.certFile;
+        settingconfig.gconfig->keyPemPass = "12345678";
 
 #elif CERTFROMFILE == 2
 
-    /* convert pem to single line
-     * # awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' certificate.crt  
-     */
+        /* convert pem to single line
+         * # awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' certificate.crt  
+         */
 
-    settingconfig.keyPemFile = "";
-    settingconfig.certificatePemFile = "";
-    // settingconfig.keyPemPass = "12345678";
+        settingconfig.keyPemFile = "";
+        settingconfig.certificatePemFile = "";
+        // settingconfig.keyPemPass = "12345678";
 
 #else
 
 #endif
 
-  //  string localId = "server";
-  //  cout << "The local ID is: " << localId << endl;
+        //  string localId = "server";
+        //  cout << "The local ID is: " << localId << endl;
 
-    rtc::DtlsTransport::ClassInit();
-    DepUsrSCTP::ClassInit();
-    
-    GetNetInterface::ClassInit();
+        rtc::DtlsTransport::ClassInit();
+        DepUsrSCTP::ClassInit();
+
+        GetNetInterface::ClassInit();
 
 
-#if 1   
-    std::string room = "65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0";
-    std::string host = "127.0.0.1";
-    int port = 443;
 
-    #if 1
-    std::ostringstream url;
-    bool ssl = true;
-    //std::string host = SERVER_HOST;
-    //int port = SERVER_PORT;
 
-    url << "/";
+        std::ostringstream url;
+        bool ssl = true;
+        //std::string host = SERVER_HOST;
+        //int port = SERVER_PORT;
 
-   
+        url << "/";
 
-    if (!ssl) {
-      m_client = new HttpClient("ws", host, port, url.str());
-    } else {
-      m_client = new HttpsClient("wss", host, port, url.str());
-    }
 
-    // conn->Complete += sdelegate(&context,
-    // &CallbackContext::onClientConnectionComplete);
-    m_client->fnComplete = [&](const Response &response) {
-      std::string reason = response.getReason();
-      StatusCode statuscode = response.getStatus();
-      std::string body =
-          m_client->readStream() ? m_client->readStream()->str() : "";
-      STrace << "SocketIO handshake response:" << "Reason: " << reason
-             << " Response: " << body;
-    };
 
-    m_client->fnConnect = [&](HttpBase *con) {
-      STrace << "client->fnConnect ";
-      //  m_con_state = con_opened;
-      // m_reconn_timer.Stop();
-
-      SInfo << "Connected securely to native WebSocket server." << std::endl;
-
-      // Map the primary handshake logic registration event sequence
-      json joinPayload;
-      joinPayload["roomId"] = room;
-      joinPayload["client"] =    false; // Mirrors client state property tracking requirements
-
-      emitWebSocketEvent("createorjoin", joinPayload);
-
-    };
-
-    m_client->fnPayload = [&](HttpBase *con, const char *data, size_t sz) {
-      STrace << "client->fnPayload " << std::string(data, sz);
-      try {
-        // Parse the outer payload protocol layer out of the text string frame
-        // execution
-        json packet = json::parse(std::string(data, sz));
-        std::string eventName = packet["event"].get<std::string>();
-        json data = packet["payload"];
-
-        if (eventName == "created") {
-          SInfo << data.dump() << std::endl;
-          SInfo << "ws: Created room " << data[0] << "- my  ID is "
-                << data[1] << std::endl;
-        } else if (eventName == "join") {
-          SInfo << "ws join " << data.dump() << std::endl;
-          SInfo << "ws: Created room " << data[0] << "- my ID is "
-                << data[1] << " noClientInRoom: " << data[2] << std::endl;
-
-          std::string room1 = data[0].get<std::string>();
-          std::string id = data[1].get<std::string>();
-          int noClientInRoom = data[2].get<int>();
-
-          if (noClientInRoom > 1) {
-            initiate(room1);
-          }
-        } else if (eventName == "joined") {
-          SInfo << "ws joined " << data.dump() << std::endl;
-        } else if (eventName == "message") {
-          STrace << "SocketioClient received message: " << data.dump()
-                 << std::endl;
-          wsOnMessage(data);
-        } else if (eventName == "disconnectClient") {
-          std::string clientFrom = data.get<std::string>();
-          SInfo << "disconnectClient " << clientFrom << std::endl;
-          LInfo(data.dump());
-        } else if (eventName == "bye") {
-          SInfo << data.dump() << std::endl;
+        if (!ssl) {
+            m_client = new HttpClient("ws", websoc_host, websoc_port, url.str());
+        } else {
+            m_client = new HttpsClient("wss", websoc_host, websoc_port, url.str());
         }
-      } catch (const std::exception &e) {
-        std::cerr << "JSON Parsing runtime error handling text frames: "
-                  << e.what() << std::endl;
-      }
-   
-    };
 
-    m_client->fnClose = [&](HttpBase *con, std::string str) {
-      SInfo << "client->fnClose " << str;
-      // close(0,"exit");
-      // on_close();
-      //emitWebSocketEvent("bye", "");
-      
-      
-    
-      
-      SInfo << "WebSocket connection closed by endpoint structure.";
-      m_client->Close();
-      delete m_client;
-      m_client = nullptr;
+        // conn->Complete += sdelegate(&context,
+        // &CallbackContext::onClientConnectionComplete);
+        m_client->fnComplete = [&](const Response & response) {
+            std::string reason = response.getReason();
+            StatusCode statuscode = response.getStatus();
+            std::string body =
+                    m_client->readStream() ? m_client->readStream()->str() : "";
+            STrace << "SocketIO handshake response:" << "Reason: " << reason
+                    << " Response: " << body;
+        };
 
-      //            m_con_state = con_closed;
-    };
+        m_client->fnConnect = [&](HttpBase * con) {
+            STrace << "client->fnConnect ";
+            //  m_con_state = con_opened;
+            // m_reconn_timer.Stop();
 
-    //  conn->_request.setKeepAlive(false);
-    m_client->setReadStream(new std::stringstream);
-    m_client->send();
-    LTrace("sendHandshakeRequest over")
+            SInfo << "Connected securely to native WebSocket server." << std::endl;
 
-    #endif
+            // Map the primary handshake logic registration event sequence
+            json joinPayload;
+            joinPayload["roomId"] = room;
+            joinPayload["client"] = false; // Mirrors client state property tracking requirements
 
-#endif
+            emitWebSocketEvent("createorjoin", joinPayload);
 
-    app.waitForShutdown([&](void*) {
+        };
 
-      
-      
-        json m;
-      m["type"] = "bye";
-      emitWebSocketEvent("message", m);
-      
-      
-           json joinPayload;
-      joinPayload["roomId"] = "oom";
-      joinPayload["client"] =   false; // Mirrors client state property tracking requirements
+        m_client->fnPayload = [&](HttpBase *con, const char *data, size_t sz) {
+            STrace << "client->fnPayload " << std::string(data, sz);
+            try {
+                // Parse the outer payload protocol layer out of the text string frame
+                // execution
+                json packet = json::parse(std::string(data, sz));
+                std::string eventName = packet["event"].get<std::string>();
+                json data = packet["payload"];
 
-      emitWebSocketEvent("createorjoin", joinPayload);
-      
-      
-      
-     
-      
-      {
-        std::lock_guard<std::mutex> lock(clients_mutex);
-        for (auto& pair : clients) {
-            if (pair.second && pair.second->peerConnection) {
-                pair.second->peerConnection->close();
+                if (eventName == "created") {
+                    SInfo << data.dump() << std::endl;
+                    SInfo << "ws: Created room " << data[0] << "- my  ID is "
+                            << data[1] << std::endl;
+                } else if (eventName == "join") {
+                    SInfo << "ws join " << data.dump() << std::endl;
+                    SInfo << "ws: Created room " << data[0] << "- my ID is "
+                            << data[1] << " noClientInRoom: " << data[2] << std::endl;
+
+                    std::string room1 = data[0].get<std::string>();
+                    std::string id = data[1].get<std::string>();
+                    int noClientInRoom = data[2].get<int>();
+
+                    if (noClientInRoom > 1) {
+                        initiate(room1);
+                    }
+                } else if (eventName == "joined") {
+                    SInfo << "ws joined " << data.dump() << std::endl;
+                } else if (eventName == "message") {
+                    STrace << "SocketioClient received message: " << data.dump()
+                            << std::endl;
+                    wsOnMessage(data);
+                } else if (eventName == "disconnectClient") {
+                    std::string clientFrom = data.get<std::string>();
+                    SInfo << "disconnectClient " << clientFrom << std::endl;
+                    LInfo(data.dump());
+                } else if (eventName == "bye") {
+                    SInfo << data.dump() << std::endl;
+                }
+            } catch (const std::exception &e) {
+                std::cerr << "JSON Parsing runtime error handling text frames: "
+                        << e.what() << std::endl;
             }
-        }
-        clients.clear();
-      }
 
-    
-      
-      
-        m_client->Close();
-        //delete m_client;
-        
-     
-       //  rtc::SctpTransport::Cleanup();
-      
-       // ClassDestroy();
-        
-        SInfo << "app.run() is over";
-         
-//        restApi->shutdown();
-//        Settings::exit();         
-//        rtc::CleanupSSL();
-        
-        
-        DepUsrSCTP::ClassDestroy();
-        GetNetInterface::ClassDestroy();
-        Logger::destroy();
-        
+        };
 
-        //    if(ctx->txt)
-        //    delete ctx->txt;
-        //    ctx->txt = nullptr;
+        m_client->fnClose = [&](HttpBase *con, std::string str) {
+            SInfo << "client->fnClose " << str;
+            // close(0,"exit");
+            // on_close();
+            //emitWebSocketEvent("bye", "");
 
-        //    restApi->stop();
 
-        //    restApi->shutdown();
 
-    });
 
-    
-  }
+            SInfo << "WebSocket connection closed by endpoint structure.";
+            m_client->Close();
+            delete m_client;
+            m_client = nullptr;
+
+            //            m_con_state = con_closed;
+        };
+
+        //  conn->_request.setKeepAlive(false);
+        m_client->setReadStream(new std::stringstream);
+        m_client->send();
+        LTrace("sendHandshakeRequest over")
+
+
+
+        app.waitForShutdown([&](void*) {
+
+
+
+            json m;
+            m["type"] = "bye";
+            emitWebSocketEvent("message", m);
+
+
+            json joinPayload;
+            joinPayload["roomId"] = "oom";
+            joinPayload["client"] = false; // Mirrors client state property tracking requirements
+
+            emitWebSocketEvent("createorjoin", joinPayload);
+
+
+
+
+
+            {
+                std::lock_guard<std::mutex> lock(clients_mutex);
+                for (auto& pair : clients) {
+                    if (pair.second && pair.second->peerConnection) {
+                        pair.second->peerConnection->close();
+                    }
+                }
+                clients.clear();
+            }
+
+
+
+
+            m_client->Close();
+            //delete m_client;
+
+
+            //  rtc::SctpTransport::Cleanup();
+
+            // ClassDestroy();
+
+            SInfo << "app.run() is over";
+
+            //        restApi->shutdown();
+            //        Settings::exit();         
+            //        rtc::CleanupSSL();
+
+
+            DepUsrSCTP::ClassDestroy();
+            GetNetInterface::ClassDestroy();
+            Logger::destroy();
+
+
+            //    if(ctx->txt)
+            //    delete ctx->txt;
+            //    ctx->txt = nullptr;
+
+            //    restApi->stop();
+
+            //    restApi->shutdown();
+
+        });
+
+
+    }
 
 
     SInfo << "Cleaning up..." << endl;
@@ -579,9 +593,8 @@ int main(int argc, char **argv) {
 
 #if 1
 
-
 shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool isClient) {
-    SInfo << "createPeerConnection id " << id  << " is client " << isClient ;
+    SInfo << "createPeerConnection id " << id << " is client " << isClient;
 
 
     auto pc = make_shared<PeerConnection>(config);
@@ -597,7 +610,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
             {
                 clients.erase(id);
 
-                       // int x = 1; //arvind
+                        // int x = 1; //arvind
             }
             //);
         }
@@ -633,7 +646,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 
     pc->onGatheringStateChange(
             [](PeerConnection::GatheringState state) {
-                SInfo << "Gathering State" <<  PeerConnection::printState(state);
+                SInfo << "Gathering State" << PeerConnection::printState(state);
                 if (state == PeerConnection::GatheringState::Complete) {
                     //  if(auto pc = wpc.lock())
                     {
@@ -647,35 +660,34 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
             });
 
     {
-          
-    std::string dcchat = "Settings::getdatachannel()";
-    auto dc = pc->createDataChannel(dcchat);
-    dc->onOpen([id, wdc = make_weak_ptr(dc)](){
-        if (auto dc = wdc.lock()) {
-            SInfo << "onOpen: ";
-                    dc->send("Ping2");
-        }
-    });
 
-//    dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg){
-//        SInfo << "Message from " << id << " received: " << msg << endl;
-//        if (auto dc = wdc.lock()) {
-//
-//            SInfo << "onOpen: " << msg;
-//            sleep(1);
-//            dc->send(" onMessage Ping");
-//        }
-//    });
-//    
-    
-    
-        dc->onClosed([id]() 
-        {
-             SInfo << "DataChannel from " << id << " closed" ;
+        std::string dcchat = "Settings::getdatachannel()";
+        auto dc = pc->createDataChannel(dcchat);
+        dc->onOpen([id, wdc = make_weak_ptr(dc)](){
+            if (auto dc = wdc.lock()) {
+                SInfo << "onOpen: ";
+                        dc->send("Ping2");
+            }
+        });
+
+        //    dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg){
+        //        SInfo << "Message from " << id << " received: " << msg << endl;
+        //        if (auto dc = wdc.lock()) {
+        //
+        //            SInfo << "onOpen: " << msg;
+        //            sleep(1);
+        //            dc->send(" onMessage Ping");
+        //        }
+        //    });
+        //    
+
+
+        dc->onClosed([id]() {
+            SInfo << "DataChannel from " << id << " closed";
         }
         );
-    
-          dc->onMessage([id, dc](auto data) {
+
+        dc->onMessage([id, dc](auto data) {
             // data holds either std::string or rtc::binary
             if (std::holds_alternative<std::string>(data))
                 SInfo << "Message from " << id << " received: " << std::get<std::string>(data)
@@ -684,26 +696,26 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
                 SInfo << "Binary message from " << id
                     << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
 
-          //  sleep(1);
-            
-             //dc->close();
-            
-      //  rtc::binary buffer = { std::byte(0x01), std::byte(0x02), std::byte(0x03) };
-    //    dc->send(buffer);
+            //  sleep(1);
 
-        // Approach 2: Sending from a raw data chunk (e.g., loaded file or hardware frame)
-       // uint8_t raw_bytes[] = { 0x04, 0x05, 0x06, 0x07 };
-       // dc->send(reinterpret_cast<const std::byte*>(raw_bytes), sizeof(raw_bytes));
+            //dc->close();
 
-    
-    
-    
-            
-         //  dc->send("Send to web2");
+            //  rtc::binary buffer = { std::byte(0x01), std::byte(0x02), std::byte(0x03) };
+            //    dc->send(buffer);
+
+            // Approach 2: Sending from a raw data chunk (e.g., loaded file or hardware frame)
+            // uint8_t raw_bytes[] = { 0x04, 0x05, 0x06, 0x07 };
+            // dc->send(reinterpret_cast<const std::byte*>(raw_bytes), sizeof(raw_bytes));
+
+
+
+
+
+            //  dc->send("Send to web2");
         });
-    
-    
-    client->dataChannel1 = dc;
+
+
+        client->dataChannel1 = dc;
     }
 
 
@@ -715,14 +727,13 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
         dc->onOpen([wdc = make_weak_ptr(dc)](){
             if (auto dc = wdc.lock()) {
                 SInfo << "DataChannel 2: Open" << endl;
-                dc->send("Ping1");
+                        dc->send("Ping1");
             }
         });
 
 
-        dc->onClosed([id]() 
-        {
-             SInfo << "DataChannel from " << id << " closed" ;
+        dc->onClosed([id]() {
+            SInfo << "DataChannel from " << id << " closed";
         }
         );
 
@@ -737,7 +748,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 
             //sleep(1);
             dc->send("Send to web1");
-           // dc->close();
+            // dc->close();
         });
 
         client->dataChannel2 = dc;

@@ -394,18 +394,6 @@ int main(int argc, char **argv) {
     Async async;
 
 
-    if (printHelp) {
-        cout << "usage: stream-h264 [-a opus_samples_folder] [-b h264_samples_folder] [-d ip_address] [-p port] [-v] [-h]" << endl
-                << "Arguments:" << endl
-                << "\t -a " << "Directory with opus samples (default: " << defaultOpusSamplesDirectory << ")." << endl
-                << "\t -b " << "Directory with H264 samples (default: " << defaultH264SamplesDirectory << ")." << endl
-                << "\t -d " << "Signaling server IP address (default: " << defaultIPAddress << ")." << endl
-                << "\t -p " << "Signaling server port (default: " << defaultPort << ")." << endl
-                << "\t -v " << "Enable debug logs." << endl
-                << "\t -h " << "Print this help and exit." << endl;
-        return 0;
-    }
-
 
 
     string stunServer = "stun:stun.l.google.com:19302";

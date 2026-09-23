@@ -6,5 +6,12 @@
     "remoteip": [
         "192.168.0.19"
     ],
-    "user": "4Pfs"
+    "user": "4Pfs",
+    "serverdtsRole": true,
+    "enableTcp": false,
+    "enableUdp": true,
+    "publicIP": true,
+    "noPivateIP": false,
+    "websoc_host": "127.0.0.1",
+    "websoc_port": 443
 }
