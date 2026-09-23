@@ -68,17 +68,16 @@ namespace rtc {
         bool IsConnected() const;
         void MayRunDtlsTransport();
 
-        void OnPacketReceived(base::net::TransportTuple* tuple, addr_record_t &remotesrc, const char* data, size_t len);
+        void OnPacketReceived(base::net::TransportTuple* tuple, addr_record_t &remotesrc, const uint8_t * data, size_t len);
         //void OnStunDataReceived(base::net::TransportTuple* tuple, const uint8_t* data, size_t len);
-        void OnDtlsDataReceived(const base::net::TransportTuple* tuple, const char* data, size_t len);
+        void OnDtlsDataReceived(const base::net::TransportTuple *tuple, const uint8_t *data, size_t len);
 
         std::queue<std::vector<unsigned char>> binaryPacketQueue;
 
 
         /* Pure virtual methods inherited from rtc::UdpSocket::Listener. */
     public:
-        void OnUdpSocketPacketReceived(
-                base::net::UdpServer* socket, const char* data, size_t len, struct sockaddr* remoteAddr) override;
+        void OnUdpSocketPacketReceived( base::net::UdpServer* socket, const char* data, size_t len, struct sockaddr* remoteAddr) override;
 
         /* Pure virtual methods inherited from rtc::TcpServer::Listener. */
     public:

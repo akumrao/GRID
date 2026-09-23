@@ -444,8 +444,7 @@ namespace rtc {
         this->dtlsTransport->SendApplicationData(data, len);
     }
 
-    inline void WebRtcTransport::OnPacketReceived(
-            base::net::TransportTuple* tuple, addr_record_t &remotesrc, const char* data, size_t len) {
+    inline void WebRtcTransport::OnPacketReceived(base::net::TransportTuple *tuple,  addr_record_t &remotesrc, const uint8_t * data, size_t len) {
 
         SDebug << "AgentNo " << agentNo << " OnPacketReceived " << len;
 
@@ -517,8 +516,7 @@ namespace rtc {
     //        delete packet;
     //    }
 
-    inline void WebRtcTransport::OnDtlsDataReceived(
-            const base::net::TransportTuple* tuple, const char* data, size_t len) {
+    inline void WebRtcTransport::OnDtlsDataReceived(const base::net::TransportTuple* tuple, const uint8_t* data, size_t len) {
 
         SDebug << "AgentNo " << agentNo << " OnDtlsDataReceived " << len;
 
@@ -576,8 +574,7 @@ namespace rtc {
         }
     }
 
-    inline void WebRtcTransport::OnUdpSocketPacketReceived(
-            base::net::UdpServer* socket, const char* data, size_t len, struct sockaddr* remoteAddr) {
+    inline void WebRtcTransport::OnUdpSocketPacketReceived(base::net::UdpServer* socket, const char* data, size_t len, struct sockaddr* remoteAddr) {
         int family;
 
         std::string peerIp;
@@ -633,7 +630,7 @@ namespace rtc {
 
         auto* storedTuple = iceServer->AddTuple(&tuple);
 
-        OnPacketReceived(storedTuple, remotesrc, data, len);
+        OnPacketReceived(storedTuple, remotesrc, (const uint8_t *)data, len);
     }
 
     inline void WebRtcTransport::on_close(base::net::Listener* conn) {
@@ -879,7 +876,7 @@ namespace rtc {
         }
 
 
-        return tcpConn->Write(data, size, nullptr);
+        return tcpConn->Write((const char*)data, size, nullptr);
     }
 
     void WebRtcTransport::on_connect(base::net::Listener* conn) {
