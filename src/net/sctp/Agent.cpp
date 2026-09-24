@@ -108,7 +108,7 @@ namespace stun {
     }
 
     bool Agent::getInterfaces() {
-        int port = mConfig.portdefault;
+        int port = mConfig.staticPort;
 
         socket = new WebRtcTransport(std::to_string(port), agentNo, mConfig, listener, "::", port, this);
 
@@ -1557,7 +1557,7 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record(const addr_record_t *rec
                    //     candidate.resolved = entry->pair->remote->resolved;
 
 
-                    if ( mConfig.enableUdp && agent_add_local_reflexive_candidate(&candidate)) {
+                    if (agent_add_local_reflexive_candidate(&candidate)) {
                         SWarn << "Failed to add local " << candidate.mType << " reflexive candidate from STUN mapped address";
                     }
                     

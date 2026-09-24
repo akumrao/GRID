@@ -71,6 +71,7 @@ void ConfSettings::SetConfiguration(json &cnfg)
     if (cnfg.find("enableUdp") != cnfg.end()) { ConfSettings::configuration.enableUdp = cnfg["enableUdp"].get<bool>(); }
     if (cnfg.find("publicIP") != cnfg.end()) { ConfSettings::configuration.publicIP = cnfg["publicIP"].get<bool>(); }
     if (cnfg.find("noPivateIP") != cnfg.end()) { ConfSettings::configuration.noPivateIP = cnfg["noPivateIP"].get<bool>(); }
+    if (cnfg.find("staticPort") != cnfg.end()) { ConfSettings::configuration.staticPort = cnfg["staticPort"].get<int>(); }
     
     if (cnfg.find("websoc_host") != cnfg.end()) { ConfSettings::configuration.websoc_host = cnfg["websoc_host"].get<std::string>(); }
     if (cnfg.find("websoc_port") != cnfg.end()) { ConfSettings::configuration.websoc_port = cnfg["websoc_port"].get<int>(); }

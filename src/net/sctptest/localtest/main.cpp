@@ -79,21 +79,6 @@ void addToStream(shared_ptr<Client> client, bool isAddingVideo);
 /// Start stream
 void startStream();
 
-/// Main dispatch queue
-//DispatchQueue MainThread("Main");
-
-/// Audio and video stream
-//optional<shared_ptr<Stream>> avStream = nullopt;
-
-const string defaultRootDirectory = "../../../examples/streamer/samples/";
-const string defaultH264SamplesDirectory = defaultRootDirectory + "h264/";
-string h264SamplesDirectory = defaultH264SamplesDirectory;
-const string defaultOpusSamplesDirectory = defaultRootDirectory + "opus/";
-string opusSamplesDirectory = defaultOpusSamplesDirectory;
-const string defaultIPAddress = "127.0.0.1";
-const uint16_t defaultPort = 8000;
-string ip_address = defaultIPAddress;
-uint16_t port = defaultPort;
 
 
 sockio::Socket *mysocket = nullptr;
@@ -400,11 +385,23 @@ int main(int argc, char **argv) {
     cout << "STUN server is " << stunServer << endl;
     settingconfig.iceServers.emplace_back(stunServer);
     settingconfig.disableAutoNegotiation = true;
+    
+    settingconfig.staticPort = ConfSettings::configuration.staticPort;
+    settingconfig.gconfig->serverdtsRole = ConfSettings::configuration.serverdtsRole;
+    settingconfig.gconfig->serverdtsRole = ConfSettings::configuration.serverdtsRole;
+    settingconfig.enableTcp = ConfSettings::configuration.enableTcp;
+    settingconfig.enableUdp = ConfSettings::configuration.enableUdp;
+    settingconfig.publicIP = ConfSettings::configuration.publicIP;
+    settingconfig.noPivateIP = ConfSettings::configuration.noPivateIP;
+    //websoc_host = ConfSettings::configuration.websoc_host;
+    //websoc_port = ConfSettings::configuration.websoc_port;
+    
     // read cert from file
 #if CERTFROMFILE == 1
     settingconfig.gconfig->keyPemFile = ConfSettings::configuration.keyFile;
     settingconfig.gconfig->certificatePemFile = ConfSettings::configuration.certFile;
     settingconfig.gconfig->keyPemPass = "12345678";
+    
 
 #elif CERTFROMFILE == 2
 
@@ -750,7 +747,7 @@ int main(int argc, char **argv) {
 
 shared_ptr<Client> createPeerConnection_lc(Configuration &config, string id) {
     auto pc1 = make_shared<PeerConnection>(config);
-    config.portdefault = config.portdefault + 1;
+    config.staticPort = config.staticPort + 1;
     auto pc2 = make_shared<PeerConnection>(config);
     {
 
@@ -1139,7 +1136,7 @@ shared_ptr<Client> createPeerConnection_rm(Configuration &config, string id, Asy
 
 
         rtc::Candidate tmp = candidate;
-        tmp.mService = std::to_string(config.portdefault);
+        tmp.mService = std::to_string(config.staticPort);
         tmp.mNode = "192.168.0.20"; //Settings::RemoteIP(); // always change it
 
 

@@ -94,6 +94,7 @@ struct RTC_CPP_EXPORT Configuration {
         bool enableUdp {true};
         bool publicIP{true};
         bool noPivateIP{false};
+        uint16_t staticPort{7345};   // 0  for random port
 
 	bool enableIceUdpMux{false}; 
 	bool disableAutoNegotiation{false};
@@ -117,7 +118,6 @@ struct RTC_CPP_EXPORT Configuration {
 	//string keyPemFile;
 	//string keyPemPass;
 
-        uint16_t portdefault{7345};   // 0  for random port
         ConfCert *gconfig{&config};
         
         void allocRestApi(Async &async, std::string room)

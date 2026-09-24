@@ -39,6 +39,7 @@ public:
         bool enableUdp {true};
         bool publicIP{true};
         bool noPivateIP{false};
+        int staticPort{7345};
     };
 
 
