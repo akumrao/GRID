@@ -295,7 +295,7 @@ void wsOnMessage(json const &m) {
             //auto description = Description(sdp, type);
             // pc->setRemoteDescription(description);
 
-            SInfo << sdp;
+            SInfo << "onRemoteCandidate " <<   sdp;
 
 
             Candidate tmp = rtc::Candidate(sdp, mid);
@@ -638,7 +638,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
         //                            {"candidate", std::string(candidate)},
         //                            {"mid", candidate.mid()}};
 
-        SInfo << std::string(candidate);
+        SInfo << "onLocalCandidate " << std::string(candidate);
         sendCandidate(candidate.mid(), 1, std::string(candidate));
         //            if (auto ws = wws.lock())
         //                    ws->send(message.dump());

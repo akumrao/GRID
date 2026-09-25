@@ -50,6 +50,8 @@ namespace rtc {
             m_udpServer = new base::net::UdpServer(this, IP, port);
 
             m_udpServer->bind();
+            
+            port = m_udpServer->GetLocalPort();
         }
 
 

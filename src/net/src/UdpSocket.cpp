@@ -345,14 +345,14 @@ namespace base {
             }
             IP::CopyAddress(reinterpret_cast<struct sockaddr*> (&addr), localAddr);
 
-            #if DEBUG 
+            //#if DEBUG 
             int family;
-            std::string ip;
-            uint16_t port;
+            //std::string ip;
+           // uint16_t port;
 
-            IP::GetAddressInfo(reinterpret_cast<struct sockaddr *>(&addr), family, ip, port);
-            SInfo << "ip " << ip << " port " << port;
-            #endif
+            IP::GetAddressInfo(reinterpret_cast<struct sockaddr *>(&addr), family, localIp, localPort);
+            SInfo << "ip " << localIp << " port " << localPort;
+            //#endif
 
 
             return true;
