@@ -63,7 +63,7 @@ namespace rtc {
 
     public:
         void HandleRequest(bool server, CertificateFingerprint &dtlsRemoteFingerprint);
-        void InitDtls(bool server, std::string announcedIp, addr_record_t &remotemapped, CertificateFingerprint dtlsRemoteFingerprint);
+        void InitDtls(bool server, std::string announcedIp, addr_record_t &remotemapped, TransportTuple *tuple, CertificateFingerprint dtlsRemoteFingerprint);
     private:
         bool IsConnected() const;
         void MayRunDtlsTransport();

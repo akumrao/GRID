@@ -2295,7 +2295,7 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record(const addr_record_t *rec
                         : "New selected pair");
                 m_selected_pair = selected_pair;
 
-                SInfo << "\033[35m" << "AgentNo " << agentNo << "  Nominated selected_pair " << selected_pair->dump() << "\033[0m";
+
 
                 // Start nomination timer if controlling
                 if (m_mode == AGENT_MODE_CONTROLLING)
@@ -2309,6 +2309,8 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record(const addr_record_t *rec
                         break;
                     }
                 }
+                
+                SInfo << "\033[35m" << "AgentNo " << agentNo << "  final selected and nominated pair " << selected_pair->dump()<< " " <<  m_selected_entry->tuple->Dump() <<  "\033[0m";
             }
 
             if (nominated_pair) {
@@ -2319,7 +2321,7 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record(const addr_record_t *rec
 
                 agent_change_state(JUICE_STATE_COMPLETED);
 
-                SDebug << "Nominated pair are Completed " << nominated_pair->dump();
+                SInfo << "Nominated pair are Completed " << nominated_pair->dump();
 
 
                 agent_stun_entry_t *nominated_entry = NULL;

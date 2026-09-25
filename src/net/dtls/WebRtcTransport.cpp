@@ -203,19 +203,25 @@ namespace rtc {
         SInfo << "~WebRtcTransport over()";
     }
 
-    void WebRtcTransport::InitDtls(bool server, std::string announcedIp, addr_record_t &remotemapped, CertificateFingerprint dtlsRemoteFingerprint) {
+    void WebRtcTransport::InitDtls(bool server, std::string announcedIp, addr_record_t &remotemapped, TransportTuple *tuple,  CertificateFingerprint dtlsRemoteFingerprint) {
 
         SInfo << "AgentNo " << agentNo << " InitDtls " << remotemapped.dump();
+        
+
+        if(!tuple) {
+            SError << "AgentNo " << agentNo <<  "not selected, not possible state";
+            return ;
+        }
 
         this->dtlsTransport = new rtc::DtlsTransport(this);
 
         if (config.enableUdp) {
             this->udpSockets[m_udpServer] = announcedIp;
 
-            TransportTuple tuple(m_udpServer, reinterpret_cast<struct sockaddr*> (&remotemapped.addr));
+          //  TransportTuple tuple(m_udpServer, reinterpret_cast<struct sockaddr*> (&remotemapped.addr));
 
 
-            auto* storedTuple = iceServer->HasTuple(&tuple);
+            auto* storedTuple = iceServer->HasTuple(tuple);
 
 
             if (storedTuple)
@@ -228,22 +234,24 @@ namespace rtc {
         }
 
         if (config.enableTcp) {
-            TcpConnectionBase* tcpConn = this->iceServer->find_tcp_connection(remotemapped);
-            if (tcpConn) {
+          //  TcpConnectionBase* tcpConn = this->iceServer->find_tcp_connection(remotemapped);
+            //if (tcpConn)
+            {
 
 
                 this->tcpServers[m_tcpServer] = announcedIp;
-                TransportTuple tuple(tcpConn);
-                auto* storedTuple = iceServer->HasTuple(&tuple);
+                //TransportTuple tuple(tcpConn);
+                auto* storedTuple = iceServer->HasTuple(tuple);
                 if (storedTuple)
                     iceServer->SetSelectedTuple(storedTuple);
                 else {
                     SError << "AgentNo " << agentNo << " Valid tuple not found, it is impossible state";
                 }
 
-            } else {
-                SError << "AgentNo " << agentNo << " not this connection registered " << remotemapped.dump();
             }
+//            else {
+//                SError << "AgentNo " << agentNo << " not this connection registered " << remotemapped.dump();
+//            }
 
         }
 
@@ -527,7 +535,7 @@ namespace rtc {
 
         // Ensure it comes from a valid tuple.
         if (!dtlsTransport) {
-            LWarn("ignoring DTLS data coming from an invalid tuple");
+            SWarn << "buffering DTLS request coming from tuple "<<  tuple->Dump() << " . since dtls init is not done yet ";
 
             binaryPacketQueue.emplace(data, data + len);
 
@@ -867,7 +875,6 @@ namespace rtc {
             uint16_t port = 0;
             IP::GetAddressInfo(reinterpret_cast<struct sockaddr*> (&record), family, peerIp, port);
             SInfo << "AgentNo " << agentNo << " register_tcp_connection via IceServer: " << peerIp << ":" << port;
-
 
             // Pass the stack-allocated addrinfo down to connect directly
             tcpConn->Connect(peerIp, port);

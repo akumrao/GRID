@@ -1546,8 +1546,8 @@ shared_ptr<IceTransport> PeerConnection::initIceTransport() {
 
                                       
                                         SInfo << "\033[36m" << "AgentNo " << iceTransport->agent.agentNo <<  " initDtlsTransport "  << " is_controlling " << is_controlling << "\033[0m";
-                                          if(iceTransport->agent.m_selected_pair)
-                                       iceTransport->agent.socket->InitDtls( is_server, iceTransport->agent.m_selected_pair->local->address() ,  iceTransport->agent.m_selected_pair->remote->resolved , mRemoteDescription->fingerprint());
+                                         if(iceTransport->agent.m_selected_entry)
+                                       iceTransport->agent.socket->InitDtls( is_server, iceTransport->agent.m_selected_entry->pair->local->address() ,   iceTransport->agent.m_selected_entry->record,  iceTransport->agent.m_selected_entry->tuple,   mRemoteDescription->fingerprint());
 
                                   
 
