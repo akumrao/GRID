@@ -212,7 +212,7 @@ namespace stun {
         bool getInterfaces();
         IceListen *iceList{nullptr};
         rtc::Transport::Listener *listener;
-    public:
+private:
         uint16_t type{0};
         uint16_t length{0};
         uint32_t cookie{0};
@@ -223,6 +223,7 @@ namespace stun {
         ice_description_t localdesp;
 
         ice_description_t remotedesp;
+public:
 
         //local candidate
         int ice_create_local_description(ice_description_t *description);
@@ -243,7 +244,7 @@ namespace stun {
 
         // Candidate pair matching helper
         bool is_tcp_pair_compatible(const Candidate *local, const Candidate *remote);
-
+private:
 
         //candidate_callback mCandidateCallback;
         // gathering_state_callback mstateCallback;
@@ -259,6 +260,8 @@ namespace stun {
 
 
         juice_state_t m_state{JUICE_STATE_DISCONNECTED};
+
+public:
 
 #if AGENT_DEBUG
         std::string dump();
@@ -317,6 +320,7 @@ namespace stun {
 
         void StartAgent(std::string &stunip, uint16_t &stunport);
 
+    
         int agent_get_selected_candidate_pair(Candidate *local, Candidate *remote);
 
         int agent_send(uint8_t* data, uint32_t nbytes, int ds);

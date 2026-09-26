@@ -2321,7 +2321,7 @@ agent_stun_entry_t *Agent::agent_find_entry_from_record(const addr_record_t *rec
 
                 agent_change_state(JUICE_STATE_COMPLETED);
 
-                SInfo << "Nominated pair are Completed " << nominated_pair->dump();
+                SInfo  << "\033[35m" << "AgentNo ""Nominated pair are Completed " << nominated_pair->dump() <<  "\033[0m";
 
 
                 agent_stun_entry_t *nominated_entry = NULL;
