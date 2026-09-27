@@ -9,6 +9,8 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <iomanip>
+#include <sstream>
 
 #include "net/netInterface.h"
 #include "httpClientTest.h"
@@ -57,6 +59,20 @@ std::string generateUniqueUUID() {
     
     std::string ret = uuid4::uuid();
     return ret; 
+}
+
+// Helper function to generate ISO 8601 Timestamp matching JS new Date().toISOString()
+std::string getISOTimestamp() {
+    auto now = std::chrono::system_clock::now();
+    auto itt = std::chrono::system_clock::to_time_t(now);
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+        now.time_since_epoch()
+    ) % 1000;
+
+    std::stringstream ss;
+    ss << std::put_time(std::gmtime(&itt), "%Y-%m-%dT%H:%M:%S")
+       << '.' << std::setfill('0') << std::setw(3) << ms.count() << 'Z';
+    return ss.str();
 }
 
 /**
@@ -166,6 +182,7 @@ int main(int argc, char** argv) {
                     if (!joined.exchange(true)) {
                         std::cout << "Joined dynamic unique channel successfully!\n";
 
+                        // Re-structured layout to keep keys completely flat inside payload for consistency
                         json broadcast_message = {
                             {"topic", channel_topic},
                             {"event", "broadcast"},
@@ -174,18 +191,8 @@ int main(int argc, char** argv) {
                                 {
                                     {"type", "broadcast"},
                                     {"event", broadcast_event},
-                                    {
-                                        "payload",
-                                        {
-                                            {"text", "Hello from C++ Dynamic Unique Client Room"},
-                                            {
-                                                "sent_at",
-                                                std::chrono::system_clock::now()
-                                                .time_since_epoch()
-                                                .count()
-                                            }
-                                        }
-                                    }
+                                    {"text", "Hello from C++ Dynamic Unique Client Room"},
+                                    {"sent_at", getISOTimestamp()}
                                 }
                             },
                             {"ref", "2"},
@@ -218,6 +225,27 @@ int main(int argc, char** argv) {
                     }
                 }
             } else if (event == "broadcast" && topic == channel_topic) {
+                if (incoming.contains("payload")) {
+                    const auto& payload_node = incoming["payload"];
+                    std::string message_text = "";
+                    
+                    // FIXED: Handle structured variations from both the webpage client and the C++ engine
+                    if (payload_node.contains("payload") && payload_node["payload"].contains("text")) {
+                        if (payload_node["payload"]["text"].is_string()) {
+                            message_text = payload_node["payload"]["text"].get<std::string>();
+                        }
+                    } else if (payload_node.contains("text")) {
+                        if (payload_node["text"].is_string()) {
+                            message_text = payload_node["text"].get<std::string>();
+                        }
+                    }
+
+                    if (!message_text.empty()) {
+                        std::cout << "\n========================================\n";
+                        std::cout << "Incoming Text Msg: " << message_text << "\n";
+                        std::cout << "========================================\n\n";
+                    }
+                }
                 std::cout << "Broadcast received on target channel:\n" << incoming.dump(2) << "\n";
             }
         } catch (const json::exception& error) {
