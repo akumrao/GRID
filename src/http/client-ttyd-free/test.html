@@ -27,14 +27,16 @@
     }
 
     input,
-    button {
+    button,
+    select {
       box-sizing: border-box;
       font: inherit;
       padding: 10px;
       margin: 4px 0;
     }
 
-    input {
+    input,
+    select {
       width: 100%;
     }
 
@@ -44,7 +46,8 @@
     }
 
     button:disabled,
-    input:disabled {
+    input:disabled,
+    select:disabled {
       cursor: not-allowed;
       opacity: 0.6;
     }
@@ -76,34 +79,64 @@
       border-radius: 6px;
     }
 
-    .flex-row {
+    /* Additional layout styles for topics list and selector elements */
+    .topic-container {
+      display: flex;
+      gap: 12px;
+      margin: 10px 0;
+      flex-wrap: wrap;
+    }
+
+    .topic-chip {
+      background: #e9e9e9;
+      border: 1px solid #ccc;
+      padding: 6px 12px;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .topic-chip:hover {
+      background: #ddd;
+    }
+
+    .topic-chip.active {
+      background: #222;
+      color: #fff;
+      border-color: #222;
+    }
+
+    .control-row {
       display: flex;
       gap: 10px;
       align-items: center;
+      margin: 10px 0;
     }
 
-    .flex-row input {
+    .custom-topic-row {
+      display: flex;
+      gap: 8px;
+      margin: 8px 0 16px 0;
+    }
+
+    .custom-topic-row input {
       flex: 1;
+    }
+
+    .custom-topic-row button {
+      margin-right: 0;
+      white-space: nowrap;
+    }
+
+    #connectToggleBtn {
+      white-space: nowrap;
     }
   </style>
 </head>
 
 <body>
   <h1>Public Supabase Realtime Test</h1>
-
-  <section>
-    <h2>Channel Switcher</h2>
-    <div class="flex-row">
-      <input
-        id="newChannelInput"
-        type="text"
-        placeholder="Enter room name (e.g., lobby)"
-      >
-      <button id="connectChannelButton">
-        Connect to Channel
-      </button>
-    </div>
-  </section>
 
   <section>
     <h2>Connection</h2>
@@ -113,12 +146,33 @@
       receive messages, and send messages.
     </p>
 
+    <!-- List to other topics -->
+    <p>Other Live Topics:</p>
+    <div id="topicList" class="topic-container"></div>
+
+    <!-- Custom topic input field option -->
+    <p>Add Custom Topic:</p>
+    <div class="custom-topic-row">
+      <input 
+        id="customTopicInput" 
+        type="text" 
+        placeholder="e.g., public:room:my-custom-room"
+      >
+      <button id="addTopicBtn">Add Topic</button>
+    </div>
+
+    <!-- Option to connect to other real time topic & single button execution -->
+    <div class="control-row">
+      <select id="topicSelect"></select>
+      <button id="connectToggleBtn">Connect</button>
+    </div>
+
     <p>
       Topic:
-      <code id="topicDisplay">realtime:public:room:lobby</code>
+      <code id="topicDisplay">public:room:arvind</code>
     </p>
 
-    <div id="status">Connecting...</div>
+    <div id="status">Disconnected</div>
   </section>
 
   <section>
@@ -149,6 +203,15 @@
     const SUPABASE_PUBLISHABLE_KEY =
       'sb_publishable_1V4Zaw720lrIPx8IqmuxmA_ri32Bdqu'
 
+    // Supported target topics for structural multi-channel testing
+    const AVAILABLE_TOPICS = [
+      'public:room:arvind',
+      'public:room:general',
+      'public:room:lobby',
+      'public:room:alerts'
+    ]
+
+    let currentTopic = 'public:room:arvind'
     const BROADCAST_EVENT = 'message_sent'
 
     const supabase = createClient(
@@ -160,11 +223,68 @@
     const messagesOutput = document.querySelector('#messages')
     const messageInput = document.querySelector('#messageInput')
     const sendButton = document.querySelector('#sendButton')
+    
+    // New UI control selectors
+    const topicListContainer = document.querySelector('#topicList')
+    const topicSelectDropdown = document.querySelector('#topicSelect')
+    const connectToggleBtn = document.querySelector('#connectToggleBtn')
     const topicDisplay = document.querySelector('#topicDisplay')
-    const newChannelInput = document.querySelector('#newChannelInput')
-    const connectChannelButton = document.querySelector('#connectChannelButton')
+    
+    // Custom input element selectors
+    const customTopicInput = document.querySelector('#customTopicInput')
+    const addTopicBtn = document.querySelector('#addTopicBtn')
 
     let channel = null
+
+    // Generates UI anchors for the subject lists and options dropdown
+    function renderTopicSelectors() {
+      topicListContainer.innerHTML = ''
+      topicSelectDropdown.innerHTML = ''
+
+      AVAILABLE_TOPICS.forEach(topic => {
+        // Build interactive topic list items
+        const chip = document.createElement('div')
+        chip.className = `topic-chip${topic === currentTopic ? ' active' : ''}`
+        chip.textContent = topic.replace('public:room:', '')
+        chip.addEventListener('click', () => {
+          if (!channel) {
+            currentTopic = topic
+            updateTopicUI()
+          }
+        })
+        topicListContainer.appendChild(chip)
+
+        // Build standard option input select mapping
+        const option = document.createElement('option')
+        option.value = topic
+        option.textContent = topic
+        option.selected = (topic === currentTopic)
+        topicSelectDropdown.appendChild(option)
+      })
+    }
+
+    // Dynamic text syncing based on selection hooks
+    function updateTopicUI() {
+      topicDisplay.textContent = currentTopic
+      renderTopicSelectors()
+    }
+
+    // Toggle dropdown accessibility depending on active connection channel state
+    function setControlsLock(locked) {
+      topicSelectDropdown.disabled = locked
+      customTopicInput.disabled = locked
+      addTopicBtn.disabled = locked
+      const chips = document.querySelectorAll('.topic-chip')
+      chips.forEach(chip => {
+        if (locked) {
+          chip.style.pointerEvents = 'none'
+          chip.style.opacity = '0.6'
+        } else {
+          chip.style.pointerEvents = 'auto'
+          chip.style.opacity = '1'
+        }
+      })
+    }
 
     function writeLog(message, value = null) {
       let output = message
@@ -177,7 +297,8 @@
         }
       }
 
-      messagesOutput.textContent += `${output}\n`
+      messagesOutput.textContent += `${output}
+`
       messagesOutput.scrollTop = messagesOutput.scrollHeight
 
       console.log(output)
@@ -210,19 +331,8 @@
       )
     }
 
-    async function connectToPublicChannel(roomName) {
-      if (channel) {
-        setStatus('Disconnecting from old channel...')
-        setMessagingEnabled(false)
-        await supabase.removeChannel(channel)
-        writeLog('[channel] Removed previous channel subscription')
-      }
-
-      const cleanRoom = roomName.trim().replace(/\s+/g, '-').toLowerCase()
-      const channelTopic = `realtime:public:room:${cleanRoom}`
-      topicDisplay.textContent = channelTopic
-
-      writeLog(`[channel] subscribing to ${channelTopic}`)
+    function connectToPublicChannel() {
+      writeLog(`[channel] subscribing to ${currentTopic}`)
 
       /*
        * No private: true.
@@ -230,7 +340,7 @@
        * This is intentionally a public channel and does not require
        * a signed-in Supabase Auth session.
        */
-      channel = supabase.channel(channelTopic, {
+      channel = supabase.channel(currentTopic, {
         config: {
           broadcast: {
             self: true,
@@ -259,8 +369,10 @@
         }
 
         if (subscriptionStatus === 'SUBSCRIBED') {
-          setStatus(`Connected to public ${channelTopic}`)
+          setStatus(`Connected to public ${currentTopic}`)
           setMessagingEnabled(true)
+          connectToggleBtn.textContent = 'Disconnect'
+          setControlsLock(true)
         } else if (subscriptionStatus === 'CHANNEL_ERROR') {
           setStatus(
             errorMessage
@@ -269,11 +381,24 @@
           )
 
           setMessagingEnabled(false)
+          disconnectFromChannel()
         } else {
           setStatus(`Channel status: ${subscriptionStatus}`)
           setMessagingEnabled(false)
         }
       })
+    }
+
+    function disconnectFromChannel() {
+      if (channel) {
+        writeLog(`[channel] removing channel subscription for ${currentTopic}`)
+        supabase.removeChannel(channel)
+        channel = null
+      }
+      setStatus('Disconnected')
+      setMessagingEnabled(false)
+      connectToggleBtn.textContent = 'Connect'
+      setControlsLock(false)
     }
 
     async function sendMessage() {
@@ -319,17 +444,49 @@
       messageInput.focus()
     }
 
-    connectChannelButton.addEventListener('click', () => {
-      const room = newChannelInput.value.trim()
-      if (room) {
-        connectToPublicChannel(room)
+    // Handles adding custom inputs into our active option streams array
+    function addCustomTopic() {
+      const newTopic = customTopicInput.value.trim()
+      
+      if (!newTopic) {
+        return
+      }
+
+      // Add to array if it isn't already included
+      if (!AVAILABLE_TOPICS.includes(newTopic)) {
+        AVAILABLE_TOPICS.push(newTopic)
+      }
+
+      // Set custom topic as current selection and re-render UI
+      currentTopic = newTopic
+      updateTopicUI()
+      
+      // Clear field
+      customTopicInput.value = ''
+      writeLog(`[input] added and selected custom topic: ${newTopic}`)
+    }
+
+    // Custom topic add triggers
+    addTopicBtn.addEventListener('click', addCustomTopic)
+    customTopicInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        addCustomTopic()
       }
     })
 
-    newChannelInput.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        connectChannelButton.click()
+    // Toggle real time topic orchestration via single action button hook
+    connectToggleBtn.addEventListener('click', () => {
+      if (channel) {
+        disconnectFromChannel()
+      } else {
+        connectToPublicChannel()
       }
+    })
+
+    // Dropdown input switch handling
+    topicSelectDropdown.addEventListener('change', (event) => {
+      currentTopic = event.target.value
+      updateTopicUI()
     })
 
     sendButton.addEventListener('click', sendMessage)
@@ -346,8 +503,8 @@
       }
     })
 
-    connectToPublicChannel('lobby')
+    // Prepare elements locally on execution layout initialization
+    updateTopicUI()
   </script>
 </body>
 </html>
-
