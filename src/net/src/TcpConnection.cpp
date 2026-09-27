@@ -206,6 +206,9 @@ namespace base {
         }
 
         inline void onconnect(uv_connect_t* req, int status) {
+            
+            SInfo << " onconnect " << status;
+            
             TcpConnectionBase *obj = (TcpConnectionBase *) req->data;
             if(!status)
             {
@@ -277,6 +280,7 @@ namespace base {
                 }
             } else {
 
+                //// Keep in mind only connect first ip, fallback to second ip if fails with first ip. It never tries both the ip. Also it is not scope this project
                 for (addrinfo* ai = addrs; ai != NULL; ai = ai->ai_next) {
                     if (ai->ai_family != AF_INET && ai->ai_family != AF_INET6) {
                         continue;

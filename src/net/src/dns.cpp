@@ -67,7 +67,7 @@ namespace base {
 
             }
 
-            void GetAddrInfoReq::resolve(const std::string& host, int port, uv_loop_t * loop, void* ptr, bool hostname ) {
+            void GetAddrInfoReq::resolve(const std::string& host, int port, uv_loop_t * loop, void* ptr, bool hostname,  bool tcp ) {
 
                 req = new uv_getaddrinfo_t; 
                 stTmp *tmp = new stTmp;
@@ -81,18 +81,26 @@ namespace base {
 
                 struct addrinfo hints;
                 memset(&hints, 0, sizeof (hints));
-//                hints.ai_family = PF_INET;
-//                hints.ai_socktype = SOCK_STREAM;
-//                hints.ai_protocol = IPPROTO_TCP;
-//                hints.ai_flags = 0;
-                hints.ai_family = AF_UNSPEC;
-                hints.ai_socktype = SOCK_DGRAM;
-                hints.ai_protocol = IPPROTO_UDP;
-                hints.ai_flags = AI_ADDRCONFIG;
+                
+                if(tcp)
+                {
+                    hints.ai_family = PF_INET;
+                    hints.ai_socktype = SOCK_STREAM;
+                    hints.ai_protocol = IPPROTO_TCP;
+                    hints.ai_flags = 0;
+                }
+                else
+                {
 
-                //if (mode != ICE_RESOLVE_MODE_LOOKUP)
-                if(!hostname)
-                hints.ai_flags |= AI_NUMERICHOST | AI_NUMERICSERV;  // for simple simple lookup for deep looup remove this line
+                    hints.ai_family = AF_UNSPEC;
+                    hints.ai_socktype = SOCK_DGRAM;
+                    hints.ai_protocol = IPPROTO_UDP;
+                    hints.ai_flags = AI_ADDRCONFIG;
+
+                    //if (mode != ICE_RESOLVE_MODE_LOOKUP)
+                    if(!hostname)
+                    hints.ai_flags |= AI_NUMERICHOST | AI_NUMERICSERV;  // for simple simple lookup for deep looup remove this line
+                }
 
                 r = uv_getaddrinfo(loop,
                         req,

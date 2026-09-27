@@ -52,9 +52,13 @@ int main(int argc, char** argv) {
 
     LTrace("Initializing HttpsClient...");
     m_client = new HttpsClient("wss", host, port, target);
+    
+    m_client->setHostName(host); // Or pass your specific SNI domain string here
 
     // Set Host header explicitly for HTTP request & SSL SNI validation
     m_client->_request.set("Host", host);
+    m_client->_request.set("Origin", "http://localhost"); // to fix cross-origin (CORS) issues 
+   
     m_client->_request.setKeepAlive(true);
 
     std::atomic<bool> joined{false};
@@ -189,15 +193,14 @@ int main(int argc, char** argv) {
 
     m_client->setReadStream(new std::stringstream);
 
-    // Connect trigger inside a std::thread to let app.run() initiate event loop processing
-    std::thread connect_thread([]() {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        if (m_client) {
-            m_client->send();
-        }
-    });
-    connect_thread.detach();
-    
+//    // Main context loop sequence
+//    std::thread connect_thread([]() {
+//        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+//        if (m_client) {
+//            m_client->send();
+//        }
+//    });
+//    connect_thread.detach();
     
     m_client->send();
 
@@ -211,3 +214,4 @@ int main(int argc, char** argv) {
 
     return 0;
 }
+

@@ -271,11 +271,17 @@ namespace rtc {
         int ret = 0;
 
 
-        uv_interface_address_t *info = GetNetInterface::info;
+        uv_interface_address_t *g_Info = GetNetInterface::info;
         int icount = GetNetInterface::icount;
+        
+        uv_interface_address_t *info  = nullptr;
 
-        if (info == nullptr)
+        if (g_Info == nullptr)
             uv_interface_addresses(&info, &icount);
+        else
+        {
+            info = g_Info; 
+        }
 
         int i = icount;
 
@@ -330,7 +336,7 @@ namespace rtc {
             }
 
         }
-        if (info != nullptr) {
+        if (info != nullptr && !g_Info) {
             uv_free_interface_addresses(info, icount);
         }
 

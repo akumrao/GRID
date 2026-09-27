@@ -147,18 +147,20 @@ namespace base {
             send(str.c_str(), str.length());
         }
 
-        void HttpsClient::cbDnsResolve(addrinfo* res, void* ptr) {
+        void HttpsClient::cbDnsResolve(addrinfo* res_h, void* ptr) {
             if (_connect) return;
 
+            SInfo << "Connecting " <<  _url.host(); 
             if (!_connect) {
                 _connect = true;
                 
-                //char addr[40] = {'\0'};
-               // int port =0; 
+                char addr[40] = {'\0'};
+                int port =0; 
+	        addrinfo* res = res_h;
                 
                 for (;res != NULL; res = res->ai_next) 
                 { 
-                    /*
+                    
                     if (res->ai_family == AF_INET) {
                         // ipv4
                         //char c[17] = { '\0' };
@@ -174,13 +176,16 @@ namespace base {
                         port= htons(tmp->sin6_port);
                         uv_ip6_name(tmp, addr, 39);
                     }
-                    */
 
-                    LTrace("Connecting ", _url.host(), ":", _url.port())
-                    Connect(_url.host(), _url.port(), res);
+                      LTrace("Dns reolved to address ",  addr, ":", _url.port());
+                      
+                      
+                    // this code is for trial only 
+                    //Connect(addr, port ); It will fails if you try to coonect both ips ( ipv6 and ipv4). TcpclientConnetion is not design for connect both ip in parallel
+                    // break;  and you have to break it here
                 }
                 
-
+		 Connect(_url.host(), _url.port(), res_h); // Keep in mind only connect first ip, fallback to second ip if fails first. 
           
             }
 
@@ -190,7 +195,7 @@ namespace base {
             if (_connect) return;
             LTrace("Resolve DNS ", _url.host());
 
-            resolve(_url.host(), _url.port(), Application::uvGetLoop(), nullptr, true );
+            resolve(_url.host(), _url.port(), Application::uvGetLoop(), nullptr, true , true );
         }
 
         void HttpsClient::setReadStream(std::ostream* os) {
@@ -336,6 +341,11 @@ namespace base {
              if(fnClose)
             fnClose(this, "exit");
 
+        }
+        
+        void HttpsClient::setHostName(const std::string& hostname)
+        {
+           _sslAdapter.setHostName(hostname);
         }
 
         long HttpsClient::sendHeader() {

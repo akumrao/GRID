@@ -693,13 +693,25 @@ void SSLAdapter::stay_uptodate( )
     
 
   }
-    
-    
-    
-    
-    
-    
-    
+  
+
+void SSLAdapter::setHostName(const std::string& hostname) 
+{
+#ifdef USE_MBEDTLS
+    // MbedTLS hostname setting for SNI
+    mbedtls_ssl_set_hostname(&_ssl, hostname.c_str());
+#else
+    // OpenSSL hostname setting for SNI
+    if (_ssl) {
+        SSL_set_tlsext_host_name(_ssl, hostname.c_str());
+        // OpenSSL also benefits from setting the expected hostname for verification purposes
+        SSL_set1_host(_ssl, hostname.c_str());
+    }
+#endif
+}
+
+
+        
     
     
     
@@ -769,6 +781,9 @@ SSL_CTX *InitCTX(bool server)
         ERR_print_errors_fp(stderr);
         abort();
     }
+    
+    // Explicitly enforce minimum TLS version to 1.2 when you see error sslv3 alert handshake failure
+   // SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
 
     SSL_CTX_set_cipher_list(ctx, "ALL:eNULL");
 
@@ -1244,7 +1259,25 @@ int evt_is_tls_stream(const char *bfr, const ssize_t nrd)
 }
 */
 
+void SSLAdapter::setHostName(const std::string& hostname)
+{
+#ifdef USE_MBEDTLS
+    // MbedTLS hostname setting for SNI
+    mbedtls_ssl_set_hostname(&_ssl, hostname.c_str());
+#else
+    // OpenSSL hostname setting for SNI
+    if (_ssl) {
+        SSL_set_tlsext_host_name(_ssl, hostname.c_str());
+        // OpenSSL also benefits from setting the expected hostname for verification purposes
+        SSL_set1_host(_ssl, hostname.c_str());
+    }
+#endif
+}
+
+
 }  // namespace net
 }  // namespace base
 
 #endif
+
+
