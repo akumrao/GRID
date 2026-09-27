@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Public Supabase Realtime Test</title>
+
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      max-width: 760px;
+      margin: 40px auto;
+      padding: 0 16px;
+      color: #222;
+    }
+
+    h1,
+    h2 {
+      margin-bottom: 10px;
+    }
+
+    section {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 18px;
+      margin-bottom: 20px;
+    }
+
+    input,
+    button {
+      box-sizing: border-box;
+      font: inherit;
+      padding: 10px;
+      margin: 4px 0;
+    }
+
+    input {
+      width: 100%;
+    }
+
+    button {
+      cursor: pointer;
+      margin-right: 6px;
+    }
+
+    button:disabled,
+    input:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    #status {
+      padding: 10px;
+      border-radius: 5px;
+      background: #f1f1f1;
+      margin: 12px 0;
+      font-weight: 600;
+    }
+
+    #messages {
+      background: #111;
+      color: #00ff66;
+      border-radius: 6px;
+      min-height: 240px;
+      padding: 14px;
+      white-space: pre-wrap;
+      overflow-x: auto;
+      font-family: monospace;
+      font-size: 13px;
+    }
+
+    .warning {
+      color: #9a6700;
+      background: #fff8c5;
+      padding: 12px;
+      border-radius: 6px;
+    }
+
+    .flex-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .flex-row input {
+      flex: 1;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Public Supabase Realtime Test</h1>
+
+  <section>
+    <h2>Channel Switcher</h2>
+    <div class="flex-row">
+      <input
+        id="newChannelInput"
+        type="text"
+        placeholder="Enter room name (e.g., lobby)"
+      >
+      <button id="connectChannelButton">
+        Connect to Channel
+      </button>
+    </div>
+  </section>
+
+  <section>
+    <h2>Connection</h2>
+
+    <p class="warning">
+      This is a public channel. Anyone who knows the topic can connect,
+      receive messages, and send messages.
+    </p>
+
+    <p>
+      Topic:
+      <code id="topicDisplay">realtime:public:room:lobby</code>
+    </p>
+
+    <div id="status">Connecting...</div>
+  </section>
+
+  <section>
+    <h2>Broadcast Message</h2>
+
+    <input
+      id="messageInput"
+      type="text"
+      placeholder="Type a message"
+      disabled
+    >
+
+    <button id="sendButton" disabled>
+      Send broadcast
+    </button>
+
+    <h3>Event log</h3>
+    <pre id="messages"></pre>
+  </section>
+
+  <script type="module">
+    import { createClient } from
+      'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
+
+    const SUPABASE_URL =
+      'https://dabwulkpyquthvearbfw.supabase.co'
+
+    const SUPABASE_PUBLISHABLE_KEY =
+      'sb_publishable_1V4Zaw720lrIPx8IqmuxmA_ri32Bdqu'
+
+    const BROADCAST_EVENT = 'message_sent'
+
+    const supabase = createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    )
+
+    const statusOutput = document.querySelector('#status')
+    const messagesOutput = document.querySelector('#messages')
+    const messageInput = document.querySelector('#messageInput')
+    const sendButton = document.querySelector('#sendButton')
+    const topicDisplay = document.querySelector('#topicDisplay')
+    const newChannelInput = document.querySelector('#newChannelInput')
+    const connectChannelButton = document.querySelector('#connectChannelButton')
+
+    let channel = null
+
+    function writeLog(message, value = null) {
+      let output = message
+
+      if (value !== null && value !== undefined) {
+        if (typeof value === 'string') {
+          output += ` ${value}`
+        } else {
+          output += ` ${JSON.stringify(value, null, 2)}`
+        }
+      }
+
+      messagesOutput.textContent += `${output}\n`
+      messagesOutput.scrollTop = messagesOutput.scrollHeight
+
+      console.log(output)
+    }
+
+    function setStatus(message) {
+      statusOutput.textContent = message
+      writeLog(`[status] ${message}`)
+    }
+
+    function setMessagingEnabled(enabled) {
+      messageInput.disabled = !enabled
+      sendButton.disabled = !enabled
+    }
+
+    function getErrorMessage(error) {
+      if (!error) {
+        return ''
+      }
+
+      if (typeof error === 'string') {
+        return error
+      }
+
+      return (
+        error.message ||
+        error.reason ||
+        error.code ||
+        String(error)
+      )
+    }
+
+    async function connectToPublicChannel(roomName) {
+      if (channel) {
+        setStatus('Disconnecting from old channel...')
+        setMessagingEnabled(false)
+        await supabase.removeChannel(channel)
+        writeLog('[channel] Removed previous channel subscription')
+      }
+
+      const cleanRoom = roomName.trim().replace(/\s+/g, '-').toLowerCase()
+      const channelTopic = `realtime:public:room:${cleanRoom}`
+      topicDisplay.textContent = channelTopic
+
+      writeLog(`[channel] subscribing to ${channelTopic}`)
+
+      /*
+       * No private: true.
+       *
+       * This is intentionally a public channel and does not require
+       * a signed-in Supabase Auth session.
+       */
+      channel = supabase.channel(channelTopic, {
+        config: {
+          broadcast: {
+            self: true,
+            ack: true
+          }
+        }
+      })
+
+      channel.on(
+        'broadcast',
+        { event: BROADCAST_EVENT },
+        (payload) => {
+          writeLog('[broadcast received]', payload)
+        }
+      )
+
+      channel.subscribe((subscriptionStatus, error) => {
+        const errorMessage = getErrorMessage(error)
+
+        if (errorMessage) {
+          writeLog(
+            `[channel] ${subscriptionStatus} — ${errorMessage}`
+          )
+        } else {
+          writeLog(`[channel] ${subscriptionStatus}`)
+        }
+
+        if (subscriptionStatus === 'SUBSCRIBED') {
+          setStatus(`Connected to public ${channelTopic}`)
+          setMessagingEnabled(true)
+        } else if (subscriptionStatus === 'CHANNEL_ERROR') {
+          setStatus(
+            errorMessage
+              ? `Channel error: ${errorMessage}`
+              : 'Channel error. Check that public access is enabled.'
+          )
+
+          setMessagingEnabled(false)
+        } else {
+          setStatus(`Channel status: ${subscriptionStatus}`)
+          setMessagingEnabled(false)
+        }
+      })
+    }
+
+    async function sendMessage() {
+      const text = messageInput.value.trim()
+
+      if (!text) {
+        return
+      }
+
+      if (!channel) {
+        writeLog('[send error] No active channel')
+        return
+      }
+
+      if (channel.state !== 'joined') {
+        writeLog(
+          `[send error] Channel is not subscribed. Current state: ${channel.state}`
+        )
+        return
+      }
+
+      const payload = {
+        text,
+        sent_at: new Date().toISOString()
+      }
+
+      writeLog('[broadcast] sending', payload)
+
+      const result = await channel.send({
+        type: 'broadcast',
+        event: BROADCAST_EVENT,
+        payload
+      })
+
+      if (result !== 'ok') {
+        writeLog('[broadcast error]', result)
+        return
+      }
+
+      writeLog('[broadcast] sent successfully')
+
+      messageInput.value = ''
+      messageInput.focus()
+    }
+
+    connectChannelButton.addEventListener('click', () => {
+      const room = newChannelInput.value.trim()
+      if (room) {
+        connectToPublicChannel(room)
+      }
+    })
+
+    newChannelInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        connectChannelButton.click()
+      }
+    })
+
+    sendButton.addEventListener('click', sendMessage)
+
+    messageInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        sendMessage()
+      }
+    })
+
+    window.addEventListener('beforeunload', () => {
+      if (channel) {
+        supabase.removeChannel(channel)
+      }
+    })
+
+    connectToPublicChannel('lobby')
+  </script>
+</body>
+</html>
+
