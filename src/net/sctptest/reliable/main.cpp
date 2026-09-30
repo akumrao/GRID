@@ -368,8 +368,16 @@ int main(int argc, char **argv) {
         settingconfig.iceServers.emplace_back(stunServer);
         settingconfig.disableAutoNegotiation = true;
 
-        settingconfig.portdefault = 0;
+        settingconfig.staticPort = ConfSettings::configuration.staticPort;
 
+        settingconfig.gconfig->serverdtsRole = ConfSettings::configuration.serverdtsRole;
+        settingconfig.gconfig->serverdtsRole = ConfSettings::configuration.serverdtsRole;
+        settingconfig.enableTcp = ConfSettings::configuration.enableTcp;
+        settingconfig.enableUdp = ConfSettings::configuration.enableUdp;
+        settingconfig.publicIP = ConfSettings::configuration.publicIP;
+        settingconfig.noPivateIP = ConfSettings::configuration.noPivateIP;
+        //websoc_host = ConfSettings::configuration.websoc_host;
+       // websoc_port = ConfSettings::configuration.websoc_port;
 
         // read cert from file
 #if CERTFROMFILE == 1
