@@ -603,7 +603,7 @@ namespace rtc {
         IP::addr_unmap_inet6_v4mapped((struct sockaddr *) &remotesrc.addr, &remotesrc.len);
 
 
-#if 1
+#if 0
         std::string ret{"addr_record_is_equal "};
         {
 
@@ -684,6 +684,20 @@ namespace rtc {
 
         IP::addr_unmap_inet6_v4mapped((struct sockaddr *) &remotesrc.addr, &remotesrc.len);
 
+
+        #if 0
+        std::string ret{"addr_record_is_equal "};
+        {
+
+          char ip[40];
+          uint16_t port;
+          IP::AddressToString(remotesrc, ip, 40, port);
+          ret += ip + std::string(":") + std::to_string(port);
+
+          SDebug << "AgentNo " << agentNo << " addr_unmap_inet6_v4mapped "
+                 << ret;
+        }
+        #endif
 
 
         OnPacketReceived(storedTuple, remotesrc, (const uint8_t*) data, len);
@@ -847,11 +861,38 @@ namespace rtc {
 
     }
 
-    int WebRtcTransport::agent_direct_send_tcp(const uint8_t* data, size_t size, addr_record_t& record) {
+    int WebRtcTransport::agent_direct_send_tcp(const uint8_t* data, size_t size, addr_record_t record) {
         // Assuming iceServer is a pointer or accessible member within WebRtcTransport
         if (!this->iceServer) {
             return -1;
         }
+
+
+         SInfo << "AgentNo " << agentNo << "agent_direct_send_tcp"              << record.dump();
+     
+
+
+         char ip[40]; uint16_t port;
+         IP::AddressToString(record, ip, 40, port);
+              
+     
+#if !defined(__linux__) && defined(DUALSTACK)
+
+
+      /* addr_record_t remotesrc;
+        IP::CopyAddress((const struct sockaddr *)&record.addr, remotesrc);*/
+
+    
+        IP::addr_map_inet6_v4mapped(
+             (struct sockaddr_storage *)&record.addr,
+            &record.len); // convert ipv4 to ipv6 if needed for windows
+
+         IP::AddressToString(record, ip, 40, port);
+
+#endif   
+
+
+       // SInfo << "AgentNo " << agentNo  << " register_tcp_connection via IceServer: " << ip << ":"     << port;
 
         // 1. Look up the connection directly from IceServer using the binary record
         TcpConnectionBase* tcpConn = this->iceServer->find_tcp_connection(record);
@@ -870,14 +911,9 @@ namespace rtc {
 
 
             // Optional: Keep string logs only if needed, otherwise use record.dump()
-            int family;
-            std::string peerIp;
-            uint16_t port = 0;
-            IP::GetAddressInfo(reinterpret_cast<struct sockaddr*> (&record), family, peerIp, port);
-            SInfo << "AgentNo " << agentNo << " register_tcp_connection via IceServer: " << peerIp << ":" << port;
-
+       
             // Pass the stack-allocated addrinfo down to connect directly
-            tcpConn->Connect(peerIp, port);
+            tcpConn->Connect(ip, port);
         }
 
         // 4. Verify connection health

@@ -106,7 +106,7 @@ namespace rtc {
         void OnDtlsTransportApplicationDataReceived(
                 const rtc::DtlsTransport* dtlsTransport, const uint8_t* data, size_t len) override;
         int agent_direct_send(uint8_t* data, uint32_t nbytes, addr_record_t record);
-        int agent_direct_send_tcp(const uint8_t* data, size_t size, addr_record_t& record);
+        int agent_direct_send_tcp(const uint8_t* data, size_t size, addr_record_t record);
 
     private:
         // Allocated by this.

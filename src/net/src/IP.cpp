@@ -112,7 +112,8 @@ namespace base {
 
             return copiedAddr;
         }
-
+        // Copy the given address into the start addr_record_t mapped // 
+        // this does not work some time need to check why. I think pointer changes the original source. We need to make copy of var mapped. Instread of addr_record_t &mapped do addr_record_t mapped and try
         void IP::CopyAddress(const struct sockaddr* addr, addr_record_t &mapped) {
             switch (addr->sa_family) {
                 case AF_INET:
@@ -188,7 +189,7 @@ namespace base {
         }
 
         // dunplicate funtion need to be remvoed
-
+        // this is not working well need to be remvoed. 
         void IP::GetAddressInfo(const struct sockaddr* addr, int& family, std::string& ip, uint16_t& port) {
 
 
@@ -235,8 +236,8 @@ namespace base {
         }
 
 
-        //          char ip[40];  uint16_t port;
-        //          IP::AddressToString(mapped, ip, port) ;
+        //          char ip[40]; uint16_t port;
+        //          IP::AddressToString(mapped, ip,40, port) ;
         //     
 
         void IP::AddressToString(addr_record_t &mapped, char *ip, int sizeofbuf, uint16_t &port) {
