@@ -12,8 +12,9 @@
 // Dynamic JSON parser 
 #include <nlohmann/json.hpp>
 
-// libwebsockets networking layer
-#include <libwebsockets.h>
+// Custom HTTP/HTTPS Client Networking Layer
+#include "http/HttpClient.h" 
+#include "http/HttpsClient.h" 
 
 // Core libwebrtc headers
 #include "api/peer_connection_interface.h"
@@ -48,11 +49,8 @@ std::string g_currentRoomTopic = "";
 rtc::Thread* g_signalingThreadPtr = nullptr;
 std::atomic<bool> g_keepRunning{true};
 
-// libwebsockets Global States
-struct lws_context* g_lwsContext = nullptr;
-struct lws* g_wsiInstance = nullptr;
-bool g_wsConnected = false;
-std::vector<std::string> g_outboundQueue;
+// Global Client Connection Instance
+ClientConnecton* m_client = nullptr;
 
 // Configuration definitions
 const std::string SUPABASE_URL = "dabwulkpyquthvearbfw.supabase.co";
@@ -86,13 +84,12 @@ std::string GenerateUniqueRoomCode() {
     return ss.str();
 }
 
-// Enqueue arbitrary strings safely for outbound transmission
+// Enqueue arbitrary strings safely for outbound transmission via m_client
 void EnqueueOutboundMessage(const std::string& msg) {
-    if (g_wsiInstance && g_wsConnected) {
-        g_outboundQueue.push_back(msg);
-        lws_callback_on_writable(g_wsiInstance);
+    if (m_client) {
+        m_client->send(msg.c_str(), msg.size(), false);
     } else {
-        std::cerr << "[WS Send Failure] Cannot queue packet: WebSocket instance disconnected or unavailable!" << std::endl;
+        std::cerr << "[WS Send Failure] Cannot send packet: Client connection instance unavailable!" << std::endl;
     }
 }
 
@@ -250,121 +247,55 @@ void SendSignalToSupabase(const std::string& targetId, const std::string& eventT
     root["payload"] = payload;
 
     std::string dumpedMsg = root.dump();
-    std::cout << "[WS Queue Add] Active Queue Size: " << g_outboundQueue.size() + 1 << " | Output payload: " << dumpedMsg << std::endl;
+    std::cout << "[WS Queue Add] Output payload: " << dumpedMsg << std::endl;
     EnqueueOutboundMessage(dumpedMsg);
 }
 
-// libwebsockets Event Protocol Callback 
-static int callback_supabase_signaling(struct lws* wsi, enum lws_callback_reasons reason,
-                                       void* user, void* in, size_t len) {
-    switch (reason) {
-        case LWS_CALLBACK_CLIENT_ESTABLISHED: {
-            std::cout << "[WebSocket State] Connected to Supabase Gateway! Requesting Phoenix subscription..." << std::endl;
-            g_wsConnected = true;
-            g_wsiInstance = wsi;
-
-            json joinMsg;
-            joinMsg["topic"] = g_currentRoomTopic;
-            joinMsg["event"] = "phx_join";
-            joinMsg["payload"] = json::object();
-            joinMsg["ref"] = "1";
-            
-            std::string joinPayload = joinMsg.dump();
-            std::cout << "[WebSocket Tx] Subscription Handshake: " << joinPayload << std::endl;
-            g_outboundQueue.push_back(joinPayload);
-            lws_callback_on_writable(wsi);
-            break;
-        }
-        case LWS_CALLBACK_CLIENT_RECEIVE: {
-            std::string incomingData((const char*)in, len);
-            if (g_signalingThreadPtr) {
-                g_signalingThreadPtr->PostTask([incomingData]() {
-                    OnInboundSupabaseMessage(incomingData);
-                });
-            }
-            break;
-        }
-        case LWS_CALLBACK_CLIENT_WRITEABLE: {
-            if (!g_outboundQueue.empty()) {
-                std::string msg = g_outboundQueue.front();
-                g_outboundQueue.erase(g_outboundQueue.begin());
-
-                std::vector<unsigned char> buf(LWS_PRE + msg.size());
-                memcpy(&buf[LWS_PRE], msg.c_str(), msg.size());
-
-                int bytesWritten = lws_write(wsi, &buf[LWS_PRE], msg.size(), LWS_WRITE_TEXT);
-                std::cout << "[WebSocket Tx] Sent frame (" << bytesWritten << " bytes successfully transmitted)." << std::endl;
-                
-                if (!g_outboundQueue.empty()) {
-                    lws_callback_on_writable(wsi);
-                }
-            }
-            break;
-        }
-        case LWS_CALLBACK_CLIENT_RECEIVE_PONG: {
-            std::cout << "[WebSocket Engine] Wire-level PONG response received from server." << std::endl;
-            break;
-        }
-        case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
-            std::cerr << "[WebSocket Failure] Connection error encountered. Wire state dropped." << std::endl;
-            g_wsConnected = false;
-            g_wsiInstance = nullptr;
-            break;
-        case LWS_CALLBACK_CLOSED:
-            std::cout << "[WebSocket State] Connection channel closed cleanly." << std::endl;
-            g_wsConnected = false;
-            g_wsiInstance = nullptr;
-            break;
-        default:
-            break;
-    }
-    return lws_callback_http_dummy(wsi, reason, user, in, len);
-}
-
-// Protocol specifications registration
-static struct lws_protocols protocols[] = {
-    { "supabase-protocol", callback_supabase_signaling, 0, 0 },
-    { NULL, NULL, 0, 0 } /* terminator */
-};
-
-// Initialize libwebsockets configuration context paths
+// Initialize HttpsClient configuration and connection handlers
 void InitializeSupabaseRealtime(const std::string& roomCode) {
     g_currentRoomTopic = "realtime:room-" + roomCode;
     std::cout << "[Init Realtime] Binding topic channel: " << g_currentRoomTopic << std::endl;
 
-    struct lws_context_creation_info info;
-    memset(&info, 0, sizeof(info));
-    info.port = CONTEXT_PORT_NO_LISTEN;
-    info.protocols = protocols;
-    info.gid = -1;
-    info.uid = -1;
-    info.options = LWS_SERVER_OPTION_DO_SSL_GLOBAL_INIT;
-    
-    // Correct Fix: Define structural WebSocket pings (in seconds) inside context creation options
-//    info.ws_ping_pong_interval = 20;
+    const std::string host = SUPABASE_URL;
+    const int port = 443;
+    const std::string target = "/realtime/v1/websocket?apikey=" + SUPABASE_ANON_KEY + "&vsn=1.0.0";
 
-    g_lwsContext = lws_create_context(&info);
-    if (!g_lwsContext) {
-        std::cerr << "[Fatal Error] Failed to initialize libwebsockets context!" << std::endl;
-        return;
-    }
+    m_client = new HttpsClient("wss", host, port, target);
+    m_client->setHostName(host);
+    m_client->_request.set("Host", host);
+    m_client->_request.set("Origin", "http://localhost");
+    m_client->_request.setKeepAlive(true);
 
-    std::string pathStr = "/realtime/v1/websocket?apikey=" + SUPABASE_ANON_KEY + "&vsn=1.0.0";
-    std::cout << "[Init Realtime] Gateway Path: " << pathStr << std::endl;
+    m_client->fnConnect = [](HttpBase* con) {
+        std::cout << "[WebSocket State] Connected to Supabase Gateway! Requesting Phoenix subscription..." << std::endl;
 
-    struct lws_client_connect_info ccinfo;
-    memset(&ccinfo, 0, sizeof(ccinfo));
-    ccinfo.context = g_lwsContext;
-    ccinfo.address = SUPABASE_URL.c_str();
-    ccinfo.port = 443;
-    ccinfo.ssl_connection = LCCSCF_USE_SSL;
-    ccinfo.path = pathStr.c_str();
-    ccinfo.host = ccinfo.address;
-    ccinfo.origin = ccinfo.address;
-    ccinfo.protocol = protocols[0].name;
+        json joinMsg;
+        joinMsg["topic"] = g_currentRoomTopic;
+        joinMsg["event"] = "phx_join";
+        joinMsg["payload"] = json::object();
+        joinMsg["ref"] = "1";
 
-    std::cout << "[Init Realtime] Attempting SSL WebSocket link to host: " << SUPABASE_URL << std::endl;
-    lws_client_connect_via_info(&ccinfo);
+        std::string joinPayload = joinMsg.dump();
+        std::cout << "[WebSocket Tx] Subscription Handshake: " << joinPayload << std::endl;
+        con->send(joinPayload.c_str(), joinPayload.size(), false);
+    };
+
+    m_client->fnPayload = [](HttpBase* con, const char* data, size_t sz) {
+        if (!data || sz == 0) return;
+        std::string incomingData(data, sz);
+        if (g_signalingThreadPtr) {
+            g_signalingThreadPtr->PostTask([incomingData]() {
+                OnInboundSupabaseMessage(incomingData);
+            });
+        }
+    };
+
+    m_client->fnClose = [](HttpBase* con, std::string str) {
+        std::cout << "[WebSocket State] Connection channel closed cleanly: " << str << std::endl;
+    };
+
+    m_client->setReadStream(new std::stringstream);
+    m_client->send();
 }
 
 // ==========================================
@@ -617,41 +548,22 @@ int main() {
         while (g_keepRunning) {
             std::this_thread::sleep_for(std::chrono::seconds(25));
             
-            // 1. Maintain WebSocket Phoenix Signaling Link directly with the Server
-            if (g_wsConnected) {
-                json hb;
-                hb["topic"] = "phoenix";
-                hb["event"] = "phx_heartbeat";
-                hb["payload"] = json::object();
-                hb["ref"] = "hb_" + std::to_string(hbSeq++);
+            // Maintain Phoenix Signaling Link directly with the Server
+            json hb;
+            hb["topic"] = "phoenix";
+            hb["event"] = "phx_heartbeat";
+            hb["payload"] = json::object();
+            hb["ref"] = "hb_" + std::to_string(hbSeq++);
 
-                std::string hbStr = hb.dump();
-                
-                if (g_signalingThreadPtr) {
-                    g_signalingThreadPtr->PostTask([hbStr]() {
-                        EnqueueOutboundMessage(hbStr);
-                    });
-                }
-            }
+            std::string hbStr = hb.dump();
             
-//            // 2. Maintain WebRTC Direct Link across local NAT setups
-//            if (g_signalingThreadPtr) {
-//                g_signalingThreadPtr->PostTask([]() {
-//                    json rtcHb;
-//                    rtcHb["type"] = "ping";
-//                    rtcHb["text"] = "keepalive";
-//                    std::string rtcHbStr = rtcHb.dump();
-//
-//                    for (auto& [clientId, viewer] : activeViewers) {
-//                        if (viewer->dataChannel && viewer->dataChannel->state() == webrtc::DataChannelInterface::kOpen) {
-//                            std::cout << "[WebRTC Keep-Alive] Sending DataChannel ping to client: " << clientId << std::endl;
-//                            webrtc::DataBuffer buffer(rtcHbStr);
-//                            viewer->dataChannel->Send(buffer);
-//                        }
-//                    }
-//                });
-//            }
-            // 2. Print the current number of active viewer connections safely
+            if (g_signalingThreadPtr) {
+                g_signalingThreadPtr->PostTask([hbStr]() {
+                    EnqueueOutboundMessage(hbStr);
+                });
+            }
+
+            // Print the current number of active viewer connections safely
             if (g_signalingThreadPtr) {
                 g_signalingThreadPtr->PostTask([]() {
                     std::cout << "[Host Status] Currently connected viewers: " << activeViewers.size() << std::endl;
@@ -660,12 +572,8 @@ int main() {
         }
     });
 
-
     std::cout << "[Host Loop] Entering main message processing loop..." << std::endl;
     while (g_keepRunning) {
-        if (g_lwsContext) {
-            lws_service(g_lwsContext, 0); 
-        }
         main_thread->ProcessMessages(5);
     }
 
@@ -674,8 +582,10 @@ int main() {
         heartbeatThread.join();
     }
 
-    if (g_lwsContext) {
-        lws_context_destroy(g_lwsContext);
+    if (m_client) {
+        m_client->Close();
+        delete m_client;
+        m_client = nullptr;
     }
     
     rtc::ThreadManager::Instance()->UnwrapCurrentThread();
