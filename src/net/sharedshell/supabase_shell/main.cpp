@@ -679,7 +679,7 @@ int main(int argc, char **argv) {
         settingconfig.iceServers.emplace_back(stunServer);
         settingconfig.disableAutoNegotiation = true;
 
-       settingconfig.staticPort = ConfSettings::configuration.staticPort;
+       settingconfig.staticPort = 0;
 
         settingconfig.gconfig->serverdtsRole = ConfSettings::configuration.serverdtsRole;
         settingconfig.enableTcp = ConfSettings::configuration.enableTcp;
