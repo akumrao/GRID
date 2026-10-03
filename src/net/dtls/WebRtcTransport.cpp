@@ -457,7 +457,7 @@ namespace rtc {
 
     inline void WebRtcTransport::OnPacketReceived(base::net::TransportTuple *tuple,  addr_record_t &remotesrc, const uint8_t * data, size_t len) {
 
-        SDebug << "AgentNo " << agentNo << " OnPacketReceived " << len;
+       // SDebug << "AgentNo " << agentNo << " OnPacketReceived " << len;
 
         //        assertm(this->dtlsTransport, "no dtlsTransport");
         //
@@ -529,7 +529,7 @@ namespace rtc {
 
     inline void WebRtcTransport::OnDtlsDataReceived(const base::net::TransportTuple* tuple, const uint8_t* data, size_t len) {
 
-        SDebug << "AgentNo " << agentNo << " OnDtlsDataReceived " << len;
+       // SDebug << "AgentNo " << agentNo << " OnDtlsDataReceived " << len;
 
         // assertm(this->dtlsTransport, "no dtlsTransport");
 
