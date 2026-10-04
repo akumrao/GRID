@@ -1,6 +1,0 @@
-Remove-NetFirewallRule -DisplayName "Supabase Shell *" -ErrorAction SilentlyContinue
-
-New-NetFirewallRule -DisplayName "Supabase Shell - Inbound Allow All" -Direction Inbound -Program "E:\workspace\sharedUsb\src\net\sharedshell\supabase_shell\build\Debug\shell.exe" -Action Allow -Protocol Any -Profile Any
-
-New-NetFirewallRule -DisplayName "Supabase Shell - Outbound Allow All" -Direction Outbound -Program "E:\workspace\sharedUsb\src\net\sharedshell\supabase_shell\build\Debug\shell.exe" -Action Allow -Protocol Any -Profile Any
-
