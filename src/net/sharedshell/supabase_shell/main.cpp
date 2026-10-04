@@ -871,10 +871,7 @@ int main(int argc, char **argv) {
 
 
             running = false;
-            phx_replied = true; // Unblock thread if waiting
-            if (heartbeat_thread.joinable()) {
-                heartbeat_thread.join();
-            }
+
               
         //    json m;
        //     m["type"] = "bye";
@@ -905,6 +902,16 @@ int main(int argc, char **argv) {
 
 
             m_client->Close();
+
+
+
+
+
+            phx_replied = true; // Unblock thread if waiting
+            if (heartbeat_thread.joinable()) {
+                heartbeat_thread.join();
+            }
+
             //delete m_client;
 
 

@@ -102,7 +102,7 @@ pty_process *process_init(void *ctx, uv_loop_t *loop, char *argv[], char *envp[]
   process->loop = loop;
   process->argv = argv;
   process->envp = envp;
-  process->columns = 80;
+  process->columns = 120;
   process->rows = 24;
   process->exit_code = -1;
   return process;

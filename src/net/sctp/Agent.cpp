@@ -17,8 +17,8 @@ using namespace base;
 
 namespace stun {
 
-    //#define  SDebug  SInfo
-
+   // #define  SDebug  STrace
+   // #define  SInfo  STrace
 
     //void thread_function() {
     //    std::thread::id thread_id = std::this_thread::get_id();
