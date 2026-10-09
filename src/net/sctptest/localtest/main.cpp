@@ -33,9 +33,9 @@ using json = nlohmann::json;
 template <class T> weak_ptr<T> make_weak_ptr(shared_ptr<T> ptr) {
     return ptr;
 }
-unordered_map<string, shared_ptr<Client>> clients
-{
-};
+unordered_map<string, shared_ptr<Client>> clients{};
+std::mutex clients_mutex;
+
 shared_ptr<Client> createPeerConnection_lc1(Configuration &config, string id,
         shared_ptr<PeerConnection> pc1,
         shared_ptr<PeerConnection> pc2);
@@ -79,33 +79,64 @@ int main(int argc, char **argv) {
     cout << "The local ID is: " << localId << endl;
     rtc::DtlsTransport::ClassInit();
     DepUsrSCTP::ClassInit();
-#if localtesting
+
     std::string id1 = "server1";
     std::string id2 = "server2";
     auto pc1 = make_shared<PeerConnection>(settingconfig);
     settingconfig.staticPort = settingconfig.staticPort + 1;
     auto pc2 = make_shared<PeerConnection>(settingconfig);
-    clients.emplace(id1, createPeerConnection_lc1(settingconfig, id1, pc1, pc2));
-    clients.emplace(id2, createPeerConnection_lc2(settingconfig, id2, pc2, pc1));
-#else
-#endif
+ 
+    auto client1 = createPeerConnection_lc1(settingconfig, id1, pc1, pc2);
+    {
+      std::lock_guard<std::mutex> lg(clients_mutex);
+      clients.emplace(id1, client1);
+      
+    }
+    auto client2 = createPeerConnection_lc2(settingconfig, id2, pc2, pc1);
+    {
+      std::lock_guard<std::mutex> lg(clients_mutex);
+      clients.emplace(id2, client2);
+    }
+
+
     app.waitForShutdown([&](void *) {
-        SInfo << "app.run() is over";
+  
         {
-            //std::lock_guard<std::mutex> lock(clients_mutex);
+            
             for (auto& pair : clients) {
                  SInfo << "Closing and cleaning up active clients and peer connections " << pair.first;
                 if (pair.second && pair.second->peerConnection) {
                     pair.second->peerConnection->close();
                 }
             }
-            clients.clear();
+
         }
+
+        {
+
+          for (auto &pair : clients) {
+            SInfo << "Closing and cleaning up active clients and peer "
+                     "connections "
+                  << pair.first;
+            if (pair.second && pair.second->peerConnection) {
+              uv_sleep(100);
+ 
+            }
+          }
+          
+        }
+
+        {
+           std::lock_guard<std::mutex> lock(clients_mutex);
+           clients.clear();
+        }
+
+        SInfo << "app.run() is over";
 
         DepUsrSCTP::ClassDestroy();
         Logger::destroy();
     });
-    SInfo << "Cleaning up..." << endl;
+    std::cout << "Exiting main..." << endl;
     return 0;
 }
 
@@ -123,7 +154,7 @@ shared_ptr<Client> createPeerConnection_lc1(Configuration &config, string id,
                 {
                     SInfo << "createPeerConnection_lc1 close " << id;
                       
-                    clients.erase(id);
+                   // clients.erase(id);
                 }
             }
         });
@@ -205,7 +236,7 @@ shared_ptr<Client> createPeerConnection_lc2(Configuration &config, string id,
                     state == PeerConnection::State::Closed) {
                 {
                      SInfo << "createPeerConnection_lc2 close " << id;
-                    clients.erase(id);
+                    //clients.erase(id);
                 }
             }
         });
