@@ -50,7 +50,7 @@ namespace rtc {
             m_udpServer = new base::net::UdpServer(this, IP, port);
 
             m_udpServer->bind();
-            
+
             port = m_udpServer->GetLocalPort();
         }
 
@@ -203,14 +203,14 @@ namespace rtc {
         SInfo << "~WebRtcTransport over()";
     }
 
-    void WebRtcTransport::InitDtls(bool server, std::string announcedIp, addr_record_t &remotemapped, TransportTuple *tuple,  CertificateFingerprint dtlsRemoteFingerprint) {
+    void WebRtcTransport::InitDtls(bool server, std::string announcedIp, addr_record_t &remotemapped, TransportTuple *tuple, CertificateFingerprint dtlsRemoteFingerprint) {
 
         SInfo << "AgentNo " << agentNo << " InitDtls " << remotemapped.dump();
-        
 
-        if(!tuple) {
-            SError << "AgentNo " << agentNo <<  "not selected, not possible state";
-            return ;
+
+        if (!tuple) {
+            SError << "AgentNo " << agentNo << "not selected, not possible state";
+            return;
         }
 
         this->dtlsTransport = new rtc::DtlsTransport(this);
@@ -218,7 +218,7 @@ namespace rtc {
         if (config.enableUdp) {
             this->udpSockets[m_udpServer] = announcedIp;
 
-          //  TransportTuple tuple(m_udpServer, reinterpret_cast<struct sockaddr*> (&remotemapped.addr));
+            //  TransportTuple tuple(m_udpServer, reinterpret_cast<struct sockaddr*> (&remotemapped.addr));
 
 
             auto* storedTuple = iceServer->HasTuple(tuple);
@@ -234,7 +234,7 @@ namespace rtc {
         }
 
         if (config.enableTcp) {
-          //  TcpConnectionBase* tcpConn = this->iceServer->find_tcp_connection(remotemapped);
+            //  TcpConnectionBase* tcpConn = this->iceServer->find_tcp_connection(remotemapped);
             //if (tcpConn)
             {
 
@@ -249,9 +249,9 @@ namespace rtc {
                 }
 
             }
-//            else {
-//                SError << "AgentNo " << agentNo << " not this connection registered " << remotemapped.dump();
-//            }
+            //            else {
+            //                SError << "AgentNo " << agentNo << " not this connection registered " << remotemapped.dump();
+            //            }
 
         }
 
@@ -455,32 +455,9 @@ namespace rtc {
         this->dtlsTransport->SendApplicationData(data, len);
     }
 
-    inline void WebRtcTransport::OnPacketReceived(base::net::TransportTuple *tuple,  addr_record_t &remotesrc, const uint8_t * data, size_t len) {
+    inline void WebRtcTransport::OnPacketReceived(base::net::TransportTuple *tuple, addr_record_t &remotesrc, const uint8_t * data, size_t len) {
 
-       // SDebug << "AgentNo " << agentNo << " OnPacketReceived " << len;
-
-        //        assertm(this->dtlsTransport, "no dtlsTransport");
-        //
-        //        // Increase receive transmission.
-        //        //		rtc::Transport::DataReceived(len);
-        //
-        //
-        //        // Check if it's DTLS.
-        //        if (rtc::DtlsTransport::IsDtls((const uint8_t*) data, len)) {
-        //            mutex.lock();
-        //
-        //            //      SInfo  << "AgentNo " << agentNo << " locked " << len;
-        //
-        //            if (dtlsTransport)
-        //                OnDtlsDataReceived(tuple, data, len);
-        //
-        //            //      SInfo  << "AgentNo " << agentNo << " unlocked " << len;
-        //            mutex.unlock();
-        //        } else {
-        //            SInfo << "AgentNo " << agentNo << " OnPacketReceived len: " << len << " data " << data;
-        //
-        //            LWarn("ignoring received packet of unknown type");
-        //        }
+        // SDebug << "AgentNo " << agentNo << " OnPacketReceived " << len;
 
 
         SDebug << "AgentNo " << agentNo << " OnPacketReceived " << len;
@@ -488,54 +465,33 @@ namespace rtc {
         assertm(this->iceServer, "no iceServer");
         // assertm(this->dtlsTransport, "no dtlsTransport");
 
+        //
+        //        bool isStun = IsStun((const uint8_t*) data, len);
+        //
+        //        if (isStun) {
+        //            /// base::net::TransportTuple tuple(socket, (struct sockaddr *) &remotesrc.addr);
 
-        bool isStun = IsStun((const uint8_t*) data, len);
-
-        if (isStun) {
-            /// base::net::TransportTuple tuple(socket, (struct sockaddr *) &remotesrc.addr);
-
-            agent->onStunMessage((unsigned char *) data, len, &remotesrc, nullptr, tuple);
-        } else {
-            // Check if it's DTLS.
-            if (rtc::DtlsTransport::IsDtls(data, len)) {
-                OnDtlsDataReceived(tuple, data, len);
-            } else {
-                LWarn("ignoring received packet of unknown type");
-            }
-        }
+        agent->onMessage((unsigned char *) data, len, &remotesrc, nullptr, tuple);
 
 
     }
 
-    //    void WebRtcTransport::OnStunDataReceived(
-    //            base::net::TransportTuple* tuple, const uint8_t* data, size_t len) {
-    //
-    //
-    //
-    //
-    //        rtc::StunPacket* packet = rtc::StunPacket::Parse(data, len);
-    //
-    //        if (!packet) {
-    //            LWarn("ignoring wrong STUN packet received");
-    //
-    //            return;
-    //        }
-    //
-    //        // Pass it to the IceServer.
-    //        this->iceServer->ProcessStunPacket(packet, tuple);
-    //
-    //        delete packet;
-    //    }
 
-    inline void WebRtcTransport::OnDtlsDataReceived(const base::net::TransportTuple* tuple, const uint8_t* data, size_t len) {
 
-       // SDebug << "AgentNo " << agentNo << " OnDtlsDataReceived " << len;
+    void WebRtcTransport::OnDtlsDataReceived(const base::net::TransportTuple* tuple, const uint8_t* data, size_t len) {
+
+        // SDebug << "AgentNo " << agentNo << " OnDtlsDataReceived " << len;
+
+
+        if (!rtc::DtlsTransport::IsDtls(data, len)) {
+            LWarn("ignoring received packet of unknown type");
+        }
 
         // assertm(this->dtlsTransport, "no dtlsTransport");
 
         // Ensure it comes from a valid tuple.
         if (!dtlsTransport) {
-            SWarn << "buffering DTLS request coming from tuple "<<  tuple->Dump() << " . since dtls init is not done yet ";
+            SWarn << "buffering DTLS request coming from tuple " << tuple->Dump() << " . since dtls init is not done yet ";
 
             binaryPacketQueue.emplace(data, data + len);
 
@@ -641,7 +597,7 @@ namespace rtc {
 
         auto* storedTuple = iceServer->AddTuple(&tuple);
 
-        OnPacketReceived(storedTuple, remotesrc, (const uint8_t *)data, len);
+        OnPacketReceived(storedTuple, remotesrc, (const uint8_t *) data, len);
     }
 
     inline void WebRtcTransport::on_close(base::net::Listener* conn) {
@@ -685,19 +641,19 @@ namespace rtc {
         IP::addr_unmap_inet6_v4mapped((struct sockaddr *) &remotesrc.addr, &remotesrc.len);
 
 
-        #if 0
+#if 0
         std::string ret{"addr_record_is_equal "};
         {
 
-          char ip[40];
-          uint16_t port;
-          IP::AddressToString(remotesrc, ip, 40, port);
-          ret += ip + std::string(":") + std::to_string(port);
+            char ip[40];
+            uint16_t port;
+            IP::AddressToString(remotesrc, ip, 40, port);
+            ret += ip + std::string(":") + std::to_string(port);
 
-          SDebug << "AgentNo " << agentNo << " addr_unmap_inet6_v4mapped "
-                 << ret;
+            SDebug << "AgentNo " << agentNo << " addr_unmap_inet6_v4mapped "
+                    << ret;
         }
-        #endif
+#endif
 
 
         OnPacketReceived(storedTuple, remotesrc, (const uint8_t*) data, len);
@@ -826,6 +782,9 @@ namespace rtc {
             return;
         }
 
+        if( this->iceServer->GetSelectedTuple()->GetProtocol()  == TransportTuple::Protocol::UDP)
+             agent->agent_send(data ,len , 0 );
+        else
         this->iceServer->GetSelectedTuple()->Send(data, len);
 
         // Increase send transmission.
@@ -868,31 +827,32 @@ namespace rtc {
         }
 
 
-         SInfo << "AgentNo " << agentNo << "agent_direct_send_tcp"              << record.dump();
-     
+        SInfo << "AgentNo " << agentNo << "agent_direct_send_tcp" << record.dump();
 
 
-         char ip[40]; uint16_t port;
-         IP::AddressToString(record, ip, 40, port);
-              
-     
+
+        char ip[40];
+        uint16_t port;
+        IP::AddressToString(record, ip, 40, port);
+
+
 #if !defined(__linux__) && defined(DUALSTACK)
 
 
-      /* addr_record_t remotesrc;
-        IP::CopyAddress((const struct sockaddr *)&record.addr, remotesrc);*/
+        /* addr_record_t remotesrc;
+          IP::CopyAddress((const struct sockaddr *)&record.addr, remotesrc);*/
 
-    
+
         IP::addr_map_inet6_v4mapped(
-             (struct sockaddr_storage *)&record.addr,
-            &record.len); // convert ipv4 to ipv6 if needed for windows
+                (struct sockaddr_storage *) &record.addr,
+                &record.len); // convert ipv4 to ipv6 if needed for windows
 
-         IP::AddressToString(record, ip, 40, port);
+        IP::AddressToString(record, ip, 40, port);
 
 #endif   
 
 
-       // SInfo << "AgentNo " << agentNo  << " register_tcp_connection via IceServer: " << ip << ":"     << port;
+        // SInfo << "AgentNo " << agentNo  << " register_tcp_connection via IceServer: " << ip << ":"     << port;
 
         // 1. Look up the connection directly from IceServer using the binary record
         TcpConnectionBase* tcpConn = this->iceServer->find_tcp_connection(record);
@@ -911,7 +871,7 @@ namespace rtc {
 
 
             // Optional: Keep string logs only if needed, otherwise use record.dump()
-       
+
             // Pass the stack-allocated addrinfo down to connect directly
             tcpConn->Connect(ip, port);
         }
@@ -922,7 +882,7 @@ namespace rtc {
         }
 
 
-        return tcpConn->Write((const char*)data, size, nullptr);
+        return tcpConn->Write((const char*) data, size, nullptr);
     }
 
     void WebRtcTransport::on_connect(base::net::Listener* conn) {

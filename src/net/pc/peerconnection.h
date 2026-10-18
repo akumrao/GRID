@@ -133,7 +133,9 @@ public:
 	uint16_t maxDataChannelId() const;
 	bool getSelectedCandidatePair(Candidate *local, Candidate *remote);
         
+        #ifdef STUN_TURN_AGENT_TEST
         void recv(unsigned char * data , size_t size);
+        #endif
         int send(unsigned char * data , size_t size);
 
 	void setLocalDescription(Description::Type type = Description::Type::Unspec);
@@ -172,7 +174,11 @@ public:
 	void onIceStateChange(std::function<void(IceState state)> callback);
 	void onGatheringStateChange(std::function<void(GatheringState state)> callback);
 	void onSignalingStateChange(std::function<void(SignalingState state)> callback);
+        
+#ifdef STUN_TURN_AGENT_TEST
+        recv_callback mRecvChangeCallback;
         void onRecv(recv_callback callback);
+#endif        
 
 	void resetCallbacks();
 	CertificateFingerprint remoteFingerprint();
@@ -218,7 +224,7 @@ public:
 	std::function<void(GatheringState )> mGatheringStateChangeCallback;
 	std::function<void(SignalingState)> mSignalingStateChangeCallback;
 	//std::function<void<std::shared_ptr<Track>> mTrackCallback;
-        recv_callback mRecvChangeCallback;
+        
         
         
         

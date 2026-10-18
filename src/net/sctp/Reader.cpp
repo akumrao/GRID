@@ -12,763 +12,715 @@ using namespace base;
 
 namespace stun {
 
-  /* --------------------------------------------------------------------- */
+    /* --------------------------------------------------------------------- */
 
-  static bool stun_validate_cookie(uint32_t cookie);
+    static bool stun_validate_cookie(uint32_t cookie);
+    static int stun_read_value_mapped_address(const void *data, size_t size, addr_record_t *mapped, const uint8_t *mask);
 
-  /* --------------------------------------------------------------------- */
+    /* --------------------------------------------------------------------- */
 
-  Reader::Reader() 
-    :dx(0)
-  {
-  }
-
-  /* @todo Reader::process - we can optimize this part by not copying but setting pointers to the  members of the MessageStun. */
-  /* @todo Reader::process - we need to implement the rules as described here: http://tools.ietf.org/html/rfc5389#section-7.3 */
-  int Reader::process(uint8_t* data, uint32_t nbytes, MessageStun* msg) {
-
-    
-    if (!data) {
-        
-        
-      LError("stun::Reader - error: received invalid data in Reader::process()");
-      return -1;
-    }
-    if (!msg) {
-      LError("stun::Reader - error: invalid stun::MessageStun passed into Reader::process()");
-      return -1;
+    Reader::Reader() {
     }
 
-    /* handle non-stun data (e.g. DTLS) */
-    if ( (data[0] & 0xC0) != 0x00) {
-      return 1;
-    }
-    
+    /* @todo Reader::process - we can optimize this part by not copying but setting pointers to the  members of the MessageStun. */
 
-    /* resetting the buffer - @todo - at the bottom of this function we erase all read bytes which isn't 100% necessary as we process a full packet a time */
-    dx = 0;
-    buffer.clear();
-    
-    std::copy(data, data + nbytes, std::back_inserter(buffer));
-    
-    /* A stun message must at least contain 20 bytes. */
-    if (buffer.size() < 20) {
-      return 1;
-    }
+#define STUN_SECURITY_PASSWORD_ALGORITHMS_BIT 0x01
+#define STUN_SECURITY_USERNAME_ANONYMITY_BIT 0x02
 
-    STrace << "stun::Reader - verbose: data to process: " << nbytes << " bytes, " <<  buffer.size();
-    
-    /* create the base message */
-    msg->type = readU16();
-  
-    msg->msg_class = (stun_class_t)( msg->type & STUN_CLASS_MASK);
-    msg->msg_method = (stun_method_t)( msg->type & ~STUN_CLASS_MASK);
-    
-    msg->length = readU16();
-    msg->cookie = readU32();
-    memcpy(msg->transaction_id,  getArray(STUN_TRANSACTION_ID_SIZE), STUN_TRANSACTION_ID_SIZE);
-//  msg->transaction[0] = readU32();
-//  msg->transaction[1] = readU32();
-//  msg->transaction[2] = readU32();
-
-    //PrintDebug("stun::Reade msg len %d, transactionids %x, %x, %x \n ", msg->length,  msg->transaction[0],  msg->transaction[1],  msg->transaction[2] );
-
-    #if PRINTDEBUG
-
-    PrintDebug("stun::Reade msg  transactionids: ");
-       for (int k = 0; k < STUN_TRANSACTION_ID_SIZE; ++k) {
-         PrintDebug("%02X ", msg->transaction_id[k]);
-    }
-    PrintDebug("\n");
-    
-    #endif
-    
-          
-    /* validate */
-    if (!stun_validate_cookie(msg->cookie)) {
-      SWarn << "stun::Reader - warning: invalid STUN cookie, number of bytes: "  << nbytes;
-      PrintDebug("stun::Reader - warning: invalid cookie data: %02X %02X %02X %02X\n", data[0], data[1], data[2], data[3]);
-      buffer.clear();
-      dx = 0;
-      return 1;
-    }
-
-    /* parse the rest of the message */
-//    int c = 0;
-    uint16_t attr_type;
-    uint16_t attr_length;
-    uint32_t attr_offset;
-    uint32_t prev_dx;
-    
-    if(bytesLeft() != msg->length)
-    PrintDebug("stun::Read Error msg len %d, bytesLeft %d \n ", msg->length,bytesLeft());
-    
-    while (bytesLeft() >= 4) {
-      
-      Attribute* attr = NULL;
-      prev_dx = dx;
-      attr_offset = dx; 
-      attr_type = readU16();
-      attr_length = readU16();
-
-      PrintDebug("stun::Reader - received message type: %s, Type: %s, Length: %d, bytes left: %u, current index: %ld\n", 
-             message_type_to_string(msg->type).c_str(),
-             attribute_type_to_string(attr_type).c_str(), 
-             attr_length, 
-             bytesLeft(), 
-             dx);
-
-      switch (attr_type) {
-
-
-        /* no parsing needed for these */
-        case STUN_ATTR_USE_CANDIDATE: {
-          attr = new UseCandidate();
-          break;
+    int Reader::process(uint8_t* data, uint32_t size, MessageStun* msg) {
+        if (!data) {
+            SError << "stun::Reader - error: received invalid data in Reader::process()";
+            return -1;
+        }
+        if (!msg) {
+            SError << "stun::Reader - error: invalid stun::MessageStun passed into Reader::process()";
+            return -1;
         }
 
-        case STUN_ATTR_USERNAME: { 
-          Username* username = new Username();
-          username->value = readString(attr_length);
-         
-          memcpy(msg->credentials.username,  username->value.buffer.data(), attr_length);
-          msg->credentials.username[attr_length] = '\0';
-          
-                  
-          attr = (Attribute*) username;
-          STrace << "stun::Reader - verbose: username: " <<  username->value.buffer.data();
-          break;
+//       /* handle non-stun data (e.g. DTLS) */
+//        if ((data[0] & 0xC0) != 0x00) {
+//            return -1;
+//        }
+
+        if (size < sizeof (struct stun_header)) {
+            SError << "STUN message too short, size=" << size;
+            return -1;
         }
 
-        case STUN_ATTR_SOFTWARE: { 
-          Software* software = new Software();
-          software->value = readString(attr_length);
-          attr = (Attribute*) software;
-          //STrace<< " stun::Reader - verbose: software " <<  software->value.buffer.data();
-          break;
+
+
+
+
+        const struct stun_header *header = (const struct stun_header *) data;
+        const size_t length = ntohs(header->length);
+        if (size < sizeof (struct stun_header) +length) {
+            SError << "Invalid STUN message length, length=" << length << ", available=" << (size - sizeof (struct stun_header));
+            return -1;
         }
 
-        case STUN_ATTR_XOR_MAPPED_ADDRESS: {
-          XorMappedAddress* address = readXorMappedAddress( msg, attr_length);
-          
-          
-          if (address) {
-              
-            msg->mapped = &address->mapped;
-            
-            char buf[40];  uint16_t port;
-            IP::AddressToString(address->mapped, buf, 40, port);
-            
-            SDebug << " Stun read STUN_ATTR_XOR_MAPPED_ADDRESS " << buf << ":" <<  port ;
-            
-            attr = (Attribute*) address;
-           
-          }
-          break;
-        }
+        uint16_t type = ntohs(header->type);
+        msg->type = type;
+        msg->msg_class = (stun_class_t) (type & STUN_CLASS_MASK);
+        msg->msg_method = (stun_method_t) (type & ~STUN_CLASS_MASK);
+        msg->length = length;
+        msg->cookie = ntohl(header->magic);
+        memcpy(msg->transaction_id, header->transaction_id, STUN_TRANSACTION_ID_SIZE);
 
-        case STUN_ATTR_PRIORITY: {
-          /* priority: http://tools.ietf.org/html/rfc5245#section-4.1.2.1 */
-          Priority* prio = new Priority();
-          prio->value = readU32();
-          attr = (Attribute*) prio;
-          STrace << "stun::Reader - verbose: priority: " <<  prio->value;
-          break;
-        } 
+        STrace << "Reading STUN message, class=0x" << std::hex << (unsigned int) msg->msg_class
+                << ", method=0x" << (unsigned int) msg->msg_method << std::dec;
 
-        case STUN_ATTR_MESSAGE_INTEGRITY: {     
-          MessageIntegrity* integ = new MessageIntegrity(20);
-          memcpy(integ->sha.sha1, &buffer[dx], 20);
-          
-          #if PRINTDEBUG
+        uint32_t security_bits = 0;
+        uint8_t *begin = data;
+        uint8_t *attr_begin = begin + sizeof (struct stun_header);
+        uint8_t *end = attr_begin + length;
+        const uint8_t *pos = attr_begin;
 
-          PrintDebug("stun::Reader - received MessageStun-Integrity: ");
-          for (int k = 0; k < 20; ++k) {
-            PrintDebug("%02X ", integ->sha.sha1[k]);
-          }
-          PrintDebug("\n");
-          
-          #endif
-          
-          attr = (Attribute*) integ;
-          skip(20);
-          break;
-        }
-
-        case STUN_ATTR_FINGERPRINT: {
-          /* CRC32-bit, see http://tools.ietf.org/html/rfc5389#section-15.5 */
-          Fingerprint* fp = new Fingerprint();
-          fp->crc = readU32();
-          PrintDebug("stun::Reader - verbose: Fingerprint: %x\n",fp->crc);
-          attr = (Attribute*) fp;
-          break;
-        }
-
-        case STUN_ATTR_ICE_CONTROLLED: {
-          IceControlled* ic = new IceControlled();
-          ic->tie_breaker = readU64();
-          STrace << "stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLED:  " <<  ic->tie_breaker;
-          attr = (Attribute*) ic;
-          msg->ice_controlled = ic->tie_breaker;
-          break;
-        }
-
-        case STUN_ATTR_ICE_CONTROLLING: {
-          IceControlling* ic = new IceControlling();
-          ic->tie_breaker = readU64();
-          STrace <<  "stun::Reader - verbose: STUN_ATTR_ICE_CONTROLLING:" <<   ic->tie_breaker;
-          attr = (Attribute*) ic;
-          msg->ice_controlling = ic->tie_breaker;
-          break;
-        }
-
-         case STUN_ATTR_ERR_CODE: {
-
-            if (attr_length < sizeof (struct stun_value_error_code)) {
-                SDebug << "STUN error code value too short, length= " << attr_length;
+        while (pos < end) {
+            // Calculate offset for safe attribute parsing
+            //dx = pos - begin;
+            int ret = stun_read_attr(pos, end - pos, msg, begin, attr_begin, &security_bits);
+            if (ret <= 0) {
+                STrace << "Reading STUN attribute failed";
                 return -1;
             }
-		
-            stun_value_error_code *error = (stun_value_error_code *)getArray(attr_length);
-            msg->error_code = (error->code_class & 0x07) * 100 + error->code_number;
+            pos += ret;
+        }
 
-            if (msg->error_code == 401 || msg->error_code == 438) { // Unauthenticated or Stale Nonce
-                SDebug << "Got STUN error code " << msg->error_code;
+        STrace << "Finished reading STUN attributes";
+
+        stun_credentials_t *credentials = &msg->credentials;
+
+        if (msg->msg_class == STUN_CLASS_RESP_ERROR &&
+                (msg->error_code == 401 || msg->error_code == 438) &&
+                security_bits & STUN_SECURITY_PASSWORD_ALGORITHMS_BIT &&
+                credentials->password_algorithms_value_size == 0) {
+            SInfo << "STUN Security Feature \"Password algorithms\" bit is set in " << msg->error_code
+                    << " error response but the corresponding attribute is missing";
+            msg->error_code = STUN_ERROR_INTERNAL_VALIDATION_FAILED;
+        }
+
+        if (!STUN_IS_RESPONSE(msg->msg_class)) {
+            if (credentials->password_algorithms_value_size == 0 &&
+                    credentials->password_algorithm == STUN_PASSWORD_ALGORITHM_UNSET) {
+                credentials->password_algorithm = STUN_PASSWORD_ALGORITHM_MD5;
+            } else if (credentials->password_algorithm == STUN_PASSWORD_ALGORITHM_UNSET) {
+                SInfo << "No suitable password algorithm in STUN request";
+                msg->error_code = STUN_ERROR_INTERNAL_VALIDATION_FAILED;
+            } else if (credentials->password_algorithms_value_size == 0) {
+                SInfo << "Missing password algorithms list in STUN request";
+                msg->error_code = STUN_ERROR_INTERNAL_VALIDATION_FAILED;
             }
-            
-            ErrorIce* err = new ErrorIce(msg->error_code);
-             
-            attr = (Attribute*) err;
-             
-            SInfo <<  " Error code "  <<  msg->error_code  <<  " reason " << err->errorNumber(msg->error_code); 
-          break;
         }
-        
-        case STUN_ATTR_USERHASH: {
-            PrintDebug("STUN_ATTR_USERHASH\n");
-            if (attr_length != USERHASH_SIZE) {
-        			SWarn << "STUN user hash value too long, length= " << attr_length;
-        			return -1;
-        		}
-            memcpy(msg->credentials.userhash, getArray(USERHASH_SIZE), USERHASH_SIZE);
-            msg->credentials.enable_userhash = true;
-                
-            break;
+
+        if (security_bits & STUN_SECURITY_USERNAME_ANONYMITY_BIT) {
+            STrace << "Remote agent supports user anonymity";
+            credentials->enable_userhash = true;
         }
-        case STUN_ATTR_REALM: {
-      		PrintDebug("Reading realm\n");
-      		if (attr_length + 1 > STUN_MAX_REALM_LEN) {
-      			SWarn << "STUN realm attribute value too long, length= " <<  attr_length;
-      			return -1;
-		}
-		memcpy(msg->credentials.realm, getArray(attr_length), attr_length);
-		msg->credentials.realm[attr_length] = '\0';
-		PrintDebug("Got realm: %s \n", msg->credentials.realm);
-                
-                skip(1);// padding
-		break;
-	}
-	case STUN_ATTR_NONCE: {
-		PrintDebug("Reading nonce \n");
-		if (attr_length + 1 > STUN_MAX_NONCE_LEN) {
-			SWarn << "STUN nonce attribute value too long, length= " <<  attr_length;
-			return -1;
-		}
-		memcpy(msg->credentials.nonce, getArray(attr_length), attr_length);
-		msg->credentials.nonce[attr_length] = '\0';
-		PrintDebug("Got nonce: %s \n", msg->credentials.nonce);
 
-		// If the nonce of a response starts with the nonce cookie, decode the Security Feature bits
-		// See https://www.rfc-editor.org/rfc/rfc8489.html#section-9.2
-		if ((msg->type == STUN_BINDING_RESPONSE) &&
-		    strlen(msg->credentials.nonce) > STUN_NONCE_COOKIE_LEN + 4 &&
-		    strncmp(msg->credentials.nonce, STUN_NONCE_COOKIE, STUN_NONCE_COOKIE_LEN) == 0) {
-			char encoded_security_bits[5];
-			memcpy(encoded_security_bits, msg->credentials.nonce + STUN_NONCE_COOKIE_LEN, 4);
-			encoded_security_bits[4] = '\0';
+        return (int) (sizeof (struct stun_header) +length);
+    }
 
-			uint8_t bytes[4];
-			bytes[0] = 0;
-//			int len = BASE64_DECODE(encoded_security_bits, bytes + 1, 3);
-//			if (len == 3) {
-//				*security_bits = ntohl(*((uint32_t *)bytes));
-//				JLOG_VERBOSE("Nonce has cookie, Security Feature bits are 0x%lX",
-//				             (unsigned long)*security_bits);
-//			} else {
-//				JLOG_WARN("Nonce has cookie, but the encoded Security Feature bits field \"%s\" is "
-//				          "invalid",
-//				          encoded_security_bits);
-//				security_bits = 0;
-//			}
-		}
-//                else if (msg->msg_class == STUN_CLASS_RESP_ERROR) {
-//			PrintDebug("Remote agent does not support RFC 8489");
-//		}
-                 skip(3);// padding
-		break;
-	}
-	case STUN_ATTR_PASSWORD_ALGORITHM: {
-		PrintDebug("Reading password algorithm\n");
-		if (attr_length < sizeof(struct stun_value_password_algorithm)) {
-			PrintDebug("STUN password algorithm value too short, length=%zu \n", attr_length);
-			return -1;
-		}
-		if ((msg->type != STUN_BINDING_RESPONSE)) {
-			stun_value_password_algorithm pwa ;
-                        memcpy( &pwa, getArray(attr_length),attr_length );
-			stun_password_algorithm_t algorithm = (stun_password_algorithm_t)ntohs(pwa.algorithm);
-			if (algorithm == STUN_PASSWORD_ALGORITHM_MD5 ||
-			    algorithm == STUN_PASSWORD_ALGORITHM_SHA256)
-				msg->credentials.password_algorithm = algorithm;
-			else
-				PrintDebug("Unknown password algorithm 0x%hX \n", algorithm);
-		} else {
-			PrintDebug("Found password algorithm in response, ignoring \n");
-		}
-		break;
-	}
-        
-        case STUN_ATTR_MESSAGE_INTEGRITY_SHA256: {
-                if (attr_length != HMAC_SHA256_SIZE)
-                       return -1;
+    int Reader::stun_read_attr(const void *data, size_t size, MessageStun *msg, uint8_t *begin, uint8_t *attr_begin, uint32_t *security_bits) {
+        // RFC 8489: When present, the FINGERPRINT attribute MUST be the last attribute in the
+        // message and thus will appear after MESSAGE-INTEGRITY and MESSAGE-INTEGRITY-SHA256.[cite: 4]
+        if (msg->has_fingerprint) {
+            STrace << "Invalid STUN attribute after fingerprint";
+            return -1;
+        }
 
-                MessageIntegrity* integ = new MessageIntegrity(32);
-                memcpy(integ->sha.sha256, &buffer[dx], 32);
-                
-                 #if PRINTDEBUG
-                PrintDebug("stun::Reader - received MessageStun-Integrity: ");
-                for (int k = 0; k < 32; ++k) {
-                  PrintDebug("%02X ", integ->sha.sha256[k]);
-                }
-                PrintDebug("\n");
-                #endif
-                
-                
-                attr = (Attribute*) integ;
-                skip(32);
+        if (size < sizeof (struct stun_attr)) {
+            STrace << "STUN attribute too short";
+            return -1;
+        }
 
+        const struct stun_attr *attr = (const struct stun_attr *) data;
+        size_t length = ntohs(attr->length);
+        AttributeType type = (AttributeType) ntohs(attr->type);
+        //STrace << "Reading attribute 0x" << std::hex << (unsigned int) type << std::dec << ", length=" << length;
+        if (size < sizeof (struct stun_attr) +length) {
+            STrace << "STUN attribute length invalid, length=" << length << ", available=" << (size - sizeof (struct stun_attr));
+            return -1;
+        }
+
+        // RFC 8489: Note that agents MUST ignore all attributes that follow MESSAGE-INTEGRITY, with
+        // the exception of the MESSAGE-INTEGRITY-SHA256 and FINGERPRINT attributes.[cite: 4]
+        if (msg->has_integrity && type != STUN_ATTR_MESSAGE_INTEGRITY &&
+                type != STUN_ATTR_MESSAGE_INTEGRITY_SHA256 && type != STUN_ATTR_FINGERPRINT) {
+            STrace << "Ignoring STUN attribute 0x" << std::hex << (unsigned int) type << std::dec << " after message integrity";
+            while (length & 0x03)
+                ++length; // attributes are aligned on 4 bytes
+            return (int) (sizeof (struct stun_attr) +length);
+        }
+
+        switch (type) {
+            case STUN_ATTR_MAPPED_ADDRESS:
+            {
+                STrace << "Reading mapped address";
+                uint8_t zero_mask[16] = {0};
+                if (stun_read_value_mapped_address(attr->value, length, &msg->mapped, zero_mask) < 0)
+                    return -1;
                 break;
-        }
-        
+            }
+            case STUN_ATTR_XOR_MAPPED_ADDRESS:
+            {
+                STrace << "Reading XOR mapped address";
+                uint8_t mask[16];
+                generate_mask(msg->transaction_id, mask);
+                if (stun_read_value_mapped_address(attr->value, length, &msg->mapped, mask) < 0)
+                    return -1;
+                break;
+            }
 
-        default: {
-          PrintDebug("stun::Reader - error: unhandled STUN attribute %s of length: %u, this will result in incorrect message integrity\n", attribute_type_to_string(attr_type).c_str(), attr_length);
-          skip(attr_length);
-          break;
-        }
-      }
+            case STUN_ATTR_ERROR_CODE:
+            {
+                STrace << "Reading error code";
+                if (length < sizeof (struct stun_value_error_code)) {
+                    STrace << "STUN error code value too short, length=" << length;
+                    return -1;
+                }
+                const struct stun_value_error_code *error =
+                        (const struct stun_value_error_code *) attr->value;
+                msg->error_code = (error->code_class & 0x07) * 100 + error->code_number;
 
-      /* Padding: http://tools.ietf.org/html/rfc5389#section-15, must be 32bit aligned */
-      while ( (dx & 0x03) != 0 && bytesLeft() > 0) {
-        dx++;
-      }
+                if (msg->error_code == 401 || msg->error_code == 438) { // Unauthenticated or Stale Nonce
+                    STrace << "Got STUN error code " << msg->error_code;
+                } else {
+                    size_t reason_length = length - sizeof (struct stun_value_error_code);
+                    if (reason_length >= STUN_MAX_ERROR_REASON_LEN)
+                        reason_length = STUN_MAX_ERROR_REASON_LEN - 1;
 
-      /* when we parsed an attribute, we set the members and append it to the message */
-      if (attr) {
-        attr->length = attr_length;
-        attr->type = attr_type;
-        attr->offset = attr_offset;
-        attr->nbytes = dx - prev_dx;
-        msg->addAttribute(attr);
-      }
+                    char err_buffer[STUN_MAX_ERROR_REASON_LEN];
+                    memcpy(err_buffer, (const char *) error->reason, reason_length);
+                    err_buffer[reason_length] = '\0';
 
-      /* reset vars used while parsing */
-      attr = NULL;
-      attr_length = 0;
-      prev_dx = dx;
-    }
+                    SInfo << "Got STUN error code " << msg->error_code << ", reason \"" << err_buffer << "\"";
+                }
+                break;
+            }
+            case STUN_ATTR_UNKNOWN_ATTRIBUTES:
+            {
+                STrace << "Reading STUN unknown attributes";
+                const uint16_t *attributes = (const uint16_t *) attr->value;
+                for (int i = 0; i < (int) ntohs(attr->length) / 2; ++i) {
+                    AttributeType unk_type = (AttributeType) ntohs(attributes[i]);
+                    SInfo << "Got unknown attribute response for attribute 0x" << std::hex << (unsigned int) unk_type;
+                }
+                break;
+            }
+            case STUN_ATTR_USERNAME:
+            {
+                STrace << "Reading username";
+                if (length + 1 > STUN_MAX_USERNAME_LEN) {
+                    SWarn << "STUN username attribute value too long, length=" << length;
+                    return -1;
+                }
+                memcpy(msg->credentials.username, (const char *) attr->value, length);
+                msg->credentials.username[length] = '\0';
+                STrace << "Got username: " << msg->credentials.username;
+                break;
+            }
+            case STUN_ATTR_MESSAGE_INTEGRITY:
+            {
+                STrace << "Reading message integrity";
+                if (length != HMAC_SHA1_SIZE) {
+                    STrace << "STUN message integrity length invalid, length=" << length;
+                    return -1;
+                }
+                msg->has_integrity = true;
+                break;
+            }
+            case STUN_ATTR_MESSAGE_INTEGRITY_SHA256:
+            {
+                STrace << "Reading message integrity SHA256";
+                if (length != HMAC_SHA256_SIZE) {
+                    STrace << "STUN message integrity SHA256 length invalid, length=" << length;
+                    return -1;
+                }
+                msg->has_integrity = true;
+                break;
+            }
+            case STUN_ATTR_FINGERPRINT:
+            {
+                STrace << "Reading fingerprint";
+                if (length != 4) {
+                    STrace << "STUN fingerprint length invalid, length=" << length;
+                    return -1;
+                }
+                size_t tmp_length = (uint8_t *) data - attr_begin + STUN_ATTR_SIZE + 4;
+                size_t prev_length = stun_update_header_length(begin, tmp_length);
+                uint32_t expected = my_crc32(begin, (uint8_t *) data - begin) ^ STUN_FINGERPRINT_XOR;
+                stun_update_header_length(begin, prev_length);
 
-    /* and erase any read data. */
-    /* @todo - we could use buffer.clear() here ... */
-   // buffer.erase(buffer.begin(), buffer.begin() + dx);
-    
-   // dx = 0;
+                uint32_t fingerprint = ntohl(*((uint32_t *) attr->value));
+                if (fingerprint != expected) {
+                    SError << "STUN fingerprint check failed, expected=" << std::hex << expected << ", actual=" << fingerprint;
+                    return -1;
+                }
+                STrace << "STUN fingerprint check succeeded";
+                msg->has_fingerprint = true;
+                msg->fingerprint_crc = fingerprint;
+                break;
+            }
+            case STUN_ATTR_REALM:
+            {
+                STrace << "Reading realm";
+                if (length + 1 > STUN_MAX_REALM_LEN) {
+                    SWarn << "STUN realm attribute value too long, length=" << length;
+                    return -1;
+                }
+                memcpy(msg->credentials.realm, (const char *) attr->value, length);
+                msg->credentials.realm[length] = '\0';
+                STrace << "Got realm: " << msg->credentials.realm;
+                break;
+            }
+            case STUN_ATTR_NONCE:
+            {
+                STrace << "Reading nonce";
+                if (length + 1 > STUN_MAX_NONCE_LEN) {
+                    SWarn << "STUN nonce attribute value too long, length=" << length;
+                    return -1;
+                }
+                memcpy(msg->credentials.nonce, (const char *) attr->value, length);
+                msg->credentials.nonce[length] = '\0';
+                STrace << "Got nonce: " << msg->credentials.nonce;
 
-    return 0;
-  }
+                if (STUN_IS_RESPONSE(msg->msg_class) &&
+                        strlen(msg->credentials.nonce) > STUN_NONCE_COOKIE_LEN + 4 &&
+                        strncmp(msg->credentials.nonce, STUN_NONCE_COOKIE, STUN_NONCE_COOKIE_LEN) == 0) {
+                    char encoded_security_bits[5];
+                    memcpy(encoded_security_bits, msg->credentials.nonce + STUN_NONCE_COOKIE_LEN, 4);
+                    encoded_security_bits[4] = '\0';
 
-  uint32_t Reader::bytesLeft() {
-    if (buffer.size() == 0) { 
-      return 0;
-    }
+                    uint8_t bytes[4];
+                    bytes[0] = 0;
+                    int len = BASE64_DECODE(encoded_security_bits, bytes + 1, 3);
+                    if (len == 3) {
+                        *security_bits = ntohl(*((uint32_t *) bytes));
+                        STrace << "Nonce has cookie, Security Feature bits are 0x" << std::hex << *security_bits;
+                    } else {
+                        SWarn << "Nonce has cookie, but the encoded Security Feature bits field is invalid";
+                        *security_bits = 0;
+                    }
+                } else if (msg->msg_class == STUN_CLASS_RESP_ERROR) {
+                    STrace << "Remote agent does not support RFC 8489";
+                }
+                break;
+            }
+            case STUN_ATTR_PASSWORD_ALGORITHM:
+            {
+                STrace << "Reading password algorithm";
+                if (length < sizeof (struct stun_value_password_algorithm)) {
+                    SWarn << "STUN password algorithm value too short, length=" << length;
+                    return -1;
+                }
+                if (!STUN_IS_RESPONSE(msg->msg_class)) {
+                    const struct stun_value_password_algorithm *pwa =
+                            (const struct stun_value_password_algorithm *) attr->value;
+                    stun_password_algorithm_t algorithm = (stun_password_algorithm_t) ntohs(pwa->algorithm);
+                    if (algorithm == STUN_PASSWORD_ALGORITHM_MD5 ||
+                            algorithm == STUN_PASSWORD_ALGORITHM_SHA256)
+                        msg->credentials.password_algorithm = algorithm;
+                    else
+                        SWarn << "Unknown password algorithm";
+                } else {
+                    SWarn << "Found password algorithm in response, ignoring";
+                }
+                break;
+            }
+            case STUN_ATTR_PASSWORD_ALGORITHMS:
+            {
+                STrace << "Reading password algorithms list";
+                if (length < sizeof (struct stun_value_password_algorithm)) {
+                    SWarn << "STUN password algorithms list too short, length=" << length;
+                    return -1;
+                }
+                if (length > STUN_MAX_PASSWORD_ALGORITHMS_VALUE_SIZE) {
+                    SWarn << "STUN password algorithms list too long, length=" << length;
+                    return -1;
+                }
 
-    return buffer.size() - dx;
-  }
+                memcpy(msg->credentials.password_algorithms_value, attr->value, length);
+                msg->credentials.password_algorithms_value_size = length;
+                break;
+            }
+            case STUN_ATTR_USERHASH:
+            {
+                STrace << "Reading user hash";
+                if (length != USERHASH_SIZE) {
+                    SWarn << "STUN user hash value too long, length=" << length;
+                    return -1;
+                }
+                memcpy(msg->credentials.userhash, attr->value, USERHASH_SIZE);
+                msg->credentials.enable_userhash = true;
+                break;
+            }
+            case STUN_ATTR_SOFTWARE:
+            {
+                STrace << "Reading software";
+                if (length + 1 > STUN_MAX_SOFTWARE_LEN) {
+                    SWarn << "STUN software attribute value too long, length=" << length;
+                    return -1;
+                }
+                char sw_buffer[STUN_MAX_SOFTWARE_LEN];
+                memcpy(sw_buffer, (const char *) attr->value, length);
+                sw_buffer[length] = '\0';
+                STrace << "Remote agent is \"" << sw_buffer << "\"";
+                break;
+            }
+            case STUN_ATTR_PRIORITY:
+            {
+                STrace << "Reading priority";
+                if (length != 4) {
+                    STrace << "STUN priority length invalid, length=" << length;
+                    return -1;
+                }
+                msg->priority = ntohl(*((uint32_t *) attr->value));
+                STrace << "Got priority: " << msg->priority;
+                break;
+            }
+            case STUN_ATTR_USE_CANDIDATE:
+            {
+                STrace << "Found use candidate flag";
+                msg->use_candidate = true;
+                break;
+            }
+            case STUN_ATTR_ICE_CONTROLLING:
+            {
+                STrace << "Found ICE controlling attribute";
+                if (length != 8) {
+                    STrace << "STUN ICE controlling attribute length invalid, length=" << length;
+                    return -1;
+                }
+                uint32_t *value32 = (uint32_t *) attr->value;
+                msg->ice_controlling = ((uint64_t) ntohl(value32[0]) << 32) | ntohl(value32[1]);
+                break;
+            }
+            case STUN_ATTR_ICE_CONTROLLED:
+            {
+                STrace << "Found ICE controlled attribute";
+                if (length != 8) {
+                    STrace << "STUN ICE controlled attribute length invalid, length=" << length;
+                    return -1;
+                }
+                uint32_t *value32 = (uint32_t *) attr->value;
+                msg->ice_controlled = ((uint64_t) ntohl(value32[0]) << 32) | ntohl(value32[1]);
+                break;
+            }
+            #if TURN
 
-  uint8_t Reader::readU8() {
-    dx++;
-    return buffer[dx - 1];
-  }
-
-  uint16_t Reader::readU16() {
-
-    if (bytesLeft() < 2) { 
-      PrintDebug("Error: trying to readU16() in STUN, but the buffer is not big enough.\n");
-      return 0;
-    }
-
-    uint16_t result;
-    uint8_t* dst = (uint8_t*)&result;
-
-    dst[0] = buffer[dx + 1];
-    dst[1] = buffer[dx + 0];
-
-    dx += 2;
-
-    return result;
-  }
-
-  uint32_t Reader::readU32() {
-
-    if (bytesLeft() < 4) {
-      PrintDebug("Error: trying to readU32() in STUN, but the buffer is not big enough.\n");
-      return 0;
-    }
-
-    uint32_t result;
-    uint8_t* dst = (uint8_t*)&result;
-
-    dst[0] = buffer[dx + 3];
-    dst[1] = buffer[dx + 2];
-    dst[2] = buffer[dx + 1];
-    dst[3] = buffer[dx + 0];
-
-    dx += 4;
-
-    return result;
-  }
-
-  uint64_t Reader::readU64() {
-
-    if (bytesLeft() < 8) {
-      PrintDebug("Error: trying to readU64() in STUN, but the buffer is not big enough.\n");
-      return 0;
-    }
-
-    uint64_t result;
-    uint8_t* dst = (uint8_t*)&result;
-
-    dst[0] = buffer[dx + 7];
-    dst[1] = buffer[dx + 6];
-    dst[2] = buffer[dx + 5];
-    dst[3] = buffer[dx + 4];
-    dst[4] = buffer[dx + 3];
-    dst[5] = buffer[dx + 2];
-    dst[6] = buffer[dx + 1];
-    dst[7] = buffer[dx + 0];
-
-    dx += 8;
-
-    return result;
-  }
-
-
-  
-  void Reader::skip(uint32_t nbytes) {
-    if (dx + nbytes > buffer.size()) {
-      SError << "Error: trying to skip " <<  nbytes <<  " bytes, but we only have %u left in STUN " << bytesLeft();
-      return;
-    }
-    dx += nbytes;
-  }
-
-
-  StringValue Reader::readString(uint16_t len) {
-    StringValue v;
-
-    if (bytesLeft() < len) {
-      LError("Error: trying to read a StringValue from the buffer, but the buffer is not big enough");
-      return v;
-    }
-
-    std::copy(ptr(), ptr() + len, std::back_inserter(v.buffer));
-    dx += len;
-    return v;
-  }
-
-   unsigned char* Reader::getArray(uint16_t len) {
-       
-    if (bytesLeft() < len) {
-      LError("Error: trying to read a getArray from the buffer, but the buffer is not big enough.");
-      return nullptr;
-    }
-    unsigned char* ret =  ptr();
-    dx += len;
-    return ret;
-  }
-
-   
-   
-   
-   
-   
-   
-    static int stun_read_value_mapped_address(const void *data, size_t size,  addr_record_t *mapped,  const uint8_t *mask) {
-	size_t len = sizeof(struct stun_value_mapped_address);
-	if (size < len) {
-		STrace << "STUN mapped address value too short, size=" <<  size;
-		return -1;
-	}
-	const struct stun_value_mapped_address *value = (const struct stun_value_mapped_address *) data;
-	stun_address_family_t family = (stun_address_family_t)value->family;
-	switch (family) {
-	case STUN_ADDRESS_FAMILY_IPV4: {
-		len += 4;
-		if (size < len) {
-			STrace << "IPv4 mapped address value too short, size=" <<  size;
-			return -1;
-		}
-		LTrace("Reading IPv4 address");
-		mapped->len = sizeof(struct sockaddr_in);
-		struct sockaddr_in *sin = (struct sockaddr_in *)&mapped->addr;
-		sin->sin_family = AF_INET;
-		sin->sin_port = value->port ^ *((uint16_t *)mask);
-		uint8_t *bytes = (uint8_t *)&sin->sin_addr;
-		for (int i = 0; i < 4; ++i)
-			bytes[i] = value->address[i] ^ mask[i];
-		break;
-	}
-	case STUN_ADDRESS_FAMILY_IPV6: {
-		len += 16;
-		if (size < len) {
-			STrace << "IPv6 mapped address value too short, size=" <<  size;
-			return -1;
-		}
-		LTrace("Reading IPv6 address");
-		mapped->len = sizeof(struct sockaddr_in6);
-		struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *)&mapped->addr;
-		sin6->sin6_family = AF_INET6;
-		sin6->sin6_port = value->port ^ *((uint16_t *)mask);
-		uint8_t *bytes = (uint8_t *)&sin6->sin6_addr;
-		for (int i = 0; i < 16; ++i)
-			bytes[i] = value->address[i] ^ mask[i];
-		break;
-	}
-	default: {
-		STrace << "Unknown STUN address family 0x%X" <<  (unsigned int)family;
-		len = size;
-		break;
-	}
-	}
-	return (int)len;
-    }
-   
-  /* See http://tools.ietf.org/html/rfc5389#section-15.2 */
-  XorMappedAddress* Reader::readXorMappedAddress( MessageStun* msg , int len) {
-
-    if (bytesLeft() < 8) {
-      LError("Error: cannot read a XorMappedAddress as the buffer is too small in stun::Reader");
-      return NULL;
-    }
-    
-    XorMappedAddress* addr = new XorMappedAddress();
-  
-    //uint8_t cookie[] = { 0x42, 0xA4, 0x12, 0x21 }; 
-      uint8_t mask[16];
-   // const uint32_t magic = htonl(STUN_MAGIC);
-    //memcpy(mask, (const uint8_t*)&magic, 4);
-    *((uint32_t *)mask) = htonl(STUN_MAGIC);
-    memcpy(mask + 4, msg->transaction_id, 12);
-    
-    
-    if (stun_read_value_mapped_address(getArray(len), len, ( addr_record_t *) &addr->mapped, mask) < 0)
-    return nullptr;
-    
-    //uint8_t* port_ptr = (uint8_t*) &addr->port;
-   
-
-    /* skip the first byte */
-//    skip(1); 
-//
-//    /* read family: 0x01 = IP4, 0x02 = IP6 */
-//    addr->family = readU8();
-//    if (addr->family != STUN_IP4 && addr->family != STUN_IP6) {
-//      LError("Error: invalid family for the xor mapped address in stun::Reader");
-//      delete addr;
-//      return NULL;
-//    }
-//
-//    /* read the port. */
-//    addr->port = *((uint16_t *)getArray(2)) ^ *((uint16_t *)mask);
-//   // port_ptr[0] = port_ptr[0] ^ cookie[2];
-//   // port_ptr[1] = port_ptr[1] ^ cookie[3];
-//
-//    /* read the address part. */
-//    if (addr->family == STUN_IP4) {
-//        
-//        //unsigned char bytes[4];
-//        //unsigned char ip_addr[16];
-//        //memcpy(bytes, getArray(4), 4 );
-//        
-//        unsigned char *tmp =  getArray(4);
-//
-//     // uint32_t ip = 0;
-//      //uint8_t* bytes = (uint8_t*) &ip;
-//      
-//     // ip = readU32();
-//
-////      ip_ptr[0] = ip_ptr[0] ^ cookie[0];
-////      ip_ptr[1] = ip_ptr[1] ^ cookie[1];
-////      ip_ptr[2] = ip_ptr[2] ^ cookie[2];
-////      ip_ptr[3] = ip_ptr[3] ^ cookie[3];
-//      
-//     // struct sockaddr_in sa;
-//      
-//
-//      
-//        addr->sin.sin_family = AF_INET;
-//	addr->sin.sin_port =  addr->port;
-//        uint8_t *bytes = (uint8_t *)&addr->sin.sin_addr;
-//        
-//                
-//        for (int i = 0; i < 4; ++i)
-//            bytes[i] = tmp[i] ^ mask[i];
-//
-//        inet_ntop(AF_INET, &addr->sin.sin_addr,(char *) addr->address, INET_ADDRSTRLEN);
-//        addr->port = htons(addr->sin.sin_port);
-//
-//        //sprintf((char*)ip_addr, "%u.%u.%u.%u", bytes[0], bytes[1], bytes[2], bytes[3]);
-//       // std::copy(ip_addr, ip_addr + 16, std::back_inserter(addr->address));
-//
-//    }
-//    else if (addr->family == STUN_IP6) {
-//      
-//        unsigned char *tmp =  getArray(16);   
-//        addr->sin6.sin6_family = AF_INET6;
-//        addr->sin6.sin6_port =  addr->port;
-//        uint8_t *bytes = (uint8_t *)&addr->sin6.sin6_addr;
-//
-//        for (int i = 0; i < 16; ++i)
-//           bytes[i] = tmp[i] ^ mask[i];
-//
-//        inet_ntop(AF_INET6, &addr->sin6.sin6_addr,(char *) addr->address, INET6_ADDRSTRLEN);
-//        
-//        addr->port = htons(addr->sin6.sin6_port);
-//         
-//      //   struct sockaddr_in6 sa6;
-//	//char astring[INET6_ADDRSTRLEN];
-//
-//	// IPv6 string to sockaddr_in6.
-//	//inet_pton(AF_INET6, "2001:db8:63b3:1::3490", &(sa6.sin6_addr));
-//
-//	// sockaddr_in6 to IPv6 string.
-//	//inet_ntop(AF_INET6, &(sa6.sin6_addr), astring, INET6_ADDRSTRLEN);
-//
-//    }
-//    else {
-//      PrintDebug("Warning: we shouldn't arrive here in stun::Reader.\n");
-//      delete addr;
-//      return NULL;
-//    }
-
-    return addr;
-  }
-
-  uint8_t* Reader::ptr() {
-    return &buffer[dx];
-  }
-  
-  #define HASH_MD5_SIZE 16
-
-size_t generate_hmac_key(MessageStun* msg, std::string &password, std::string &key)
-{
-    if (*msg->credentials.realm != '\0') {
-        // long-term credentials
-        if( *msg->credentials.username == '\0')
-           PrintDebug("Generating HMAC key for long-term credentials with empty STUN username \n");
-
-        char input[MAX_HMAC_INPUT_LEN];
-        int input_len = snprintf(input, MAX_HMAC_INPUT_LEN, "%s:%s:%s", msg->credentials.username,
-                msg->credentials.realm, password.size() ? password.data() : "");
-        if (input_len < 0)
-            return 0;
-
-        if (input_len >= MAX_HMAC_INPUT_LEN)
-            input_len = MAX_HMAC_INPUT_LEN - 1;
-
-        switch (msg->credentials.password_algorithm) {
-            case STUN_PASSWORD_ALGORITHM_SHA256:
-               // hash_sha256(input, input_len, key);
-                sha256(input, key);
-                return 32;
-            default:
-              //  hash_md5(input, input_len, key);
-                return HASH_MD5_SIZE;
-        }
-    } else {
-        // short-term credentials
-//        int key_len = snprintf((char *) key, MAX_HMAC_KEY_LEN, "%s", password ? password : "");
-//        if (key_len < 0)
-//            return 0;
-//
-//        if (key_len >= MAX_HMAC_KEY_LEN)
-//            key_len = MAX_HMAC_KEY_LEN - 1;
-        key = password;
-        return 20;
-    }
-}
-  
-bool Reader::computeMessageIntegrity(MessageStun* msg, std::string password) {
-
-    MessageIntegrity* integ = NULL;
-    
-    std::string key;
-    int keylen = generate_hmac_key( msg,password, key );
+            case STUN_ATTR_ALTERNATE_SERVER:
+            {
+                STrace << "Reading alternate server";
+                uint8_t zero_mask[16] = {0};
+                if (stun_read_value_mapped_address(attr->value, length, &msg->alternate_server, zero_mask) < 0)
+                    return -1;
+                break;
+            }
+            case STUN_ATTR_CHANNEL_NUMBER:
+            {
+                STrace << "Reading channel number attribute";
+                if (length < sizeof (struct stun_value_channel_number)) {
+                    STrace << "STUN channel number attribute value too short, length=" << length;
+                    return -1;
+                }
+                const struct stun_value_channel_number *channel_number =
+                        (const struct stun_value_channel_number *) attr->value;
+                msg->channel_number = ntohs(channel_number->channel_number);
+                break;
+            }
+            case STUN_ATTR_LIFETIME:
+            {
+                STrace << "Reading lifetime attribute";
+                if (length != 4) {
+                    STrace << "STUN lifetime attribute length invalid, length=" << length;
+                    return -1;
+                }
+                msg->lifetime = ntohl(*((uint32_t *) attr->value));
+                msg->lifetime_set = true;
+                break;
+            }
+            case STUN_ATTR_XOR_PEER_ADDRESS:
+            {
+                STrace << "Reading XOR peer address";
+                if (msg->peers_size < STUN_MAX_PEER_ADDRESSES) {
+                    uint8_t mask[16];
+                    generate_mask(msg->transaction_id, mask);
+                    addr_record_t *peer = msg->peers + msg->peers_size;
+                    if (stun_read_value_mapped_address(attr->value, length, peer, mask) < 0)
+                        return -1;
+                    if (peer->len)
+                        ++msg->peers_size;
+                } else {
+                    SWarn << "Too many STUN XOR-PEER-ADDRESS attributes, ignoring";
+                }
+                break;
+            }
+            case STUN_ATTR_XOR_RELAYED_ADDRESS:
+            {
+                STrace << "Reading XOR relayed address";
+                uint8_t mask[16];
+                generate_mask(msg->transaction_id, mask);
+                if (stun_read_value_mapped_address(attr->value, length, &msg->relayed, mask) < 0)
+                    return -1;
+                break;
+            }
+            case STUN_ATTR_DATA:
+            {
+                STrace << "Found data";
+                msg->data = (const char *) attr->value;
+                msg->data_size = length;
+                break;
+            }
+            case STUN_ATTR_EVEN_PORT:
+            {
+                STrace << "Found even port attribute";
+                if (length < 1) {
+                    STrace << "STUN even port attribute length invalid, length=" << length;
+                    return -1;
+                }
+                msg->even_port = true;
+                msg->next_port = ((struct stun_value_even_port *) attr->value)->r & 0x80;
+                break;
+            }
+            case STUN_ATTR_REQUESTED_TRANSPORT:
+            {
+                STrace << "Found requested transport attribute";
+                if (length < sizeof (struct stun_value_requested_transport)) {
+                    STrace << "STUN requested transport attribute length invalid, length=" << length;
+                    return -1;
+                }
+                const struct stun_value_requested_transport *requested_transport =
+                        (const struct stun_value_requested_transport *) attr->value;
+                if (requested_transport->protocol != 17) { // UDP
+                    SWarn << "Unexpected requested transport protocol: " << (int) requested_transport->protocol;
+                    return -1;
+                }
+                msg->requested_transport = true;
+                break;
+            }
+            case STUN_ATTR_DONT_FRAGMENT:
+            {
+                STrace << "Found don't fragment attribute";
+                msg->dont_fragment = true;
+                break;
+            }
+            case STUN_ATTR_RESERVATION_TOKEN:
+            {
+                STrace << "Found reservation token";
+                if (length != 8) {
+                    STrace << "STUN reservation token length invalid, length=" << length;
+                    return -1;
+                }
+                uint32_t *value32 = (uint32_t *) attr->value;
+                msg->reservation_token = ((uint64_t) ntohl(value32[0]) << 32) | ntohl(value32[1]);
+                break;
+            }
+#endif
             
-    if (!key.size()) { 
-      LError("Error: cannot compute message integrity in stun::MessageStun because the key is empty");
-      return false;
+            default:
+            {
+                if (STUN_IS_OPTIONAL_ATTR(type))
+                    STrace << "Ignoring unknown optional STUN attribute type 0x" << std::hex << (unsigned int) type;
+                else
+                    SWarn << "Unknown STUN attribute type 0x" << std::hex << (unsigned int) type << ", ignoring";
+                break;
+            }
+        }
+        return (int) (sizeof (struct stun_attr) +align32(length));
     }
 
-    if (!msg->attributes.size() || !msg->find(&integ)) {
-      LError("Error: cannot compute the message integrity in stun::MessageStun because the message doesn't contain a MessageIntegrity attribute.");
-      return false;
+
+
+    //    unsigned char* Reader::getArray(uint16_t len) {
+    //
+    //        if (bytesLeft() < len) {
+    //            LError("Error: trying to read a getArray from the buffer, but the buffer is not big enough.");
+    //            return nullptr;
+    //        }
+    //        unsigned char* ret = ptr();
+    //        dx += len;
+    //        return ret;
+    //    }
+
+    static int stun_read_value_mapped_address(const void *data, size_t size, addr_record_t *mapped, const uint8_t *mask) {
+        size_t len = sizeof (struct stun_value_mapped_address);
+        if (size < len) {
+            STrace << "STUN mapped address value too short, size=" << size;
+            return -1;
+        }
+        const struct stun_value_mapped_address *value = (const struct stun_value_mapped_address *) data;
+        stun_address_family_t family = (stun_address_family_t) value->family;
+        switch (family) {
+            case STUN_ADDRESS_FAMILY_IPV4:
+            {
+                len += 4;
+                if (size < len) {
+                    STrace << "IPv4 mapped address value too short, size=" << size;
+                    return -1;
+                }
+                LTrace("Reading IPv4 address");
+                mapped->len = sizeof (struct sockaddr_in);
+                struct sockaddr_in *sin = (struct sockaddr_in *) &mapped->addr;
+                sin->sin_family = AF_INET;
+                sin->sin_port = value->port ^ *((uint16_t *) mask);
+                uint8_t *bytes = (uint8_t *) & sin->sin_addr;
+                for (int i = 0; i < 4; ++i)
+                    bytes[i] = value->address[i] ^ mask[i];
+                break;
+            }
+            case STUN_ADDRESS_FAMILY_IPV6:
+            {
+                len += 16;
+                if (size < len) {
+                    STrace << "IPv6 mapped address value too short, size=" << size;
+                    return -1;
+                }
+                LTrace("Reading IPv6 address");
+                mapped->len = sizeof (struct sockaddr_in6);
+                struct sockaddr_in6 *sin6 = (struct sockaddr_in6 *) &mapped->addr;
+                sin6->sin6_family = AF_INET6;
+                sin6->sin6_port = value->port ^ *((uint16_t *) mask);
+                uint8_t *bytes = (uint8_t *) & sin6->sin6_addr;
+                for (int i = 0; i < 16; ++i)
+                    bytes[i] = value->address[i] ^ mask[i];
+                break;
+            }
+            default:
+            {
+                STrace << "Unknown STUN address family 0x%X" << (unsigned int) family;
+                len = size;
+                break;
+            }
+        }
+        return (int) len;
     }
 
-    //uint8_t output[keylen]; 
-    std::vector<uint8_t> output(keylen);         
+    //    /* See http://tools.ietf.org/html/rfc5389#section-15.2 */
+    //    bool Reader::readXorMappedAddress(MessageStun* msg, int len) {
+    //
+    //        if (bytesLeft() < 8) {
+    //            LError("Error: cannot read a XorMappedAddress as the buffer is too small in stun::Reader");
+    //            return false;
+    //        }
+    //
+    //        uint8_t mask[16];
+    //        *((uint32_t *) mask) = htonl(STUN_MAGIC);
+    //        memcpy(mask + 4, msg->transaction_id, 12);
+    //
+    //        if (stun_read_value_mapped_address(getArray(len), len, &msg->mapped, mask) < 0)
+    //            return false;
+    //
+    //        return true;
+    //    }
+    //
+    //    uint8_t* Reader::ptr() {
+    //        return &buffer[dx];
+    //    }
+    //
 
-    if  (!compute_message_integrity(buffer.data(), buffer.size(), key, keylen, output.data() ))
-    {
-        SError << "STUN message integrity SHA1 check failed";
-        return false;
-    }
-    
-   
-    if (const_time_memcmp( (keylen == 20 ? integ->sha.sha1: integ->sha.sha256) , output.data(), keylen) != 0) {
-            SError << "STUN message integrity SHA1 check failed";
+
+
+
+#define MAX_HMAC_KEY_LEN STUN_MAX_USERNAME_LEN
+
+    // bool Reader::computeMessageIntegrity(MessageStun* msg, std::string password) {
+
+    bool Reader::stun_check_integrity(void *buf, size_t size, const MessageStun *msg, const char *password) {
+
+        if (!msg->has_integrity) {
+            LError("Error: cannot compute the message integrity in stun::MessageStun because the message doesn't contain a MessageIntegrity attribute.");
             return false;
+        }
+
+
+
+        const struct stun_header *header = (const struct stun_header *) buf;
+        const size_t length = ntohs(header->length);
+        if (size < sizeof (struct stun_header) +length)
+            return false;
+
+        uint8_t key[MAX_HMAC_KEY_LEN];
+        size_t key_len = generate_hmac_key(msg, password, key);
+
+        bool success = false;
+        uint8_t *begin = buf;
+        const uint8_t *attr_begin = begin + sizeof (struct stun_header);
+        const uint8_t *end = attr_begin + length;
+        const uint8_t *pos = attr_begin;
+        while (pos < end) {
+            const struct stun_attr *attr = (const struct stun_attr *) pos;
+            size_t attr_length = ntohs(attr->length);
+            if (size < sizeof (struct stun_attr) +attr_length)
+                return false;
+
+            AttributeType type = (AttributeType) ntohs(attr->type);
+            switch (type) {
+                case STUN_ATTR_MESSAGE_INTEGRITY:
+                {
+                    if (attr_length != HMAC_SHA1_SIZE)
+                        return false;
+
+                    size_t tmp_length = pos - attr_begin + STUN_ATTR_SIZE + HMAC_SHA1_SIZE;
+                    size_t prev_length = stun_update_header_length(begin, tmp_length);
+                    uint8_t hmac[HMAC_SHA1_SIZE];
+                    hmac_sha1(begin, pos - begin, key, key_len, hmac);
+                    stun_update_header_length(begin, prev_length);
+
+                    const uint8_t *expected_hmac = attr->value;
+                    if (const_time_memcmp(hmac, expected_hmac, HMAC_SHA1_SIZE) != 0) {
+                        STrace << "STUN message integrity SHA1 check failed";
+                        return false;
+                    }
+
+                    success = true;
+                    break;
+                }
+                case STUN_ATTR_MESSAGE_INTEGRITY_SHA256:
+                {
+                    if (attr_length != HMAC_SHA256_SIZE)
+                        return false;
+
+                    size_t tmp_length = pos - attr_begin + STUN_ATTR_SIZE + HMAC_SHA256_SIZE;
+                    size_t prev_length = stun_update_header_length(begin, tmp_length);
+                    uint8_t hmac[HMAC_SHA256_SIZE];
+                    hmac_sha256(begin, pos - begin, key, key_len, hmac);
+                    stun_update_header_length(begin, prev_length);
+
+                    const uint8_t *expected_hmac = attr->value;
+                    if (const_time_memcmp(hmac, expected_hmac, HMAC_SHA256_SIZE) != 0) {
+                        STrace << "STUN message integrity SHA256 check failed";
+                        return false;
+                    }
+
+                    success = true;
+                    break;
+                }
+                default:
+                    // Ignore
+                    break;
+            }
+
+            pos += sizeof (struct stun_attr) +align32(attr_length);
+        }
+
+        if (!success)
+            return false;
+
+        return true;
     }
 
-    
-    return true;
-  }
 
+    /* --------------------------------------------------------------------- */
 
-  bool Reader::computeFingerprint(MessageStun* msg) {
+    static bool stun_validate_cookie(uint32_t cookie) {
+        //PrintDebug("%02X:%02X:%02X:%02X\n", ptr[3], ptr[2], ptr[1], ptr[0]);
+        uint8_t* ptr = (uint8_t*) & cookie;
+        return (ptr[3] == 0x21
+                && ptr[2] == 0x12
+                && ptr[1] == 0xA4
+                && ptr[0] == 0x42);
 
-    Fingerprint* finger = NULL;
-    if (!msg->attributes.size() || !msg->find(&finger)) {
-      LError("Error: cannot compute fingerprint because there is not fingerprint attribute");
-      return false;
+        return true;
     }
-     uint32_t crc = 0;
-     compute_fingerprint(buffer, crc);
-     
-     return crc == finger->crc;
-  }
-
-  /* --------------------------------------------------------------------- */
-
-  static bool stun_validate_cookie(uint32_t cookie) {
-    //PrintDebug("%02X:%02X:%02X:%02X\n", ptr[3], ptr[2], ptr[1], ptr[0]);
-    uint8_t* ptr = (uint8_t*) &cookie;
-    return (ptr[3] == 0x21 
-            && ptr[2] == 0x12 
-            && ptr[1] == 0xA4 
-            && ptr[0] == 0x42);
-
-    return true;
-  }
 
 } /* namespace stun */

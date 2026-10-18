@@ -30,6 +30,7 @@ public:
         std::string keyFile;
 
         std::string log{"/tmp/log/"};
+        std::string turn;
         
         std::string websoc_host{"localhost"};
         int websoc_port{443};
@@ -39,6 +40,7 @@ public:
         bool enableUdp {true};
         bool publicIP{true};
         bool noPivateIP{false};
+        bool relayOnly{false};
         int staticPort{7345};
     };
 

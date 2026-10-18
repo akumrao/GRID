@@ -424,11 +424,20 @@ int main(int argc, char **argv) {
 
 
         string stunServer = "stun:stun.l.google.com:19302";
-        cout << "STUN server is " << stunServer << endl;
+        SInfo << "STUN server is " << stunServer;
         settingconfig.iceServers.emplace_back(stunServer);
+
+
+        if (!ConfSettings::configuration.turn.empty()) {
+            SInfo << "Turn server is " << ConfSettings::configuration.turn;
+            settingconfig.iceServers.emplace_back(ConfSettings::configuration.turn);
+        }
+
+
+
         settingconfig.disableAutoNegotiation = true;
 
-       settingconfig.staticPort = ConfSettings::configuration.staticPort;
+        settingconfig.staticPort = ConfSettings::configuration.staticPort;
 
         settingconfig.gconfig->serverdtsRole = ConfSettings::configuration.serverdtsRole;
         settingconfig.enableTcp = ConfSettings::configuration.enableTcp;
@@ -437,6 +446,13 @@ int main(int argc, char **argv) {
         settingconfig.noPivateIP = ConfSettings::configuration.noPivateIP;
         websoc_host = ConfSettings::configuration.websoc_host;
         websoc_port = ConfSettings::configuration.websoc_port;
+
+        bool relayOnly = ConfSettings::configuration.relayOnly;
+        if (relayOnly)
+            settingconfig.iceTransportPolicy = TransportPolicy::Relay;
+
+
+
 
 
         // read cert from file
@@ -464,8 +480,8 @@ int main(int argc, char **argv) {
 
         rtc::DtlsTransport::ClassInit();
         DepUsrSCTP::ClassInit();
-        GetNetInterface::ClassInit();
 
+        GetNetInterface::ClassInit();
 
 
 
@@ -581,34 +597,33 @@ int main(int argc, char **argv) {
 
 
 
-
         app.waitForShutdown([&](void*) {
 
 
 
-            json m;
-            m["type"] = "bye";
-            emitWebSocketEvent("message", m);
-
-
-            json joinPayload;
-            joinPayload["roomId"] = "oom";
-            joinPayload["client"] = false; // Mirrors client state property tracking requirements
-
-            emitWebSocketEvent("createorjoin", joinPayload);
-
-
-
-
-
             {
-                std::lock_guard<std::mutex> lock(clients_mutex);
+
                 for (auto& pair : clients) {
+                    SInfo << "Closing and cleaning up active clients and peer connections " << pair.first;
                     if (pair.second && pair.second->peerConnection) {
                         pair.second->peerConnection->close();
                     }
                 }
-                clients.clear();
+
+            }
+
+            {
+
+                for (auto &pair : clients) {
+                    SInfo << "Closing and cleaning up active clients and peer "
+                            "connections "
+                            << pair.first;
+                    if (pair.second && pair.second->peerConnection) {
+                        uv_sleep(100);
+
+                    }
+                }
+
             }
 
 
@@ -671,7 +686,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
             // remove disconnected client
             //MainThread.dispatch([id]() 
             {
-                clients.erase(id);
+
 
                         // int x = 1; //arvind
             }

@@ -267,7 +267,7 @@ namespace rtc {
     }
 
     bool DtlsTransport::handshake() {
-        SInfo << "handshake state " << static_cast<int>(this->state);
+        SInfo << "handshake state " <<  to_string(this->state) ;
 
         if (handshakeDone)
             return true;

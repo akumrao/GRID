@@ -33,7 +33,9 @@ using json = nlohmann::json;
 template <class T> weak_ptr<T> make_weak_ptr(shared_ptr<T> ptr) {
     return ptr;
 }
-unordered_map<string, shared_ptr<Client>> clients{};
+unordered_map<string, shared_ptr<Client>> clients
+{
+};
 std::mutex clients_mutex;
 
 shared_ptr<Client> createPeerConnection_lc1(Configuration &config, string id,
@@ -54,17 +56,31 @@ int main(int argc, char **argv) {
     Async async;
     string stunServer = "stun:stun.l.google.com:19302";
     cout << "STUN server is " << stunServer << endl;
+    
+    
     settingconfig.iceServers.emplace_back(stunServer);
+
+   // settingconfig.iceServers.emplace_back("turn:testuser:testpassword@192.168.0.20:3478?transport=udp");
+    
+    if(!ConfSettings::configuration.turn.empty())
+    settingconfig.iceServers.emplace_back(ConfSettings::configuration.turn);
+    
+
     settingconfig.disableAutoNegotiation = true;
     settingconfig.staticPort = ConfSettings::configuration.staticPort;
     settingconfig.gconfig->serverdtsRole =
             ConfSettings::configuration.serverdtsRole;
     settingconfig.gconfig->serverdtsRole =
             ConfSettings::configuration.serverdtsRole;
-    settingconfig.enableTcp = false;
-    settingconfig.enableUdp = true;
+    settingconfig.enableTcp =  ConfSettings::configuration.enableTcp;;
+    settingconfig.enableUdp =  ConfSettings::configuration.enableUdp;;
     settingconfig.publicIP = ConfSettings::configuration.publicIP;
     settingconfig.noPivateIP = ConfSettings::configuration.noPivateIP;
+    bool relayOnly = ConfSettings::configuration.relayOnly;
+    if (relayOnly)
+        settingconfig.iceTransportPolicy = TransportPolicy::Relay;
+
+
 #if CERTFROMFILE == 1
     settingconfig.gconfig->keyPemFile = ConfSettings::configuration.keyFile;
     settingconfig.gconfig->certificatePemFile =
@@ -85,26 +101,26 @@ int main(int argc, char **argv) {
     auto pc1 = make_shared<PeerConnection>(settingconfig);
     settingconfig.staticPort = settingconfig.staticPort + 1;
     auto pc2 = make_shared<PeerConnection>(settingconfig);
- 
+
     auto client1 = createPeerConnection_lc1(settingconfig, id1, pc1, pc2);
     {
-      std::lock_guard<std::mutex> lg(clients_mutex);
-      clients.emplace(id1, client1);
-      
+        std::lock_guard<std::mutex> lg(clients_mutex);
+        clients.emplace(id1, client1);
+
     }
     auto client2 = createPeerConnection_lc2(settingconfig, id2, pc2, pc1);
     {
-      std::lock_guard<std::mutex> lg(clients_mutex);
-      clients.emplace(id2, client2);
+        std::lock_guard<std::mutex> lg(clients_mutex);
+        clients.emplace(id2, client2);
     }
 
 
     app.waitForShutdown([&](void *) {
-  
+
         {
-            
+
             for (auto& pair : clients) {
-                 SInfo << "Closing and cleaning up active clients and peer connections " << pair.first;
+                SInfo << "Closing and cleaning up active clients and peer connections " << pair.first;
                 if (pair.second && pair.second->peerConnection) {
                     pair.second->peerConnection->close();
                 }
@@ -114,21 +130,21 @@ int main(int argc, char **argv) {
 
         {
 
-          for (auto &pair : clients) {
-            SInfo << "Closing and cleaning up active clients and peer "
-                     "connections "
-                  << pair.first;
-            if (pair.second && pair.second->peerConnection) {
-              uv_sleep(100);
- 
+            for (auto &pair : clients) {
+                SInfo << "Closing and cleaning up active clients and peer "
+                        "connections "
+                        << pair.first;
+                if (pair.second && pair.second->peerConnection) {
+                    uv_sleep(100);
+
+                }
             }
-          }
-          
+
         }
 
         {
-           std::lock_guard<std::mutex> lock(clients_mutex);
-           clients.clear();
+            std::lock_guard<std::mutex> lock(clients_mutex);
+            clients.clear();
         }
 
         SInfo << "app.run() is over";
@@ -140,7 +156,6 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-
 shared_ptr<Client> createPeerConnection_lc1(Configuration &config, string id,
         shared_ptr<PeerConnection> pc1,
         shared_ptr<PeerConnection> pc2) {
@@ -151,11 +166,9 @@ shared_ptr<Client> createPeerConnection_lc1(Configuration &config, string id,
             if (state == PeerConnection::State::Disconnected ||
                     state == PeerConnection::State::Failed ||
                     state == PeerConnection::State::Closed) {
-                {
-                    SInfo << "createPeerConnection_lc1 close " << id;
-                      
-                   // clients.erase(id);
-                }
+
+                SInfo << "createPeerConnection_lc1 close " << id;
+
             }
         });
         pc1->onLocalDescription([id, pc1, pc2](rtc::Description & description) {
@@ -170,12 +183,33 @@ shared_ptr<Client> createPeerConnection_lc1(Configuration &config, string id,
                     << std::string(candidate);
             pc2->addRemoteCandidate(candidate);
         });
-        pc1->onGatheringStateChange([](PeerConnection::GatheringState state) {
+
+
+        pc1->onIceStateChange([pc1](PeerConnection::IceState state) {
+            SInfo << "ICE state 1: " << state << endl;
+
+            if (state == PeerConnection::IceState::Completed) {
+
+//                Candidate local; Candidate remote;
+//
+//                pc1->getSelectedCandidatePair(&local, &remote);
+//
+//                SInfo << "getSelectedCandidatePair1 local " << local << " remote " << remote;
+//                std::string msg = "PC1 Hello world";
+//                pc1->send((unsigned char *) msg.data(), msg.size() + 1);
+
+
+            }
+        }
+
+        );
+
+
+        pc1->onGatheringStateChange([pc1](PeerConnection::GatheringState state) {
             SInfo << "Gathering State" << PeerConnection::printState(state);
             if (state == PeerConnection::GatheringState::Complete) {
                 SInfo << "pc1 Gathering State: Complete";
-                {
-                }
+
             } else if (state == PeerConnection::GatheringState::InProgress) {
                 SInfo << "pc1 Gathering State: InProgress";
             }
@@ -194,6 +228,7 @@ shared_ptr<Client> createPeerConnection_lc1(Configuration &config, string id,
             if (auto dc = wdc.lock()) {
             }
         });
+
         client->dataChannel1 = dc;
         pc1->onDataChannel([id, client](shared_ptr<rtc::DataChannel> dc) {
             SInfo << "pc1 onDataChannel from " << id << " received with label \""
@@ -234,10 +269,10 @@ shared_ptr<Client> createPeerConnection_lc2(Configuration &config, string id,
             if (state == PeerConnection::State::Disconnected ||
                     state == PeerConnection::State::Failed ||
                     state == PeerConnection::State::Closed) {
-                {
-                     SInfo << "createPeerConnection_lc2 close " << id;
-                    //clients.erase(id);
-                }
+
+                SInfo << "createPeerConnection_lc2 close " << id;
+
+
             }
         });
         pc2->onLocalDescription([id, pc1](rtc::Description description) {
@@ -250,10 +285,35 @@ shared_ptr<Client> createPeerConnection_lc2(Configuration &config, string id,
                     << std::string(candidate);
             pc1->addRemoteCandidate(candidate);
         });
-        pc2->onGatheringStateChange([](PeerConnection::GatheringState state) {
+
+
+
+        pc2->onIceStateChange([pc2](PeerConnection::IceState state) {
+            SInfo << "ICE state 2: " << state << endl;
+
+            if (state == PeerConnection::IceState::Completed) {
+
+//                Candidate local; Candidate remote;
+//
+//                pc2->getSelectedCandidatePair(&local, &remote);
+//
+//                SInfo << "getSelectedCandidatePair1 local " << local << " remote " << remote;
+//                std::string msg = "PC2 Hello world";
+//                pc2->send((unsigned char *) msg.data(), msg.size() + 1);
+
+            }
+        }
+
+        );
+
+
+
+        pc2->onGatheringStateChange([pc2](PeerConnection::GatheringState state) {
             if (state == PeerConnection::GatheringState::Complete) {
                 SInfo << "Pc2 Gathering State: Complete";
                 {
+
+
                 }
             }
         });
@@ -263,12 +323,12 @@ shared_ptr<Client> createPeerConnection_lc2(Configuration &config, string id,
         dc->onOpen([id, wdc = make_weak_ptr(dc)](){
             if (auto dc = wdc.lock()) {
                 SInfo << "pc2 onOpen";
-                        dc->send("ping-pong pc2 on open send");
+                        dc->send("ping-pong pc2 on open send1");
             }
         });
         dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg){
             if (auto dc = wdc.lock()) {
-                dc->send("ping-pong pc2 on message send");
+                dc->send("ping-pong pc2 on message send2");
             }
         });
         client->dataChannel2 = dc;
@@ -277,8 +337,8 @@ shared_ptr<Client> createPeerConnection_lc2(Configuration &config, string id,
                     << dc->label();
             dc->onOpen([wdc = make_weak_ptr(dc)](){
                 if (auto dc = wdc.lock())
-                        dc->send("PC2 Hello from arvind");
-                });
+                dc->send("PC2 Hello from arvind");
+            });
             dc->onClosed(
                     [id]() {
                         SInfo << "DataChannel from " << id << " closed" << std::endl; });

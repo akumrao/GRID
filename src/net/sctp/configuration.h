@@ -93,6 +93,7 @@ struct RTC_CPP_EXPORT Configuration {
 	bool enableTcp {false };    
         bool enableUdp {true};
         bool publicIP{true};
+        //bool turnIP{true};
         bool noPivateIP{false};
         uint16_t staticPort{7345};   // 0  for random port
 

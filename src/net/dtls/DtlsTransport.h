@@ -44,6 +44,17 @@ class DtlsTransport : public Timer::Listener {
 public:
   enum class DtlsState { NEW = 1, CONNECTING, CONNECTED, FAILED, CLOSED };
 
+  std::string to_string(DtlsState state) {
+    switch (state) {
+        case DtlsState::NEW:        return "new";
+        case DtlsState::CONNECTING: return "connecting";
+        case DtlsState::CONNECTED:  return "connected";
+        case DtlsState::FAILED:     return "failed";
+        case DtlsState::CLOSED:     return "closed";
+    }
+    return "unknown";
+}
+  
 public:
   enum class Role { NONE = 0, AUTO = 1, CLIENT, SERVER };
 

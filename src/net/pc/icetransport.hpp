@@ -119,7 +119,7 @@ private:
 	int mTurnServersAdded = 0;
 
 #else
-	void onStateChangeCallback( juice_state_t state);
+	void onStateChangeCallback( agent_state_t state);
         void onCandidateCallback( Candidate *candidate);
         void onGatheringDoneCallback();
         void onRecvCallback( unsigned char *data, size_t size);

@@ -1197,8 +1197,16 @@ void PeerConnection::onGatheringStateChange(std::function<void(GatheringState st
 	
 }
 
+#ifdef STUN_TURN_AGENT_TEST
 void PeerConnection::onRecv(recv_callback callback) {
 	mRecvChangeCallback = callback;
+}
+#endif
+
+int PeerConnection::send(unsigned char * data , size_t size)
+{
+     auto transport = std::atomic_load(&mIceTransport);
+    return transport->agent.agent_send(data, size,0);
 }
 
 void PeerConnection::onSignalingStateChange(std::function<void(SignalingState state)> callback) {
@@ -1206,7 +1214,7 @@ void PeerConnection::onSignalingStateChange(std::function<void(SignalingState st
 }
 
 void PeerConnection::onIceStateChange(std::function<void(IceState state)> callback) {
-	//impl()->iceStateChangeCallback = callback;
+	mKIceStateChangeCallback = callback;
 }
 
 
@@ -1459,22 +1467,6 @@ void PeerConnection::iceGathering(IceTransport::GatheringState state) {
     
    
     
-    #if DATACHANNEL
-    
-//     switch (state) 
-//    {
-//        case JUICE_STATE_CONNECTED:
-//         initDtlsTransport();
-//            
-//        break;
-//        
-//        default:
-//            break; 
-//         
-//    };
-    
-    #endif
-    
     
 
 
@@ -1660,11 +1652,12 @@ bool PeerConnection::getSelectedCandidatePair(Candidate *local, Candidate *remot
 }
 
 
+#ifdef STUN_TURN_AGENT_TEST
 void PeerConnection::recv(unsigned char * data , size_t size)
 {
      mRecvChangeCallback( data, size );
 }
-
+#endif
 //int PeerConnection::send(unsigned char * data , size_t size)
 //{
 //    return miceTransport->agent.agent_send(data, size,0);
@@ -1731,29 +1724,29 @@ std::ostream &operator<<(std::ostream &out, PeerConnection::IceState state) {
 	return out << str;
 }
 
-std::ostream &operator<<(std::ostream &out, juice_state_t state) {
+std::ostream &operator<<(std::ostream &out, agent_state_t state) {
 	//using GatheringState = PeerConnection::GatheringState;
 	const char *str;
 	switch (state) {
-	case JUICE_STATE_DISCONNECTED:
+	case AGENT_STATE_DISCONNECTED:
 		str = "disconnecte";
 		break;
-	case JUICE_STATE_GATHERING:
+	case AGENT_STATE_GATHERING:
 		str = "gathering";
 		break;
-	case JUICE_STATE_CONNECTING:
+	case AGENT_STATE_CONNECTING:
 		str = "connecting";
 		break;
                 
-        case JUICE_STATE_CONNECTED:
+        case AGENT_STATE_CONNECTED:
                 str = "connected";
                  break;
                 
-        case JUICE_STATE_COMPLETED:
+        case AGENT_STATE_COMPLETED:
 		str = "complete";
 		break;  
                 
-         case JUICE_STATE_FAILED:
+         case AGENT_STATE_FAILED:
 		str = "failed";
 		break;          
 	default:

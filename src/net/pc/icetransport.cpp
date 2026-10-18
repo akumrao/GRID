@@ -245,7 +245,7 @@ bool IceTransport::outgoing(message_ptr message) {
 
 
 
-void IceTransport::onStateChangeCallback( juice_state_t state)
+void IceTransport::onStateChangeCallback( agent_state_t state)
 {
     processStateChange(static_cast<unsigned int>(state));
 }
@@ -283,19 +283,19 @@ void IceTransport::changeState(State state) {
 
 void IceTransport::processStateChange(unsigned int state) {
 	switch (state) {
-	case JUICE_STATE_DISCONNECTED:
+	case AGENT_STATE_DISCONNECTED:
 		changeState(State::Disconnected);
 		break;
-	case JUICE_STATE_CONNECTING:
+	case AGENT_STATE_CONNECTING:
 		changeState(State::Connecting);
 		break;
-	case JUICE_STATE_CONNECTED:
+	case AGENT_STATE_CONNECTED:
 		changeState(State::Connected);
 		break;
-	case JUICE_STATE_COMPLETED:
+	case AGENT_STATE_COMPLETED:
 		changeState(State::Completed);
 		break;
-	case JUICE_STATE_FAILED:
+	case AGENT_STATE_FAILED:
 		changeState(State::Failed);
 		break;
 	};
@@ -329,9 +329,13 @@ IceTransport::State IceTransport::state() const { return mState; }
 } // namespace rtc
 
 
+// This is disccarded function should be remvoed. It just used for agent stun messages. Never part of webrtc
 void IceTransport::incoming(message_ptr message) {
    // recv(message); 
+    std::string str(reinterpret_cast<const char*>(message->data()), message->size());
+
     
+    SInfo << "Agent " << agent.agentNo   << " APPlication message " <<  str;
 
 }
 
