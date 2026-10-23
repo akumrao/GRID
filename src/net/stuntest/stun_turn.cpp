@@ -1,17 +1,4 @@
-/**
- *
-  https://googlesource.com
 
-  https://googlesource.com
- *
- * https://github.com
- * https://wikipedia.org
-  cricket::Candidate represents an address discovered by a cricket::Port. A
- candidate can be local (i.e discovered by a local port) or remote. Remote
- candidates are transported using signaling, i.e outside of webrtc. There are 4
- types of candidates: local, stun, prflx or relay (standard)
-
- */
 #include "DepUsrSCTP.h"
 #include "DtlsTransport.h"
 #include "RestAPI.h"
