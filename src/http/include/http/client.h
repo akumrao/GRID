@@ -67,6 +67,11 @@ namespace base {
 
             virtual void setReadStream(std::ostream* ) {
             }
+
+            virtual void setHostName(const std::string& hostname)
+            {
+                  
+            }
             
             virtual std::stringstream* readStream()
             {

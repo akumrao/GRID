@@ -35,7 +35,12 @@ namespace base
     {
         typedef struct addr_record {
             struct sockaddr_storage addr;
-            socklen_t len;
+            socklen_t len{0};
+            
+            int socktype{SOCK_DGRAM};
+            std::string dump() const;
+        
+    
         } addr_record_t;
 
         class IP
@@ -46,13 +51,17 @@ namespace base
 	    static void NormalizeIp(std::string& ip);
 	    static bool CompareAddresses(const struct sockaddr* addr1, const struct sockaddr* addr2);
 	    static struct sockaddr_storage CopyAddress(const struct sockaddr* addr);
+            // Copy the given address into the tart addr_record_t mapped
             static void CopyAddress(const struct sockaddr* addr, addr_record_t &mapped);
             static void AddressToString( addr_record_t &mapped,  char *buf, int sizeofbuf,  uint16_t &port);
+            static void AddressToString(const struct sockaddr* addr, char* ip, int sizeofbuf, uint16_t& port);
             static bool StringToAddress( const char *ip,  uint16_t port, addr_record_t &mapped);
             static bool addr_is_equal(const struct sockaddr *a, const struct sockaddr *b, bool compare_ports);
             static bool addr_record_is_equal(const addr_record_t *a, const addr_record_t *b, bool compare_ports);
             static bool addr_unmap_inet6_v4mapped(struct sockaddr *sa, socklen_t *len); 
             static bool addr_map_inet6_v4mapped(struct sockaddr_storage *ss, socklen_t *len);
+            
+            static unsigned long addr_record_hash(const addr_record_t *record, bool with_port);
         };
 
 

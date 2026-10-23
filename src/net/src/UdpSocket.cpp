@@ -214,7 +214,7 @@ namespace base {
             }
             // Error,
             if (sent != UV_EAGAIN) {
-                 SWarn << "uv_udp_try_send() failed trying uv_udp_send()"<< uv_strerror(sent) <<  "  "  << sent; // will cause recursion lock
+                 STrace << "uv_udp_try_send() failed trying uv_udp_send()"<< uv_strerror(sent) <<  "  "  << sent; // will cause recursion lock
                 //SWarn << "uv_udp_try_send() failed UV_EAGAIN: " << uv_strerror(sent);
                 //return -1; // arvind do not return
 
@@ -225,7 +225,7 @@ namespace base {
 
                  IP::GetAddressInfo(addr,
                                     family, ip, port);
-                 SInfo << "ip " << ip << " port " << port;
+//                 SInfo << "ip " << ip << " port " << port;
 #endif
             }
 
@@ -343,15 +343,16 @@ namespace base {
                 LError("uv_udp_getsockname() failed: %s", uv_strerror(err));
                 return false;
             }
+            IP::CopyAddress(reinterpret_cast<struct sockaddr*> (&addr), localAddr);
 
-            #if DEBUG 
+            //#if DEBUG 
             int family;
-            std::string ip;
-            uint16_t port;
+            //std::string ip;
+           // uint16_t port;
 
-            IP::GetAddressInfo(reinterpret_cast<struct sockaddr *>(&addr), family, ip, port);
-            SInfo << "ip " << ip << " port " << port;
-            #endif
+            IP::GetAddressInfo(reinterpret_cast<struct sockaddr *>(&addr), family, localIp, localPort);
+            SInfo << "ip " << localIp << " port " << localPort;
+            //#endif
 
 
             return true;

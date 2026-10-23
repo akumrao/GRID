@@ -33,8 +33,8 @@
 #include "stream.hpp"
 
 
-#define socketio 1
-#define localtesting 1
+//#define socketio 1
+//#define localtesting 1
 //#define remotetesting 1
 #define VIDEOMEDIA 1
 #include "peerconnection.h"

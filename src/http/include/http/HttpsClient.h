@@ -79,6 +79,8 @@ namespace base {
             void shouldSendHeader(bool flag);
 
             void setReadStream(std::ostream* os) override;
+            
+            void setHostName(const std::string& hostname);
 
         private:
             // Passed by argument.

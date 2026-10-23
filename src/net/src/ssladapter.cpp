@@ -233,7 +233,8 @@ void SSLAdapter::initSSL()
         //mbedtls_printf( " failed\n  !  mbedtls_x509_crt_parse returned -0x%x\n\n", -ret );
         //goto exit;
         
-        SError << "mbedtls_x509_crt_parse returned " << ret ;
+        SError << "mbedtls_x509_crt_parse returned " << ret << " missing "
+               << CertFile;
         
         
           exit(0);
@@ -317,16 +318,17 @@ void SSLAdapter::initSSL()
      
 
 #else 
-    
-        //config.keyPemFile = "/mnt/key/private_key.pem";
-        //config.certificatePemFile  = "/mnt/key/certificate.crt";       
-        config.init();
-       auto [crt, pk] = config.mCertificate->credentials();
 
-       //  mbedtls_ssl_conf_ca_chain(&_ssl_conf, crt, NULL);
+        if (server)
+        {
+            //config.keyPemFile = "/mnt/key/private_key.pem";
+            //config.certificatePemFile  = "/mnt/key/certificate.crt";
+            config.init();
+            auto [crt, pk] = config.mCertificate->credentials();
+             //  mbedtls_ssl_conf_ca_chain(&_ssl_conf, crt, NULL);
          
-      rtc::mbedtls::check(mbedtls_ssl_conf_own_cert(&_ssl_conf, crt, pk));
-
+            rtc::mbedtls::check(mbedtls_ssl_conf_own_cert(&_ssl_conf, crt, pk));
+        }
 
 #endif
 
@@ -691,13 +693,25 @@ void SSLAdapter::stay_uptodate( )
     
 
   }
-    
-    
-    
-    
-    
-    
-    
+  
+
+void SSLAdapter::setHostName(const std::string& hostname) 
+{
+#ifdef USE_MBEDTLS
+    // MbedTLS hostname setting for SNI
+    mbedtls_ssl_set_hostname(&_ssl, hostname.c_str());
+#else
+    // OpenSSL hostname setting for SNI
+    if (_ssl) {
+        SSL_set_tlsext_host_name(_ssl, hostname.c_str());
+        // OpenSSL also benefits from setting the expected hostname for verification purposes
+        SSL_set1_host(_ssl, hostname.c_str());
+    }
+#endif
+}
+
+
+        
     
     
     
@@ -767,6 +781,9 @@ SSL_CTX *InitCTX(bool server)
         ERR_print_errors_fp(stderr);
         abort();
     }
+    
+    // Explicitly enforce minimum TLS version to 1.2 when you see error sslv3 alert handshake failure
+   // SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
 
     SSL_CTX_set_cipher_list(ctx, "ALL:eNULL");
 
@@ -868,32 +885,32 @@ SSL_CTX *InitCTX(bool server)
 
 #else
 
-        config.init();
-
-        auto [x509, pkey] = config.mCertificate->credentials();
-        SSL_CTX_use_certificate(ctx, x509);
-
-        if (SSL_CTX_use_certificate(ctx, x509) <= 0)
+        if (server)
         {
-            ERR_print_errors_fp(stderr);
-            abort();
+            config.init();
+
+            auto [x509, pkey] = config.mCertificate->credentials();
+            SSL_CTX_use_certificate(ctx, x509);
+
+            if (SSL_CTX_use_certificate(ctx, x509) <= 0)
+            {
+                ERR_print_errors_fp(stderr);
+                abort();
+            }
+
+            if ( SSL_CTX_use_PrivateKey(ctx, pkey) <= 0)
+            {
+                ERR_print_errors_fp(stderr);
+                abort();
+            }
+
+         
+            if (!SSL_CTX_check_private_key(ctx)) {
+                ERR_print_errors_fp(stderr);
+             fprintf(stderr, "Private key does not match the public certificate\n");
+             abort();
+           }
         }
-
-        if ( SSL_CTX_use_PrivateKey(ctx, pkey) <= 0)
-        {
-            ERR_print_errors_fp(stderr);
-            abort();
-        }
-
-     
-        if (!SSL_CTX_check_private_key(ctx)) {
-            ERR_print_errors_fp(stderr);
-         fprintf(stderr, "Private key does not match the public certificate\n");
-         abort();
-       }
-
-
-      
 
 #endif
 
@@ -1109,6 +1126,11 @@ void SSLAdapter::addOutgoingData(const char *data, size_t len)
 
 int SSLAdapter::handshake()
 {
+    if (handshake_state == STATE_HANDSHAKE_DONE) {
+      return STATE_HANDSHAKE_DONE;
+    }
+
+
     int r = SSL_do_handshake(_ssl);
     if (r <= 0) swrap_error_handler(r);
    
@@ -1117,7 +1139,7 @@ int SSLAdapter::handshake()
         SInfo << "SSL handshake is over";
         flush();
     }
-    r;
+    return r;
 }
 
 int SSLAdapter::flush()
@@ -1237,8 +1259,25 @@ int evt_is_tls_stream(const char *bfr, const ssize_t nrd)
 }
 */
 
+void SSLAdapter::setHostName(const std::string& hostname)
+{
+#ifdef USE_MBEDTLS
+    // MbedTLS hostname setting for SNI
+    mbedtls_ssl_set_hostname(&_ssl, hostname.c_str());
+#else
+    // OpenSSL hostname setting for SNI
+    if (_ssl) {
+        SSL_set_tlsext_host_name(_ssl, hostname.c_str());
+        // OpenSSL also benefits from setting the expected hostname for verification purposes
+        SSL_set1_host(_ssl, hostname.c_str());
+    }
+#endif
+}
+
+
 }  // namespace net
 }  // namespace base
 
 #endif
+
 

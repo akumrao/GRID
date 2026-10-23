@@ -115,6 +115,8 @@ class  SSLAdapter
 public:
     SSLAdapter(SslConnection* socket);
     ~SSLAdapter();
+    
+    void setHostName(const std::string& hostname);
 
     /// Initializes the SSL context as a client.
     void initSSL();

@@ -143,7 +143,7 @@ namespace base {
 
             std::ostringstream oss;
             _request.write(oss);
-            LTrace("Client request: ", oss.str())
+            SDebug << "WebSocket Handshake [Client Request Sent]:\n" << oss.str();
 
             assert(socket);
             _connection->tcpsend((const char*) oss.str().c_str(), oss.str().length(),  nullptr);
@@ -260,7 +260,8 @@ namespace base {
         #endif
         
         void WebSocketConnection::handleServerRequest(const std::string & buffer) {
-            LTrace("Server request: ", buffer)
+            // LTrace("Server request: ", buffer)
+            SDebug << "WebSocket Handshake [Server Request Received]:\n" << buffer;
 
             Parser parser(&_request);
             if (!parser.parse(buffer.c_str(), buffer.size())) {
@@ -276,7 +277,8 @@ namespace base {
                     // Verify the WebSocket handshake request
             try {
                 framer.acceptServerRequest(_request, _response);
-                LTrace("Handshake success")
+       
+                SDebug << "WebSocket Handshake [Server Accepted]: Handshake successful for connection " << this;
                         
                    if(_connection->fnConnect)
                         _connection->fnConnect(_connection);
@@ -298,7 +300,7 @@ namespace base {
                 
                         
             } catch (std::exception& exc) {
-                LWarn("Handshake failed: ", exc.what())
+                SWarn << "WebSocket Handshake [Server Failed]: " << exc.what();
             }
 
             // Allow the application to override the response
@@ -308,7 +310,7 @@ namespace base {
             std::ostringstream oss;
             _response.write(oss);
 
-            LTrace(oss.str());
+              SDebug << "WebSocket Handshake [Server Response Sent]:\n" << oss.str();
             
             _connection->send( (const char*) oss.str().c_str(), oss.str().length());
         }
@@ -534,7 +536,7 @@ namespace base {
 
         
       void WebSocketConnection::handleClientResponse(const std::string& buffer) {
-            LTrace("Client response: ", buffer)
+            SDebug << "WebSocket Handshake [Client Response Received]:\n" << buffer;
 
             const char *data = buffer.c_str();
             Parser parser(&_response);
@@ -550,7 +552,7 @@ namespace base {
             // Parse and check the response
 
             if (framer.checkClientHandshakeResponse(_response)) {
-                LTrace("Handshake success")
+                SDebug << "WebSocket Handshake [Client Accepted]: Handshake successful for connection " << this;
                 onHandshakeComplete();
             }
 

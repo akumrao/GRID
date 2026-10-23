@@ -50,6 +50,7 @@ namespace base
 
     Timer::~Timer() {
         
+	LInfo("~Timer()");
 
         if (!this->closed)
             Close();
