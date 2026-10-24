@@ -16,8 +16,7 @@ using json = nlohmann::json;
 namespace base {
 
 
-    namespace net
- {
+    namespace net {
 
         class TransportTuple {
         protected:

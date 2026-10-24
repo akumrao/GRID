@@ -51,6 +51,8 @@ public:
 
 	bool send(message_variant data) override;
 	bool send(const byte *data, size_t size) override;
+       
+        void *user{nullptr};
 
 protected:
 	const weak_ptr<PeerConnection> mPeerConnection;
