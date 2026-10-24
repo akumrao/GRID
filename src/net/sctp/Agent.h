@@ -1,12 +1,8 @@
-
-
-
 #ifndef STUN_Agent_H
 #define STUN_Agent_H
 
 //#define PRINTDEBUG 1
 
-#include <Attribute.h>
 #include <Types.h>
 #include "candidate.hpp"
 #include "description.hpp"
@@ -19,6 +15,9 @@
 #include "net/dns.h"
 #include "configuration.h"
 #include "candidate.hpp"
+#include "TransportTuple.h"
+
+#include "turn.h"
 
 using namespace base::net;
 
@@ -52,6 +51,24 @@ using namespace stun;
 // characteristics of the associated data.
 #define STUN_PACING_TIME 50 // msecs
 
+
+// TURN refresh period
+#define TURN_LIFETIME 600000                        // msecs (10 min)
+#define TURN_REFRESH_PERIOD (TURN_LIFETIME - 60000) // msecs (lifetime - 1 min)
+// RFC 8445: Agents SHOULD use a Tr value of 15 seconds. Agents MAY use a bigger value but MUST NOT
+// use a value smaller than 15 seconds.
+#define STUN_KEEPALIVE_PERIOD 15000 // msecs
+
+// RFC 7675: To prevent synchronization of consent checks, each interval MUST be randomized from
+// between 0.8 and 1.2 times the basic period. Implementations SHOULD set a default interval of 5
+// seconds, resulting in a period between checks of 4 to 6 seconds. Implementations MUST NOT set the
+// period between checks to less than 4 seconds.
+#define MIN_CONSENT_CHECK_PERIOD 4000 // msecs
+#define MAX_CONSENT_CHECK_PERIOD 6000 // msecs
+
+
+
+
 // Consent freshness
 // RFC 7675: Consent expires after 30 seconds.
 #define CONSENT_TIMEOUT 30000 // msecs
@@ -62,287 +79,350 @@ using namespace stun;
 #define ICE_CANDIDATE_PREF_RELAYED 0
 namespace stun {
 
-    
     typedef enum juice_state {
-	JUICE_STATE_DISCONNECTED = 0,
-	JUICE_STATE_GATHERING,
-	JUICE_STATE_CONNECTING,
-	JUICE_STATE_CONNECTED,
-	JUICE_STATE_COMPLETED,
-	JUICE_STATE_FAILED
-} juice_state_t;
+        AGENT_STATE_DISCONNECTED = 0,
+        AGENT_STATE_GATHERING,
+        AGENT_STATE_CONNECTING,
+        AGENT_STATE_CONNECTED,
+        AGENT_STATE_COMPLETED,
+        AGENT_STATE_FAILED
+    } agent_state_t;
 
+    typedef enum ice_candidate_pair_state {
+        ICE_CANDIDATE_PAIR_STATE_PENDING,
+        ICE_CANDIDATE_PAIR_STATE_SUCCEEDED,
+        ICE_CANDIDATE_PAIR_STATE_FAILED,
+        ICE_CANDIDATE_PAIR_STATE_FROZEN,
 
-typedef enum ice_candidate_pair_state {
-	ICE_CANDIDATE_PAIR_STATE_PENDING,
-	ICE_CANDIDATE_PAIR_STATE_SUCCEEDED,
-	ICE_CANDIDATE_PAIR_STATE_FAILED,
-	ICE_CANDIDATE_PAIR_STATE_FROZEN,
-                
-/*                
-                Frozen State:
-When a candidate pair is in the frozen state, it means that ongoing checks on other candidate pairs are preventing this pair from being evaluated. 
+        /*                
+                        Frozen State:
+        When a candidate pair is in the frozen state, it means that ongoing checks on other candidate pairs are preventing this pair from being evaluated. 
         
-   ansitioning to Other States:
-Once the checks on higher priority pairs are complete or no longer blocking, the frozen pair can transition to the "waiting" state, and then to "in-progress" if it's selected for a connectivity check. 
-Failure or Success:
-If the check for the candidate pair succeeds, it moves to the "succeeded" state. If it fails, it moves to the "failed" state. 
-Example:
-In a video call, the "frozen" state might be used to prioritize checking direct connections between peers (e.g., host-to-host) before attempting more complex paths (e.g., relaying through a TURN server).      
-*/
-                
-} ice_candidate_pair_state_t;
+           ansitioning to Other States:
+        Once the checks on higher priority pairs are complete or no longer blocking, the frozen pair can transition to the "waiting" state, and then to "in-progress" if it's selected for a connectivity check. 
+        Failure or Success:
+        If the check for the candidate pair succeeds, it moves to the "succeeded" state. If it fails, it moves to the "failed" state. 
+        Example:
+        In a video call, the "frozen" state might be used to prioritize checking direct connections between peers (e.g., host-to-host) before attempting more complex paths (e.g., relaying through a TURN server).      
+         */
 
+    } ice_candidate_pair_state_t;
 
-typedef struct ice_candidate_pair {
-	Candidate *local{nullptr};
-	Candidate *remote{nullptr};
-	uint64_t priority{0};
-	ice_candidate_pair_state_t state{ICE_CANDIDATE_PAIR_STATE_PENDING};
-	bool nominated{false};
-	bool nomination_requested{false};
-	int64_t consent_expiry{0};
-        
-        #if AGENT_DEBUG
-        std::string dump();
-        #endif
-        
-} ice_candidate_pair_t;
-
-
-
-typedef enum agent_mode {
-	AGENT_MODE_UNKNOWN,
-	AGENT_MODE_CONTROLLED,
-	AGENT_MODE_CONTROLLING
-} agent_mode_t;
-
-
-typedef enum agent_stun_entry_type {
-	AGENT_STUN_ENTRY_TYPE_EMPTY,
-	AGENT_STUN_ENTRY_TYPE_SERVER,
-	AGENT_STUN_ENTRY_TYPE_RELAY,
-	AGENT_STUN_ENTRY_TYPE_CHECK
-} agent_stun_entry_type_t;
-
-typedef enum agent_stun_entry_state {
-	AGENT_STUN_ENTRY_STATE_PENDING,
-	AGENT_STUN_ENTRY_STATE_CANCELLED,
-	AGENT_STUN_ENTRY_STATE_FAILED,
-	AGENT_STUN_ENTRY_STATE_SUCCEEDED,
-	AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE,
-	AGENT_STUN_ENTRY_STATE_IDLE
-} agent_stun_entry_state_t;
-
-typedef struct agent_stun_entry {
-	agent_stun_entry_type_t type;
-    agent_stun_entry_state_t state{AGENT_STUN_ENTRY_STATE_PENDING};
-
-	agent_mode_t mode{AGENT_MODE_UNKNOWN};
-    ice_candidate_pair_t *pair{nullptr};
-	addr_record_t record{0};
-	addr_record_t relayed{0};
-    uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE] = {0};
-	int64_t next_transmission{0};
-	int64_t retransmission_timeout{0};
-	int retransmissions{0};
-	bool transaction_id_expired;
+    typedef struct ice_candidate_pair {
+        Candidate *local{nullptr};
+        Candidate *remote{nullptr};
+        uint64_t priority{0};
+        ice_candidate_pair_state_t state{ICE_CANDIDATE_PAIR_STATE_PENDING};
+        bool nominated{false};
+        bool nomination_requested{false};
+        int64_t consent_expiry{0};
 
 #if AGENT_DEBUG
         std::string dump();
 #endif
-	// TURN
-	//agent_turn_state_t *turn;
-	//unsigned int turn_redirections;
-	//struct agent_stun_entry *relay_entry;
 
-} agent_stun_entry_t;
+    } ice_candidate_pair_t;
+
+    typedef enum agent_mode {
+        AGENT_MODE_UNKNOWN,
+        AGENT_MODE_CONTROLLED,
+        AGENT_MODE_CONTROLLING
+    } agent_mode_t;
+
+    typedef enum agent_stun_entry_type {
+        AGENT_STUN_ENTRY_TYPE_EMPTY,
+        AGENT_STUN_ENTRY_TYPE_SERVER,
+        AGENT_STUN_ENTRY_TYPE_RELAY,
+        AGENT_STUN_ENTRY_TYPE_CHECK
+    } agent_stun_entry_type_t;
+
+    typedef enum agent_stun_entry_state {
+        AGENT_STUN_ENTRY_STATE_PENDING,
+        AGENT_STUN_ENTRY_STATE_CANCELLED,
+        AGENT_STUN_ENTRY_STATE_FAILED,
+        AGENT_STUN_ENTRY_STATE_SUCCEEDED,
+        AGENT_STUN_ENTRY_STATE_SUCCEEDED_KEEPALIVE,
+        AGENT_STUN_ENTRY_STATE_IDLE
+    } agent_stun_entry_state_t;
+
+    typedef struct agent_turn_state {
+        turn_map_t map;
+        stun_credentials_t credentials;
+        const char *password;
+    } agent_turn_state_t;
+
+    typedef struct agent_stun_entry {
+        agent_stun_entry_type_t type;
+        agent_stun_entry_state_t state{AGENT_STUN_ENTRY_STATE_PENDING};
+
+        agent_mode_t mode{AGENT_MODE_UNKNOWN};
+        ice_candidate_pair_t *pair{nullptr};
+        addr_record_t record{0};
+        addr_record_t relayed{0};
+        uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE] = {0};
+        int64_t next_transmission{0};
+        int64_t retransmission_timeout{0};
+        int retransmissions{0};
+        bool transaction_id_expired{false};
+        TransportTuple *tuple{nullptr};
+
+#if AGENT_DEBUG
+        std::string dump();
+#endif
+
+        agent_turn_state_t *turn;
+        unsigned int turn_redirections;
+        struct agent_stun_entry *relay_entry;
+
+    } agent_stun_entry_t;
 
 
-//typedef void (*_cb_state_changed_t)(juice_agent_t *agent, juice_state_t state, void *user_ptr);
-//typedef void (*cb_candidate_t)(juice_agent_t *agent, const char *sdp, void *user_ptr);
-//typedef void (*cb_gathering_done_t)(juice_agent_t *agent, void *user_ptr);
-//typedef void (*cb_recv_t)(juice_agent_t *agent, const char *data, size_t size,
-//                                void *user_ptr);
+    //typedef void (*_cb_state_changed_t)(juice_agent_t *agent, agent_state_t state, void *user_ptr);
+    //typedef void (*cb_candidate_t)(juice_agent_t *agent, const char *sdp, void *user_ptr);
+    //typedef void (*cb_gathering_done_t)(juice_agent_t *agent, void *user_ptr);
+    //typedef void (*cb_recv_t)(juice_agent_t *agent, const char *data, size_t size,
+    //                                void *user_ptr);
 
-
-    class IceListen 
-    {
-        public:
-	virtual void onStateChangeCallback( juice_state_t state)=0;
-	virtual void onCandidateCallback( Candidate *candidate)=0;;
-	virtual void onGatheringDoneCallback()=0;;
-	virtual void onRecvCallback( unsigned char *data, size_t size)=0;
+    class IceListen {
+    public:
+        virtual void onStateChangeCallback(agent_state_t state) = 0;
+        virtual void onCandidateCallback(Candidate *candidate) = 0;
+        virtual void onGatheringDoneCallback() = 0;
+        virtual void onRecvCallback(unsigned char *data, size_t size) = 0;
     };
 
-  class Agent : public GetAddrInfoReq, GetNameInfoReq//, rtc::Transport::Listener
-  {
-  public:
-      
-    using candidate_callback = std::function<void(const Candidate candidate)>;
-    using gathering_state_callback = std::function<void(juice_state_t state)>;
-    using recv_callback = std::function<void(unsigned char * data , size_t size )>;
-    
-    void resolveStunServer();
-    void resolveHostname(Candidate *cand );
-    void cbDnsResolve(addrinfo* res, void* ptr) override;
-    //void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
-    int agent_resolve_hostname( addrinfo* start , void *ptr);
-    //void resolveIp( Candidate *certificate );
-    Configuration &mConfig;
-        
-      
-    Agent() = delete;
-    
-    Agent( Configuration &config, IceListen *list , rtc::Transport::Listener *listener);
-    ~Agent();
-    bool getInterfaces( );
-    IceListen *iceList{nullptr};
-    rtc::Transport::Listener *listener;       
-  public:
-    uint16_t type{0};
-    uint16_t length{0};
-    uint32_t cookie{0};
-    //uint32_t transaction[3];
-    uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
-    std::vector<Attribute*> attributes;
-    std::vector<uint8_t> buffer;
-    ice_description_t localdesp;
-    
-    ice_description_t remotedesp;
-    
-    //local candidate
-    int ice_create_local_description(ice_description_t *description);
-    int set_local_ice_attributes(const char *ufrag, const char *pwd);
-    int get_local_description( char *buffer, int size) ;
-    int ice_create_host_candidate( Candidate *candidate);
-    int agent_add_local_reflexive_candidate( Candidate *candidate );
-    int ice_create_local_candidate(int component, int index, Candidate *candidate);
-    uint32_t ice_compute_priority(Candidate::Type type, int family, int component, int index);
-        
-        
-    //Remote candidate
-    int ice_add_remote_candidate(const Candidate *candidate);
-    int ice_add_remote_candidate(const char *sdp);
-    int  agent_add_remote_peer_reflexive_candidate( uint32_t priority, const addr_record_t *record); // peer-reflex only
-    Candidate * ice_add_candidate( Candidate *candidate, ice_description_t *description);
-        
-    
+    struct CDNResolve {
 
-   //candidate_callback mCandidateCallback;
-  // gathering_state_callback mstateCallback;
-  // recv_callback mrecvcallback;
-            
-  //  ice_description_t local;
-   // ice_description_t remote;
+        enum class Type {
+            CANDIDATE, ICESERVER
+        };
+        Type type{Type::CANDIDATE};
+        Candidate *cand{nullptr};
+        IceServer_conf *icesv{nullptr};
 
-    ice_candidate_pair_t m_candidate_pairs[MAX_CANDIDATE_PAIRS_COUNT];
-    ice_candidate_pair_t *m_ordered_pairs[MAX_CANDIDATE_PAIRS_COUNT];
-    ice_candidate_pair_t *m_selected_pair{nullptr};
-    int m_candidate_pairs_count{0};
 
-    
-    juice_state_t m_state{JUICE_STATE_DISCONNECTED};
-    
-    #if AGENT_DEBUG
-    std::string dump();
-    #endif
-    
-    agent_mode_t m_mode{AGENT_MODE_UNKNOWN};
-    
-    int m_entriesStun_count{0};
-    agent_stun_entry_t m_entriesStun[MAX_STUN_ENTRIES_COUNT]; // Stun server entries (  two stun sever entries per stun resolve( ipv4 + ipv6) for example stun.1.google.com will have two stun entries
-    
-    
-    
-    void agent_update_ordered_pairs() ;
-    
-    int agent_add_candidate_pairs_for_remote( Candidate *remote) ;
-    
-    int agent_add_candidate_pair( Candidate *local, // local may be NULL
-                             Candidate *remote);
-    
-        
-    int ice_create_candidate_pair(Candidate *local, Candidate *remote, bool is_controlling,
-                              ice_candidate_pair_t *pair);
- 
-    int ice_update_candidate_pair(ice_candidate_pair_t *pair, bool is_controlling);
-    
-    void agent_update_candidate_pairs();
-    
-    int ice_candidates_count(const ice_description_t *description, Candidate::Type type); 
-    
-    void agent_arm_transmission( agent_stun_entry_t *entry, int64_t delay); 
-    
-    int agent_unfreeze_candidate_pair( ice_candidate_pair_t *pair);
-    
+    };
 
-    
-    std::string localMid{0};
+    class Agent : public GetAddrInfoReq, GetNameInfoReq//, rtc::Transport::Listener
+    {
+    public:
 
-    Timer _timer{ nullptr};
-     
-    void onTimer();
-    
-    /// ON return messages 
-    int gather_candidates();
-    int onStunMessage( unsigned char *buf, size_t len, const addr_record_t *src,  const addr_record_t *relayed);
-    int agent_dispatch_stun( unsigned char *buf, size_t size, stun::MessageStun  *msg,  const addr_record_t *src, const addr_record_t *relayed);
-    int agent_verify_stun_binding(unsigned char *buf, size_t size, stun::MessageStun *msg);
-    int agent_verify_credentials( const agent_stun_entry_t *entry, unsigned char *buf,   size_t size, stun::MessageStun *msg);
-    
- 
-    agent_stun_entry_t* agent_find_entry_from_transaction_id( const uint8_t *transaction_id) ;
-    agent_stun_entry_t* agent_find_entry_from_record( const addr_record_t *record, const addr_record_t *relayed); 
-    
-    int agent_process_stun_binding( stun::MessageStun *msg,   agent_stun_entry_t *entry, const addr_record_t *src,    const addr_record_t *relayed);
-    
-    int agent_send_stun_binding( agent_stun_entry_t *entry, stun_class_t msg_class, unsigned int error_code, const uint8_t *transaction_id, const addr_record_t *mapped);
+        using candidate_callback = std::function<void(const Candidate candidate) >;
+        using gathering_state_callback = std::function<void(agent_state_t state)>;
+        using recv_callback = std::function<void(unsigned char * data, size_t size)>;
 
-    void StartAgent( std::string &stunip, uint16_t &stunport);
-    
-    int agent_get_selected_candidate_pair( Candidate *local, Candidate *remote);
-    
-    int agent_send(  uint8_t* data, uint32_t nbytes, int ds);
-    
-    //testUdpServer *socket{nullptr};
-    WebRtcTransport *socket{nullptr}; 
-    
-    void agent_arm_keepalive(agent_stun_entry_t *entry);
-    
-    int agent_bookkeeping( int64_t &now);
-    
-    void agent_update_gathering_done();
-    
-    void agent_change_state( juice_state_t state);
-    
-    void  agent_update_pac_timer();
-    
-    int  agent_set_remote_description(const char *sdp);
-    
-    int agent_resolve_servers( addrinfo* res);
-    
-    agent_stun_entry_t *m_selected_entry{nullptr};
-    
-    uint64_t ice_tiebreaker{0};  // random number
-        
-    int64_t nomination_timestamp{0};
-    int64_t pac_timestamp{0}; ///* perform connectivity check, getting ice from websocket from other machine*/
-    bool  m_gathering_done{false};
-    int agentNo;
-  private:
-    bool is_stun_datagram(const void *data, size_t size);
-    
-    int64_t m_next_timestamp {0};
-    
-    
-    
-    int ice_parse_candidate_sdp(const char *line, Candidate *candidate); 
-    int parse_sdp_candidate(const char *line, Candidate *candidate);
-    int ice_parse_sdp(const char *sdp, ice_description_t *description);
-    int parse_sdp_line(const char *line, ice_description_t *description);
+        void resolveStunServer(); // arvind if you wish to disable public ip disbale mConfig.publicIP
+        void resolveTurnServer(); // arvind if you wish to disable trurn ip  disbale mConfig.turn
 
-  };
+        void resolveHostname(Candidate *cand);
+        void cbDnsResolve(addrinfo* res, void* ptr) override;
+        //void cbNameResolve( const char* hostname, const char* service,  void* ptr) override;
+        int agent_resolve_hostname(addrinfo* start, void *ptr);
+        //void resolveIp( Candidate *certificate );
+        Configuration &mConfig;
+
+        void close_timer();
+
+
+        int start_timer(int64_t timeout_ms);
+
+        Agent() = delete;
+
+        Agent(Configuration &config, IceListen *list, rtc::Transport::Listener *listener);
+        ~Agent();
+        bool getInterfaces();
+        IceListen *iceList{nullptr};
+        rtc::Transport::Listener *listener;
+    private:
+        //        uint16_t type{0};
+        //        uint16_t length{0};
+        //        uint32_t cookie{0};
+        //uint32_t transaction[3];
+        //    uint8_t transaction_id[STUN_TRANSACTION_ID_SIZE];
+        // std::vector<uint8_t> buffer;
+        ice_description_t localdesp;
+
+        ice_description_t remotedesp;
+    public:
+
+        //local candidate
+        int ice_create_local_description(ice_description_t *description);
+        int set_local_ice_attributes(const char *ufrag, const char *pwd);
+        int get_local_description(char *buffer, int size);
+        int ice_create_host_candidate(Candidate *candidate);
+        int agent_add_local_reflexive_candidate(Candidate *candidate);
+        int ice_create_local_candidate(int component, int index, Candidate *candidate);
+        uint32_t ice_compute_priority(Candidate::Type type, int family, int component, int index,
+                const std::string &transport, Candidate::TransportType transportType);
+
+
+        //Remote candidate
+        int ice_add_remote_candidate(const Candidate *candidate);
+        int ice_add_remote_candidate(const char *sdp);
+        int agent_add_remote_peer_reflexive_candidate(uint32_t priority, const addr_record_t *record, const std::string &transport); // peer-reflex only
+        Candidate * ice_add_candidate(Candidate *candidate, ice_description_t *description);
+
+        // Candidate pair matching helper
+        bool is_tcp_pair_compatible(const Candidate *local, const Candidate *remote);
+    private:
+
+        //candidate_callback mCandidateCallback;
+        // gathering_state_callback mstateCallback;
+        // recv_callback mrecvcallback;
+
+        //  ice_description_t local;
+        // ice_description_t remote;
+
+        ice_candidate_pair_t m_candidate_pairs[MAX_CANDIDATE_PAIRS_COUNT];
+        ice_candidate_pair_t *m_ordered_pairs[MAX_CANDIDATE_PAIRS_COUNT];
+        ice_candidate_pair_t *m_selected_pair{nullptr};
+        int m_candidate_pairs_count{0};
+
+
+        agent_state_t m_state{AGENT_STATE_DISCONNECTED};
+
+    public:
+
+#if AGENT_DEBUG
+        std::string dump();
+#endif
+
+        agent_mode_t m_mode{AGENT_MODE_UNKNOWN};
+
+        int m_entriesStun_count{0};
+        agent_stun_entry_t m_entriesStun[MAX_STUN_ENTRIES_COUNT]; // Stun server entries (  two stun sever entries per stun resolve( ipv4 + ipv6) for example stun.1.google.com will have two stun entries
+
+
+
+        void agent_update_ordered_pairs();
+
+        int agent_add_candidate_pairs_for_remote(Candidate *remote);
+
+        int agent_add_candidate_pair(Candidate *local, // local may be NULL
+                Candidate *remote);
+
+
+        int ice_create_candidate_pair(Candidate *local, Candidate *remote, bool is_controlling,
+                ice_candidate_pair_t *pair);
+
+        int ice_update_candidate_pair(ice_candidate_pair_t *pair, bool is_controlling);
+
+        void agent_update_candidate_pairs();
+
+        int ice_candidates_count(const ice_description_t *description, Candidate::Type type);
+
+        void agent_arm_transmission(agent_stun_entry_t *entry, int64_t delay);
+
+        int agent_unfreeze_candidate_pair(ice_candidate_pair_t *pair);
+
+
+
+        std::string localMid{0};
+
+        Timer _timer{ nullptr};
+
+        void onTimer();
+
+        /// ON return messages 
+        int gather_candidates();
+        // stun/turn or application message
+        int onMessage(unsigned char *buf, size_t len, const addr_record_t *src, const addr_record_t *relayed, TransportTuple *tuple);
+        int agent_dispatch_stun(unsigned char *buf, size_t size, stun::MessageStun *msg, const addr_record_t *src, const addr_record_t *relayed, TransportTuple *tuple);
+        int agent_verify_stun_binding(unsigned char *buf, size_t size, stun::MessageStun *msg);
+        int agent_verify_credentials(const agent_stun_entry_t *entry, unsigned char *buf, size_t size, stun::MessageStun *msg);
+
+
+        agent_stun_entry_t* agent_find_entry_from_transaction_id(const uint8_t *transaction_id);
+        agent_stun_entry_t* agent_find_entry_from_record(const addr_record_t *record, const addr_record_t *relayed);
+
+        int agent_process_stun_binding(stun::MessageStun *msg, agent_stun_entry_t *entry, const addr_record_t *src, const addr_record_t *relayed);
+
+        int agent_send_stun_binding(agent_stun_entry_t *entry, stun_class_t msg_class, unsigned int error_code, const uint8_t *transaction_id, const addr_record_t *mapped);
+
+        void StartAgent(std::string &stunip, uint16_t &stunport);
+
+
+        int agent_get_selected_candidate_pair(Candidate *local, Candidate *remote);
+
+        int agent_send(uint8_t* data, uint32_t nbytes, int ds);
+
+        //testUdpServer *socket{nullptr};
+        WebRtcTransport *socket{nullptr};
+
+        void agent_arm_keepalive(agent_stun_entry_t *entry);
+
+        int agent_bookkeeping(int64_t &now);
+
+        void agent_update_gathering_done();
+
+        void agent_change_state(agent_state_t state);
+
+        void agent_update_pac_timer();
+
+        int agent_set_remote_description(const char *sdp);
+
+        int agent_resolve_servers(addrinfo* res);
+        int agent_resolve_TurnServers(addrinfo* start, IceServer_conf *icesv);
+
+        agent_stun_entry_t *m_selected_entry{nullptr};
+
+        uint64_t ice_tiebreaker{0}; // random number
+
+        int64_t nomination_timestamp{0};
+        int64_t pac_timestamp{0}; ///* perform connectivity check, getting ice from websocket from other machine*/
+        bool m_gathering_done{false};
+        int agentNo;
+    private:
+        bool is_stun_datagram(const void *data, size_t size);
+
+        int64_t m_next_timestamp{0};
+
+
+
+        int ice_parse_candidate_sdp(const char *line, Candidate *candidate);
+        int parse_sdp_candidate(const char *line, Candidate *candidate);
+        int ice_parse_sdp(const char *sdp, ice_description_t *description);
+        int parse_sdp_line(const char *line, ice_description_t *description);
+
+
+        uint64_t STUN_requests_sent{0};
+        uint64_t STUN_responses_received{0};
+
+        uint64_t STUN_responses_sent{0};
+        uint64_t STUN_requests_received{0};
+
+        bool bTimerActive{true};
+
+
+#if TURN
+
+        //int agent_process_channel_data(agent_stun_entry_t *entry, char *buf, size_t len) ;
+
+        int agent_process_turn_allocate(stun::MessageStun *msg, agent_stun_entry_t *entry);
+
+        int agent_send_turn_allocate_request(agent_stun_entry_t *entry, stun_method_t method);
+
+        int agent_process_turn_create_permission(stun::MessageStun *msg, agent_stun_entry_t *entry);
+
+        int agent_send_turn_create_permission_request(agent_stun_entry_t *entry, const addr_record_t *record, int ds);
+
+        int agent_process_turn_channel_bind(stun::MessageStun *msg, agent_stun_entry_t *entry);
+
+        int agent_send_turn_channel_bind_request(agent_stun_entry_t *entry, const addr_record_t *record, int ds, uint16_t *out_channel);
+
+        int agent_process_turn_data(stun::MessageStun *msg, agent_stun_entry_t *entry, TransportTuple *tuple);
+
+        int agent_add_local_relayed_candidate(const addr_record_t *record);
+
+        int agent_process_channel_data(agent_stun_entry_t *entry, char *buf, size_t len, TransportTuple *tuple);
+
+
+        int agent_relay_send(agent_stun_entry_t *entry, const addr_record_t *dst, const char *data, size_t size, int ds);
+        int agent_channel_send(agent_stun_entry_t *entry, const addr_record_t *record, const char *data, size_t size, int ds);
+
+#endif
+
+    };
 
 } /* namespace stun */
 

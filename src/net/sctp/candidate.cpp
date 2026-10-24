@@ -159,36 +159,55 @@ Candidate::TransportType Candidate::transportType() const { return mTransportTyp
 uint32_t Candidate::priority() const { return mPriority; }
 
 string Candidate::candidate() const {
-	const char sp{' '};
-	std::ostringstream oss;
-	oss << "candidate:";
-	oss << mFoundation << sp << mComponent << sp << mTransportString << sp << mPriority << sp;
-	if (isResolved())
-        {
+    const char sp{' '};
+    std::ostringstream oss;
+    oss << "candidate:";
+    oss << mFoundation << sp << mComponent << sp << mTransportString << sp << mPriority << sp;
 
-            char ip[40];  uint16_t port;
-            base::net::IP::AddressToString(resolved, ip,40, port);
-	    oss << ip << sp << port;
-        }
-	else
-		oss << mNode << sp << mService;
+    if (isResolved()) {
+            char ip[40]; 
+            uint16_t port;
+            base::net::IP::AddressToString(resolved, ip, 40, port);
+            oss << ip << sp << port;
+    } else {
+            oss << mNode << sp << mService;
+    }
 
-	const char *type = nullptr;
-	char *suffix = nullptr;
-	int ret = ice_type_suffix(this, &type, &suffix);
+    const char *type = nullptr;
+    char *suffix = nullptr;
+    int ret = ice_type_suffix(this, &type, &suffix);
 
-	if (!ret) {
-	  char tmp[100];
-	  // No need to redeclare 'type' and 'suffix' here, just reuse them
-	  snprintf(tmp, 99, "%s%s%s", type, suffix ? " " : "",
-		   suffix ? suffix : "");
-	  oss << sp << "typ" << sp << tmp;
-        }
+    if (!ret) {
+            char tmp[100];
+            snprintf(tmp, sizeof(tmp), "%s%s%s", type, suffix ? " " : "", suffix ? suffix : "");
+            oss << sp << "typ" << sp << tmp;
+    }
 
-	if (!mTail.empty())
-		oss << sp << mTail;
+    // Check if tcptype is already included in mTail
+    bool hasTcpTypeInTail = (mTail.find("tcptype") != string::npos);
 
-	return oss.str();
+    // Append tcptype attribute if it's a TCP transport and not already present in mTail
+    if (!hasTcpTypeInTail) {
+            switch (mTransportType) {
+            case TransportType::TcpActive:
+                    oss << sp << "tcptype active";
+                    break;
+            case TransportType::TcpPassive:
+                    oss << sp << "tcptype passive";
+                    break;
+            case TransportType::TcpSo:
+                    oss << sp << "tcptype so";
+                    break;
+            default:
+                    break;
+            }
+    }
+
+    if (!mTail.empty()) {
+            oss << sp << mTail;
+    }
+
+    return oss.str();
 }
 
 string Candidate::mid() const { return mMid;}

@@ -14,7 +14,6 @@
 #if !USE_NICE
 //#include <juice/juice.h>
 #include <Agent.h>
-#include "configuration.h"
 #include "net/tls.h"
 #include "json/json.hpp" 
 #else
@@ -76,7 +75,7 @@ public:
         void OnSctpState(std::string id, SctpTransport::State state);
         void OnSctpTransportMessageReceived(std::string id, SctpTransport* sctpAssociation ,message_ptr message );
         void OnReceiveData(std::string id, byte * data, size_t len){};
-        void OnClose(std::string id){};
+        void OnClose(std::string id);
         
         Description::Role mRole{Description::Role::ActPass};
 
@@ -120,7 +119,7 @@ private:
 	int mTurnServersAdded = 0;
 
 #else
-	void onStateChangeCallback( juice_state_t state);
+	void onStateChangeCallback( agent_state_t state);
         void onCandidateCallback( Candidate *candidate);
         void onGatheringDoneCallback();
         void onRecvCallback( unsigned char *data, size_t size);

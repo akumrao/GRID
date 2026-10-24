@@ -90,12 +90,19 @@ struct RTC_CPP_EXPORT Configuration {
 	// Options
 	CertificateType certificateType = CertificateType::Default;
 	TransportPolicy iceTransportPolicy = TransportPolicy::All;
-	bool enableIceTcp = false;    // libnice only
-	bool enableIceUdpMux = false; // libjuice only
-	bool disableAutoNegotiation = false;
-	bool disableAutoGathering = false;
-	bool forceMediaTransport = false;
-	bool disableFingerprintVerification = false;
+	bool enableTcp {false };    
+        bool enableUdp {true};
+        bool publicIP{true};
+        //bool turnIP{true};
+        bool noPivateIP{false};
+        uint16_t staticPort{7345};   // 0  for random port
+
+	bool enableIceUdpMux{false}; 
+	bool disableAutoNegotiation{false};
+	bool disableAutoGathering{false};
+	bool forceMediaTransport{false};
+	bool disableFingerprintVerification{ false};
+        
 
 	// Port range
 	uint16_t portRangeBegin = 1024;

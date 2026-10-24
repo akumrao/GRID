@@ -6,8 +6,6 @@
 #include "candidate.hpp"
 #include "common.hpp"
 #include "configuration.h"
-
-
 #define DATACHANNEL 1
 
 #if DATACHANNEL
@@ -21,8 +19,11 @@
 #include "description.hpp"
 #include "reliability.h"
 #include "net/certificate.h"
-#include "track.hpp"
+#include "TaskProcessor.h"
 
+#if RTC_MEDIA
+#include "track.hpp"
+#endif
 
 //#include "track.h"
 #include "rtc.h"
@@ -101,9 +102,24 @@ public:
 		HaveRemotePranswer = RTC_SIGNALING_HAVE_REMOTE_PRANSWER,
 	};
 
+        static std::string printState(GatheringState state) {
+            switch (state) {
+                case GatheringState::New:
+                    return "Gathering hasn't started yet.";
+                case GatheringState::InProgress:
+                    return "ICE candidates are actively being found.";
+                case GatheringState::Complete:
+                    return "ICE gathering is finished.";
+            }
+            return "Unknown state";
+        }
+
 	PeerConnection();
 	PeerConnection( Configuration &config);
 	~PeerConnection();
+
+#if RTC_MEDIA
+
 
   void iterateRemoteTracks(std::function<void(shared_ptr<Track> track)> func);
   void iterateTracks(std::function<void(shared_ptr<Track> track)> func);
@@ -112,10 +128,11 @@ public:
   void triggerTrack(weak_ptr<Track> weakTrack);
 
   void triggerPendingTracks();
+#endif
   
 	void close();
 
-  const Configuration config;
+        const Configuration config;
         
 	State state() const;
 	IceState iceState() const;
@@ -131,7 +148,9 @@ public:
 	uint16_t maxDataChannelId() const;
 	bool getSelectedCandidatePair(Candidate *local, Candidate *remote);
         
+        #ifdef STUN_TURN_AGENT_TEST
         void recv(unsigned char * data , size_t size);
+        #endif
         int send(unsigned char * data , size_t size);
 
 	void setLocalDescription(Description::Type type = Description::Type::Unspec);
@@ -170,7 +189,11 @@ public:
 	void onIceStateChange(std::function<void(IceState state)> callback);
 	void onGatheringStateChange(std::function<void(GatheringState state)> callback);
 	void onSignalingStateChange(std::function<void(SignalingState state)> callback);
+        
+#ifdef STUN_TURN_AGENT_TEST
+        recv_callback mRecvChangeCallback;
         void onRecv(recv_callback callback);
+#endif        
 
 	void resetCallbacks();
 	CertificateFingerprint remoteFingerprint();
@@ -184,7 +207,7 @@ public:
 //	size_t bytesReceived();
 	//optional<std::chrono::milliseconds> rtt();
         
-        
+        TaskProcessor mProcessor;
         
 //        std::atomic<State> mState;
 //
@@ -309,7 +332,7 @@ public:
 	size_t bytesSent();
 	size_t bytesReceived();
 	optional<std::chrono::milliseconds> rtt();
-        
+  #if RTC_MEDIA      
         
         
         
@@ -328,7 +351,7 @@ public:
         
         void setMediaHandler(shared_ptr<MediaHandler> handler);
 	shared_ptr<MediaHandler> getMediaHandler();
-
+#endif
        
         
 };

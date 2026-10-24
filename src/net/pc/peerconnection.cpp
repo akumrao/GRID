@@ -13,7 +13,7 @@
 #include "track.hpp"
 //#include "datachannel.h"
 
-#if RTC_ENABLE_MEDIA
+#if RTC_MEDIA
 //#include "impl/dtlssrtptransport.hpp"
 #endif
 
@@ -64,6 +64,7 @@ PeerConnection::PeerConnection( Configuration &config1): config(config1)
 	}
 }
 
+#if RTC_MEDIA
 
 void PeerConnection::iterateRemoteTracks(std::function<void(shared_ptr<Track> track)> func) {
 	auto remote = remoteDescription();
@@ -192,15 +193,16 @@ void PeerConnection::triggerPendingTracks() {
 }
 
 
+#endif
 
 PeerConnection::~PeerConnection() {
-	STrace << "Destroying PeerConnection";
+	SInfo << "~PeerConnection()";
 	close();
 	//delete mCertificate;
 }
 
 void PeerConnection::close() {
-	STrace << "Closing PeerConnection";
+	SInfo << "Closing PeerConnection";
 
 	mNegotiationNeeded = false;
         
@@ -386,6 +388,7 @@ void PeerConnection::processLocalDescription(Description &description) {
 			        },
 			        [&](Description::Media *remoteMedia) {
 //				        std::unique_lock lock(mTracksMutex); // we may emplace a track
+#if RTC_MEDIA
 				        if (auto it = mTracks.find(remoteMedia->mid()); it != mTracks.end()) {
 					        // Prefer local description
 					        if (auto track = it->second.lock()) {
@@ -409,6 +412,7 @@ void PeerConnection::processLocalDescription(Description &description) {
 					        }
 					        return;
 				        }
+ #endif
 
 				        auto reciprocated = remoteMedia->reciprocate();
 #if !RTC_ENABLE_MEDIA
@@ -424,6 +428,7 @@ void PeerConnection::processLocalDescription(Description &description) {
 				                   << reciprocated.isRemoved();
 
 				        // Create incoming track
+#if RTC_MEDIA
 				        auto track =
 				            std::make_shared<Track>(weak_from_this(), std::move(reciprocated));
 				        mTracks.emplace(std::make_pair(track->mid(), track));
@@ -438,6 +443,7 @@ void PeerConnection::processLocalDescription(Description &description) {
 					        track->close();
 
 				        description.addMedia(track->description());
+#endif
 			        },
 			    },
 			    remote->media(i));
@@ -449,6 +455,7 @@ void PeerConnection::processLocalDescription(Description &description) {
 	if (description.type() == Description::Type::Offer) {
 		// This is an offer, add locally created data channels and tracks
 		// Add media for local tracks
+#if RTC_MEDIA
 //		std::shared_lock lock(mTracksMutex);
 		for (auto it = mTrackLines.begin(); it != mTrackLines.end(); ++it) {
 			if (auto track = it->lock()) {
@@ -463,6 +470,7 @@ void PeerConnection::processLocalDescription(Description &description) {
 				description.addMedia(std::move(media));
 			}
 		}
+#endif
 
 		// Add application for data channels
 		if (!description.hasApplication()) {
@@ -518,8 +526,9 @@ void PeerConnection::processLocalDescription(Description &description) {
         
         //localDescriptionCallback(description);
         mLocalDescriptionCallback(description);
-        
+        #if RTC_MEDIA
         openTracks();
+        #endif
 
 	// Reciprocated tracks might need to be open
 //	if (auto dtlsTransport = std::atomic_load(&mDtlsTransport);
@@ -879,13 +888,46 @@ void PeerConnection::addRemoteCandidate(Candidate& candidate) {
 
 
 
+
+
+bool isLocalIPOnlyInDebug(const std::string& ip_str) {
+// Most compilers (GCC, Clang, MSVC) define _DEBUG or leave NDEBUG undefined in debug builds
+
+    struct in_addr addr;
+    if (inet_pton(AF_INET, ip_str.c_str(), &addr) != 1) {
+        return false; 
+    }
+
+    uint32_t ip = ntohl(addr.s_addr);
+    uint8_t o1 = (ip >> 24) & 0xFF;
+    uint8_t o2 = (ip >> 16) & 0xFF;
+
+    if (o1 == 10) return true;                           
+    if (o1 == 172 && (o2 >= 16 && o2 <= 31)) return true; 
+    if (o1 == 192 && o2 == 168) return true;             
+    if (o1 == 127) return true;                          
+    if (o1 == 169 && o2 == 254) return true;             
+
+    return false; // Public IP
+
+
+}
+
+
 void PeerConnection::processRemoteCandidate(Candidate& candidate) {
 
     Candidate *cand = nullptr;
 
     auto iceTransport = initIceTransport();
     
-    SInfo << "AgentNo " << iceTransport->agent.agentNo << " Adding remote candidate: " << string(candidate);
+   
+    
+    if( config.noPivateIP)
+       if(  isLocalIPOnlyInDebug(candidate.mNode))
+           return ;
+   
+     SInfo << "AgentNo " << iceTransport->agent.agentNo << " Adding remote candidate: " << string(candidate);
+           
     
 	{
 		// Set as remote candidate
@@ -1295,8 +1337,16 @@ void PeerConnection::onGatheringStateChange(std::function<void(GatheringState st
 	
 }
 
+#ifdef STUN_TURN_AGENT_TEST
 void PeerConnection::onRecv(recv_callback callback) {
 	mRecvChangeCallback = callback;
+}
+#endif
+
+int PeerConnection::send(unsigned char * data , size_t size)
+{
+     auto transport = std::atomic_load(&mIceTransport);
+    return transport->agent.agent_send(data, size,0);
 }
 
 void PeerConnection::onSignalingStateChange(std::function<void(SignalingState state)> callback) {
@@ -1304,7 +1354,7 @@ void PeerConnection::onSignalingStateChange(std::function<void(SignalingState st
 }
 
 void PeerConnection::onIceStateChange(std::function<void(IceState state)> callback) {
-	//impl()->iceStateChangeCallback = callback;
+	mKIceStateChangeCallback = callback;
 }
 
 
@@ -1356,8 +1406,9 @@ void PeerConnection::onIceStateChange(std::function<void(IceState state)> callba
            mSctpTransport.reset( transport->agent.socket->Connected(ports));
 
         }
-        
+        #if RTC_MEDIA
         openTracks();
+        #endif
      
     }
 	
@@ -1396,12 +1447,12 @@ void PeerConnection::onIceStateChange(std::function<void(IceState state)> callba
                     openDataChannels();
                     break;
             case SctpTransport::State::Failed:
-                    changeState(State::Failed);
-                    remoteClose();
+                   // changeState(State::Failed);
+                   // remoteClose();
                     break;
             case SctpTransport::State::Disconnected:
-                    changeState(State::Disconnected);
-                    remoteClose();
+                   // changeState(State::Disconnected);
+                   // remoteClose();
                     break;
             default:
                     {
@@ -1559,22 +1610,6 @@ void PeerConnection::iceGathering(IceTransport::GatheringState state) {
     
    
     
-    #if DATACHANNEL
-    
-//     switch (state) 
-//    {
-//        case JUICE_STATE_CONNECTED:
-//         initDtlsTransport();
-//            
-//        break;
-//        
-//        default:
-//            break; 
-//         
-//    };
-    
-    #endif
-    
     
 
 
@@ -1642,13 +1677,12 @@ shared_ptr<IceTransport> PeerConnection::initIceTransport() {
                                       auto iceTransport = initIceTransport();
 
                                         bool is_controlling = iceTransport->agent.m_mode == AGENT_MODE_CONTROLLING;
+                                         bool is_server =   iceTransport->mRole == Description::Role::Passive;
 
-                                          if( config.console)
-                                          iceTransport->mRole = iceTransport->agent.m_mode == AGENT_MODE_CONTROLLING ? Description::Role::Active: Description::Role::Passive;
-
+                                      
                                         SInfo << "\033[36m" << "AgentNo " << iceTransport->agent.agentNo <<  " initDtlsTransport "  << " is_controlling " << is_controlling << "\033[0m";
-                                          if(iceTransport->agent.m_selected_pair)
-                                       iceTransport->agent.socket->InitDtls( is_controlling, iceTransport->agent.m_selected_pair->local->address() ,  iceTransport->agent.m_selected_pair->remote->resolved , mRemoteDescription->fingerprint());
+                                         if(iceTransport->agent.m_selected_entry)
+                                       iceTransport->agent.socket->InitDtls( is_server, iceTransport->agent.m_selected_entry->pair->local->address() ,   iceTransport->agent.m_selected_entry->record,  iceTransport->agent.m_selected_entry->tuple,   mRemoteDescription->fingerprint());
 
                                   
 
@@ -1664,12 +1698,15 @@ shared_ptr<IceTransport> PeerConnection::initIceTransport() {
 			    case IceTransport::State::Failed:
 				    changeIceState(IceState::Failed);
 				    changeState(State::Failed);
-				   // mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+                                    
+                                   // remoteClose();
+				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
 				    break;
 			    case IceTransport::State::Disconnected:
 				    changeIceState(IceState::Disconnected);
 				    changeState(State::Disconnected);
-//				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
+                                   // remoteClose();
+				    mProcessor.enqueue(&PeerConnection::remoteClose, shared_from_this());
 				    break;
 			    default:
 				    // Ignore
@@ -1758,11 +1795,12 @@ bool PeerConnection::getSelectedCandidatePair(Candidate *local, Candidate *remot
 }
 
 
+#ifdef STUN_TURN_AGENT_TEST
 void PeerConnection::recv(unsigned char * data , size_t size)
 {
      mRecvChangeCallback( data, size );
 }
-
+#endif
 //int PeerConnection::send(unsigned char * data , size_t size)
 //{
 //    return miceTransport->agent.agent_send(data, size,0);
@@ -1829,29 +1867,29 @@ std::ostream &operator<<(std::ostream &out, PeerConnection::IceState state) {
 	return out << str;
 }
 
-std::ostream &operator<<(std::ostream &out, juice_state_t state) {
+std::ostream &operator<<(std::ostream &out, agent_state_t state) {
 	//using GatheringState = PeerConnection::GatheringState;
 	const char *str;
 	switch (state) {
-	case JUICE_STATE_DISCONNECTED:
+	case AGENT_STATE_DISCONNECTED:
 		str = "disconnecte";
 		break;
-	case JUICE_STATE_GATHERING:
+	case AGENT_STATE_GATHERING:
 		str = "gathering";
 		break;
-	case JUICE_STATE_CONNECTING:
+	case AGENT_STATE_CONNECTING:
 		str = "connecting";
 		break;
                 
-        case JUICE_STATE_CONNECTED:
+        case AGENT_STATE_CONNECTED:
                 str = "connected";
                  break;
                 
-        case JUICE_STATE_COMPLETED:
+        case AGENT_STATE_COMPLETED:
 		str = "complete";
 		break;  
                 
-         case JUICE_STATE_FAILED:
+         case AGENT_STATE_FAILED:
 		str = "failed";
 		break;          
 	default:
@@ -2088,8 +2126,10 @@ void PeerConnection::triggerDataChannel(weak_ptr<DataChannel> weakDataChannel) {
 	auto dataChannel = weakDataChannel.lock();
 	if (!dataChannel)
 		return;
-       mDataChannelCallback( std::move(dataChannel));
-	//mProcessor->enqueue(mDataChannelCallback.wrap(), std::move(dataChannel));
+       mDataChannelCallback(dataChannel);  // On remote open
+       
+       dataChannel->triggerOpen();
+ 	//mProcessor->enqueue(mDataChannelCallback.wrap(), std::move(dataChannel));
 }
 
 
@@ -2135,7 +2175,7 @@ void PeerConnection::validateRemoteDescription(const Description &description)
 	if (activeMediaCount == 0)
 		throw std::invalid_argument("Remote description has no active media");
 
-	STrace << "Remote description looks valid";
+	STrace << "Remote description looks valid " << description ;
 }
 
 
@@ -2169,11 +2209,13 @@ void PeerConnection::processRemoteDescription(Description description)
 
 	//if (dtlsTransport && dtlsTransport->state() == Transport::State::Connected)
 	//	mProcessor.enqueue(&PeerConnection::openTracks, shared_from_this());
-  
+  #if RTC_MEDIA
   openTracks();
+  #endif
 
 }
 
+#if RTC_MEDIA
 
     std::shared_ptr<Track> PeerConnection::addTrack(Description::Media description) {
          auto trackImpl = emplaceTrack(std::move(description));
@@ -2233,6 +2275,6 @@ void PeerConnection::processRemoteDescription(Description description)
             return mMediaHandler;
     }
 
-
+#endif
 
 } // namespace rtc

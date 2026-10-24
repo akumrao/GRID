@@ -32,11 +32,11 @@ namespace rtc {
     
     
 void IceTransport::Init() {
-	// Dummy
+	SInfo << "IceTransport::Init()";
 }
 
 void IceTransport::Cleanup() {
-	// Dummy
+		SInfo << "IceTransport::Cleanup()";
 }
 
 
@@ -52,7 +52,7 @@ IceTransport::IceTransport(const Configuration &config, dtls_state_callback dtls
       agent(  (Configuration &)config, this, this)  
 {
 
-SDebug << "Initializing ICE transport";	
+  SInfo << "Initializing ICE transport";	
 }
 
 void IceTransport::setIceAttributes(string uFrag, string pwd) {
@@ -97,7 +97,7 @@ void IceTransport::addIceServer(IceServer_conf server) {
 }
 
 IceTransport::~IceTransport() {
-	SInfo << "Destroying ICE transport";
+	SInfo << "Destroying ICE transport ~IceTransport()";
 //	mAgent.reset();
 }
 
@@ -133,9 +133,13 @@ void IceTransport::setRemoteDescription(const Description &description) {
 	// will not begin until the answerer is received, which adds additional latency.
 	// setup:active allows the answer and the DTLS handshake to occur in parallel. Thus,
 	// setup:active is RECOMMENDED.
-	if (mRole == Description::Role::ActPass)
-		mRole = description.role() == Description::Role::Active ? Description::Role::Passive
-		                                                        : Description::Role::Active;
+        if (mRole == Description::Role::ActPass) {
+            if (!config.serverdtsRole)
+
+                mRole = description.role() == Description::Role::Active ? Description::Role::Passive : Description::Role::Active;
+            else
+                mRole = description.role() == Description::Role::Passive ? Description::Role::Active : Description::Role::Passive;
+        }
 
 	if (mRole == description.role())
 		throw std::invalid_argument("Incompatible roles with remote description");
@@ -159,7 +163,6 @@ bool IceTransport::addRemoteCandidate(const Candidate &candidate) {
 
 void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer_conf> additionalIceServers) {
     
-     SInfo << "Agent " << agent.agentNo  <<  " gatherLocalCandidates";
 	mMid = std::move(mid);
         
         agent.localMid = mMid;
@@ -173,7 +176,7 @@ void IceTransport::gatherLocalCandidates(string mid, std::vector<IceServer_conf>
 	changeGatheringState(GatheringState::InProgress);
 
         
-         if (agent.gather_candidates() < 0) {
+    if (agent.gather_candidates() < 0) {
 		throw std::runtime_error("Failed to gather local ICE candidates");
  	  }
 }
@@ -242,7 +245,7 @@ bool IceTransport::outgoing(message_ptr message) {
 
 
 
-void IceTransport::onStateChangeCallback( juice_state_t state)
+void IceTransport::onStateChangeCallback( agent_state_t state)
 {
     processStateChange(static_cast<unsigned int>(state));
 }
@@ -280,19 +283,19 @@ void IceTransport::changeState(State state) {
 
 void IceTransport::processStateChange(unsigned int state) {
 	switch (state) {
-	case JUICE_STATE_DISCONNECTED:
+	case AGENT_STATE_DISCONNECTED:
 		changeState(State::Disconnected);
 		break;
-	case JUICE_STATE_CONNECTING:
+	case AGENT_STATE_CONNECTING:
 		changeState(State::Connecting);
 		break;
-	case JUICE_STATE_CONNECTED:
+	case AGENT_STATE_CONNECTED:
 		changeState(State::Connected);
 		break;
-	case JUICE_STATE_COMPLETED:
+	case AGENT_STATE_COMPLETED:
 		changeState(State::Completed);
 		break;
-	case JUICE_STATE_FAILED:
+	case AGENT_STATE_FAILED:
 		changeState(State::Failed);
 		break;
 	};
@@ -326,12 +329,28 @@ IceTransport::State IceTransport::state() const { return mState; }
 } // namespace rtc
 
 
+// This is disccarded function should be remvoed. It just used for agent stun messages. Never part of webrtc
 void IceTransport::incoming(message_ptr message) {
    // recv(message); 
+    std::string str(reinterpret_cast<const char*>(message->data()), message->size());
+
     
+    SInfo << "Agent " << agent.agentNo   << " APPlication message " <<  str;
 
 }
 
+
+
+void IceTransport::OnClose(std::string id)
+{
+        
+    changeState(State::Disconnected);
+
+  //  OnDtlsTransportStatus(id, DtlsTransport::DtlsState::CLOSED);
+    
+   
+
+}
 
  void IceTransport::OnSctpTransportMessageReceived(std::string id, SctpTransport* sctpAssociation ,message_ptr message )
  {
