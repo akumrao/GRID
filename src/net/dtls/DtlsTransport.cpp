@@ -381,11 +381,17 @@ namespace rtc {
                 }
                 
             }
-            
+
             ssl_set_timer(this, 0, 0);
 
+#if RTC_MEDIA
+            // Run verification & extract SRTP keys
+            return ProcessHandshake();
+#else
             this->state = DtlsState::CONNECTED;
-            this->listener->OnDtlsTransportConnected(this);
+            this->listener->OnDtlsTransportConnected(this);     
+#endif
+
         }
         return handshakeDone;
     }
@@ -467,8 +473,27 @@ namespace rtc {
     }
 
     inline bool DtlsTransport::ProcessHandshake() {
-        //
-        return true;
+        SInfo << "DtlsTransport::ProcessHandshake()";
+
+        assertm(this->handshakeDone, "handshake not done yet");
+
+        // Get the negotiated SRTP profile.
+        rtc::SrtpSession::Profile srtpProfile = GetNegotiatedSrtpProfile();
+
+        if (srtpProfile != rtc::SrtpSession::Profile::NONE) {
+            // Extract the SRTP keys (will notify the listener with them).
+            ExtractSrtpKeys(srtpProfile);
+            return true;
+        }
+
+        SWarn << "SRTP profile not negotiated";
+
+        this->state = DtlsState::FAILED;
+        if (this->listener) {
+            this->listener->OnDtlsTransportFailed(this);
+        }
+
+        return false;
     }
 
     void DtlsTransport::ClassDestroy() {
@@ -534,6 +559,143 @@ namespace rtc {
         //    mbedtls_ssl_free(&_ssl);
     }
 
+
+    inline rtc::SrtpSession::Profile DtlsTransport::GetNegotiatedSrtpProfile() {
+        rtc::SrtpSession::Profile negotiatedSrtpProfile = rtc::SrtpSession::Profile::NONE;
+
+#if defined(MBEDTLS_SSL_DTLS_SRTP)
+        mbedtls_dtls_srtp_info srtpInfo{};
+        mbedtls_ssl_get_dtls_srtp_negotiation_result(&this->mSsl, &srtpInfo);
+
+        switch (srtpInfo.private_chosen_dtls_srtp_profile) {
+            case MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_80:
+                negotiatedSrtpProfile = rtc::SrtpSession::Profile::AES_CM_128_HMAC_SHA1_80;
+                break;
+            case MBEDTLS_TLS_SRTP_AES128_CM_HMAC_SHA1_32:
+                negotiatedSrtpProfile = rtc::SrtpSession::Profile::AES_CM_128_HMAC_SHA1_32;
+                break;
+            default:
+                negotiatedSrtpProfile = rtc::SrtpSession::Profile::NONE;
+                break;
+        }
+#else
+        // Fallback if MBEDTLS_SSL_DTLS_SRTP is not defined in mbedtls config
+        negotiatedSrtpProfile = rtc::SrtpSession::Profile::AES_CM_128_HMAC_SHA1_80;
+#endif
+
+        if (negotiatedSrtpProfile != rtc::SrtpSession::Profile::NONE) {
+            SDebug << "chosen SRTP profile: " << static_cast<int>(negotiatedSrtpProfile);
+        }
+
+        return negotiatedSrtpProfile;
+    }
+    
+    inline void DtlsTransport::ExtractSrtpKeys(rtc::SrtpSession::Profile srtpProfile) {
+        size_t srtpKeyLength{0};
+        size_t srtpSaltLength{0};
+        size_t srtpMasterLength{0};
+
+        switch (srtpProfile) {
+            case rtc::SrtpSession::Profile::AES_CM_128_HMAC_SHA1_80:
+            case rtc::SrtpSession::Profile::AES_CM_128_HMAC_SHA1_32:
+            {
+                srtpKeyLength = SrtpMasterKeyLength;
+                srtpSaltLength = SrtpMasterSaltLength;
+                srtpMasterLength = SrtpMasterLength;
+                break;
+            }
+            case rtc::SrtpSession::Profile::AEAD_AES_256_GCM:
+            {
+                srtpKeyLength = SrtpAesGcm256MasterKeyLength;
+                srtpSaltLength = SrtpAesGcm256MasterSaltLength;
+                srtpMasterLength = SrtpAesGcm256MasterLength;
+                break;
+            }
+            case rtc::SrtpSession::Profile::AEAD_AES_128_GCM:
+            {
+                srtpKeyLength = SrtpAesGcm128MasterKeyLength;
+                srtpSaltLength = SrtpAesGcm128MasterSaltLength;
+                srtpMasterLength = SrtpAesGcm128MasterLength;
+                break;
+            }
+            default:
+            {
+                MS_ABORT("unknown SRTP profile");
+            }
+        }
+
+        auto* srtpMaterial = new uint8_t[srtpMasterLength * 2];
+        uint8_t * srtpLocalKey{nullptr};
+        uint8_t * srtpLocalSalt{nullptr};
+        uint8_t * srtpRemoteKey{nullptr};
+        uint8_t * srtpRemoteSalt{nullptr};
+        auto* srtpLocalMasterKey = new uint8_t[srtpMasterLength];
+        auto* srtpRemoteMasterKey = new uint8_t[srtpMasterLength];
+
+        // Export keying material via TLS PRF using the captured master secret and random bytes
+        int ret = mbedtls_ssl_tls_prf(
+                this->mTlsProfile,
+                reinterpret_cast<const unsigned char*> (this->mMasterSecret),
+                sizeof (this->mMasterSecret),
+                "EXTRACTOR-dtls_srtp",
+                reinterpret_cast<const unsigned char*> (this->mRandBytes),
+                sizeof (this->mRandBytes),
+                srtpMaterial,
+                srtpMasterLength * 2
+                );
+
+        assertm(ret == 0, "mbedtls_ssl_tls_prf() failed");
+
+        switch (this->localRole) {
+            case Role::SERVER:
+            {
+                srtpRemoteKey = srtpMaterial;
+                srtpLocalKey = srtpRemoteKey + srtpKeyLength;
+                srtpRemoteSalt = srtpLocalKey + srtpKeyLength;
+                srtpLocalSalt = srtpRemoteSalt + srtpSaltLength;
+                break;
+            }
+            case Role::CLIENT:
+            {
+                srtpLocalKey = srtpMaterial;
+                srtpRemoteKey = srtpLocalKey + srtpKeyLength;
+                srtpLocalSalt = srtpRemoteKey + srtpKeyLength;
+                srtpRemoteSalt = srtpLocalSalt + srtpSaltLength;
+                break;
+            }
+            default:
+            {
+                MS_ABORT("no DTLS role set");
+            }
+        }
+
+        // Create the SRTP local master key
+        std::memcpy(srtpLocalMasterKey, srtpLocalKey, srtpKeyLength);
+        std::memcpy(srtpLocalMasterKey + srtpKeyLength, srtpLocalSalt, srtpSaltLength);
+
+        // Create the SRTP remote master key
+        std::memcpy(srtpRemoteMasterKey, srtpRemoteKey, srtpKeyLength);
+        std::memcpy(srtpRemoteMasterKey + srtpKeyLength, srtpRemoteSalt, srtpSaltLength);
+
+        // Set state and notify listener with all 6 parameters
+        this->state = DtlsState::CONNECTED;
+        this->listener->OnDtlsTransportConnected(
+                this,
+                srtpProfile,
+                srtpLocalMasterKey,
+                srtpMasterLength,
+                srtpRemoteMasterKey,
+                srtpMasterLength
+                );
+
+        delete[] srtpMaterial;
+        delete[] srtpLocalMasterKey;
+        delete[] srtpRemoteMasterKey;
+    }
+
+    
+    
+ 
 } // namespace rtc
 
 #else

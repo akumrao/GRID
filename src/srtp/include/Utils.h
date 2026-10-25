@@ -3,7 +3,7 @@
 
 #include "common.h"
 #include <json.hpp>
-#include <openssl/hmac.h>
+
 #include <cmath>
 #include <cstring> // std::memcmp(), std::memcpy()
 #include <string>
@@ -160,7 +160,7 @@ namespace Utils
 
 	private:
 		static uint32_t seed;
-		static HMAC_CTX* hmacSha1Ctx;
+
 		static uint8_t hmacSha1Buffer[];
 		static const uint32_t crc32Table[256];
 	};

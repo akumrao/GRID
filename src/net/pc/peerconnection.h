@@ -336,9 +336,10 @@ public:
         
         
         
-        std::shared_ptr<Track> PeerConnection::addTrack(Description::Media description) ;
-        void PeerConnection::onTrack(std::function<void(std::shared_ptr<Track>)> callback) ;
-        shared_ptr<Track> PeerConnection::emplaceTrack(Description::Media description);
+       std::shared_ptr<Track> addTrack(Description::Media description);
+	void onTrack(std::function<void(std::shared_ptr<Track>)> callback);
+	std::shared_ptr<Track> emplaceTrack(Description::Media description);
+
         
         synchronized_callback<shared_ptr<rtc::Track>> trackCallback;
         
