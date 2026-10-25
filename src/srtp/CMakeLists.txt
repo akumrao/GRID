@@ -104,7 +104,7 @@ if(WIN32)
 endif()
 
 
-set(SOURCE_FILES main.cpp helpers.cpp)
+set(SOURCE_FILES remote/main.cpp helpers.cpp)
 
 if(UNIX)
 file(GLOB SOURCES   
