@@ -31,7 +31,8 @@
 #include "sctptransport.hpp"
 #include "DtlsTransport.h"
 #include "stream.hpp"
-
+#include "DepUsrSCTP.h"
+#include "sdpcommon.h"
 
 //#define socketio 1
 //#define localtesting 1
@@ -361,7 +362,6 @@ void wsOnMessage(json const &m) {
 
 
     }
-
 }
 
 void initiate(std::string rm) {
@@ -389,11 +389,9 @@ int main(int argc, char **argv) {
 
 
 
-    rtc::SctpTransport::Init();
-    rtc::SctpSettings mCurrentSctpSettings = {};
-    rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
-
-    DepLibSRTP::ClassInit();
+    //rtc::SctpTransport::Init();
+   // rtc::SctpSettings mCurrentSctpSettings = {};
+    //rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
 
 
 
@@ -403,6 +401,16 @@ int main(int argc, char **argv) {
     Application app;
 
     Async async;
+    
+    
+    
+    rtc::DtlsTransport::ClassInit();
+    DepUsrSCTP::ClassInit();
+
+    GetNetInterface::ClassInit();
+        
+    DepLibSRTP::ClassInit();
+
 
 
     if (printHelp) {
@@ -1600,7 +1608,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
         if (auto dc = wdc.lock()) {
 
             SInfo << "onOpen: " << msg;
-                    dc->send("Ping");
+             //       dc->send("Ping");
         }
     });
     client->dataChannel1 = dc;

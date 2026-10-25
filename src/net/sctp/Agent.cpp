@@ -17,7 +17,13 @@ using namespace base;
 
 namespace stun {
 
-  
+   // #define  SDebug  STrace
+   // #define  SInfo  STrace
+
+    //void thread_function() {
+    //    std::thread::id thread_id = std::this_thread::get_id();
+    //    std::cout << "Thread ID: " << thread_id << std::endl;
+    //}
 
 
     /* --------------------------------------------------------------------- */
@@ -621,15 +627,15 @@ namespace stun {
 
         if (local->mTransportString == "TCP") {
             if (local->mTransportType == Candidate::TransportType::TcpActive &&
-                    remote->mTransportType == Candidate::TransportType::TcpPassive) {
+                remote->mTransportType == Candidate::TransportType::TcpPassive) {
                 return true;
             }
             if (local->mTransportType == Candidate::TransportType::TcpPassive &&
-                    remote->mTransportType == Candidate::TransportType::TcpActive) {
+                remote->mTransportType == Candidate::TransportType::TcpActive) {
                 return true;
             }
             if (local->mTransportType == Candidate::TransportType::TcpSo &&
-                    remote->mTransportType == Candidate::TransportType::TcpSo) {
+                remote->mTransportType == Candidate::TransportType::TcpSo) {
                 return true;
             }
             return false;
@@ -1916,9 +1922,9 @@ namespace stun {
         if (entry->tuple) {
             entry->tuple->Send(writer.buffer.data(), writer.buffer.size());
         } else if (isTcp) {
-            //  if (socket->agent_direct_send_tcp(&writer.buffer[0], writer.buffer.size(), entry->record) < 0) {
-            /// //    return -1;
-            // }
+            if (socket->agent_direct_send_tcp(&writer.buffer[0], writer.buffer.size(), entry->record) < 0) {
+                return -1;
+            }
         } else if (socket->agent_direct_send(&writer.buffer[0], writer.buffer.size(), entry->record) < 0) {
             return -1;
         }
