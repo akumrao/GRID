@@ -342,7 +342,7 @@ namespace base {
             fnClose(this, "exit");
 
         }
-        
+
         void HttpsClient::setHostName(const std::string& hostname)
         {
            _sslAdapter.setHostName(hostname);

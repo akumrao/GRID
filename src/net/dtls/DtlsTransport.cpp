@@ -277,6 +277,8 @@ namespace rtc {
             if (this->listener) {
                 this->listener->OnDtlsTransportConnecting(this);
             }
+            //mbedtls_ssl_set_mtu(&mSsl, 1200);
+ 
         }
 
         int rv = mbedtls_ssl_handshake(&mSsl);
@@ -294,7 +296,7 @@ namespace rtc {
                     SError << " Failed ssl cert verification because expired or CN mismatch: " << buf;
                 }
             }
-            
+
             ssl_set_timer(this, 0, 0);
 
             this->state = DtlsState::CONNECTED;
@@ -403,7 +405,7 @@ namespace rtc {
         SInfo << "~DtlsTransport over()";
     }
 
-        
+
     void DtlsTransport::shutdown() {
         SInfo << "Shutdown";
         int ret;
@@ -537,6 +539,9 @@ namespace rtc {
         std::string dtlsSrtpProfiles;
         int ret;
 
+        /* Set the global DTLS context. */
+
+        // Both DTLS 1.0 and 1.2 (requires OpenSSL >= 1.1.0).
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
         DtlsTransport::sslCtx = SSL_CTX_new(DTLS_method());
 #elif (OPENSSL_VERSION_NUMBER >= 0x10001000L)
@@ -609,9 +614,17 @@ namespace rtc {
             return;
         }
 
+        // Enable ECDH ciphers.
+        // DOC: http://en.wikibooks.org/wiki/OpenSSL/Diffie-Hellman_parameters
+        // NOTE: https://code.google.com/p/chromium/issues/detail?id=406458
+        // NOTE: https://bugs.ruby-lang.org/issues/12324
+        //
+        // Nothing to be done in OpenSSL >= 1.1.0.
 #if (OPENSSL_VERSION_NUMBER >= 0x10100000L)
+        // For OpenSSL >= 1.0.2.
 #elif (OPENSSL_VERSION_NUMBER >= 0x10002000L)
         SSL_CTX_set_ecdh_auto(DtlsTransport::sslCtx, 1);
+        // Older versions.
 #else
         EC_KEY *ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
         if (!ecdh) {
@@ -628,6 +641,7 @@ namespace rtc {
         EC_KEY_free(ecdh);
 #endif
 
+        // Set the "use_srtp" DTLS extension.
         for (auto it = DtlsTransport::srtpProfiles.begin();
                 it != DtlsTransport::srtpProfiles.end(); ++it) {
             if (it != DtlsTransport::srtpProfiles.begin())
@@ -839,6 +853,9 @@ error:
     }
 
     void DtlsTransport::Reset() {
+
+        int ret;
+
         if (!IsRunning())
             return;
 
@@ -848,6 +865,9 @@ error:
             this->timer->Stop();
         }
 
+        // We need to reset the SSL instance so we need to "shutdown" it, but we
+        // don't want to send a Close Alert to the peer, so just don't call
+        // SendPendingOutgoingDTLSData().
         SSL_shutdown(this->ssl);
 
         this->localRole = Role::NONE;
@@ -855,7 +875,12 @@ error:
         this->handshakeDone = false;
         this->handshakeDoneNow = false;
 
-        int ret = SSL_clear(this->ssl);
+        // Reset SSL status.
+        // NOTE: For this to properly work, SSL_shutdown() must be called before.
+        // NOTE: This may fail if not enough DTLS handshake data has been received,
+        // but we don't care so just clear the error queue.
+        ret = SSL_clear(this->ssl);
+
         if (ret == 0)
             ERR_clear_error();
     }
@@ -968,6 +993,8 @@ error:
         } else {
             SWarn << "DTLS timeout too high ms, resetting DLTS: " << timeoutMs;
             Reset();
+
+            // Set state and notify the listener.
             this->state = DtlsState::FAILED;
             if (this->listener) {
                 this->listener->OnDtlsTransportFailed(this);

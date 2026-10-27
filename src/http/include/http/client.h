@@ -64,7 +64,7 @@ namespace base {
             
             /// for websocket connect
             
-            
+
             virtual void setReadStream(std::ostream* ) {
             }
 
