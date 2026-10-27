@@ -9,54 +9,50 @@
 //#include "Utils.h"
 #include <string>
 
-namespace base
-{
-    
+namespace base {
 
-namespace net
-{
-	/* Instance methods. */
 
-	void TransportTuple::FillJson(json& jsonObject) const
-	{
-		//MS_TRACE();
+    namespace net {
 
-		int family;
-		std::string ip;
-		uint16_t port;
+        /* Instance methods. */
 
-		base::net::IP::GetAddressInfo((struct sockaddr*)GetLocalAddress(), family, ip, port);
+        void TransportTuple::FillJson(json& jsonObject) const {
+            //MS_TRACE();
 
-		// Add localIp.
-		if (this->localAnnouncedIp.empty())
-			jsonObject["localIp"] = ip;
-		else
-			jsonObject["localIp"] = this->localAnnouncedIp;
+            int family;
+            std::string ip;
+            uint16_t port;
 
-		// Add localPort.
-		jsonObject["localPort"] = port;
+            base::net::IP::GetAddressInfo((struct sockaddr*) GetLocalAddress(), family, ip, port);
 
-		base::net::IP::GetAddressInfo((struct sockaddr*)GetRemoteAddress(), family, ip, port);
+            // Add localIp.
+            if (this->localAnnouncedIp.empty())
+                jsonObject["localIp"] = ip;
+            else
+                jsonObject["localIp"] = this->localAnnouncedIp;
 
-		// Add remoteIp.
-		jsonObject["remoteIp"] = ip;
+            // Add localPort.
+            jsonObject["localPort"] = port;
 
-		// Add remotePort.
-		jsonObject["remotePort"] = port;
+            base::net::IP::GetAddressInfo((struct sockaddr*) GetRemoteAddress(), family, ip, port);
 
-		// Add protocol.
-		switch (GetProtocol())
-		{
-			case Protocol::UDP:
-				jsonObject["protocol"] = "udp";
-				break;
+            // Add remoteIp.
+            jsonObject["remoteIp"] = ip;
 
-			case Protocol::TCP:
-				jsonObject["protocol"] = "tcp";
-				break;
-		}
-	}
+            // Add remotePort.
+            jsonObject["remotePort"] = port;
 
+            // Add protocol.
+            switch (GetProtocol()) {
+                case Protocol::UDP:
+                    jsonObject["protocol"] = "udp";
+                    break;
+
+                case Protocol::TCP:
+                    jsonObject["protocol"] = "tcp";
+                    break;
+            }
+        }
 
         std::string TransportTuple::Dump() const {
             //MS_TRACE();
@@ -68,7 +64,7 @@ namespace net
             uint16_t port;
 
             oss << "Tuple ";
-            
+
             switch (GetProtocol()) {
                 case Protocol::UDP:
                     oss << "udp ";
@@ -79,135 +75,116 @@ namespace net
                     break;
             }
 
-            sockaddr* add =  (struct sockaddr*) GetLocalAddress();
-               
-            if(add)
-            {
+            sockaddr* add = (struct sockaddr*) GetLocalAddress();
+
+            if (add) {
                 base::net::IP::GetAddressInfo((struct sockaddr*) GetLocalAddress(), family, ip, port);
-                oss << "  localIp " <<  ip;
+                oss << "  localIp " << ip;
                 oss << "  : " << port;
             }
-            
-            
+
+
             base::net::IP::GetAddressInfo((struct sockaddr*) GetRemoteAddress(), family, ip, port);
-            oss << "  remoteIp " << ip ;
-            oss << "  : " << port ;
+            oss << "  remoteIp " << ip;
+            oss << "  : " << port;
 
 
 
             return oss.str();
         }
 
+        /*  methods. */
 
+        TransportTuple::TransportTuple(net::UdpSocket* udpSocket, const struct sockaddr* udpRemoteAddr)
+        : udpSocket(udpSocket), udpRemoteAddr((struct sockaddr*) udpRemoteAddr), protocol(Protocol::UDP) {
+        }
 
+        TransportTuple::TransportTuple(net::TcpConnectionBase* tcpConnection)
+        : tcpConnection(tcpConnection), protocol(Protocol::TCP) {
+        }
 
-	/*  methods. */
+        TransportTuple::TransportTuple(const TransportTuple* tuple)
+        : udpSocket(tuple->udpSocket), udpRemoteAddr(tuple->udpRemoteAddr),
+        tcpConnection(tuple->tcpConnection), localAnnouncedIp(tuple->localAnnouncedIp),
+        protocol(tuple->protocol) {
+            if (protocol == TransportTuple::Protocol::UDP)
+                StoreUdpRemoteAddress();
+        }
 
-	 TransportTuple::TransportTuple(net::UdpSocket* udpSocket, const struct sockaddr* udpRemoteAddr)
-	  : udpSocket(udpSocket), udpRemoteAddr((struct sockaddr*)udpRemoteAddr), protocol(Protocol::UDP)
-	{
-	}
+        void TransportTuple::StoreUdpRemoteAddress() {
+            // Clone the given address into our address storage and make the sockaddr
+            // pointer point to it.
+            this->udpRemoteAddrStorage = base::net::IP::CopyAddress(this->udpRemoteAddr);
 
-	 TransportTuple::TransportTuple(net::TcpConnectionBase* tcpConnection)
-	  : tcpConnection(tcpConnection), protocol(Protocol::TCP)
-	{
-	}
+#if !defined(__linux__) && defined(DUALSTACK)
+            base::net::IP::CopyAddress(this->udpRemoteAddr, record_win);
 
-	 TransportTuple::TransportTuple(const TransportTuple* tuple)
-	  : udpSocket(tuple->udpSocket), udpRemoteAddr(tuple->udpRemoteAddr),
-	    tcpConnection(tuple->tcpConnection), localAnnouncedIp(tuple->localAnnouncedIp),
-	    protocol(tuple->protocol)
-	{
-		if (protocol == TransportTuple::Protocol::UDP)
-			StoreUdpRemoteAddress();
-	}
-
-	 void TransportTuple::StoreUdpRemoteAddress()
-	{
-		// Clone the given address into our address storage and make the sockaddr
-		// pointer point to it.
-		this->udpRemoteAddrStorage = base::net::IP::CopyAddress(this->udpRemoteAddr);
-		
-  #if !defined(__linux__) && defined(DUALSTACK)
-                base::net::IP::CopyAddress(this->udpRemoteAddr, record_win);
-
-               socklen_t lent;
-                IP::addr_map_inet6_v4mapped(   // convert ipv4 to ipv6 if needed for windows
-                    (struct sockaddr_storage *)&record_win.addr,
+            socklen_t lent;
+            IP::addr_map_inet6_v4mapped(// convert ipv4 to ipv6 if needed for windows
+                    (struct sockaddr_storage *) &record_win.addr,
                     &record_win.len);
-  #endif
+#endif
 
-				this->udpRemoteAddr =
-                    (struct sockaddr *)&this->udpRemoteAddrStorage;
-	}
+            this->udpRemoteAddr =
+                    (struct sockaddr *) & this->udpRemoteAddrStorage;
+        }
 
-	 TransportTuple::Protocol TransportTuple::GetProtocol() const
-	{
-		return this->protocol;
-	}
+        TransportTuple::Protocol TransportTuple::GetProtocol() const {
+            return this->protocol;
+        }
 
-	 bool TransportTuple::Compare(const TransportTuple* tuple) const
-	{
-		if (this->protocol == Protocol::UDP && tuple->GetProtocol() == Protocol::UDP)
-		{
-			return (
-			  this->udpSocket == tuple->udpSocket &&
-			  base::net::IP::CompareAddresses(this->udpRemoteAddr, tuple->GetRemoteAddress()));
-		}
-		else if (this->protocol == Protocol::TCP && tuple->GetProtocol() == Protocol::TCP)
-		{
-			return (this->tcpConnection == tuple->tcpConnection);
-		}
-		else
-		{
-			return false;
-		}
-	}
+        bool TransportTuple::Compare(const TransportTuple* tuple) const {
+            if (this->protocol == Protocol::UDP && tuple->GetProtocol() == Protocol::UDP) {
+                return (
+                        this->udpSocket == tuple->udpSocket &&
+                        base::net::IP::CompareAddresses(this->udpRemoteAddr, tuple->GetRemoteAddress()));
+            } else if (this->protocol == Protocol::TCP && tuple->GetProtocol() == Protocol::TCP) {
+                return (this->tcpConnection == tuple->tcpConnection);
+            } else {
+                return false;
+            }
+        }
 
-	 void TransportTuple::SetLocalAnnouncedIp(std::string& localAnnouncedIp)
-	{
-		this->localAnnouncedIp = localAnnouncedIp;
-	}
+        void TransportTuple::SetLocalAnnouncedIp(std::string& localAnnouncedIp) {
+            this->localAnnouncedIp = localAnnouncedIp;
+        }
 
-	 void TransportTuple::Send(
-	  const uint8_t* data, size_t len, net::TransportTuple::onSendCallback cb)
-	{
+        void TransportTuple::Send(
+                const uint8_t* data, size_t len, net::TransportTuple::onSendCallback cb) {
 
-		
-  #if !defined(__linux__) && defined(DUALSTACK)
-          if (this->protocol == Protocol::UDP)
-             this->udpSocket->send((const char *)data, len, (const struct sockaddr *)&this->record_win.addr, cb);
+
+#if !defined(__linux__) && defined(DUALSTACK)
+            if (this->protocol == Protocol::UDP)
+                this->udpSocket->send((const char *) data, len, (const struct sockaddr *) & this->record_win.addr, cb);
 
 #else
-          if (this->protocol == Protocol::UDP)
-            this->udpSocket->send((const char *)data, len, this->udpRemoteAddr, cb);
- 
-	
+            if (this->protocol == Protocol::UDP)
+                this->udpSocket->send((const char *) data, len, this->udpRemoteAddr, cb);
+
+
 #endif
-          else
-            this->tcpConnection->Write((const char *)data, len, cb);  
-	
-	}
+            else
+                this->tcpConnection->Write((const char *) data, len, cb);
 
-	 const struct sockaddr* TransportTuple::GetLocalAddress() const
-	{
-		if (this->protocol == Protocol::UDP)
-			return this->udpSocket->GetLocalAddress();
-		else
-			return this->tcpConnection->GetLocalAddress();
-	}
+        }
 
-	 const struct sockaddr* TransportTuple::GetRemoteAddress() const
-	{
-		if (this->protocol == Protocol::UDP)
-			return (const struct sockaddr*)this->udpRemoteAddr;
-		else
-			return this->tcpConnection->GetPeerAddress();
-	}
+        const struct sockaddr* TransportTuple::GetLocalAddress() const {
+            if (this->protocol == Protocol::UDP)
+                return this->udpSocket->GetLocalAddress();
+            else
+                return this->tcpConnection->GetLocalAddress();
+        }
+
+        const struct sockaddr* TransportTuple::GetRemoteAddress() const {
+            if (this->protocol == Protocol::UDP)
+                return (const struct sockaddr*) this->udpRemoteAddr;
+            else
+                return this->tcpConnection->GetPeerAddress();
+        }
 
 
 
 
 
-} // namespace net
+    } // namespace net
 }
