@@ -21,6 +21,9 @@
 #include "net/certificate.h"
 #include "TaskProcessor.h"
 
+#if RTC_MEDIA
+#include "track.hpp"
+#endif
 
 //#include "track.h"
 #include "rtc.h"
@@ -115,6 +118,18 @@ public:
 	PeerConnection( Configuration &config);
 	~PeerConnection();
 
+#if RTC_MEDIA
+
+
+  void iterateRemoteTracks(std::function<void(shared_ptr<Track> track)> func);
+  void iterateTracks(std::function<void(shared_ptr<Track> track)> func);
+  void openTracks();
+  void closeTracks();
+  void triggerTrack(weak_ptr<Track> weakTrack);
+
+  void triggerPendingTracks();
+#endif
+  
 	void close();
 
         const Configuration config;
@@ -224,7 +239,7 @@ public:
 	std::function<void(GatheringState )> mGatheringStateChangeCallback;
 	std::function<void(SignalingState)> mSignalingStateChangeCallback;
 	//std::function<void<std::shared_ptr<Track>> mTrackCallback;
-        
+        recv_callback mRecvChangeCallback;
         
         
         
@@ -317,6 +332,29 @@ public:
 	size_t bytesSent();
 	size_t bytesReceived();
 	optional<std::chrono::milliseconds> rtt();
+  #if RTC_MEDIA      
+        
+        
+        
+       std::shared_ptr<Track> addTrack(Description::Media description);
+	void onTrack(std::function<void(std::shared_ptr<Track>)> callback);
+	std::shared_ptr<Track> emplaceTrack(Description::Media description);
+
+        
+        synchronized_callback<shared_ptr<rtc::Track>> trackCallback;
+        
+        std::unordered_map<string, weak_ptr<Track>> mTracks;         // by mid
+        std::unordered_map<uint32_t, weak_ptr<Track>> mTracksBySsrc; // by SSRC
+        std::vector<weak_ptr<Track>> mTrackLines;                    // by SDP order
+        Queue<shared_ptr<Track>> mPendingTracks;
+        
+        shared_ptr<MediaHandler> mMediaHandler;
+        
+        void setMediaHandler(shared_ptr<MediaHandler> handler);
+	shared_ptr<MediaHandler> getMediaHandler();
+#endif
+       
+        
 };
 
 RTC_CPP_EXPORT std::ostream &operator<<(std::ostream &out, PeerConnection::State state);
