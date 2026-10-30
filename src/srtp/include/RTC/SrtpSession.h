@@ -4,21 +4,14 @@
 #include "common.h"
 #include <srtp.h>
 #include <arpa/inet.h>
-#include <RTC/SrtpSession.h>
+#include "../net/dtls/DtlsTransport.h"
 
 namespace rtc
 {
 	class SrtpSession
 	{
 	public:
-		enum class Profile
-		{
-			NONE                    = 0,
-			AES_CM_128_HMAC_SHA1_80 = 1,
-			AES_CM_128_HMAC_SHA1_32,
-			AEAD_AES_256_GCM,
-			AEAD_AES_128_GCM
-		};
+		using Profile = DtlsTransport::Profile;
 
 	public:
 		enum class Type

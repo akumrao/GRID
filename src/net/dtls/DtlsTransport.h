@@ -3,7 +3,6 @@
 
 #include "description.hpp"
 
-#include "RTC/SrtpSession.h"
 #include "base/Timer.h"
 
 #if USE_MBEDTLS
@@ -60,31 +59,31 @@ public:
   enum class Role { NONE = 0, AUTO = 1, CLIENT, SERVER };
   
   
-  	static constexpr int SslReadBufferSize{ 65536 };
-	// AES-HMAC: http://tools.ietf.org/html/rfc3711
-	static constexpr size_t SrtpMasterKeyLength{ 16 };
-	static constexpr size_t SrtpMasterSaltLength{ 14 };
-	static constexpr size_t SrtpMasterLength{ SrtpMasterKeyLength + SrtpMasterSaltLength };
-	// AES-GCM: http://tools.ietf.org/html/rfc7714
-	static constexpr size_t SrtpAesGcm256MasterKeyLength{ 32 };
-	static constexpr size_t SrtpAesGcm256MasterSaltLength{ 12 };
-	static constexpr size_t SrtpAesGcm256MasterLength{ SrtpAesGcm256MasterKeyLength + SrtpAesGcm256MasterSaltLength };
-	static constexpr size_t SrtpAesGcm128MasterKeyLength{ 16 };
-	static constexpr size_t SrtpAesGcm128MasterSaltLength{ 12 };
-	static constexpr size_t SrtpAesGcm128MasterLength{ SrtpAesGcm128MasterKeyLength + SrtpAesGcm128MasterSaltLength };
-	
+    static constexpr int SslReadBufferSize{ 65536 };
+  // AES-HMAC: http://tools.ietf.org/html/rfc3711
+  static constexpr size_t SrtpMasterKeyLength{ 16 };
+  static constexpr size_t SrtpMasterSaltLength{ 14 };
+  static constexpr size_t SrtpMasterLength{ SrtpMasterKeyLength + SrtpMasterSaltLength };
+  // AES-GCM: http://tools.ietf.org/html/rfc7714
+  static constexpr size_t SrtpAesGcm256MasterKeyLength{ 32 };
+  static constexpr size_t SrtpAesGcm256MasterSaltLength{ 12 };
+  static constexpr size_t SrtpAesGcm256MasterLength{ SrtpAesGcm256MasterKeyLength + SrtpAesGcm256MasterSaltLength };
+  static constexpr size_t SrtpAesGcm128MasterKeyLength{ 16 };
+  static constexpr size_t SrtpAesGcm128MasterSaltLength{ 12 };
+  static constexpr size_t SrtpAesGcm128MasterLength{ SrtpAesGcm128MasterKeyLength + SrtpAesGcm128MasterSaltLength };
+  
 public:
-//  enum class Profile {
-//    NONE = 0,
-//    AES_CM_128_HMAC_SHA1_80 = 1,
-//    AES_CM_128_HMAC_SHA1_32,
-//    AEAD_AES_256_GCM,
-//    AEAD_AES_128_GCM
-//  };
+ enum class Profile {
+   NONE = 0,
+   AES_CM_128_HMAC_SHA1_80 = 1,
+   AES_CM_128_HMAC_SHA1_32,
+   AEAD_AES_256_GCM,
+   AEAD_AES_128_GCM
+ };
 
 private:
   struct SrtpProfileMapEntry {
-    rtc::SrtpSession::Profile profile;
+    Profile profile;
     const char *name;
   };
 
@@ -102,7 +101,7 @@ public:
     // callback.
    // virtual void
     //OnDtlsTransportConnected(const rtc::DtlsTransport *dtlsTransport) = 0;
-    virtual void OnDtlsTransportConnected( const rtc::DtlsTransport* /*dtlsTransport*/, rtc::SrtpSession::Profile srtpProfile,  uint8_t* srtpLocalKey,  size_t srtpLocalKeyLen,  uint8_t* srtpRemoteKey,  size_t srtpRemoteKeyLen)= 0;
+    virtual void OnDtlsTransportConnected( const rtc::DtlsTransport* /*dtlsTransport*/, rtc::DtlsTransport::Profile srtpProfile,  uint8_t* srtpLocalKey,  size_t srtpLocalKeyLen,  uint8_t* srtpRemoteKey,  size_t srtpRemoteKeyLen)= 0;
 
     // The DTLS connection has been closed as the result of an error (such as a
     // DTLS alert or a failure to validate the remote fingerprint).
@@ -218,8 +217,8 @@ private:
   bool ProcessHandshake();
   bool CheckRemoteFingerprint();
   
-  void ExtractSrtpKeys(rtc::SrtpSession::Profile srtpProfile);
-  rtc::SrtpSession::Profile GetNegotiatedSrtpProfile();
+  void ExtractSrtpKeys(rtc::DtlsTransport::Profile srtpProfile);
+  rtc::DtlsTransport::Profile GetNegotiatedSrtpProfile();
 
 
   /* Callbacks fired by OpenSSL events. */

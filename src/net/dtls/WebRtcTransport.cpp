@@ -599,7 +599,7 @@ namespace rtc {
 
     inline void WebRtcTransport::OnDtlsTransportConnected(const rtc::DtlsTransport* dtlsTransport,
 
-            rtc::SrtpSession::Profile srtpProfile,
+            rtc::DtlsTransport::Profile srtpProfile,
             uint8_t* srtpLocalKey,
             size_t srtpLocalKeyLen,
             uint8_t* srtpRemoteKey,
