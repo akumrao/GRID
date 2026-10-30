@@ -227,7 +227,7 @@ endif()
 
 
 include_directories(
-           ./include ../net/sctp/ ../net/pc/ ../net/dtls/ ../http/include/ ../http_parser/ ../base/include/ ../net/include/ ../libuv/include ../libuv/src ../json/include/ ../json/include/json ../http_parser/ ../signal/include/ ../../src/openssl/buildx64/include ../webrtcserver/deps/usrsctp/usrsctplib/ ../webrtcserver/deps/libsrtp/include  ./deps/libwebrtc  ./deps/libwebrtc/libwebrtc ./deps/libwebrtc/abseil-cpp ${SSL_ROOT}/include)
+           ./include  ../net/sctp/ ../net/pc/ ../net/dtls/ ../http/include/ ../http_parser/ ../base/include/ ../net/include/ ../libuv/include ../libuv/src ../json/include/ ../json/include/json ../http_parser/ ../signal/include/ ../../src/openssl/buildx64/include ../webrtcserver/deps/usrsctp/usrsctplib/ ../webrtcserver/deps/libsrtp/include  ./deps/libwebrtc  ./deps/libwebrtc/libwebrtc ./deps/libwebrtc/abseil-cpp ${SSL_ROOT}/include )
 
 
 

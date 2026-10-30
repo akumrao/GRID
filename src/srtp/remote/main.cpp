@@ -18,7 +18,10 @@
 #include "rtcpnackresponder.hpp"
 #include "DepLibSRTP.h"
 #include "helpers.hpp"
-#include "socketio/socketioClient.h"
+
+//#include "socketio/socketioClient.h"
+
+#include "http/HttpClient.h"
 #include "http/HttpsClient.h"
 //#include "Settings.h"
 #include "RestAPI.h"
@@ -31,13 +34,20 @@
 #include "sctptransport.hpp"
 #include "DtlsTransport.h"
 #include "stream.hpp"
-#include "DepUsrSCTP.h"
-#include "sdpcommon.h"
 
 #define VIDEOMEDIA 1
 #include "peerconnection.h"
 
 #include "http/HttpsClient.h"
+
+//#include "server.h"
+#include "DepUsrSCTP.h"
+#include "sdpcommon.h"
+
+
+//volatile bool force_exit = false;
+
+//struct server *server{nullptr};
 
 #define CERTFROMFILE 1
 
@@ -53,37 +63,18 @@ template <class T> weak_ptr<T> make_weak_ptr(shared_ptr<T> ptr) {
     return ptr;
 }
 
-/// all connected clients
-unordered_map<string, shared_ptr<Client>> clients
-{
-};
 
-/// Creates peer connection and client representation
-/// @param config Configuration
-/// @param wws Websocket for signaling
-/// @param id Client ID
-/// @returns Client
+std::mutex clients_mutex;
+/// all connected clients
+unordered_map<string, shared_ptr<Client>> clients;
+
+
 shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool isClient);
 
-/// Creates stream
-/// @param h264Samples Directory with H264 samples
-/// @param fps Video FPS
-/// @param opusSamples Directory with opus samples
-/// @returns Stream object
-//shared_ptr<Stream> createStream(const string h264Samples, const unsigned fps, const string opusSamples);
-
-/// Add client to stream
-/// @param client Client
-/// @param adding_video True if adding video
 void addToStream(shared_ptr<Client> client, bool isAddingVideo);
-
-/// Start stream
 void startStream();
 
-/// Main dispatch queue
-//DispatchQueue MainThread("Main");
 
-/// Audio and video stream
 optional<shared_ptr<Stream>> avStream = nullopt;
 
 const string defaultRootDirectory = "../examples/streamer/samples/";
@@ -101,7 +92,28 @@ std::string from;
 std::string room;
 Configuration settingconfig;
 
-std::string id;
+bool isClient = false; // only one id possible. Multiple connect of client will connect one server 
+
+// Explicit function to completely destroy an active peer session
+
+void destroyClient(const string& clientId) {
+
+    SInfo << "destroyClient clientId: " << clientId;
+
+    std::lock_guard<std::mutex> lock(clients_mutex);
+    auto it = clients.find(clientId);
+    if (it != clients.end()) {
+        SInfo << "Cleaning up and destroying peer connection object: " << clientId << std::endl;
+        if (it->second && it->second->peerConnection) {
+            try {
+                it->second->peerConnection->close(); // Cease background async processing thread loops
+            } catch (const std::exception& e) {
+                SError << "Exception thrown during WebRTC object close: " << e.what() << std::endl;
+            }
+        }
+        clients.erase(it); // Erase from mapping container to drop shared_ptr allocation
+    }
+}
 
 #if 1
 
@@ -176,6 +188,8 @@ void wsOnMessage(json const &m) {
     std::string to;
     std::string user;
 
+    std::string id;
+
     if (m.find("room") != m.end()) {
         room = m["room"].get<std::string>();
     } else {
@@ -198,8 +212,10 @@ void wsOnMessage(json const &m) {
 
     if (m.find("from") != m.end()) {
         from = m["from"].get<std::string>();
-        if (id.empty())
+        if (!isClient)
             id = from;
+        else
+            id = "client"; // only one id possible. Multiple connect of client will connect one server 
     } else {
         SError << " On Peer message is missing participant id ";
         return;
@@ -215,41 +231,35 @@ void wsOnMessage(json const &m) {
 
 
     if (m.find("cam") != m.end()) {
-        id = m["cam"].get<std::string>();
+        std::string id = m["cam"].get<std::string>();
 
     }
 
 
     if (m.find("starttime") != m.end()) {
-        //   camT.start = m["starttime"].get<std::string>();
+        //  camT.start = m["starttime"].get<std::string>();
 
     }
-
-    //
-    //    if (m.find("camAudio") != m.end()) { camT.camAudio = m["camAudio"].get<bool>(); }
-    //
-    //    if (m.find("appAudio") != m.end()) { camT.appAudio = m["appAudio"].get<bool>(); }
-
-
-
-
-
 
 
     if (type == "offer") {
 
 
-        if (clients.find(id) != clients.end())
-            clients.erase(id);
+        SInfo << " offer from clinet id " << id;
 
-        clients.emplace(id, createPeerConnection(settingconfig, id, false));
+        destroyClient(id); // Safe erasure structure handles cleanup safely instead of raw `.erase()`
+
+        {
+            std::lock_guard<std::mutex> lock(clients_mutex);
+            clients.emplace(id, createPeerConnection(settingconfig, id, false));
+        }
 
         //clients.emplace(id, createPeerConnection(config,  id));
         if (auto jt = clients.find(id); jt != clients.end()) {
             auto pc = jt->second->peerConnection;
 
             auto sdp = m["desc"]["sdp"].get<string>();
-            SInfo << sdp;
+
             SInfo << "setRemoteDescription " << type;
 
             auto description = Description(sdp, type);
@@ -260,12 +270,14 @@ void wsOnMessage(json const &m) {
 
     } else if (type == "answer") {
 
+
+        SInfo << "Answer to id " << id;
         //clients.emplace(id, createPeerConnection(config,  id));
         if (auto jt = clients.find(id); jt != clients.end()) {
             auto pc = jt->second->peerConnection;
 
             auto sdp = m["desc"]["sdp"].get<string>();
-            SInfo << sdp;
+
             SInfo << "setRemoteDescription " << type;
 
             auto description = Description(sdp, type);
@@ -285,7 +297,7 @@ void wsOnMessage(json const &m) {
             //auto description = Description(sdp, type);
             // pc->setRemoteDescription(description);
 
-            SInfo << sdp;
+            SInfo << "onRemoteCandidate " <<   sdp;
 
 
             Candidate tmp = rtc::Candidate(sdp, mid);
@@ -295,17 +307,18 @@ void wsOnMessage(json const &m) {
 
 
     }
+
 }
 
 void initiate(std::string rm) {
 
+
     room = rm;
-    id = "client"; /// hard coded the id for client(second participant), since it will have only one instance. Second instance should only have one instance, otherwise throw error. TBD 
+    std::string id = "client"; //   only one id possible. Multiple connect of client will connect one server 
+    isClient = true;
+    destroyClient(id); // Safe structural cleanup
 
-    if (clients.find(id) != clients.end())
-        clients.erase(id);
-
-
+    std::lock_guard<std::mutex> lock(clients_mutex);
     clients.emplace(id, createPeerConnection(settingconfig, id, true));
 }
 
@@ -589,7 +602,7 @@ shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const 
 // Create and setup a PeerConnection
 
 shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool isClient) {
-    SInfo << "createPeerConnection";
+    SInfo << "createPeerConnection id " << id << " is client " << isClient;
 
 
     auto pc = make_shared<PeerConnection>(config);
@@ -603,9 +616,9 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
             // remove disconnected client
             //MainThread.dispatch([id]() 
             {
-                clients.erase(id);
 
-                        int x = 1; //arvind
+
+                        // int x = 1; //arvind
             }
             //);
         }
@@ -614,17 +627,17 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 
 
     pc->onLocalDescription([ id, pc](rtc::Description description) {
-        //      json message = {{"id", id},
-        //                      {"type", description.typeString()},
-        //                      {"description", std::string(description)}};
+        //		json message = {{"id", id},
+        //		                {"type", description.typeString()},
+        //		                {"description", std::string(description)}};
 
         SInfo << "send:" << description.typeString() << " des " << std::string(description);
 
         //  pc->setLocalDescription(Description::Type::Offer);// Description::Type::Answer);          
         sendSdp(std::string(description), description.typeString());
         // Make the answer
-        //      if (auto ws = wws.lock())
-        //          ws->send(message.dump());
+        //		if (auto ws = wws.lock())
+        //			ws->send(message.dump());
     });
 
     pc->onLocalCandidate([ id](rtc::Candidate candidate) {
@@ -633,7 +646,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
         //                            {"candidate", std::string(candidate)},
         //                            {"mid", candidate.mid()}};
 
-        SInfo << std::string(candidate);
+        SInfo << "onLocalCandidate " << std::string(candidate);
         sendCandidate(candidate.mid(), 1, std::string(candidate));
         //            if (auto ws = wws.lock())
         //                    ws->send(message.dump());
@@ -641,7 +654,7 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
 
     pc->onGatheringStateChange(
             [](PeerConnection::GatheringState state) {
-                SInfo << "Gathering State";
+                SInfo << "Gathering State" << PeerConnection::printState(state);
                 if (state == PeerConnection::GatheringState::Complete) {
                     //  if(auto pc = wpc.lock())
                     {
@@ -713,13 +726,15 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
         dc->onOpen([wdc = make_weak_ptr(dc)](){
             if (auto dc = wdc.lock()) {
                 SInfo << "DataChannel 2: Open" << endl;
-                        dc->send("Hello from 2");
+                        dc->send("Ping1");
             }
         });
 
 
         dc->onClosed([id]() {
-            std::cout << "DataChannel from " << id << " closed" << std::endl; });
+            SInfo << "DataChannel from " << id << " closed";
+        }
+        );
 
         dc->onMessage([id, dc](auto data) {
             // data holds either std::string or rtc::binary

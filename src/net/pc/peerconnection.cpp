@@ -10,11 +10,12 @@
 //#include "peerconnection_imp.hpp"
 #include "sctptransport.hpp"
 //#include "threadpool.hpp"
-#include "track.hpp"
+
 //#include "datachannel.h"
 
 #if RTC_MEDIA
 //#include "impl/dtlssrtptransport.hpp"
+#include "track.hpp"
 #endif
 
 #include <iomanip>

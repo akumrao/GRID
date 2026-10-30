@@ -455,7 +455,7 @@ int main(int argc, char **argv) {
     rtc::DtlsTransport::ClassInit();
 
 #if localtesting 
-    settingconfig.console = true;
+    //settingconfig.console = true;
     std::string id = "server";
     createPeerConnection_lc(settingconfig);
 #elif remotetesting
@@ -780,7 +780,7 @@ shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const 
 
 void createPeerConnection_lc(Configuration &config) {
     auto pc1 = make_shared<PeerConnection>(config);
-    config.portdefault = config.portdefault + 1;
+    config.staticPort = config.staticPort + 1;
     auto pc2 = make_shared<PeerConnection>(config);
     {
         string id = "server";
