@@ -180,6 +180,8 @@ void sendSdp(const std::string &sdp, const std::string &type) {
 #endif
 
 
+
+
 void wsOnMessage(json const &m) {
 
 
@@ -324,222 +326,277 @@ void initiate(std::string rm) {
 
 int main(int argc, char **argv) {
 
-    /////////////////////////////////////////////////
-    base::cnfg::Configuration cache;
+    {
+        /////////////////////////////////////////////////
+        base::cnfg::Configuration cache;
 
-    cache.load("./cache.js");
-
-    ConfSettings::SetConfiguration(cache.root);
-
-
-
-    //rtc::SctpTransport::Init();
-   // rtc::SctpSettings mCurrentSctpSettings = {};
-    //rtc::SctpTransport::SetSettings(mCurrentSctpSettings);
+        std::string room = "65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0";
+        std::string websoc_host = "127.0.0.1";
+        int websoc_port = 443;
 
 
 
-    bool printHelp = false;
-    //int c = 0;
+        cache.load("./cache.js");
 
-    Application app;
+        ConfSettings::SetConfiguration(cache.root);
 
-    Async async;
-    
-    
-    
-    rtc::DtlsTransport::ClassInit();
-    DepUsrSCTP::ClassInit();
 
+
+        //rtc::SctpTransport::Init();
+
+ 
     GetNetInterface::ClassInit();
         
     DepLibSRTP::ClassInit();
 
 
+        bool printHelp = false;
+        //int c = 0;
 
-    if (printHelp) {
-        cout << "usage: stream-h264 [-a opus_samples_folder] [-b h264_samples_folder] [-d ip_address] [-p port] [-v] [-h]" << endl
-                << "Arguments:" << endl
-                << "\t -a " << "Directory with opus samples (default: " << defaultOpusSamplesDirectory << ")." << endl
-                << "\t -b " << "Directory with H264 samples (default: " << defaultH264SamplesDirectory << ")." << endl
-                << "\t -d " << "Signaling server IP address (default: " << defaultIPAddress << ")." << endl
-                << "\t -p " << "Signaling server port (default: " << defaultPort << ")." << endl
-                << "\t -v " << "Enable debug logs." << endl
-                << "\t -h " << "Print this help and exit." << endl;
-        return 0;
-    }
+        Application app;
 
 
 
-    string stunServer = "stun:stun.l.google.com:19302";
-    cout << "STUN server is " << stunServer << endl;
-    settingconfig.iceServers.emplace_back(stunServer);
-    settingconfig.disableAutoNegotiation = true;
-    // read cert from file
+
+
+        string stunServer = "stun:stun.l.google.com:19302";
+        SInfo << "STUN server is " << stunServer;
+        settingconfig.iceServers.emplace_back(stunServer);
+
+
+        if (!ConfSettings::configuration.turn.empty()) {
+            SInfo << "Turn server is " << ConfSettings::configuration.turn;
+            settingconfig.iceServers.emplace_back(ConfSettings::configuration.turn);
+        }
+
+
+
+        settingconfig.disableAutoNegotiation = true;
+
+        settingconfig.staticPort = ConfSettings::configuration.staticPort;
+
+        settingconfig.gconfig->serverdtsRole = ConfSettings::configuration.serverdtsRole;
+        settingconfig.enableTcp = ConfSettings::configuration.enableTcp;
+        settingconfig.enableUdp = ConfSettings::configuration.enableUdp;
+        settingconfig.publicIP = ConfSettings::configuration.publicIP;
+        settingconfig.noPivateIP = ConfSettings::configuration.noPivateIP;
+        websoc_host = ConfSettings::configuration.websoc_host;
+        websoc_port = ConfSettings::configuration.websoc_port;
+
+        bool relayOnly = ConfSettings::configuration.relayOnly;
+        if (relayOnly)
+            settingconfig.iceTransportPolicy = TransportPolicy::Relay;
+
+
+
+
+
+        // read cert from file
 #if CERTFROMFILE == 1
-    settingconfig.gconfig->keyPemFile = ConfSettings::configuration.keyFile;
-    settingconfig.gconfig->certificatePemFile = ConfSettings::configuration.certFile;
-    settingconfig.gconfig->keyPemPass = "12345678";
+        settingconfig.gconfig->keyPemFile = ConfSettings::configuration.keyFile;
+        settingconfig.gconfig->certificatePemFile = ConfSettings::configuration.certFile;
+        settingconfig.gconfig->keyPemPass = "12345678";
 
 #elif CERTFROMFILE == 2
 
-    /* convert pem to single line
-     * # awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' certificate.crt  
-     */
+        /* convert pem to single line
+         * # awk 'NF {sub(/\r/, ""); printf "%s\\n",$0;}' certificate.crt  
+         */
 
-    settingconfig.keyPemFile = "";
-    settingconfig.certificatePemFile = "";
-    // settingconfig.keyPemPass = "12345678";
+        settingconfig.keyPemFile = "";
+        settingconfig.certificatePemFile = "";
+        // settingconfig.keyPemPass = "12345678";
 
 #else
 
 #endif
 
-    string localId = "server";
-    cout << "The local ID is: " << localId << endl;
+        //  string localId = "server";
+        //  cout << "The local ID is: " << localId << endl;
 
-    rtc::DtlsTransport::ClassInit();
+        rtc::DtlsTransport::ClassInit();
+        DepUsrSCTP::ClassInit();
 
-    std::string room = "65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0";
-    std::string host = ip_address;
-    int port = 8443;
-
-    std::ostringstream url;
-    bool ssl = true;
-    //std::string host = SERVER_HOST;
-    //int port = SERVER_PORT;
-
-    url << "/";
+        GetNetInterface::ClassInit();
 
 
 
-    if (!ssl) {
-        m_client = new HttpClient("ws", host, port, url.str());
-    } else {
-        m_client = new HttpsClient("wss", host, port, url.str());
-    }
 
-    // conn->Complete += sdelegate(&context,
-    // &CallbackContext::onClientConnectionComplete);
-    m_client->fnComplete = [&](const Response & response) {
-        std::string reason = response.getReason();
-        StatusCode statuscode = response.getStatus();
-        std::string body =
-                m_client->readStream() ? m_client->readStream()->str() : "";
-        STrace << "SocketIO handshake response:" << "Reason: " << reason
-                << " Response: " << body;
-    };
+        std::ostringstream url;
+        bool ssl = true;
+        //std::string host = SERVER_HOST;
+        //int port = SERVER_PORT;
 
-    m_client->fnConnect = [&](HttpBase * con) {
-        STrace << "client->fnConnect ";
-        //  m_con_state = con_opened;
-        // m_reconn_timer.Stop();
-
-        SInfo << "Connected securely to native WebSocket server." << std::endl;
-
-        // Map the primary handshake logic registration event sequence
-        json joinPayload;
-        joinPayload["roomId"] = room;
-        joinPayload["client"] =
-                false; // Mirrors client state property tracking requirements
-
-        emitWebSocketEvent("createorjoin", joinPayload);
+        url << "/";
 
 
-        // char tmp[3] = "{}";
 
-        // con->send(tmp, 2);
-    };
-
-    m_client->fnPayload = [&](HttpBase *con, const char *data, size_t sz) {
-        STrace << "client->fnPayload " << std::string(data, sz);
-        try {
-            // Parse the outer payload protocol layer out of the text string frame
-            // execution
-            json packet = json::parse(std::string(data, sz));
-            std::string eventName = packet["event"].get<std::string>();
-            json data = packet["payload"];
-
-            if (eventName == "created") {
-                SInfo << data.dump() << std::endl;
-                SInfo << "ws: Created room " << data[0] << "- my client ID is "
-                        << data[1] << std::endl;
-            } else if (eventName == "join") {
-                SInfo << "ws join " << data.dump() << std::endl;
-                SInfo << "ws: Created room " << data[0] << "- my client ID is "
-                        << data[1] << " noClientInRoom: " << data[2] << std::endl;
-
-                std::string room1 = data[0].get<std::string>();
-                int noClientInRoom = data[2].get<int>();
-
-                if (noClientInRoom > 1) {
-                    initiate(room1);
-                }
-            } else if (eventName == "joined") {
-                SInfo << "ws joined " << data.dump() << std::endl;
-            } else if (eventName == "message") {
-                STrace << "SocketioClient received message: " << data.dump()
-                        << std::endl;
-                wsOnMessage(data);
-            } else if (eventName == "disconnectClient") {
-                std::string clientFrom = data.get<std::string>();
-                SInfo << "disconnectClient " << clientFrom << std::endl;
-                LInfo(data.dump());
-            } else if (eventName == "bye") {
-                SInfo << data.dump() << std::endl;
-            }
-        } catch (const std::exception &e) {
-            std::cerr << "JSON Parsing runtime error handling text frames: "
-                    << e.what() << std::endl;
+        if (!ssl) {
+            m_client = new HttpClient("ws", websoc_host, websoc_port, url.str());
+        } else {
+            m_client = new HttpsClient("wss", websoc_host, websoc_port, url.str());
         }
 
-    };
+        // conn->Complete += sdelegate(&context,
+        // &CallbackContext::onClientConnectionComplete);
+        m_client->fnComplete = [&](const Response & response) {
+            std::string reason = response.getReason();
+            StatusCode statuscode = response.getStatus();
+            std::string body =
+                    m_client->readStream() ? m_client->readStream()->str() : "";
+            STrace << "SocketIO handshake response:" << "Reason: " << reason
+                    << " Response: " << body;
+        };
 
-    m_client->fnClose = [&](HttpBase *con, std::string str) {
-        STrace << "client->fnClose " << str;
-        // close(0,"exit");
-        // on_close();
-        SInfo << "WebSocket connection closed by endpoint structure.";
-        m_client->Close();
-        delete m_client;
-        //m_client = nullptr;
+        m_client->fnConnect = [&](HttpBase * con) {
+            STrace << "client->fnConnect ";
+            //  m_con_state = con_opened;
+            // m_reconn_timer.Stop();
 
-        //          m_con_state = con_closed;
-    };
+            SInfo << "Connected securely to native WebSocket server." << std::endl;
 
-    //  conn->_request.setKeepAlive(false);
-    m_client->setReadStream(new std::stringstream);
-    m_client->send();
-    LTrace("sendHandshakeRequest over")
+            // Map the primary handshake logic registration event sequence
+            json joinPayload;
+            joinPayload["roomId"] = room;
+            joinPayload["client"] = false; // Mirrors client state property tracking requirements
 
-    //    while (true) {
-    //        string id;
-    //        cout << "Enter to exit" << endl;
-    //        cin >> id;
-    //        cin.ignore();
-    //        cout << "exiting" << endl;
-    //        break;
-    //    }
+            emitWebSocketEvent("createorjoin", joinPayload);
 
-    app.waitForShutdown([&](void*) {
+        };
 
-        SInfo << "app.run() is over";
-        //    Settings::exit();         
-        //    rtc::CleanupSSL();
+        m_client->fnPayload = [&](HttpBase *con, const char *data, size_t sz) {
+            STrace << "client->fnPayload " << std::string(data, sz);
+            try {
+                // Parse the outer payload protocol layer out of the text string frame
+                // execution
+                json packet = json::parse(std::string(data, sz));
+                std::string eventName = packet["event"].get<std::string>();
+                json data = packet["payload"];
 
-        DepLibSRTP::ClassDestroy();
-        Logger::destroy();
+                if (eventName == "created") {
+                    SInfo << data.dump() << std::endl;
+                    SInfo << "ws: Created room " << data[0] << "- my  ID is "
+                            << data[1] << std::endl;
+                } else if (eventName == "join") {
+                    SInfo << "ws join " << data.dump() << std::endl;
+                    SInfo << "ws: Created room " << data[0] << "- my ID is "
+                            << data[1] << " noClientInRoom: " << data[2] << std::endl;
 
-        //    if(ctx->txt)
-        //    delete ctx->txt;
-        //    ctx->txt = nullptr;
+                    std::string room1 = data[0].get<std::string>();
+                    std::string id = data[1].get<std::string>();
+                    int noClientInRoom = data[2].get<int>();
 
-        //    restApi->stop();
+                    if (noClientInRoom > 1) {
+                        initiate(room1);
+                    }
+                } else if (eventName == "joined") {
+                    SInfo << "ws joined " << data.dump() << std::endl;
+                } else if (eventName == "message") {
+                    STrace << "SocketioClient received message: " << data.dump()
+                            << std::endl;
+                    wsOnMessage(data);
+                } else if (eventName == "disconnectClient") {
+                    std::string clientFrom = data.get<std::string>();
+                    SInfo << "disconnectClient " << clientFrom << std::endl;
+                    LInfo(data.dump());
+                } else if (eventName == "bye") {
+                    SInfo << data.dump() << std::endl;
+                }
+            } catch (const std::exception &e) {
+                std::cerr << "JSON Parsing runtime error handling text frames: "
+                        << e.what() << std::endl;
+            }
 
-        //    restApi->shutdown();
+        };
 
-    });
+        m_client->fnClose = [&](HttpBase *con, std::string str) {
+            SInfo << "client->fnClose " << str;
+            // close(0,"exit");
+            // on_close();
+            //emitWebSocketEvent("bye", "");
 
+
+
+
+            SInfo << "WebSocket connection closed by endpoint structure.";
+            m_client->Close();
+            delete m_client;
+            m_client = nullptr;
+
+            //            m_con_state = con_closed;
+        };
+
+        //  conn->_request.setKeepAlive(false);
+        m_client->setReadStream(new std::stringstream);
+        m_client->send();
+        LTrace("sendHandshakeRequest over")
+
+
+
+        app.waitForShutdown([&](void*) {
+
+
+
+            {
+
+                for (auto& pair : clients) {
+                    SInfo << "Closing and cleaning up active clients and peer connections " << pair.first;
+                    if (pair.second && pair.second->peerConnection) {
+                        pair.second->peerConnection->close();
+                    }
+                }
+
+            }
+
+            {
+
+                for (auto &pair : clients) {
+                    SInfo << "Closing and cleaning up active clients and peer "
+                            "connections "
+                            << pair.first;
+                    if (pair.second && pair.second->peerConnection) {
+                        uv_sleep(100);
+
+                    }
+                }
+
+            }
+
+
+
+
+            m_client->Close();
+            //delete m_client;
+
+
+            //  rtc::SctpTransport::Cleanup();
+
+            // ClassDestroy();
+
+            SInfo << "app.run() is over";
+
+            //        restApi->shutdown();
+            //        Settings::exit();         
+            //        rtc::CleanupSSL();
+
+
+            DepUsrSCTP::ClassDestroy();
+            GetNetInterface::ClassDestroy();
+            Logger::destroy();
+
+
+            //    if(ctx->txt)
+            //    delete ctx->txt;
+            //    ctx->txt = nullptr;
+
+            //    restApi->stop();
+
+            //    restApi->shutdown();
+
+        });
+
+
+    }
 
 
     SInfo << "Cleaning up..." << endl;
@@ -698,24 +755,64 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
     });
 
 #endif
-    std::string dcchat = "Settings::getdatachannel()";
-    auto dc = pc->createDataChannel(dcchat);
-    dc->onOpen([id, wdc = make_weak_ptr(dc)](){
-        if (auto dc = wdc.lock()) {
-            SInfo << "onOpen: ";
-                    dc->send("Ping");
-        }
-    });
+    {
 
-    dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg){
-        SInfo << "Message from " << id << " received: " << msg << endl;
-        if (auto dc = wdc.lock()) {
+        std::string dcchat = "Settings::getdatachannel()";
+        auto dc = pc->createDataChannel(dcchat);
+        dc->onOpen([id, wdc = make_weak_ptr(dc)](){
+            if (auto dc = wdc.lock()) {
+                SInfo << "onOpen: ";
+                        dc->send("Ping2");
+            }
+        });
 
-            SInfo << "onOpen: " << msg;
-             //       dc->send("Ping");
+        //    dc->onMessage(nullptr, [id, wdc = make_weak_ptr(dc)](string msg){
+        //        SInfo << "Message from " << id << " received: " << msg << endl;
+        //        if (auto dc = wdc.lock()) {
+        //
+        //            SInfo << "onOpen: " << msg;
+        //            sleep(1);
+        //            dc->send(" onMessage Ping");
+        //        }
+        //    });
+        //    
+
+
+        dc->onClosed([id]() {
+            SInfo << "DataChannel from " << id << " closed";
         }
-    });
-    client->dataChannel1 = dc;
+        );
+
+        dc->onMessage([id, dc](auto data) {
+            // data holds either std::string or rtc::binary
+            if (std::holds_alternative<std::string>(data))
+                SInfo << "Message from " << id << " received: " << std::get<std::string>(data)
+                << std::endl;
+            else
+                SInfo << "Binary message from " << id
+                    << " received, size=" << std::get<rtc::binary>(data).size() << std::endl;
+
+            //  sleep(1);
+
+            //dc->close();
+
+            //  rtc::binary buffer = { std::byte(0x01), std::byte(0x02), std::byte(0x03) };
+            //    dc->send(buffer);
+
+            // Approach 2: Sending from a raw data chunk (e.g., loaded file or hardware frame)
+            // uint8_t raw_bytes[] = { 0x04, 0x05, 0x06, 0x07 };
+            // dc->send(reinterpret_cast<const std::byte*>(raw_bytes), sizeof(raw_bytes));
+
+
+
+
+
+            //  dc->send("Send to web2");
+        });
+
+
+        client->dataChannel1 = dc;
+    }
 
 
 
