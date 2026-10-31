@@ -26,18 +26,6 @@ const string DEFAULT_OPUS_AUDIO_PROFILE =
 const string DEFAULT_H264_VIDEO_PROFILE =
     "profile-level-id=42e01f;packetization-mode=1;level-asymmetry-allowed=1";
 
-//struct CertificateFingerprint {
-//	enum class Algorithm { Sha1, Sha224, Sha256, Sha384, Sha512 };
-//	static string AlgorithmIdentifier(Algorithm algorithm);
-//	static size_t AlgorithmSize(Algorithm algorithm);
-//
-//	bool isValid() const;
-//
-//	Algorithm algorithm;
-//	string value;
-//};
-
-
 typedef struct ice_description {
 	char ice_ufrag[256 + 1]={'\0'}; // 4 to 256 characters
 	char ice_pwd[256 + 1]={'\0'};   // 22 to 256 characters
@@ -83,19 +71,15 @@ typedef struct ice_description {
     std::string dump()
     {
         std::string ret = "[";
-        for( int i =0; i < candidates_count; ++i)
+        for (int i = 0; i < candidates_count; ++i)
         {
-
-            Candidate *cur = & candidates[i];
-
-            ret += "\"" +cur->dump(true) + (i < candidates_count-1? "\", ":"\"");
+            Candidate *cur = &candidates[i];
+            ret += "\"" + cur->dump(true) + (i < candidates_count - 1 ? "\", " : "\"");
         }
-         ret +="]";
+        ret += "]";
         return ret;
     }
     #endif 
-
-        
 } ice_description_t;
 
 class RTC_CPP_EXPORT Description {
@@ -113,7 +97,7 @@ public:
 
 	Description(const string &sdp, Type type = Type::Unspec, Role role = Role::ActPass);
 	Description(const string &sdp, string typeString);
-       Description();
+	Description();
 
 	Type type() const;
 	string typeString() const;
@@ -134,11 +118,9 @@ public:
 	void addAttribute(string attr);
 	void removeAttribute(const string &attr);
 
-	//std::vector<Candidate> mcandidates() const;
 	std::vector<Candidate> extractCandidates();
 	bool hasCandidate(const Candidate &candidate) const;
-        //bool hasRecord(const Candidate &candidate) const;
-        Candidate* ice_find_candidate_from_addr(const addr_record_t *record,  Candidate::Type type);
+	Candidate* ice_find_candidate_from_addr(const addr_record_t *record, Candidate::Type type);
 	Candidate* addCandidate(Candidate &candidate);
 	void addCandidates(std::vector<Candidate> candidates);
 	void endCandidates();
@@ -231,11 +213,10 @@ public:
 	private:
 		virtual string generateSdpLines(const string& eol) const override;
 
-		uint16_t mSctpPort{5000};   // const uint16_t DEFAULT_SCTP_PORT = 5000; // SCTP port to use by default
+		uint16_t mSctpPort{5000};
 		size_t mMaxMessageSize{0};
 	};
 
-	// Media (non-data)
 	class RTC_CPP_EXPORT Media : public Entry {
 	public:
 		Media(const string &mline, string mid, Direction dir = Direction::SendOnly);
@@ -262,7 +243,7 @@ public:
 			static int parsePayloadType(string description);
 
 			explicit RtpMap(int payloadType);
-			RtpMap(string  description);
+			RtpMap(string description);
 
 			void setDescription(string description);
 
@@ -352,20 +333,18 @@ public:
 
 	static Type stringToType(const string &typeString);
 	static string typeToString(Type type);
-        Role mRole{Role::ActPass};;
+
 private:
 	Candidate defaultCandidate() const;
 	shared_ptr<Entry> createEntry(string mline, string mid, Direction dir);
 	void removeApplication();
 
 	Type mType{Type::Unspec};
+	Role mRole{Role::ActPass};
 
-	// Session-level attributes
-	
 	string mUsername;
 	string mSessionId;
 	std::vector<string> mIceOptions;
-	//string mIceUfrag, mIcePwd;
 	CertificateFingerprint mFingerprint;
 	std::vector<string> mAttributes; // other attributes
 

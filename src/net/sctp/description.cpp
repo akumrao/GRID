@@ -1,8 +1,5 @@
-
-
 #include "description.hpp"
 
-//#include "impl/internals.hpp"
 #include "UtilString.h"
 
 #include <algorithm>
@@ -21,7 +18,7 @@ using std::chrono::system_clock;
 namespace {
 
 using std::string;
-using std::string_view;
+
 
 inline bool match_prefix(const string& str, const string& prefix) {
 	return str.size() >= prefix.size() &&
@@ -64,8 +61,6 @@ template <typename T> T to_integer(const string& s) {
 } // namespace
 
 namespace rtc {
-
-//namespace utils = impl::utils;
 
 Description::Description(const string &sdp, Type type, Role role)
     : mType(Type::Unspec), mRole(role) {
@@ -129,8 +124,8 @@ Description::Description(const string &sdp, Type type, Role role)
 						}
 					}
 
-                                    setFingerprint(CertificateFingerprint{
-                                        fingerprintAlgorithm, std::move(fingerprintExploded.at(1))});
+                    setFingerprint(CertificateFingerprint{
+                        fingerprintAlgorithm, std::move(fingerprintExploded.at(1))});
 				}
 			} else if (pr.first == "ice-ufrag") {
 				// RFC 8839: The "ice-pwd" and "ice-ufrag" attributes can appear at either the
@@ -277,7 +272,7 @@ bool Description::hasCandidate(const Candidate &cand) const {
             */
 	    if( cand.mFoundation == other->mFoundation && cand.mService == other->mService && cand.mNode == other->mNode)
             {
-                SError << " This candidate alreay exist" << std::string(cand);
+                SError << " This candidate already exists" << std::string(cand);
                 return true;
             }
             
@@ -286,35 +281,20 @@ bool Description::hasCandidate(const Candidate &cand) const {
         return false;
 }
 
-
-Candidate* Description::addCandidate(Candidate &candidate ) {
-	
-    	Candidate *ret = nullptr; 
-
-//        if (!candidate.isResolved()) 
-//        {
-//
-//            if(!candidate.resolve())
-//            {
-//            	return ret;
-//            }
-//        }
-
-        candidate.hintMid(bundleMid());
+Candidate* Description::addCandidate(Candidate &candidate) {
+	Candidate *ret = nullptr; 
+    candidate.hintMid(bundleMid());
        
-        
-	//if ((!matchRecord && !hasCandidate(candidate))  || (matchRecord &&  (ice_find_candidate_from_addr( &candidate.resolved, Candidate::Type::Unknown) == nullptr  )))
-	
-        if ( !hasCandidate(candidate)    )
-        {
-
+    if (!hasCandidate(candidate)) {
+        if (desc.candidates_count < ICE_MAX_CANDIDATES_COUNT) {
             desc.candidates[desc.candidates_count] = candidate;
+            ret = &desc.candidates[desc.candidates_count];
             ++desc.candidates_count;
-            ret= desc.candidates + desc.candidates_count -1 ;
-            
+        } else {
+            SError << "Maximum candidate count reached (" << ICE_MAX_CANDIDATES_COUNT << "). Dropping candidate.";
         }
-      
-        return ret;
+    }
+    return ret;
 }
 
 void Description::addCandidates(std::vector<Candidate> candidates) {
@@ -378,9 +358,16 @@ string Description::generateSdp(const string& eol) const {
 	for (const auto &entry : mEntries) {
 		sdp << entry->generateSdp(eol, addr, port);
 
-		// RFC 8829: Attributes that SDP permits to be at either the session level or the media level
-		// SHOULD generally be at the media level even if they are identical.
-		sdp << "a=setup:" << mRole << eol;
+            // RFC 8829: Attributes that SDP permits to be at either the session level or the media level
+            // SHOULD generally be at the media level even if they are identical.
+            //	sdp << "a=setup:" << mRole << eol;
+            // arvind      
+            std::string roleStr = "actpass";
+            if (mRole == Role::Active) roleStr = "active";
+            else if (mRole == Role::Passive) roleStr = "passive";
+            sdp << "a=setup:" << roleStr << eol;
+
+
 		if (*desc.ice_ufrag != '\0' )
 			sdp << "a=ice-ufrag:" << desc.ice_ufrag << eol;
 		if (*desc.ice_pwd != '\0' )
@@ -428,7 +415,13 @@ string Description::generateApplicationSdp(const string& eol) const {
 	sdp << app->generateSdp(eol, addr, port);
 
 	// Media-level attributes
-	sdp << "a=setup:" << mRole << eol;
+	//sdp << "a=setup:" << mRole << eol;
+        
+        std::string roleStr = "actpass";
+	if (mRole == Role::Active) roleStr = "active";
+	else if (mRole == Role::Passive) roleStr = "passive";
+	sdp << "a=setup:" << roleStr << eol;
+
 	if (*desc.ice_ufrag != '\0')
 		sdp << "a=ice-ufrag:" << desc.ice_ufrag  << eol;
 	if (*desc.ice_pwd != '\0')
@@ -738,8 +731,9 @@ string Description::Entry::generateSdpLines(const string& eol) const {
 
 void Description::Entry::parseSdpLine(const string& line) {
 	if (match_prefix(line, "a=")) {
-		const string& attr = line.substr(2);
-		std::pair<const string&, const string&> pr = parse_pair(attr);
+		const string &attr = line.substr(2);
+                //std::pair<const string&, const string&> pr = parse_pair(attr);
+                std::pair<const string, const string> pr = parse_pair(attr); // arvind
 
 		if (pr.first  == "mid") {
 			mMid = pr.second;
@@ -781,7 +775,13 @@ Description::Entry::ExtMap::ExtMap(int id, string uri, Direction direction) {
 	this->direction = direction;
 }
 
-Description::Entry::ExtMap::ExtMap(const string& description) { setDescription(description); }
+Description::Entry::ExtMap::ExtMap(const string& description) 
+{
+    setDescription(description); 
+}
+
+
+
 
 void Description::Entry::ExtMap::setDescription(const string& description) {
 	const size_t uriStart = description.find(' ');
@@ -795,7 +795,7 @@ void Description::Entry::ExtMap::setDescription(const string& description) {
 	} else {
 		this->id = to_integer<int>(idAndDirection.substr(0, idSplit));
 
-		const string_view directionStr = idAndDirection.substr(idSplit + 1);
+		const string directionStr = idAndDirection.substr(idSplit + 1);
 		if (directionStr == "sendonly")
 			this->direction = Direction::SendOnly;
 		else if (directionStr == "recvonly")
@@ -808,7 +808,7 @@ void Description::Entry::ExtMap::setDescription(const string& description) {
 			throw std::invalid_argument("Invalid direction for extmap");
 	}
 
-	const string_view uriAndAttributes = description.substr(uriStart + 1);
+	const string uriAndAttributes = description.substr(uriStart + 1);
 	const size_t attributeSplit = uriAndAttributes.find(' ');
 
 	if (attributeSplit == string::npos)
@@ -983,7 +983,6 @@ Description::Media Description::Media::reciprocate() const {
 		reciprocated.setDirection(Direction::RecvOnly);
 		break;
 	default:
-		// We are good
 		break;
 	}
 
@@ -999,7 +998,6 @@ Description::Media Description::Media::reciprocate() const {
 			map.direction = Direction::RecvOnly;
 			break;
 		default:
-			// We are good
 			break;
 		}
 	}
@@ -1150,13 +1148,20 @@ void Description::Media::parseSdpLine(const string& line) {
 			// always added
 
 		} else if (pr.first == "ssrc") {
-			auto ssrc = to_integer<uint32_t>(pr.second);
+			size_t space_pos = pr.second.find(' ');
+			string ssrc_str = (space_pos == string::npos) ? pr.second : pr.second.substr(0, space_pos);
+
+			auto ssrc = to_integer<uint32_t>(ssrc_str);
 			if (!hasSSRC(ssrc))
 				mSsrcs.emplace_back(ssrc);
 
 			auto cnamePos = pr.second.find("cname:");
 			if (cnamePos != string::npos) {
 				auto cname = pr.second.substr(cnamePos + 6);
+				size_t cname_end = cname.find(' ');
+				if (cname_end != string::npos) {
+					cname = cname.substr(0, cname_end);
+				}
 				mCNameMap.emplace(ssrc, cname);
 			}
 			mAttributes.emplace_back(attr);
@@ -1182,7 +1187,10 @@ int Description::Media::RtpMap::parsePayloadType(string mline) {
 	return to_integer<int>(mline.substr(0, p));
 }
 
-Description::Media::RtpMap::RtpMap(string description) { setDescription(description); }
+Description::Media::RtpMap::RtpMap(string description) 
+{
+    setDescription(description);
+}
 
 void Description::Media::RtpMap::setDescription(string description) {
 	size_t p = description.find(' ');
@@ -1356,61 +1364,6 @@ string Description::typeToString(Type type) {
 		return "unknown";
 	}
 }
-/*
-size_t
-CertificateFingerprint::AlgorithmSize(CertificateFingerprint::Algorithm fingerprintAlgorithm) {
-	switch (fingerprintAlgorithm) {
-	case CertificateFingerprint::Algorithm::Sha1:
-		return 20;
-	case CertificateFingerprint::Algorithm::Sha224:
-		return 28;
-	case CertificateFingerprint::Algorithm::Sha256:
-		return 32;
-	case CertificateFingerprint::Algorithm::Sha384:
-		return 48;
-	case CertificateFingerprint::Algorithm::Sha512:
-		return 64;
-	default:
-		return 0;
-	}
-}
-
-std::string CertificateFingerprint::AlgorithmIdentifier(
-    CertificateFingerprint::Algorithm fingerprintAlgorithm) {
-	switch (fingerprintAlgorithm) {
-	case CertificateFingerprint::Algorithm::Sha1:
-		return "sha-1";
-	case CertificateFingerprint::Algorithm::Sha224:
-		return "sha-224";
-	case CertificateFingerprint::Algorithm::Sha256:
-		return "sha-256";
-	case CertificateFingerprint::Algorithm::Sha384:
-		return "sha-256";
-	case CertificateFingerprint::Algorithm::Sha512:
-		return "sha-512";
-	default:
-		return "unknown";
-	}
-}
-
-bool CertificateFingerprint::isValid() const {
-	size_t expectedSize = AlgorithmSize(this->algorithm);
-	if (expectedSize == 0 || this->value.size() != expectedSize * 3 - 1) {
-		return false;
-	}
-
-	for (size_t i = 0; i < this->value.size(); ++i) {
-		if (i % 3 == 2) {
-			if (this->value[i] != ':')
-				return false;
-		} else {
-			if (!std::isxdigit(this->value[i]))
-				return false;
-		}
-	}
-	return true;
-}
-*/
 
 std::ostream &operator<<(std::ostream &out, const Description &description) {
 	return out << string(description);
