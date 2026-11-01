@@ -35,28 +35,6 @@ function emitSocketEvent(event, payload) {
     }
 }
 
-// Set up audio and video regardless of what devices are present.
-
-var browserName = (function(agent) {
-    switch (true) {
-        case agent.indexOf("edge") > -1:
-            return "Edge";
-        case agent.indexOf("edg/") > -1:
-            return "Edge ( chromium based)";
-        case agent.indexOf("opr") > -1 && !!window.opr:
-            return "Opera";
-        case agent.indexOf("chrome") > -1 && !!window.chrome:
-            return "Chrome";
-        case agent.indexOf("trident") > -1:
-            return "MS IE";
-        case agent.indexOf("firefox") > -1:
-            return "Firefox";
-        case agent.indexOf("safari") > -1:
-            return "Safari";
-        default:
-            return "other";
-    }
-})(window.navigator.userAgent.toLowerCase());
 
 // Could prompt for room name:
 var roomId = prompt('Enter camera name:', '65f570720af337cec5335a70ee88cbfb7df32b5ee33ed0b4a896a0');
@@ -159,16 +137,8 @@ registerSocketEvent('message', function(message) {
       candidate: message.candidate.candidate
     });
     pc.addIceCandidate(candidate);
-  } else if (message.type === 'bye' && isStarted) {
-
-    console.log('Camera state', message.desc);
-    handleRemoteHangup();
-  }
-  else if(message.type === 'error') {
-   
-    console.log('Camera state', message.desc);
-    hangup();
-  }
+  } 
+  
 });
 
 ////////////////////////////////////////////////////
@@ -248,38 +218,112 @@ async function maybeStart() {
   }
 }
 
-window.onbeforeunload = function() {
-    sendMessage({
-        room: roomId,
-        type: 'bye'
-    });
-};
-
-/////////////////////////////////////////////////////////
 
 function createPeerConnection() {
   try {
-      pc = new RTCPeerConnection(
-      {
-          iceServers         : [{'urls': 'stun:stun.l.google.com:19302'}],
-          iceTransportPolicy : 'all',
-          bundlePolicy       : 'max-bundle',
-          rtcpMuxPolicy      : 'require',
-          sdpSemantics       : 'unified-plan'
-      });
+    pc = new RTCPeerConnection({
+      iceServers: [
+        { urls: 'stun:stun.l.google.com:19302' },
+        // Add a TURN server using transport=tcp
+        {
+          urls: 'turn:openrelay.metered.ca:80?transport=tcp',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        },
+        {
+          urls: 'turn:openrelay.metered.ca:443?transport=tcp',
+          username: 'openrelayproject',
+          credential: 'openrelayproject'
+        }
+      ],
+      iceTransportPolicy: 'all',
+      bundlePolicy: 'max-bundle',
+      rtcpMuxPolicy: 'require',
+      sdpSemantics: 'unified-plan'
+    });
+
+    pc.ondatachannel = (event) => {
+    // This is your 'receivedChannel'
+    const receivedChannel = event.channel;
+    
+    // Configure matching binary type
+    receivedChannel.binaryType = "arraybuffer";
+
+    // Handle Open Event
+    receivedChannel.onopen = () => {
+        console.log("Received channel is open and ready to use.");
+        // Reply back immediately if desired
+        receivedChannel.send("hi onopen testing you 2");
+    };
+
+    // Handle Close Event
+    receivedChannel.onclose = () => {
+        console.log("Received channel is closed 2.");
+    };
+
+    // Complete handled 'onmessage' function
+    receivedChannel.onmessage = (event) => {
+        const rawData = event.data;
+          //console.log("Remote received plain text string:", rawData);
+       // 1. Handle Text Data
+        if (typeof rawData === "string") {
+            try {
+                // Check if it is a JSON object
+                const parsedJson = JSON.parse(rawData);
+                console.log("Remote received JSON Object:", parsedJson);
+                } catch (e) {
+                // If parsing fails, treat it as a standard string
+                console.log("Remote received plain text string:", rawData);
+            }
+        } 
+        // 2. Handle Binary Data (ArrayBuffer)
+        else if (rawData instanceof ArrayBuffer) {
+            console.log(`Remote received binary data of size: ${rawData.byteLength} bytes`);
+         
+        }
+
+        // 3. Create your binary data (e.g., a 4-byte buffer)
+        const buffer = new ArrayBuffer(4);
+        const view = new Int32Array(buffer);
+        view[0] = 42; // Example data`
+
+
+         receivedChannel.send(buffer);
+        };
+
+        //receivedChannel.close();
+    };
+
 
      channelSnd = pc.createDataChannel("chat"); 
     
-     channelSnd.onopen = function(event)
+     channelSnd.onopen = function()
      {
+         console.log("onopen");
          channelSnd.send('Hi you!');
      }
     
      channelSnd.onmessage = function(event)
      {
-         console.log("event.data " + event.data);
+         console.log("onmessage event.data " + event.data);
          //channelSnd.send('Hi you!');
+        // channelSnd.close();
      }
+
+     channelSnd.onclose = function()
+     {
+         console.log("onclose " );
+
+     }
+        
+
+    channelSnd.onerror = function(event)
+    {
+        console.error("onerror An operational failure occurred:", event.error.message);
+        // Log telemetry or attempt recovery here
+    }
+
+
         
     pc.onicecandidate = handleIceCandidate;
     pc.ontrack = ontrack;
@@ -390,11 +434,6 @@ function ontrack({
 
 }
 
-// function handleRemoteStreamAdded(event) {
-//     console.log('Remote stream added.');
-//     //remoteStream = event.stream;
-//     remoteVideo.srcObject =  event.stream;
-// }
 
 function handleRemoteStreamRemoved(event) {
     console.log('Remote stream removed. Event: ', event);
@@ -403,10 +442,7 @@ function handleRemoteStreamRemoved(event) {
 function hangup() {
     console.log('Hanging up.');
     stop();
-    sendMessage({
-        room: roomId,
-        type: 'bye'
-    });
+   
 }
 
 function handleRemoteHangup() {

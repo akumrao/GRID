@@ -49,6 +49,34 @@ inline std::pair<const string, const string> parse_pair(const string& attr) {
 	return std::make_pair(std::move(key), std::move(value));
 }
 
+inline std::vector<std::pair<string, string>> parse_attr_list(const string& attr_list) {
+	std::vector<std::pair<string, string>> attrs;
+
+	size_t pos = 0;
+	size_t end = attr_list.size();
+	while (pos < end) {
+		auto i = attr_list.find(';', pos);
+		if (i == string::npos) {
+			i = end;
+		}
+
+		const auto key_value = attr_list.substr(pos, i - pos);
+		const auto j = key_value.find('=');
+		if (j != string::npos) {
+			const auto key = key_value.substr(0, j);
+			const auto value = key_value.substr(j + 1);
+			if (!key.empty() && !value.empty()) {
+				attrs.emplace_back(key, value);
+			}
+		}
+
+		pos = i + 1;
+	}
+
+	return attrs;
+}
+
+// arvind
 template <typename T> T to_integer(const string& s) {
 	const string str(s);
 	try {
@@ -226,6 +254,66 @@ void Description::removeIceOption(const string &option) {
 	                  mIceOptions.end());
 }
 
+Description::RidAttribute::RidAttribute(string name, string value) : mName(std::move(name)), mValue(std::move(value)) {}
+
+const string &Description::RidAttribute::name() const {
+	return mName;
+}
+
+const string &Description::RidAttribute::value() const {
+	return mValue;
+}
+
+void Description::RidAttribute::value(string value) {
+	mValue = std::move(value);
+}
+
+Description::Rid::Rid(string rid) : mRid(std::move(rid)) {}
+
+Description::Rid::Rid(string rid, std::vector<RidAttribute> attributes) : mRid(std::move(rid)), mAttributes(std::move(attributes)) {}
+
+const string &Description::Rid::rid() const { return mRid; }
+
+const std::vector<Description::RidAttribute> &Description::Rid::attributes() const { return mAttributes; }
+
+Description::RidBuilder::RidBuilder(string rid) : mRid(std::move(rid)) {}
+
+Description::RidBuilder& Description::RidBuilder::max_width(uint32_t value) {
+	return saveAttribute("max-width", std::to_string(value));
+}
+
+Description::RidBuilder& Description::RidBuilder::max_height(uint32_t value) {
+	return saveAttribute("max-height", std::to_string(value));
+}
+
+Description::RidBuilder& Description::RidBuilder::max_fps(uint32_t value) {
+	return saveAttribute("max-fps", std::to_string(value));
+}
+
+Description::RidBuilder& Description::RidBuilder::max_br(uint32_t value) {
+	return saveAttribute("max-br", std::to_string(value));
+}
+
+Description::RidBuilder& Description::RidBuilder::custom(string key, string value) {
+	return saveAttribute(std::move(key), std::move(value));
+}
+
+Description::Rid Description::RidBuilder::build() {
+	return {std::move(mRid), std::move(mAttributes)};
+}
+
+Description::RidBuilder& Description::RidBuilder::saveAttribute(string key, string value) {
+	const auto iter = std::find_if(mAttributes.begin(), mAttributes.end(),
+		[&key](const RidAttribute &attr) { return attr.name() == key; }
+	);
+	if (iter != mAttributes.end()) {
+		iter->value(std::move(value));
+	} else {
+		mAttributes.emplace_back(std::move(key), std::move(value));
+	}
+	return *this;
+}
+
 std::vector<string> Description::Entry::attributes() const { return mAttributes; }
 
 void Description::Entry::addAttribute(string attr) {
@@ -240,8 +328,17 @@ void Description::Entry::removeAttribute(const string &attr) {
 	    mAttributes.end());
 }
 
-//std::vector<Candidate> Description::candidates() const { return mCandidates; }
-//
+void Description::Entry::addRid(string rid) {
+	mRids.emplace_back(Rid(std::move(rid)));
+}
+
+void Description::Entry::addRid(Rid rid) {
+	mRids.emplace_back(std::move(rid));
+}
+
+std::vector<Description::Rid> Description::Entry::rids() const {
+	return mRids;
+}
 
 std::vector<Candidate> Description::extractCandidates() {
 	std::vector<Candidate> result;
@@ -414,9 +511,6 @@ string Description::generateApplicationSdp(const string& eol) const {
 	auto app = mApplication ? mApplication : std::make_shared<Application>();
 	sdp << app->generateSdp(eol, addr, port);
 
-	// Media-level attributes
-	//sdp << "a=setup:" << mRole << eol;
-        
         std::string roleStr = "actpass";
 	if (mRole == Role::Active) roleStr = "active";
 	else if (mRole == Role::Passive) roleStr = "passive";
@@ -614,22 +708,6 @@ bool Description::Entry::isRemoved() const { return mIsRemoved; }
 
 void Description::Entry::markRemoved() { mIsRemoved = true; }
 
-std::vector<string> Description::attributes() const { return mAttributes; }
-
-void Description::addAttribute(string attr) {
-	if (std::find(mAttributes.begin(), mAttributes.end(), attr) == mAttributes.end())
-		mAttributes.emplace_back(std::move(attr));
-}
-
-void Description::Entry::addRid(string rid) { mRids.emplace_back(rid); }
-
-void Description::removeAttribute(const string &attr) {
-	mAttributes.erase(
-	    std::remove_if(mAttributes.begin(), mAttributes.end(),
-	                   [&](const auto &a) { return a == attr || parse_pair(a).first == attr; }),
-	    mAttributes.end());
-}
-
 std::vector<int> Description::Entry::extIds() {
 	std::vector<int> result;
 	for (auto it = mExtMaps.begin(); it != mExtMaps.end(); ++it)
@@ -698,7 +776,7 @@ string Description::Entry::generateSdpLines(const string& eol) const {
 		sdp << "a=" << mDirection << eol;
 
 	for (const auto &attr : mAttributes) {
-		if (mRids.size() != 0 && match_prefix(attr, "ssrc:")) {
+		if (!mRids.empty() && match_prefix(attr, "ssrc:")) {
 			continue;
 		}
 
@@ -706,10 +784,27 @@ string Description::Entry::generateSdpLines(const string& eol) const {
 	}
 
 	for (const auto &rid : mRids) {
-		sdp << "a=rid:" << rid << " send" << eol;
+		sdp << "a=rid:" << rid.rid() << " send";
+
+		const auto &attributes = rid.attributes();
+		if (!attributes.empty()) {
+			sdp << " ";
+
+			bool first = true;
+			for (const auto &attr : attributes) {
+				if (first) {
+					first = false;
+				} else {
+					sdp << ";";
+				}
+				sdp << attr.name() << "=" << attr.value();
+			}
+		}
+
+		sdp << eol;
 	}
 
-	if (mRids.size() != 0) {
+	if (!mRids.empty()) {
 		sdp << "a=simulcast:send ";
 
 		bool first = true;
@@ -720,7 +815,7 @@ string Description::Entry::generateSdpLines(const string& eol) const {
 				sdp << ";";
 			}
 
-			sdp << rid;
+			sdp << rid.rid();
 		}
 
 		sdp << eol;
@@ -732,8 +827,7 @@ string Description::Entry::generateSdpLines(const string& eol) const {
 void Description::Entry::parseSdpLine(const string& line) {
 	if (match_prefix(line, "a=")) {
 		const string &attr = line.substr(2);
-                //std::pair<const string&, const string&> pr = parse_pair(attr);
-                std::pair<const string, const string> pr = parse_pair(attr); // arvind
+		std::pair<const string, const string> pr = parse_pair(attr);
 
 		if (pr.first  == "mid") {
 			mMid = pr.second;
@@ -754,10 +848,23 @@ void Description::Entry::parseSdpLine(const string& line) {
 		else if (pr.first == "inactive")
 			mDirection = Direction::Inactive;
 		else if (pr.first == "bundle-only") {
-			// RFC 8843: When an offerer generates a subsequent offer, in which it wants to disable
-			// a bundled "m=" section from a BUNDLE group, the offerer [...] MUST NOT assign an SDP
-			// 'bundle-only' attribute to the "m=" section.
 			mIsRemoved = false;
+		} else if (pr.first == "rid") {
+			const auto list = utils::explode(string(pr.second), ' ');
+			if (list.size() < 2) {
+				throw std::invalid_argument("Invalid rid line \"" + string(line) + "\" in description");
+			}
+
+			auto builder = RidBuilder(list[0]);
+
+			if (list.size() >= 3) {
+				const auto attr_list_parsed = parse_attr_list(list[2]);
+				for (const auto& [attr_key, attr_value] : attr_list_parsed) {
+					builder.custom(attr_key, attr_value);
+				}
+			}
+
+			addRid(builder.build());
 		} else {
 			mAttributes.emplace_back(attr);
 		}
@@ -779,9 +886,6 @@ Description::Entry::ExtMap::ExtMap(const string& description)
 {
     setDescription(description); 
 }
-
-
-
 
 void Description::Entry::ExtMap::setDescription(const string& description) {
 	const size_t uriStart = description.find(' ');
@@ -819,19 +923,19 @@ void Description::Entry::ExtMap::setDescription(const string& description) {
 	}
 }
 
-void Description::Media::addSSRC(uint32_t ssrc, optional<string> name, optional<string> msid,
-                                 optional<string> trackId) {
-	if (name) {
-		mAttributes.emplace_back("ssrc:" + std::to_string(ssrc) + " cname:" + *name);
-		mCNameMap.emplace(ssrc, *name);
+void Description::Media::addSSRC(uint32_t ssrc, const string &name, const string &msid,
+                                 const string &trackId) {
+	if (!name.empty()) {
+		mAttributes.emplace_back("ssrc:" + std::to_string(ssrc) + " cname:" + name);
+		mCNameMap.emplace(ssrc, name);
 	} else {
 		mAttributes.emplace_back("ssrc:" + std::to_string(ssrc));
 	}
 
-	if (msid) {
-		mAttributes.emplace_back("ssrc:" + std::to_string(ssrc) + " msid:" + *msid + " " +
-		                         trackId.value_or(*msid));
-		mAttributes.emplace_back("msid:" + *msid + " " + trackId.value_or(*msid));
+	if (!msid.empty()) {
+		string tid = !trackId.empty() ? trackId : msid;
+		mAttributes.emplace_back("ssrc:" + std::to_string(ssrc) + " msid:" + msid + " " + tid);
+		mAttributes.emplace_back("msid:" + msid + " " + tid);
 	}
 
 	mSsrcs.emplace_back(ssrc);
@@ -846,10 +950,50 @@ void Description::Media::removeSSRC(uint32_t ssrc) {
 	mSsrcs.erase(std::remove(mSsrcs.begin(), mSsrcs.end(), ssrc), mSsrcs.end());
 }
 
-void Description::Media::replaceSSRC(uint32_t old, uint32_t ssrc, optional<string> name,
-                                     optional<string> msid, optional<string> trackID) {
+void Description::Media::addRtxSSRC(uint32_t primarySsrc, uint32_t rtxSsrc, const string &cname) {
+	mSsrcToRtxSsrc[primarySsrc] = rtxSsrc;
+
+	if (!hasSSRC(rtxSsrc)) {
+		if (!cname.empty()) {
+			mAttributes.emplace_back("ssrc:" + std::to_string(rtxSsrc) + " cname:" + cname);
+			mCNameMap.emplace(rtxSsrc, cname);
+		} else {
+			mAttributes.emplace_back("ssrc:" + std::to_string(rtxSsrc));
+		}
+		mSsrcs.emplace_back(rtxSsrc);
+	}
+}
+
+void Description::Media::removeRtxSSRC(uint32_t primarySsrc) {
+	auto it = mSsrcToRtxSsrc.find(primarySsrc);
+	if (it != mSsrcToRtxSsrc.end()) {
+		uint32_t rtxSsrc = it->second;
+		removeSSRC(rtxSsrc);
+		mSsrcToRtxSsrc.erase(it);
+	}
+}
+
+uint32_t Description::Media::getRtxSsrcForSsrc(uint32_t primarySsrc) const {
+	auto it = mSsrcToRtxSsrc.find(primarySsrc);
+	if (it != mSsrcToRtxSsrc.end()) {
+		return it->second;
+	}
+	return 0;
+}
+
+uint32_t Description::Media::getSsrcForRtxSsrc(uint32_t rtxSsrc) const {
+	for (const auto &[primary, rtx] : mSsrcToRtxSsrc) {
+		if (rtx == rtxSsrc) {
+			return primary;
+		}
+	}
+	return 0;
+}
+
+void Description::Media::replaceSSRC(uint32_t old, uint32_t ssrc, const string &name,
+                                     const string &msid, const string &trackID) {
 	removeSSRC(old);
-	addSSRC(ssrc, std::move(name), std::move(msid), std::move(trackID));
+	addSSRC(ssrc, name, msid, trackID);
 }
 
 bool Description::Media::hasSSRC(uint32_t ssrc) const {
@@ -867,16 +1011,17 @@ void Description::Media::clearSSRCs() {
 
 	mSsrcs.clear();
 	mCNameMap.clear();
+	mSsrcToRtxSsrc.clear();
 }
 
 std::vector<uint32_t> Description::Media::getSSRCs() const { return mSsrcs; }
 
-optional<string> Description::Media::getCNameForSsrc(uint32_t ssrc) const {
+string Description::Media::getCNameForSsrc(uint32_t ssrc) const {
 	auto it = mCNameMap.find(ssrc);
 	if (it != mCNameMap.end()) {
 		return it->second;
 	}
-	return nullopt;
+	return "";
 }
 
 Description::Application::Application(string mid)
@@ -889,7 +1034,7 @@ Description::Application::Application(const string &mline, string mid)
 Description::Application Description::Application::reciprocate() const {
 	Application reciprocated(*this);
 
-	reciprocated.mMaxMessageSize =0 ;
+	reciprocated.mMaxMessageSize = 0;
 
 	return reciprocated;
 }
@@ -919,8 +1064,8 @@ string Description::Application::generateSdpLines(const string& eol) const {
 
 void Description::Application::parseSdpLine(const string& line) {
 	if (match_prefix(line, "a=")) {
-		const string& attr = line.substr(2);
-		std::pair<const string&, const string&> pr = parse_pair(attr);
+		const string &attr = line.substr(2);
+		std::pair<const string, const string> pr = parse_pair(attr);
 
 		if (pr.first == "sctp-port") {
 			mSctpPort = to_integer<uint16_t>(pr.second);
@@ -1110,6 +1255,10 @@ string Description::Media::generateSdpLines(const string& eol) const {
 			sdp << "a=fmtp:" << map.payloadType << ' ' << val << eol;
 	}
 
+	for (const auto &[primarySsrc, rtxSsrc] : mSsrcToRtxSsrc) {
+		sdp << "a=ssrc-group:FID " << primarySsrc << ' ' << rtxSsrc << eol;
+	}
+
 	return sdp.str();
 }
 
@@ -1165,6 +1314,17 @@ void Description::Media::parseSdpLine(const string& line) {
 				mCNameMap.emplace(ssrc, cname);
 			}
 			mAttributes.emplace_back(attr);
+
+		} else if (pr.first == "ssrc-group") {
+			if (match_prefix(pr.second, "FID ")) {
+				string ssrcs = pr.second.substr(4);
+				size_t space = ssrcs.find(' ');
+				if (space != string::npos) {
+					auto primarySsrc = to_integer<uint32_t>(ssrcs.substr(0, space));
+					auto rtxSsrc = to_integer<uint32_t>(ssrcs.substr(space + 1));
+					mSsrcToRtxSsrc[primarySsrc] = rtxSsrc;
+				}
+			}
 
 		} else {
 			Entry::parseSdpLine(line);
@@ -1248,7 +1408,7 @@ void Description::Media::RtpMap::removeParameter(const string &str) {
 Description::Audio::Audio(string mid, Direction dir)
     : Media("audio 9 UDP/TLS/RTP/SAVPF", std::move(mid), dir) {}
 
-void Description::Audio::addAudioCodec(int payloadType, string codec, optional<string> profile) {
+void Description::Audio::addAudioCodec(int payloadType, string codec, const string &profile) {
 	if (codec.find('/') == string::npos) {
 		if (codec == "PCMA" || codec == "PCMU")
 			codec += "/8000/1";
@@ -1258,26 +1418,26 @@ void Description::Audio::addAudioCodec(int payloadType, string codec, optional<s
 
 	RtpMap map(std::to_string(payloadType) + ' ' + codec);
 
-	if (profile)
-		map.fmtps.emplace_back(*profile);
+	if (!profile.empty())
+		map.fmtps.emplace_back(profile);
 
 	addRtpMap(map);
 }
 
-void Description::Audio::addOpusCodec(int payloadType, optional<string> profile) {
+void Description::Audio::addOpusCodec(int payloadType, const string &profile) {
 	addAudioCodec(payloadType, "opus", profile);
 }
 
-void Description::Audio::addPCMACodec(int payloadType, optional<string> profile) {
+void Description::Audio::addPCMACodec(int payloadType, const string &profile) {
 	addAudioCodec(payloadType, "PCMA", profile);
 }
 
-void Description::Audio::addPCMUCodec(int payloadType, optional<string> profile) {
+void Description::Audio::addPCMUCodec(int payloadType, const string &profile) {
 	addAudioCodec(payloadType, "PCMU", profile);
 }
 
-void Description::Audio::addAACCodec(int payloadType, optional<string> profile) {
-	if (profile) {
+void Description::Audio::addAACCodec(int payloadType, const string &profile) {
+	if (!profile.empty()) {
 		addAudioCodec(payloadType, "MP4A-LATM", profile);
 	} else {
 		addAudioCodec(payloadType, "MP4A-LATM", "cpresent=1");
@@ -1287,7 +1447,7 @@ void Description::Audio::addAACCodec(int payloadType, optional<string> profile) 
 Description::Video::Video(string mid, Direction dir)
     : Media("video 9 UDP/TLS/RTP/SAVPF", std::move(mid), dir) {}
 
-void Description::Video::addVideoCodec(int payloadType, string codec, optional<string> profile) {
+void Description::Video::addVideoCodec(int payloadType, string codec, const string &profile) {
 	if (codec.find('/') == string::npos)
 		codec += "/90000";
 
@@ -1298,8 +1458,8 @@ void Description::Video::addVideoCodec(int payloadType, string codec, optional<s
 	// map.addFB("ccm fir");
 	map.addFeedback("goog-remb");
 
-	if (profile)
-		map.fmtps.emplace_back(*profile);
+	if (!profile.empty())
+		map.fmtps.emplace_back(profile);
 
 	addRtpMap(map);
 
@@ -1317,23 +1477,23 @@ void Description::Video::addVideoCodec(int payloadType, string codec, optional<s
 	// ";rtx-time=3000"); addFormat(rtx);
 }
 
-void Description::Video::addH264Codec(int payloadType, optional<string> profile) {
+void Description::Video::addH264Codec(int payloadType, const string &profile) {
 	addVideoCodec(payloadType, "H264", profile);
 }
 
-void Description::Video::addH265Codec(int payloadType, optional<string> profile) {
+void Description::Video::addH265Codec(int payloadType, const string &profile) {
 	addVideoCodec(payloadType, "H265", profile);
 }
 
-void Description::Video::addVP8Codec(int payloadType, optional<string> profile) {
+void Description::Video::addVP8Codec(int payloadType, const string &profile) {
 	addVideoCodec(payloadType, "VP8", profile);
 }
 
-void Description::Video::addVP9Codec(int payloadType, optional<string> profile) {
+void Description::Video::addVP9Codec(int payloadType, const string &profile) {
 	addVideoCodec(payloadType, "VP9", profile);
 }
 
-void Description::Video::addAV1Codec(int payloadType, optional<string> profile) {
+void Description::Video::addAV1Codec(int payloadType, const string &profile) {
 	addVideoCodec(payloadType, "AV1", profile);
 }
 

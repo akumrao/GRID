@@ -1,5 +1,3 @@
-
-
 #ifndef RTC_DESCRIPTION_HPP
 #define RTC_DESCRIPTION_HPP
 
@@ -129,6 +127,53 @@ public:
 	string generateSdp(const string& eol = "\r\n") const;
 	string generateApplicationSdp(const string& eol = "\r\n") const;
 
+	class RTC_CPP_EXPORT RidAttribute {
+	public:
+		RidAttribute(string name, string value);
+
+		[[nodiscard]] const string &name() const;
+		[[nodiscard]] const string &value() const;
+
+		void value(string value);
+
+	private:
+		string mName;
+		string mValue;
+	};
+
+	class RTC_CPP_EXPORT Rid {
+	public:
+		explicit Rid(string rid);
+		Rid(string rid, std::vector<RidAttribute> attributes);
+
+		[[nodiscard]] const string &rid() const;
+		[[nodiscard]] const std::vector<RidAttribute> &attributes() const;
+
+	private:
+		string mRid;
+		std::vector<RidAttribute> mAttributes;
+	};
+
+	class RTC_CPP_EXPORT RidBuilder {
+	public:
+		explicit RidBuilder(string rid);
+
+		RidBuilder& max_width(uint32_t value);
+		RidBuilder& max_height(uint32_t value);
+		RidBuilder& max_fps(uint32_t value);
+		RidBuilder& max_br(uint32_t value);
+
+		RidBuilder& custom(string key, string value);
+
+		[[nodiscard]] Rid build();
+
+	private:
+		string mRid;
+		std::vector<RidAttribute> mAttributes;
+
+		RidBuilder& saveAttribute(string key, string value);
+	};
+
 	class RTC_CPP_EXPORT Entry {
 	public:
 		virtual ~Entry() = default;
@@ -148,6 +193,8 @@ public:
 		void addAttribute(string attr);
 		void removeAttribute(const string &attr);
 		void addRid(string rid);
+		void addRid(Rid rid);
+		std::vector<Rid> rids() const;
 
 		struct RTC_CPP_EXPORT ExtMap {
 			static int parseId(const string& description);
@@ -188,7 +235,7 @@ public:
 		string mProtocol;
 		string mDescription;
 		string mMid;
-		std::vector<string> mRids;
+		std::vector<Rid> mRids;
 		Direction mDirection;
 		bool mIsRemoved;
 	};
@@ -226,15 +273,20 @@ public:
 		string description() const override;
 		Media reciprocate() const;
 
-		void addSSRC(uint32_t ssrc, optional<string> name, optional<string> msid = nullopt,
-		             optional<string> trackId = nullopt);
+		void addSSRC(uint32_t ssrc, const string &name, const string &msid = "",
+		             const string &trackId = "");
 		void removeSSRC(uint32_t ssrc);
-		void replaceSSRC(uint32_t old, uint32_t ssrc, optional<string> name,
-		                 optional<string> msid = nullopt, optional<string> trackID = nullopt);
+		void replaceSSRC(uint32_t old, uint32_t ssrc, const string &name,
+		                 const string &msid = "", const string &trackID = "");
 		bool hasSSRC(uint32_t ssrc) const;
 		void clearSSRCs();
 		std::vector<uint32_t> getSSRCs() const;
-		optional<std::string> getCNameForSsrc(uint32_t ssrc) const;
+		string getCNameForSsrc(uint32_t ssrc) const;
+
+		void addRtxSSRC(uint32_t primarySsrc, uint32_t rtxSsrc, const string &cname = "");
+		void removeRtxSSRC(uint32_t primarySsrc);
+		uint32_t getRtxSsrcForSsrc(uint32_t primarySsrc) const;
+		uint32_t getSsrcForRtxSsrc(uint32_t rtxSsrc) const;
 
 		int bitrate() const;
 		void setBitrate(int bitrate);
@@ -282,21 +334,22 @@ public:
 		std::map<int, RtpMap> mRtpMaps;
 		std::vector<uint32_t> mSsrcs;
 		std::map<uint32_t, string> mCNameMap;
+		std::map<uint32_t, uint32_t> mSsrcToRtxSsrc;
 	};
 
 	class RTC_CPP_EXPORT Audio : public Media {
 	public:
 		Audio(string mid = "audio", Direction dir = Direction::SendOnly);
 
-		void addAudioCodec(int payloadType, string codec, optional<string> profile = std::nullopt);
-		void addOpusCodec(int payloadType, optional<string> profile = DEFAULT_OPUS_AUDIO_PROFILE);
-		void addPCMACodec(int payloadType, optional<string> profile = std::nullopt);
-		void addPCMUCodec(int payloadType, optional<string> profile = std::nullopt);
-		void addAACCodec(int payloadType, optional<string> profile = std::nullopt);
+		void addAudioCodec(int payloadType, string codec, const string &profile = "");
+		void addOpusCodec(int payloadType, const string &profile = DEFAULT_OPUS_AUDIO_PROFILE);
+		void addPCMACodec(int payloadType, const string &profile = "");
+		void addPCMUCodec(int payloadType, const string &profile = "");
+		void addAACCodec(int payloadType, const string &profile = "");
 
 		[[deprecated("Use addAACCodec")]] inline void
-		addAacCodec(int payloadType, optional<string> profile = std::nullopt) {
-			addAACCodec(payloadType, std::move(profile));
+		addAacCodec(int payloadType, const string &profile = "") {
+			addAACCodec(payloadType, profile);
 		};
 	};
 
@@ -304,13 +357,13 @@ public:
 	public:
 		Video(string mid = "video", Direction dir = Direction::SendOnly);
 
-		void addVideoCodec(int payloadType, string codec, optional<string> profile = std::nullopt);
+		void addVideoCodec(int payloadType, string codec, const string &profile = "");
 
-		void addH264Codec(int payloadType, optional<string> profile = DEFAULT_H264_VIDEO_PROFILE);
-		void addH265Codec(int payloadType, optional<string> profile = std::nullopt);
-		void addVP8Codec(int payloadType, optional<string> profile = std::nullopt);
-		void addVP9Codec(int payloadType, optional<string> profile = std::nullopt);
-		void addAV1Codec(int payloadType, optional<string> profile = std::nullopt);
+		void addH264Codec(int payloadType, const string &profile = DEFAULT_H264_VIDEO_PROFILE);
+		void addH265Codec(int payloadType, const string &profile = "");
+		void addVP8Codec(int payloadType, const string &profile = "");
+		void addVP9Codec(int payloadType, const string &profile = "");
+		void addAV1Codec(int payloadType, const string &profile = "");
 	};
 
 	bool hasApplication() const;
