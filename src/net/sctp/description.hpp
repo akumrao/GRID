@@ -237,7 +237,7 @@ public:
 		string mMid;
 		std::vector<Rid> mRids;
 		Direction mDirection;
-		bool mIsRemoved;
+		bool mIsRemoved{false};
 	};
 
 	struct RTC_CPP_EXPORT Application : public Entry {
@@ -287,6 +287,10 @@ public:
 		void removeRtxSSRC(uint32_t primarySsrc);
 		uint32_t getRtxSsrcForSsrc(uint32_t primarySsrc) const;
 		uint32_t getSsrcForRtxSsrc(uint32_t rtxSsrc) const;
+
+		bool isRtxEnabled() const;
+		void disableRtx();
+
 
 		int bitrate() const;
 		void setBitrate(int bitrate);

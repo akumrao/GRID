@@ -1,5 +1,3 @@
-
-
 #ifndef RTC_PEER_CONNECTION_H
 #define RTC_PEER_CONNECTION_H
 
@@ -301,6 +299,8 @@ public:
         bool changeState(State newState);
         
         void forwardMessage(message_ptr message);
+        void forwardMedia(message_ptr message);
+        void dispatchMedia(message_ptr message);
         
         void forwardBufferedAmount(uint16_t stream, size_t amount);
         
@@ -342,8 +342,10 @@ public:
 
         
         synchronized_callback<shared_ptr<rtc::Track>> trackCallback;
-        
+
+private:        
         std::unordered_map<string, weak_ptr<Track>> mTracks;         // by mid
+
         std::unordered_map<uint32_t, weak_ptr<Track>> mTracksBySsrc; // by SSRC
         std::vector<weak_ptr<Track>> mTrackLines;                    // by SDP order
         Queue<shared_ptr<Track>> mPendingTracks;
@@ -354,6 +356,9 @@ public:
 	shared_ptr<MediaHandler> getMediaHandler();
 #endif
        
+        void populateLocalDescription(Description &description) const;
+        void updateTrackSsrcCache(const Description &description);
+        mutable std::shared_mutex mTracksMutex;
         
 };
 

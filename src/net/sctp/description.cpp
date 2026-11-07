@@ -704,9 +704,14 @@ Description::Direction Description::Entry::direction() const { return mDirection
 
 void Description::Entry::setDirection(Direction dir) { mDirection = dir; }
 
-bool Description::Entry::isRemoved() const { return mIsRemoved; }
+bool Description::Entry::isRemoved() const { 
+    return mIsRemoved; 
+}
 
-void Description::Entry::markRemoved() { mIsRemoved = true; }
+void Description::Entry::markRemoved() 
+{
+    mIsRemoved = true;
+}
 
 std::vector<int> Description::Entry::extIds() {
 	std::vector<int> result;
@@ -1572,5 +1577,27 @@ std::ostream &operator<<(std::ostream &out, const Description::Direction &direct
 	}
 	return out;
 }
+
+
+
+
+bool Description::Media::isRtxEnabled() const {
+	for (const auto &[pt, map] : mRtpMaps) {
+		if (map.format == "RTX" || map.format == "rtx")
+			return true;
+	}
+	return false;
+}
+
+void Description::Media::disableRtx() {
+	removeFormat("RTX");
+	removeFormat("rtx");
+	auto mSsrcToRtxSsrcCopy = mSsrcToRtxSsrc;
+	for (const auto &[primarySsrc, _] : mSsrcToRtxSsrcCopy)
+		removeRtxSSRC(primarySsrc);
+	mSsrcToRtxSsrc.clear();
+}
+
+
 
 } // namespace rtc
