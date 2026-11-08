@@ -104,8 +104,7 @@ void PeerConnection::iterateRemoteTracks(std::function<void(shared_ptr<Track> tr
 
 void PeerConnection::openTracks() {
   
-  SInfo << "openTracks()";
-  
+
 #if RTC_ENABLE_MEDIA
 //	auto transport = std::atomic_load(&mDtlsTransport);
 //	if (!transport)
@@ -113,18 +112,21 @@ void PeerConnection::openTracks() {
 
        auto transport = std::atomic_load(&mIceTransport);
        
- 	WebRtcTransport* websocketTransport =  transport->agent.socket;
+ 	WebRtcTransport* webRTCsocketTransport =  transport->agent.socket;
 	iterateRemoteTracks([&](shared_ptr<Track> track) {
 		if(!track->isOpen()) {
-			if (websocketTransport) {
+			if (webRTCsocketTransport) {
 				//track->open(websocketTransport); 
-                                track->open(websocketTransport);
+                            
+                                SInfo << "AgentNo " <<  webRTCsocketTransport->agentNo  <<" openTracks  track->open";
+                            
+                                track->open(webRTCsocketTransport);
 			} else {
 				// A track was added during a latter renegotiation, whereas SRTP transport was
 				// not initialized. This is an optimization to use the library with data
 				// channels only. Set forceMediaTransport to true to initialize the transport
 				// before dynamically adding tracks.
-				auto errorMsg = "The connection has no media transport";
+				auto errorMsg = "The connection has no webrtc transport yet";
 				SError << errorMsg;
 				track->triggerError(errorMsg);
 			}
@@ -177,21 +179,19 @@ void PeerConnection::triggerTrack(weak_ptr<Track> weakTrack) {
 }
 
 void PeerConnection::triggerPendingTracks() {
-	while (trackCallback) {
-		auto next = mPendingTracks.pop();
-		if (!next)
-			break;
+    while (trackCallback) {
+        auto next = mPendingTracks.pop();
+        if (!next)
+            break;
 
-		auto impl = std::move(*next);
+        auto track = std::move(*next);
 
-		try {
-		//	trackCallback(std::make_shared<rtc::Track>(impl));  TBD
-		} catch (const std::exception &e) {
-		//	PLOG_WARNING << "Uncaught exception in callback: " << e.what();
-		}
-
-		// Do not trigger open immediately for tracks as it'll be done later
-	}
+        try {
+            trackCallback(track); // Pass the shared_ptr directly without re-wrapping
+        } catch (const std::exception &e) {
+            SWarn << "Uncaught exception in track callback: " << e.what();
+        }
+    }
 }
 
 
@@ -1912,7 +1912,7 @@ void PeerConnection::processRemoteDescription(Description description)
      void PeerConnection::onTrack(std::function<void(std::shared_ptr<Track>)> callback) {
         trackCallback = callback;
       // call back TBD
-        //flushPendingTracks();
+        triggerPendingTracks();
      }
      
      

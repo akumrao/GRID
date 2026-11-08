@@ -262,7 +262,7 @@ void wsOnMessage(json const &m) {
 
             auto sdp = m["desc"]["sdp"].get<string>();
 
-            SInfo << "setRemoteDescription " << type;
+            SInfo << "setRemoteDescription " << sdp;
 
             auto description = Description(sdp, type);
             pc->setRemoteDescription(description);
@@ -280,7 +280,7 @@ void wsOnMessage(json const &m) {
 
             auto sdp = m["desc"]["sdp"].get<string>();
 
-            SInfo << "setRemoteDescription " << type;
+            SInfo << "setRemoteDescription " << sdp;
 
             auto description = Description(sdp, type);
             pc->setRemoteDescription(description);
@@ -610,7 +610,7 @@ int main(int argc, char **argv) {
 //}
 
 shared_ptr<ClientTrackData> addVideo(const shared_ptr<PeerConnection> pc, const uint8_t payloadType, const uint32_t ssrc, const string cname, const string msid, const function<void (void) > onOpen) {
-    auto video = Description::Video(cname);
+    auto video = Description::Video("0", Description::Direction::SendOnly); // Pass "0" as mid
     video.addH264Codec(payloadType);
     video.addSSRC(ssrc, cname, msid, cname);
     auto track = pc->addTrack(video);
@@ -634,7 +634,7 @@ shared_ptr<ClientTrackData> addVideo(const shared_ptr<PeerConnection> pc, const 
 }
 
 shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const uint8_t payloadType, const uint32_t ssrc, const string cname, const string msid, const function<void (void) > onOpen) {
-    auto audio = Description::Audio(cname);
+    auto audio = Description::Audio("1", Description::Direction::SendOnly); // Pass "1" as mid
     audio.addOpusCodec(payloadType);
     audio.addSSRC(ssrc, cname, msid, cname);
     auto track = pc->addTrack(audio);
@@ -654,9 +654,6 @@ shared_ptr<ClientTrackData> addAudio(const shared_ptr<PeerConnection> pc, const 
     auto trackData = make_shared<ClientTrackData>(track, srReporter);
     return trackData;
 }
-
-
-// Create and setup a PeerConnection
 
 shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool isClient) {
     SInfo << "createPeerConnection id " << id << " is client " << isClient;
@@ -753,6 +750,41 @@ shared_ptr<Client> createPeerConnection(Configuration &config, string id, bool i
         //);
         SInfo << "Audio from " << id << " opened" << endl;
     });
+    
+    
+    
+    
+    
+    
+shared_ptr<Track> t2;
+    string newTrackMid;
+    std::promise<rtc::binary> recvRtpPromise;
+    pc->onTrack([&t2, &newTrackMid, &recvRtpPromise](shared_ptr<Track> t) {
+            string mid = t->mid();
+            cout << "Track 2: Received track with mid \"" << mid << "\"" << endl;
+            if (mid != newTrackMid) {
+                    cerr << "Wrong track mid" << endl;
+                    return;
+            }
+
+            t->onOpen([mid]() {
+                cout << "Track 2: Track with mid \"" << mid << "\" is open" << endl; 
+            });
+
+            t->onClosed(
+                [mid]() { cout << "Track 2: Track with mid \"" << mid << "\" is closed" << endl; });
+
+            t->onMessage(
+                [&recvRtpPromise](rtc::binary message) {
+                        // This is an RTP packet
+                        recvRtpPromise.set_value(message);
+                },
+                nullptr);
+
+            std::atomic_store(&t2, t);
+    });
+
+    
 
 #endif
     {
