@@ -132,7 +132,10 @@ public:
 
         const Configuration config;
         
-	State state() const;
+	State state() const
+        {
+         return mState;   
+        }
 	IceState iceState() const;
 	GatheringState gatheringState() const;
 	SignalingState signalingState() const;

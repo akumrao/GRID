@@ -11,7 +11,7 @@ let channelSnd;
 let starttime;
 
 let camAudio = false;
-let appAudio = false;
+let appAudio = true;
 let appVideo = true;
 let inboundStream = null;
 

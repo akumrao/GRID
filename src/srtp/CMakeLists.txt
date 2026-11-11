@@ -103,7 +103,7 @@ if(WIN32)
 	link_libraries(  ws2_32) # winsock2
 endif()
 
-
+set(SOURCE_FILES_test test/main.cpp helpers.cpp)
 set(SOURCE_FILES_local local/main.cpp helpers.cpp)
 set(SOURCE_FILES_remote remote/main.cpp helpers.cpp)
 
@@ -123,6 +123,7 @@ if(WIN32)
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/app.rc.in ${CMAKE_CURRENT_BINARY_DIR}/app.rc @ONLY)
     list(APPEND SOURCE_FILES_remote ${CMAKE_CURRENT_BINARY_DIR}/app.rc)
     list(APPEND SOURCE_FILES_local ${CMAKE_CURRENT_BINARY_DIR}/app.rc)
+    list(APPEND SOURCE_FILES_test ${CMAKE_CURRENT_BINARY_DIR}/app.rc)
 else()
     find_library(LIBUTIL NAMES util)
     if(LIBUTIL)
@@ -245,5 +246,14 @@ add_executable(${PROJECT_NAME}_local ${SOURCE_FILES_local} ${SOURCES})
 target_include_directories(${PROJECT_NAME}_local PUBLIC ${INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME}_local PRIVATE webrtc srtp2)
 target_compile_definitions(${PROJECT_NAME}_local PUBLIC DUALSTACK SRTP TURN RTC_MEDIA RTC_ENABLE_MEDIA MS_LITTLE_ENDIAN TTYD_VERSION="${TTYD_VERSION}"
+    $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
+)
+
+
+
+add_executable(${PROJECT_NAME}_test ${SOURCE_FILES_test} ${SOURCES})
+target_include_directories(${PROJECT_NAME}_test PUBLIC ${INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME}_test PRIVATE webrtc srtp2)
+target_compile_definitions(${PROJECT_NAME}_test PUBLIC DUALSTACK SRTP TURN RTC_MEDIA RTC_ENABLE_MEDIA MS_LITTLE_ENDIAN TTYD_VERSION="${TTYD_VERSION}"
     $<$<PLATFORM_ID:Windows>:_WIN32_WINNT=0xa00 WINVER=0xa00>
 )
