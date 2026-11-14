@@ -92,7 +92,7 @@ namespace rtc {
     }
 
     void Track::close() {
-        close();
+        Impclose();
     }
 
     bool Track::send(message_variant data) {
